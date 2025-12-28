@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>网页回合制战斗系统 Demo</title>
+<style>
+body { margin: 0; background: radial-gradient(circle at top, rgba(78,139,255,0.35), transparent 55%), linear-gradient(160deg, #1f2440, #151a2b); color: #f4f6ff; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
+.app-shell { width: 1920px; height: 1080px; background: rgba(32,38,63,0.94); display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 25px 60px rgba(8,12,40,0.65); border: 1px solid rgba(120,150,255,0.15); backdrop-filter: blur(6px); max-width: 100%; max-height: 100vh; }
+main { flex: 1; padding: 16px 24px; display: grid; grid-template-rows: 546px 220px 186px; gap: 16px; height: calc(1080px - 56px); overflow: visible; }
+.scene-wrapper { background: #252b45; border-radius: 18px; padding: 48px 24px 24px; border: 2px solid #81a5ff; box-shadow: 0 18px 36px rgba(6,10,35,0.45); min-height: 0; display: flex; flex-direction: column; overflow: visible; }
+.scene-wrapper .area-tag { color: #81a5ff; }
+.scene-wrapper .battle-row { height: 100%; flex: 1; }
+.battle-row { display: grid; grid-template-columns: 420px 1fr 420px; gap: 16px; min-height: 0; }
+.scene-wrapper .battle-row > section { height: 100%; }
+.labeled-block { position: relative; }
+.area-tag { position: absolute; top: -14px; left: 24px; background: #1f2440; color: #f0f8ff; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.15em; padding: 2px 12px; border-radius: 999px; border: 2px solid currentColor; box-shadow: 0 4px 12px rgba(0,0,0,0.35); }
+.sub-area-tag { position: absolute; top: 10px; left: 16px; background: rgba(15,18,30,0.85); color: currentColor; font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.12em; padding: 1px 8px; border-radius: 999px; border: 1px solid currentColor; box-shadow: 0 2px 6px rgba(0,0,0,0.25); }
+.enemy-hud .sub-area-tag { left: auto; right: 20px; }
+.battle-scene .sub-area-tag { left: 50%; transform: translateX(-50%); }
+.hud-panel { background: #2f3551; border-radius: 14px; padding: 32px 20px 20px; box-shadow: 0 18px 36px rgba(6,10,35,0.45); display: flex; flex-direction: column; gap: 10px; border: 2px solid rgba(255,255,255,0.08); height: 100%; box-sizing: border-box; overflow: auto; }
+.player-hud { border-color: #57c2ff; }
+.player-hud .sub-area-tag { color: #57c2ff; }
+.hud-panel h2 { margin: 0; font-size: 1.1rem; }
+.hud-stat { width: 100%; display: flex; align-items: center; gap: 10px; }
+.hud-stat span { font-size: 0.88rem; color: #cbd6ff; min-width: 140px; }
+.hud-stat .bar { flex: 1; margin: 0; }
+.status-row { display: flex; align-items: center; gap: 12px; font-size: 0.78rem; color: #cbd6ff; }
+.status-label { width: 64px; letter-spacing: 0.05em; color: rgba(255,255,255,0.6); }
+.status-icons { display: flex; gap: 6px; flex-wrap: wrap; }
+.status-icon { width: 20px; height: 20px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.3); position: relative; cursor: pointer; box-shadow: inset 0 0 6px rgba(0,0,0,0.4); }
+.status-icon.buff { background: linear-gradient(135deg, #6ae0ff, #3c7cff); border-color: rgba(101,171,255,0.9); }
+.status-icon.debuff { background: linear-gradient(135deg, #ff7b7b, #ff3b3b); border-color: rgba(255,123,123,0.9); }
+.status-icon.neutral { background: linear-gradient(135deg, #6c748a, #43495f); border-color: rgba(255,255,255,0.25); }
+.status-icon::after { content: attr(data-name) " · " attr(data-desc); position: absolute; left: 50%; transform: translate(-50%, -110%); background: rgba(9,12,22,0.95); padding: 6px 10px; border-radius: 6px; font-size: 0.72rem; white-space: nowrap; opacity: 0; pointer-events: none; transition: opacity .15s ease; box-shadow: 0 6px 16px rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.1); }
+.status-icon:hover::after { opacity: 1; }
+.player-hud { align-items: flex-start; text-align: left; }
+.enemy-hud { align-items: flex-end; text-align: right; }
+.enemy-hud .hud-stat { flex-direction: row-reverse; }
+.enemy-hud .hud-stat span { text-align: right; }
+.enemy-hud .bar span { right: 0; left: auto; }
+.bar { height: 12px; border-radius: 8px; background: rgba(255,255,255,0.08); margin: 4px 0 12px; position: relative; overflow: hidden; width: 100%; }
+.bar span { position: absolute; height: 100%; border-radius: 6px; left: 0; top: 0; }
+.hp span { background: linear-gradient(90deg, #ff8e8e, #ff5f5f); width: 80%; box-shadow: 0 0 12px rgba(255,95,95,0.5); }
+.ap span { background: linear-gradient(90deg, #7bffcf, #4ff3a0); width: 66%; box-shadow: 0 0 12px rgba(79,243,160,0.4); }
+.armor-row { display: flex; align-items: center; gap: 10px; padding: 4px 0; }
+.armor-list-wrapper { background: rgba(18,22,38,0.6); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; padding: 10px 14px; display: inline-flex; flex-direction: column; gap: 6px; align-self: flex-start; width: auto; max-width: 100%; }
+.armor-name { min-width: 44px; font-size: 0.78rem; letter-spacing: 0.08em; text-transform: uppercase; color: rgba(255,255,255,0.7); }
+.armor-bar { flex: 1 1 160px; max-width: 180px; height: 6px; border-radius: 999px; background: rgba(255,255,255,0.08); position: relative; overflow: hidden; }
+.armor-bar span { position: absolute; inset: 0; border-radius: inherit; background: linear-gradient(90deg, #7cf5d9, #57c2ff); }
+.armor-value { min-width: 72px; font-size: 0.85rem; font-weight: 600; color: #e5eaff; text-align: right; }
+.enemy-hud .armor-row { flex-direction: row-reverse; }
+.enemy-hud .armor-value { text-align: left; }
+.enemy-hud .armor-bar span { background: linear-gradient(90deg, #ff9dbb, #ff6584); }
+.battle-scene { background: linear-gradient(160deg, rgba(22,27,47,0.9), rgba(52,64,120,0.7)); border-radius: 20px; border: 2px solid #ffd266; position: relative; display: flex; align-items: center; justify-content: center; overflow: hidden; box-shadow: inset 0 0 50px rgba(5,8,25,0.6); padding: 36px 30px 24px; height: 100%; box-sizing: border-box; }
+.battle-scene .sub-area-tag { color: #ffd266; }
+.scene-grid { position: absolute; inset: 0; background-image: linear-gradient(rgba(255,255,255,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px); background-size: 60px 60px; z-index: 0; border-radius: inherit; }
+.scene-floor { position: absolute; bottom: 0; width: 100%; height: 50%; background: radial-gradient(circle at center, rgba(120,150,255,0.35), transparent 70%); filter: blur(10px); z-index: 0; border-radius: inherit; }
+.scene-character { width: 32%; height: 70%; border: 1px solid rgba(255,255,255,0.15); border-radius: 20px; background: linear-gradient(160deg, rgba(74,113,255,0.4), rgba(31,40,76,0.8)); box-shadow: 0 20px 35px rgba(5,8,25,0.6); display: flex; align-items: center; justify-content: center; font-size: 1.1rem; color: #f4f8ff; text-transform: uppercase; letter-spacing: 0.15em; position: relative; z-index: 1; }
+.scene-vs { position: absolute; font-size: 2.4rem; font-weight: 700; letter-spacing: 0.2em; color: rgba(255,255,255,0.2); z-index: 1; }
+.scene-character::after { content: "互动区域"; position: absolute; bottom: 10px; font-size: 0.7rem; letter-spacing: normal; color: rgba(255,255,255,0.7); }
+.scene-character.player { align-self: flex-end; }
+.scene-character.enemy { align-self: flex-start; }
+.scene-vs { position: absolute; font-size: 2.4rem; font-weight: 700; letter-spacing: 0.2em; color: rgba(255,255,255,0.2); }
+.log { background: #252b45; padding: 56px 20px 20px; border-radius: 14px; min-height: 0; box-shadow: 0 12px 28px rgba(5,9,30,0.45); border: 2px solid #ffb48b; overflow: visible; display: flex; flex-direction: column; }
+.log .area-tag { color: #ffb48b; }
+.log h3 { margin-top: 0; }
+.log-entry { padding: 6px 0; border-bottom: 1px solid #2f323e; font-size: 0.95rem; }
+.action-panel { background: #2c3350; padding: 56px 20px 20px; border-radius: 14px; display: flex; gap: 16px; box-shadow: 0 15px 30px rgba(6,10,35,0.45); min-height: 0; border: 2px solid #7cf5d9; }
+.action-panel .area-tag { color: #7cf5d9; }
+.skill-list { flex: 2; display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 8px; }
+.skill { background: radial-gradient(circle at top, rgba(255,255,255,0.08), rgba(26,30,44,0.9)); padding: 12px; border-radius: 10px; font-size: 0.9rem; border: 1px solid rgba(255,255,255,0.04); cursor: pointer; transition: border .15s ease, transform .15s; }
+.skill:hover { border-color: rgba(70,150,255,0.8); transform: translateY(-2px); }
+.skill strong { display: block; margin-bottom: 6px; }
+.hint { flex: 1; background: #262c47; border-radius: 12px; padding: 14px; font-size: 0.9rem; border: 1px dashed rgba(120,150,255,0.4); color: #cfd8ff; }
+.timeline { position: relative; background: rgba(37,43,69,0.95); padding: 10px 24px 6px; border-radius: 12px; display: flex; gap: 12px; box-shadow: 0 12px 28px rgba(5,9,30,0.35); overflow: visible; border: 2px solid #c08bff; align-items: center; justify-content: space-between; margin-bottom: 12px; min-height: 44px; }
+.timeline::before { content: ""; position: absolute; left: 48px; right: 48px; top: 50%; height: 1px; background: linear-gradient(90deg, rgba(192,139,255,0.1), rgba(192,139,255,0.9), rgba(192,139,255,0.1)); z-index: 0; }
+.timeline .sub-area-tag { color: #c08bff; z-index: 1; }
+.timeline-item { background: transparent; padding: 0; border-radius: 0; font-size: 0.82rem; display: flex; flex-direction: column; align-items: center; gap: 2px; flex: 1; position: relative; z-index: 1; }
+.timeline-item::before { content: ""; width: 10px; height: 10px; border-radius: 50%; border: 2px solid #c08bff; background: #1f2440; }
+.timeline-item span { font-size: 0.72rem; color: #c7d3ff; }
+.log-body { flex: 1; overflow-y: auto; margin-top: 12px; padding-right: 6px; }
+footer { padding: 0 24px 24px; color: #b5c1ff; font-size: 0.85rem; flex-shrink: 0; height: 56px; display: flex; align-items: flex-end; }
+</style>
+</head>
+<body>
+<div class="app-shell">
+<main>
+  <section class="scene-wrapper labeled-block">
+    <div class="area-tag">场景区</div>
+    <section class="timeline labeled-block">
+      <div class="sub-area-tag">行动顺序区域</div>
+      <div class="timeline-item">
+        玩家 · 穿甲斩
+        <span>速度 14</span>
+      </div>
+      <div class="timeline-item">
+        敌人 · 剧毒箭
+        <span>速度 10</span>
+      </div>
+      <div class="timeline-item">
+        玩家 · 守护姿态
+        <span>速度 9</span>
+      </div>
+      <div class="timeline-item">
+        敌人 · 防御
+        <span>速度 8</span>
+      </div>
+    </section>
+    <div class="battle-row">
+      <section class="hud-panel player-hud labeled-block">
+        <div class="sub-area-tag">玩家状态区域</div>
+      <h2>玩家：先锋游侠</h2>
+      <div class="hud-stat">
+        <span>HP 120 / 150</span>
+        <div class="bar hp"><span></span></div>
+      </div>
+      <div class="hud-stat">
+        <span>行动力（AP） 4 / 6</span>
+        <div class="bar ap"><span></span></div>
+      </div>
+      <div class="status-row">
+         <span class="status-label">BUFF</span>
+         <div class="status-icons">
+           <div class="status-icon buff" data-name="纳米护盾" data-desc="受击时减免20%伤害"></div>
+         </div>
+       </div>
+       <div class="status-row">
+         <span class="status-label">DEBUFF</span>
+         <div class="status-icons">
+           <div class="status-icon neutral" data-name="无减益" data-desc="当前无异常状态"></div>
+         </div>
+       </div>
+       <div class="armor-list-wrapper">
+        <div class="armor-row">
+          <span class="armor-name">头部</span>
+          <div class="armor-bar"><span style="width:50%"></span></div>
+          <span class="armor-value">30 / 30</span>
+        </div>
+        <div class="armor-row">
+          <span class="armor-name">胸部</span>
+          <div class="armor-bar"><span style="width:75%"></span></div>
+          <span class="armor-value">45 / 60</span>
+        </div>
+        <div class="armor-row">
+          <span class="armor-name">腹部</span>
+          <div class="armor-bar"><span style="width:58.3%"></span></div>
+          <span class="armor-value">35 / 50</span>
+        </div>
+        <div class="armor-row">
+          <span class="armor-name">左臂</span>
+          <div class="armor-bar"><span style="width:46.7%"></span></div>
+          <span class="armor-value">28 / 40</span>
+        </div>
+        <div class="armor-row">
+          <span class="armor-name">右臂</span>
+          <div class="armor-bar"><span style="width:53.3%"></span></div>
+          <span class="armor-value">32 / 40</span>
+        </div>
+        <div class="armor-row">
+          <span class="armor-name">左腿</span>
+          <div class="armor-bar"><span style="width:36.7%"></span></div>
+          <span class="armor-value">22 / 35</span>
+        </div>
+        <div class="armor-row">
+          <span class="armor-name">右腿</span>
+          <div class="armor-bar"><span style="width:33.3%"></span></div>
+          <span class="armor-value">20 / 35</span>
+        </div>
+       </div>
+       </section>
+      <section class="battle-scene labeled-block">
+        <div class="sub-area-tag">战斗场景区域</div>
+      <div class="scene-grid"></div>
+      <div class="scene-floor"></div>
+      <div class="scene-character player"><span>PLAYER</span></div>
+      <div class="scene-vs">VS</div>
+      <div class="scene-character enemy"><span>ENEMY</span></div>
+      </section>
+      <section class="hud-panel enemy-hud labeled-block">
+        <div class="sub-area-tag">敌方状态区域</div>
+      <h2>敌人：黑巢刺客</h2>
+      <div class="hud-stat">
+        <span>HP 80 / 120</span>
+        <div class="bar hp"><span style="width:65%"></span></div>
+      </div>
+      <div class="hud-stat">
+        <span>行动力（AP） 3 / 5</span>
+        <div class="bar ap"><span style="width:60%"></span></div>
+      </div>
+      <div class="armor-list-wrapper">
+        <div class="armor-row">
+          <span class="armor-name">头部</span>
+          <div class="armor-bar"><span style="width:30%"></span></div>
+          <span class="armor-value">15 / 30</span>
+        </div>
+        <div class="armor-row">
+          <span class="armor-name">胸部</span>
+          <div class="armor-bar"><span style="width:20%"></span></div>
+          <span class="armor-value">10 / 50</span>
+        </div>
+        <div class="armor-row">
+          <span class="armor-name">腹部</span>
+          <div class="armor-bar"><span style="width:36%"></span></div>
+          <span class="armor-value">18 / 40</span>
+        </div>
+        <div class="armor-row">
+          <span class="armor-name">左臂</span>
+          <div class="armor-bar"><span style="width:16%"></span></div>
+          <span class="armor-value">8 / 30</span>
+        </div>
+        <div class="armor-row">
+          <span class="armor-name">右臂</span>
+          <div class="armor-bar"><span style="width:24%"></span></div>
+          <span class="armor-value">12 / 30</span>
+        </div>
+        <div class="armor-row">
+          <span class="armor-name">左腿</span>
+          <div class="armor-bar"><span style="width:50%"></span></div>
+          <span class="armor-value">25 / 35</span>
+        </div>
+        <div class="armor-row">
+          <span class="armor-name">右腿</span>
+          <div class="armor-bar"><span style="width:54%"></span></div>
+          <span class="armor-value">27 / 35</span>
+        </div>
+       </div>
+        </section>
+    </div>
+  </section>
+
+  <section class="action-panel labeled-block">
+    <div class="area-tag">技能操作区域</div>
+    <div class="skill-list">
+      <div class="skill">
+        <strong>穿甲斩</strong>
+        AP:2 | 速度 +1 | 部位：头/胸
+      </div>
+      <div class="skill">
+        <strong>守护姿态</strong>
+        AP:1 | 速度 0 | 临时护甲 +15
+      </div>
+      <div class="skill">
+        <strong>纳米修复</strong>
+        AP:2 | 冷却 2T | 修复部位耐久 20
+      </div>
+      <div class="skill">
+        <strong>连锁射击</strong>
+        AP:3 | 速度 -2 | 多段命中四肢
+      </div>
+      <div class="skill">
+        <strong>结束回合</strong>
+        不消耗 AP | 立即执行
+      </div>
+    </div>
+    <aside class="hint">
+      <strong>技能说明</strong>
+      悬停技能显示详细参数：
+      <ul>
+        <li>AP 消耗与剩余</li>
+        <li>速度修正与行动顺序</li>
+        <li>可命中部位/人数</li>
+        <li>额外效果（破甲、流血等）</li>
+      </ul>
+    </aside>
+  </section>
+
+  <section class="log labeled-block">
+    <div class="area-tag">回合日志区域</div>
+    <h3>回合日志</h3>
+    <div class="log-body">
+      <div class="log-entry">[回合 3] 玩家使用「破阵斩」命中敌人胸部 → 伤害 45，护甲耐久 -20</div>
+      <div class="log-entry">[回合 3] 敌人施放「剧毒箭」命中玩家头部 → 伤害 18，附加流血</div>
+      <div class="log-entry">[回合 2] 玩家使用「纳米修复」为胸部恢复 15 耐久</div>
+      <div class="log-entry">[回合 2] 敌人进入防御姿态，下回合速度 +2</div>
+    </div>
+  </section>
+</main>
+<footer>示意图仅供策划沟通，最终表现由 UI / 美术进一步设计。</footer>
+</div>
+</body>
+</html>
