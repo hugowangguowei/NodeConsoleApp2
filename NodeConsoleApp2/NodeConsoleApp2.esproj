@@ -1,9 +1,7 @@
 <Project Sdk="Microsoft.VisualStudio.JavaScript.Sdk/1.0.4110890">
   <ItemGroup>
     <Folder Include="script\view_2dScene\" />
-    <Folder Include="script\engine\" />
     <Folder Include="source\scene\" />
     <Folder Include="source\character\" />
-    <Folder Include="test\" />
   </ItemGroup>
 </Project>

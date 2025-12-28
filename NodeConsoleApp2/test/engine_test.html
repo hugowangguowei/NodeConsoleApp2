@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>核心引擎测试</title>
+    <style>
+        body { font-family: monospace; background: #222; color: #eee; padding: 20px; }
+        #console { background: #111; border: 1px solid #444; padding: 10px; height: 300px; overflow-y: auto; margin-bottom: 20px; }
+        .log-entry { margin: 2px 0; }
+        .controls { display: flex; gap: 10px; margin-bottom: 10px; }
+        button { padding: 8px 16px; cursor: pointer; background: #333; color: #fff; border: 1px solid #555; }
+        button:hover { background: #444; }
+        button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        /* Player Stats Panel Styles */
+        #playerStats {
+            background: #1a1a1a;
+            padding: 15px;
+            margin-bottom: 20px;
+            border: 1px solid #444;
+            border-radius: 4px;
+            display: none;
+        }
+        #playerStats h3 {
+            margin-top: 0;
+            color: #81a5ff;
+            font-size: 1.1em;
+            border-bottom: 1px solid #333;
+            padding-bottom: 5px;
+        }
+        #playerStats div {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+    <h1>核心引擎测试</h1>
+    
+    <div id="console"></div>
+
+    <!-- Player Stats Panel -->
+    <div id="playerStats" style="background: #1a1a1a; padding: 15px; margin-bottom: 20px; border: 1px solid #444; border-radius: 4px; display: none;">
+        <h3 style="margin-top: 0; color: #81a5ff; font-size: 1.1em; border-bottom: 1px solid #333; padding-bottom: 5px;">玩家状态</h3>
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; font-size: 0.9em;">
+            <div>名称: <span id="statName" style="color: #fff; font-weight: bold;">-</span></div>
+            <div>HP: <span id="statHp" style="color: #ff8e8e;">-</span> / <span id="statMaxHp">-</span></div>
+            <div>AP: <span id="statAp" style="color: #7bffcf;">-</span> / <span id="statMaxAp">-</span></div>
+        </div>
+    </div>
+
+    <div class="controls">
+        <input type="text" id="username" placeholder="用户名" value="Hero">
+        <button id="btnLogin">登录</button>
+    </div>
+
+    <div class="controls">
+        <button id="btnSelectLevel" disabled>选择关卡 1-1</button>
+    </div>
+
+    <div class="controls">
+        <button id="btnSkill" disabled>释放技能：斩击</button>
+        <button id="btnEndTurn" disabled>结束回合</button>
+    </div>
+
+    <script type="module">
+        import Engine from '../script/engine/CoreEngine.js';
+
+        const consoleDiv = document.getElementById('console');
+        const btnLogin = document.getElementById('btnLogin');
+        const btnSelectLevel = document.getElementById('btnSelectLevel');
+        const btnSkill = document.getElementById('btnSkill');
+        const btnEndTurn = document.getElementById('btnEndTurn');
+        const inputUsername = document.getElementById('username');
+
+        // Stats Elements
+        const statPanel = document.getElementById('playerStats');
+        const statName = document.getElementById('statName');
+        const statHp = document.getElementById('statHp');
+        const statMaxHp = document.getElementById('statMaxHp');
+        const statAp = document.getElementById('statAp');
+        const statMaxAp = document.getElementById('statMaxAp');
+
+        function log(msg) {
+            const div = document.createElement('div');
+            div.className = 'log-entry';
+            div.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
+            consoleDiv.appendChild(div);
+            consoleDiv.scrollTop = consoleDiv.scrollHeight;
+        }
+
+        // Subscribe to Engine Events
+        Engine.eventBus.on('STATE_CHANGED', (data) => {
+            log(`状态变更: ${data.from} -> ${data.to}`);
+            updateButtons(data.to);
+        });
+
+        Engine.eventBus.on('DATA_UPDATE', (data) => {
+            log(`数据更新: 玩家 ${data.name} (HP: ${data.stats.hp}, AP: ${data.stats.ap})`);
+            
+            // Update Stats Panel
+            statPanel.style.display = 'block';
+            statName.textContent = data.name;
+            statHp.textContent = data.stats.hp;
+            statMaxHp.textContent = data.stats.maxHp;
+            statAp.textContent = data.stats.ap;
+            statMaxAp.textContent = data.stats.maxAp;
+        });
+
+        Engine.eventBus.on('BATTLE_START', (data) => {
+            log(`战斗开始: ${data.player.name} 对战 ${data.level.enemies.length} 个敌人`);
+        });
+
+        Engine.eventBus.on('BATTLE_LOG', (data) => {
+            log(`战斗日志: ${data.text}`);
+        });
+
+        Engine.eventBus.on('TICK', (dt) => {
+            // Too spammy to log every tick
+            // log(`Tick: ${dt}`);
+        });
+
+        // UI Handlers
+        btnLogin.onclick = () => {
+            const name = inputUsername.value;
+            if(name) Engine.input.login(name);
+        };
+
+        btnSelectLevel.onclick = () => {
+            Engine.input.selectLevel('level_1_1');
+        };
+
+        btnSkill.onclick = () => {
+            Engine.input.castSkill('skill_slash', 'goblin_01', 'chest');
+        };
+
+        btnEndTurn.onclick = () => {
+            Engine.input.endTurn();
+        };
+
+        function updateButtons(state) {
+            btnLogin.disabled = state !== 'LOGIN';
+            btnSelectLevel.disabled = state !== 'MAIN_MENU';
+            
+            const isBattle = state === 'BATTLE_LOOP';
+            btnSkill.disabled = !isBattle;
+            btnEndTurn.disabled = !isBattle;
+        }
+
+        log('测试页面已加载。引擎正在初始化...');
+
+    </script>
+</body>
+</html>
