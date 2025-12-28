@@ -66,12 +66,23 @@ main { flex: 1; padding: 16px 24px; display: grid; grid-template-rows: 546px 286
 .action-panel { background: #2c3350; padding: 20px 20px 20px; border-radius: 14px; display: flex; gap: 16px; box-shadow: 0 15px 30px rgba(6,10,35,0.45); min-height: 0; border: 2px solid #7cf5d9; }
 .action-panel .area-tag { color: #7cf5d9; }
 .skill-panel { flex: 9; display: flex; gap: 20px; }
-.skill-list-grid { flex: 0 0 65%; display: grid; grid-template-columns: repeat(auto-fill, minmax(76px, 1fr)); gap: 10px; padding: 12px; background: rgba(12,16,32,0.65); border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; box-shadow: inset 0 0 16px rgba(0,0,0,0.25); }
-.skill-icon-button { border: 2px solid transparent; border-radius: 14px; height: 72px; background: radial-gradient(circle at top, rgba(255,255,255,0.08), rgba(20,26,45,0.9)); display: flex; align-items: center; justify-content: center; cursor: pointer; transition: border-color .15s ease, transform .15s ease, box-shadow .15s ease; color: #fff; font-size: 1rem; position: relative; }
-.skill-icon-button::after { content: attr(data-name); position: absolute; bottom: 6px; left: 50%; transform: translateX(-50%); font-size: 0.68rem; letter-spacing: 0.05em; color: rgba(255,255,255,0.75); white-space: nowrap; }
-.skill-detail { flex: 0 0 30%; background: rgba(14,18,32,0.8); border: 1px solid rgba(124,245,217,0.25); border-radius: 16px; padding: 14px; box-shadow: 0 12px 28px rgba(0,0,0,0.45); display: flex; flex-direction: column; gap: 6px; }
-.skill-detail h4 { margin: 0; font-size: 0.96rem; letter-spacing: 0.08em; color: #f5f7ff; }
-.skill-detail .detail-meta { font-size: 0.76rem; color: #a8c2ff; letter-spacing: 0.05em; text-transform: uppercase; }
+.skill-selection-wrapper { flex: 0 0 65%; display: flex; flex-direction: column; gap: 10px; background: rgba(12,16,32,0.65); border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; box-shadow: inset 0 0 16px rgba(0,0,0,0.25); }
+.skill-grid-view { flex: 1; display: grid; grid-template-columns: repeat(auto-fill, minmax(72px, 1fr)); grid-auto-rows: 72px; gap: 10px; overflow-y: auto; padding-right: 4px; }
+.skill-grid-view::-webkit-scrollbar { width: 4px; }
+.skill-grid-view::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 4px; }
+.skill-icon-button { border: 2px solid #4a4a4a; border-radius: 8px; height: 100%; background: radial-gradient(circle at center, #3a4055, #1a1e2e); display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all .15s ease; color: #fff; font-size: 1.4rem; position: relative; box-shadow: inset 0 0 0 1px rgba(0,0,0,0.5), 0 4px 8px rgba(0,0,0,0.3); }
+.skill-icon-button:hover { border-color: #ffd700; box-shadow: 0 0 12px rgba(255, 215, 0, 0.4), inset 0 0 0 1px rgba(255, 215, 0, 0.2); transform: scale(1.02); z-index: 2; }
+.skill-icon-button.active { border-color: #7cf5d9; box-shadow: 0 0 12px rgba(124, 245, 217, 0.5), inset 0 0 0 1px rgba(124, 245, 217, 0.3); }
+.skill-icon-button::after { content: attr(data-name); position: absolute; bottom: 0; left: 0; right: 0; background: rgba(0,0,0,0.75); font-size: 0.6rem; padding: 3px 0; color: #ddd; border-radius: 0 0 6px 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.skill-sort-bar { display: flex; gap: 8px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.08); }
+.sort-btn { flex: 1; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #8fa3bf; font-size: 0.75rem; padding: 6px; border-radius: 6px; cursor: pointer; transition: all 0.2s; }
+.sort-btn:hover, .sort-btn.active { background: rgba(124, 245, 217, 0.1); color: #7cf5d9; border-color: #7cf5d9; }
+.skill-detail { flex: 0 0 30%; background: rgba(14,18,32,0.8); border: 1px solid rgba(124,245,217,0.25); border-radius: 16px; padding: 14px; box-shadow: 0 12px 28px rgba(0,0,0,0.45); display: flex; flex-direction: column; gap: 6px; overflow: hidden; }
+.skill-detail h4 { margin: 0; font-size: 0.96rem; letter-spacing: 0.08em; color: #f5f7ff; flex-shrink: 0; }
+.skill-detail .detail-meta { font-size: 0.76rem; color: #a8c2ff; letter-spacing: 0.05em; text-transform: uppercase; flex-shrink: 0; }
+.skill-detail .detail-body { margin: 0; font-size: 0.82rem; line-height: 1.35; color: #dce6ff; }
+.skill-detail .detail-tags { display: flex; gap: 6px; flex-wrap: wrap; margin-top: auto; flex-shrink: 0; }
+.skill-detail .detail-tags span { background: rgba(124,245,217,0.1); border: 1px solid rgba(124,245,217,0.2); color: #7cf5d9; font-size: 0.7rem; padding: 2px 8px; border-radius: 4px; }
 .turn-panel { flex: 1; background: rgba(15,20,35,0.85); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; padding: 16px; box-shadow: 0 12px 24px rgba(0,0,0,0.45); display: flex; flex-direction: column; gap: 12px; justify-content: center; align-items: stretch; }
 .turn-panel h4 { margin: 0; font-size: 0.95rem; letter-spacing: 0.08em; color: #f7fbff; text-align: center; }
 .turn-buttons { display: flex; flex-direction: column; gap: 10px; }
@@ -96,15 +107,15 @@ footer { padding: 0 24px 24px; color: #b5c1ff; font-size: 0.85rem; flex-shrink: 
     <section class="timeline labeled-block">
       <div class="sub-area-tag">行动顺序区域</div>
       <div class="timeline-item">
-        玩家 · 穿甲斩
+        玩家 · 重斩
         <span>速度 14</span>
       </div>
       <div class="timeline-item">
-        敌人 · 剧毒箭
+        敌人 · 毒刃
         <span>速度 10</span>
       </div>
       <div class="timeline-item">
-        玩家 · 守护姿态
+        玩家 · 钢铁防御
         <span>速度 9</span>
       </div>
       <div class="timeline-item">
@@ -115,7 +126,7 @@ footer { padding: 0 24px 24px; color: #b5c1ff; font-size: 0.85rem; flex-shrink: 
     <div class="battle-row">
       <section class="hud-panel player-hud labeled-block">
         <div class="sub-area-tag">玩家状态区域</div>
-      <h2>玩家：先锋游侠</h2>
+      <h2>玩家：王国骑士</h2>
       <div class="hud-stat">
         <span>HP 120 / 150</span>
         <div class="bar hp"><span></span></div>
@@ -127,7 +138,7 @@ footer { padding: 0 24px 24px; color: #b5c1ff; font-size: 0.85rem; flex-shrink: 
       <div class="status-row">
          <span class="status-label">BUFF</span>
          <div class="status-icons">
-           <div class="status-icon buff" data-name="纳米护盾" data-desc="受击时减免20%伤害"></div>
+           <div class="status-icon buff" data-name="圣光护盾" data-desc="受击时减免20%伤害"></div>
          </div>
        </div>
        <div class="status-row">
@@ -184,7 +195,7 @@ footer { padding: 0 24px 24px; color: #b5c1ff; font-size: 0.85rem; flex-shrink: 
       </section>
       <section class="hud-panel enemy-hud labeled-block">
         <div class="sub-area-tag">敌方状态区域</div>
-      <h2>敌人：黑巢刺客</h2>
+      <h2>敌人：暗影刺客</h2>
       <div class="hud-stat">
         <span>HP 80 / 120</span>
         <div class="bar hp"><span style="width:65%"></span></div>
@@ -249,35 +260,49 @@ footer { padding: 0 24px 24px; color: #b5c1ff; font-size: 0.85rem; flex-shrink: 
   <section class="action-panel labeled-block">
     <div class="area-tag">技能操作区域</div>
     <div class="skill-panel">
-      <section class="skill-list-grid" id="skillList">
-        <button type="button" class="skill-icon-button type-offense active" data-name="穿甲斩" data-type="突击技能" data-cost="AP 2" data-speed="速度 +1" data-target="命中部位：头部 / 胸部" data-effect="对目标造成 120% 武器伤害，并削减目标护甲 20%。" data-tags="破甲,单体" data-tip="适合清除高护甲单位">
-          ⚔
-        </button>
-        <button type="button" class="skill-icon-button type-offense" data-name="连锁射击" data-type="突击技能" data-cost="AP 3" data-speed="速度 -2" data-target="命中部位：四肢（多段）" data-effect="连续打击 3 次，每次造成 40% 伤害，并叠加流血。" data-tags="多段,流血" data-tip="压制敌方机动能力">
-          ➹
-        </button>
-        <button type="button" class="skill-icon-button type-defense" data-name="守护姿态" data-type="防御与辅助" data-cost="AP 1" data-speed="速度 0" data-target="效果：临时护甲 +15（持续 1T）" data-effect="进入戒备状态，下次受到伤害额外减免 15%。" data-tags="格挡,自我强化" data-tip="建议在敌方爆发前使用">
-          🛡
-        </button>
-        <button type="button" class="skill-icon-button type-defense" data-name="纳米修复" data-type="防御与辅助" data-cost="AP 2" data-speed="速度 -1" data-target="效果：指定部位恢复 20 耐久" data-effect="立即修复指定部位护甲并移除 1 层出血。" data-tags="治疗,修复" data-tip="可对友方单位生效">
-          ✚
-        </button>
-        <button type="button" class="skill-icon-button type-command" data-name="结束回合" data-type="战术指令" data-cost="AP 0" data-speed="立即" data-target="效果：立刻将先攻交给下一个单位" data-effect="结束当前行动并为下一回合保留 1 点 AP。" data-tags="终结,优先级" data-tip="用于提前交出回合抢占先攻">
-          ⏱
-        </button>
-        <button type="button" class="skill-icon-button type-command" data-name="战术换位" data-type="战术指令" data-cost="AP 1" data-speed="速度 +2" data-target="效果：与友方互换位置并给予 5 护甲" data-effect="与指定友方互换站位，并使双方获得 5 点临时护甲。" data-tags="位移,增益" data-tip="可快速脱离危险位置">
-          ♻
-        </button>
-      </section>
+      <div class="skill-selection-wrapper">
+        <div class="skill-grid-view" id="skillList">
+          <button type="button" class="skill-icon-button type-offense active" data-name="重斩" data-type="近战技能" data-cost="AP 2" data-speed="速度 +1" data-target="命中部位：躯干" data-effect="对目标造成 150% 物理伤害。" data-tags="单体,物理" data-tip="基础的高伤害技能" data-sort-cost="2" data-sort-target="single">⚔️</button>
+          <button type="button" class="skill-icon-button type-offense" data-name="火球术" data-type="魔法技能" data-cost="AP 3" data-speed="速度 -1" data-target="命中部位：全身" data-effect="造成 120% 火焰伤害，并附加燃烧效果。" data-tags="魔法,燃烧" data-tip="对高护甲单位有效" data-sort-cost="3" data-sort-target="single">🔥</button>
+          <button type="button" class="skill-icon-button type-defense" data-name="治愈之光" data-type="神圣技能" data-cost="AP 2" data-speed="速度 0" data-target="效果：恢复生命" data-effect="为友方单位恢复 40 点生命值。" data-tags="治疗,神圣" data-tip="保持队伍生存" data-sort-cost="2" data-sort-target="ally">✨</button>
+          <button type="button" class="skill-icon-button type-defense" data-name="钢铁防御" data-type="防御技能" data-cost="AP 1" data-speed="速度 +2" data-target="效果：提升护甲" data-effect="获得 20 点临时护甲，持续 1 回合。" data-tags="防御,护甲" data-tip="预判敌方攻击时使用" data-sort-cost="1" data-sort-target="self">🛡️</button>
+          <button type="button" class="skill-icon-button type-offense" data-name="二连击" data-type="近战技能" data-cost="AP 2" data-speed="速度 +2" data-target="命中部位：随机" data-effect="进行两次快速攻击，每次造成 60% 伤害。" data-tags="多段,物理" data-tip="适合破除闪避" data-sort-cost="2" data-sort-target="random">⚔️</button>
+          <button type="button" class="skill-icon-button type-offense" data-name="冰锥术" data-type="魔法技能" data-cost="AP 2" data-speed="速度 0" data-target="命中部位：腿部" data-effect="造成 80% 冰霜伤害，并降低目标速度。" data-tags="魔法,减速" data-tip="控制敌方行动顺序" data-sort-cost="2" data-sort-target="single">❄️</button>
+          <button type="button" class="skill-icon-button type-offense" data-name="雷击" data-type="魔法技能" data-cost="AP 4" data-speed="速度 -2" data-target="命中部位：头部" data-effect="造成 200% 雷电伤害，有几率眩晕目标。" data-tags="魔法,控制" data-tip="高消耗高回报" data-sort-cost="4" data-sort-target="single">⚡</button>
+          <button type="button" class="skill-icon-button type-offense" data-name="毒刃" data-type="盗贼技能" data-cost="AP 1" data-speed="速度 +3" data-target="命中部位：四肢" data-effect="造成 50% 伤害，并施加中毒效果。" data-tags="物理,持续伤害" data-tip="长期战斗中收益高" data-sort-cost="1" data-sort-target="single">🗡️</button>
+          <button type="button" class="skill-icon-button type-offense" data-name="盾击" data-type="防御技能" data-cost="AP 2" data-speed="速度 +1" data-target="命中部位：头部" data-effect="造成 80% 伤害，并打断目标施法。" data-tags="物理,打断" data-tip="用于反制法师" data-sort-cost="2" data-sort-target="single">🛡️</button>
+          <button type="button" class="skill-icon-button type-offense" data-name="奥术飞弹" data-type="魔法技能" data-cost="AP 3" data-speed="速度 +1" data-target="命中部位：随机" data-effect="发射 3 枚飞弹，每枚造成 40% 奥术伤害。" data-tags="魔法,多段" data-tip="稳定的输出手段" data-sort-cost="3" data-sort-target="random">🔮</button>
+          <button type="button" class="skill-icon-button type-command" data-name="战吼" data-type="战术技能" data-cost="AP 1" data-speed="立即" data-target="效果：全体增益" data-effect="友方全体攻击力提升 10%，持续 2 回合。" data-tags="增益,群体" data-tip="爆发前使用" data-sort-cost="1" data-sort-target="global">🗣️</button>
+          <button type="button" class="skill-icon-button type-offense" data-name="旋风斩" data-type="近战技能" data-cost="AP 4" data-speed="速度 -1" data-target="命中部位：群体" data-effect="对所有敌人造成 100% 物理伤害。" data-tags="物理,AOE" data-tip="面对多个敌人时使用" data-sort-cost="4" data-sort-target="aoe">🌪️</button>
+          <button type="button" class="skill-icon-button type-offense" data-name="神圣惩击" data-type="神圣技能" data-cost="AP 2" data-speed="速度 0" data-target="命中部位：躯干" data-effect="造成 130% 神圣伤害，对亡灵生物加倍。" data-tags="魔法,神圣" data-tip="针对亡灵敌人" data-sort-cost="2" data-sort-target="single">✝️</button>
+          <button type="button" class="skill-icon-button type-command" data-name="暗影步" data-type="盗贼技能" data-cost="AP 1" data-speed="立即" data-target="效果：位移" data-effect="移动到目标背后，下一次攻击必定暴击。" data-tags="位移,增益" data-tip="配合高伤技能使用" data-sort-cost="1" data-sort-target="self">👻</button>
+          <button type="button" class="skill-icon-button type-offense" data-name="生命吸取" data-type="暗影技能" data-cost="AP 3" data-speed="速度 -1" data-target="命中部位：躯干" data-effect="造成 80% 杀伤，并将伤害转化为自身生命。" data-tags="魔法,吸血" data-tip="攻守兼备" data-sort-cost="3" data-sort-target="single">🩸</button>
+          <button type="button" class="skill-icon-button type-offense" data-name="地震术" data-type="自然技能" data-cost="AP 5" data-speed="速度 -3" data-target="命中部位：群体" data-effect="对所有地面单位造成 150% 杀伤，并降低闪避。" data-tags="魔法,AOE" data-tip="强力清场技能" data-sort-cost="5" data-sort-target="aoe">🌍</button>
+          <button type="button" class="skill-icon-button type-defense" data-name="疾风步" data-type="自然技能" data-cost="AP 2" data-speed="立即" data-target="效果：隐身" data-effect="进入隐身状态，闪避率提升 50%。" data-tags="生存,隐身" data-tip="躲避致命伤害" data-sort-cost="2" data-sort-target="self">🍃</button>
+          <button type="button" class="skill-icon-button type-command" data-name="狂暴" data-type="战术技能" data-cost="AP 0" data-speed="立即" data-target="效果：自身强化" data-effect="攻击力提升 50%，但受到的伤害也增加 20%。" data-tags="增益,风险" data-tip="拼命时使用" data-sort-cost="0" data-sort-target="self">😡</button>
+          <button type="button" class="skill-icon-button type-offense" data-name="陨石术" data-type="魔法技能" data-cost="AP 6" data-speed="速度 -5" data-target="命中部位：群体" data-effect="召唤陨石，造成 300% 毁灭性伤害。" data-tags="魔法,终极" data-tip="消耗巨大但威力惊人" data-sort-cost="6" data-sort-target="aoe">☄️</button>
+          <button type="button" class="skill-icon-button type-defense" data-name="反击姿态" data-type="战术技能" data-cost="AP 2" data-speed="速度 +1" data-target="效果：反击" data-effect="受到近战攻击时，自动反击造成 80% 杀伤。" data-tags="防御,反击" data-tip="对付近战敌人" data-sort-cost="2" data-sort-target="self">🤺</button>
+          <button type="button" class="skill-icon-button type-defense" data-name="祝福" data-type="神圣技能" data-cost="AP 2" data-speed="速度 0" data-target="效果：驱散" data-effect="移除友方单位的所有负面状态。" data-tags="辅助,驱散" data-tip="应对控制和持续伤害" data-sort-cost="2" data-sort-target="ally">🙏</button>
+          <button type="button" class="skill-icon-button type-offense" data-name="诅咒" data-type="暗影技能" data-cost="AP 2" data-speed="速度 0" data-target="命中部位：精神" data-effect="使目标造成的伤害降低 30%。" data-tags="魔法,减益" data-tip="削弱强力敌人" data-sort-cost="2" data-sort-target="single">💀</button>
+          <button type="button" class="skill-icon-button type-command" data-name="召唤幽灵狼" data-type="自然技能" data-cost="AP 4" data-speed="速度 -2" data-target="效果：召唤" data-effect="召唤一只幽灵狼协助战斗。" data-tags="召唤,辅助" data-tip="增加战场单位" data-sort-cost="4" data-sort-target="global">🐺</button>
+          <button type="button" class="skill-icon-button type-defense" data-name="法力护盾" data-type="魔法技能" data-cost="AP 1" data-speed="立即" data-target="效果：护盾" data-effect="消耗法力值抵消受到的伤害。" data-tags="防御,魔法" data-tip="保护脆弱的法师" data-sort-cost="1" data-sort-target="self">🔵</button>
+          <button type="button" class="skill-icon-button type-offense" data-name="斩杀" data-type="近战技能" data-cost="AP 3" data-speed="速度 +1" data-target="命中部位：躯干" data-effect="对生命值低于 30% 的目标造成巨额伤害。" data-tags="物理,终结" data-tip="收割残血敌人" data-sort-cost="3" data-sort-target="single">☠️</button>
+        </div>
+        <div class="skill-sort-bar" id="skillSortBar">
+          <button class="sort-btn active" data-sort="default">默认排序</button>
+          <button class="sort-btn" data-sort="cost">AP消耗</button>
+          <button class="sort-btn" data-sort="target">目标类型</button>
+        </div>
+      </div>
       <section class="skill-detail" id="skillDetail">
-        <h4 id="detailName">穿甲斩</h4>
-        <div class="detail-meta" id="detailMeta">突击技能 · AP 2 · 速度 +1</div>
-        <p class="detail-body" id="detailEffect"><strong>效果</strong>：对目标造成 120% 武器伤害，并削减目标护甲 20%。</p>
-        <p class="detail-body" id="detailTarget"><strong>命中范围</strong>：命中部位：头部 / 胸部。</p>
-        <p class="detail-body" id="detailTip"><strong>战术提示</strong>：适合清除高护甲单位。</p>
+        <h4 id="detailName">重斩</h4>
+        <div class="detail-meta" id="detailMeta">近战技能 · AP 2 · 速度 +1</div>
+        <p class="detail-body" id="detailEffect"><strong>效果</strong>：对目标造成 150% 物理伤害。</p>
+        <p class="detail-body" id="detailTarget"><strong>命中范围</strong>：命中部位：躯干。</p>
+        <p class="detail-body" id="detailTip"><strong>战术提示</strong>：基础的高伤害技能。</p>
         <div class="detail-tags" id="detailTags">
-          <span>破甲</span>
           <span>单体</span>
+          <span>物理</span>
         </div>
       </section>
     </div>
@@ -301,7 +326,7 @@ footer { padding: 0 24px 24px; color: #b5c1ff; font-size: 0.85rem; flex-shrink: 
   }
   const detail = {
     name: document.getElementById('detailName'),
-    meta: document.getElementById('detailMeta'),
+    meta: document.getElementById('detailMeta',
     effect: document.getElementById('detailEffect'),
     target: document.getElementById('detailTarget'),
     tip: document.getElementById('detailTip'),
@@ -329,6 +354,43 @@ footer { padding: 0 24px 24px; color: #b5c1ff; font-size: 0.85rem; flex-shrink: 
       updateDetail(button);
     }
   });
+
+  // Sorting Logic
+  const sortBar = document.getElementById('skillSortBar');
+  if (sortBar) {
+    const originalOrder = Array.from(list.children);
+    
+    sortBar.addEventListener('click', event => {
+      const btn = event.target.closest('.sort-btn');
+      if (!btn) return;
+
+      // Update active state
+      sortBar.querySelectorAll('.sort-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+
+      const sortType = btn.dataset.sort;
+      const items = Array.from(list.children);
+
+      if (sortType === 'default') {
+        items.sort((a, b) => originalOrder.indexOf(a) - originalOrder.indexOf(b));
+      } else if (sortType === 'cost') {
+        items.sort((a, b) => {
+          const costA = parseInt(a.dataset.sortCost || 0);
+          const costB = parseInt(b.dataset.sortCost || 0);
+          return costA - costB;
+        });
+      } else if (sortType === 'target') {
+        items.sort((a, b) => {
+          const targetA = a.dataset.sortTarget || '';
+          const targetB = b.dataset.sortTarget || '';
+          return targetA.localeCompare(targetB);
+        });
+      }
+
+      // Re-append in new order
+      items.forEach(item => list.appendChild(item));
+    });
+  }
 
   updateDetail(list.querySelector('.skill-icon-button.active') || list.querySelector('.skill-icon-button'));
 })();
