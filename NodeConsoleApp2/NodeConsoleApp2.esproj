@@ -4,5 +4,6 @@
     <Folder Include="script\engine\" />
     <Folder Include="source\scene\" />
     <Folder Include="source\character\" />
+    <Folder Include="test\" />
   </ItemGroup>
 </Project>
