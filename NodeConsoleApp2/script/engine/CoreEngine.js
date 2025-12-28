@@ -1,4 +1,3 @@
-
 import EventBus from './EventBus.js';
 import GameFSM from './GameFSM.js';
 import GameLoop from './GameLoop.js';
@@ -93,7 +92,7 @@ class CoreEngine {
         const cost = 2; // Mock cost
 
         if (player.stats.ap < cost) {
-            this.eventBus.emit('BATTLE_LOG', { text: `ÐÐ¶¯Á¦²»×ã£¡ÐèÒª ${cost} AP` });
+            this.eventBus.emit('BATTLE_LOG', { text: `è¡ŒåŠ¨åŠ›ä¸è¶³ï¼éœ€è¦ ${cost} AP` });
             return;
         }
 
@@ -105,7 +104,7 @@ class CoreEngine {
         
         // Mock damage calculation
         const damage = 20;
-        const log = `Íæ¼ÒÊ¹ÓÃ ${skillId} ¹¥»÷ ${targetId} Ôì³É ${damage} µãÉËº¦!`;
+        const log = `çŽ©å®¶ä½¿ç”¨ ${skillId} æ”»å‡» ${targetId} é€ æˆ ${damage} ç‚¹ä¼¤å®³!`;
         
         this.eventBus.emit('BATTLE_LOG', { text: log });
         
