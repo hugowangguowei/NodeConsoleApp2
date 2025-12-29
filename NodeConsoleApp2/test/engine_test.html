@@ -5,66 +5,99 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>核心引擎测试</title>
     <style>
-        body { font-family: monospace; background: #222; color: #eee; padding: 20px; }
-        #console { background: #111; border: 1px solid #444; padding: 10px; height: 300px; overflow-y: auto; margin-bottom: 20px; }
-        .log-entry { margin: 2px 0; }
-        .controls { display: flex; gap: 10px; margin-bottom: 10px; }
-        button { padding: 8px 16px; cursor: pointer; background: #333; color: #fff; border: 1px solid #555; }
-        button:hover { background: #444; }
-        button:disabled { opacity: 0.5; cursor: not-allowed; }
-
-        /* Player Stats Panel Styles */
-        #playerStats {
+        body { font-family: monospace; background: #222; color: #eee; padding: 10px; font-size: 12px; }
+        h1 { font-size: 1.2em; margin: 0 0 10px 0; }
+        
+        .layout-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        
+        .panel {
             background: #1a1a1a;
-            padding: 15px;
-            margin-bottom: 20px;
+            padding: 10px;
             border: 1px solid #444;
             border-radius: 4px;
-            display: none;
         }
-        #playerStats h3 {
-            margin-top: 0;
-            color: #81a5ff;
-            font-size: 1.1em;
+        
+        .panel h3 {
+            margin: 0 0 5px 0;
+            font-size: 1em;
             border-bottom: 1px solid #333;
-            padding-bottom: 5px;
+            padding-bottom: 2px;
         }
-        #playerStats div {
+
+        .stats-grid {
             display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 10px;
-            font-size: 0.9em;
+            grid-template-columns: auto auto;
+            gap: 5px 15px;
         }
+
+        #console { 
+            background: #111; 
+            border: 1px solid #444; 
+            padding: 5px; 
+            height: 200px; 
+            overflow-y: auto; 
+            font-size: 11px;
+        }
+        .log-entry { margin: 1px 0; border-bottom: 1px solid #222; }
+
+        .controls-area {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+            margin-bottom: 10px;
+            align-items: center;
+        }
+        
+        button { padding: 4px 8px; font-size: 11px; background: #333; color: #fff; border: 1px solid #555; cursor: pointer; }
+        button:hover { background: #444; }
+        button:disabled { opacity: 0.5; cursor: not-allowed; }
+        input { padding: 4px; background: #333; border: 1px solid #555; color: #fff; font-size: 11px; }
+        
+        ul { margin: 0; padding: 0; list-style: none; }
+        li { margin-bottom: 2px; }
     </style>
 </head>
 <body>
     <h1>核心引擎测试</h1>
     
-    <div id="console"></div>
+    <div class="layout-grid">
+        <!-- Player Stats Panel -->
+        <div id="playerStats" class="panel" style="display: none;">
+            <h3 style="color: #81a5ff;">玩家状态</h3>
+            <div class="stats-grid">
+                <div>名称: <span id="statName" style="color: #fff; font-weight: bold;">-</span></div>
+                <div>HP: <span id="statHp" style="color: #ff8e8e;">-</span> / <span id="statMaxHp">-</span></div>
+                <div>AP: <span id="statAp" style="color: #7bffcf;">-</span> / <span id="statMaxAp">-</span></div>
+            </div>
+        </div>
 
-    <!-- Player Stats Panel -->
-    <div id="playerStats" style="background: #1a1a1a; padding: 15px; margin-bottom: 20px; border: 1px solid #444; border-radius: 4px; display: none;">
-        <h3 style="margin-top: 0; color: #81a5ff; font-size: 1.1em; border-bottom: 1px solid #333; padding-bottom: 5px;">玩家状态</h3>
-        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; font-size: 0.9em;">
-            <div>名称: <span id="statName" style="color: #fff; font-weight: bold;">-</span></div>
-            <div>HP: <span id="statHp" style="color: #ff8e8e;">-</span> / <span id="statMaxHp">-</span></div>
-            <div>AP: <span id="statAp" style="color: #7bffcf;">-</span> / <span id="statMaxAp">-</span></div>
+        <!-- Battle Info Panel -->
+        <div id="battleInfo" class="panel" style="display: none;">
+            <h3 style="color: #ff8181;">战斗信息</h3>
+            <div style="margin-bottom: 5px;">回合: <span id="battleTurn" style="color: #fff; font-weight: bold;">-</span></div>
+            <div>敌人列表:</div>
+            <ul id="enemyList">
+                <!-- Enemies will be injected here -->
+            </ul>
         </div>
     </div>
 
-    <div class="controls">
+    <div class="controls-area">
         <input type="text" id="username" placeholder="用户名" value="Hero">
         <button id="btnLogin">登录</button>
-    </div>
-
-    <div class="controls">
+        <span style="color: #444;">|</span>
         <button id="btnSelectLevel" disabled>选择关卡 1-1</button>
-    </div>
-
-    <div class="controls">
+        <span style="color: #444;">|</span>
         <button id="btnSkill" disabled>释放技能：斩击 (2 AP)</button>
         <button id="btnEndTurn" disabled>结束回合</button>
     </div>
+
+    <div id="console"></div>
 
     <script type="module">
         import Engine from '../script/engine/CoreEngine.js';
@@ -83,6 +116,11 @@
         const statMaxHp = document.getElementById('statMaxHp');
         const statAp = document.getElementById('statAp');
         const statMaxAp = document.getElementById('statMaxAp');
+
+        // Battle Info Elements
+        const battleInfoPanel = document.getElementById('battleInfo');
+        const battleTurn = document.getElementById('battleTurn');
+        const enemyList = document.getElementById('enemyList');
 
         function log(msg) {
             const div = document.createElement('div');
@@ -116,6 +154,29 @@
 
         Engine.eventBus.on('BATTLE_LOG', (data) => {
             log(`战斗日志: ${data.text}`);
+        });
+
+        Engine.eventBus.on('BATTLE_END', (data) => {
+            log(`>>> 战斗结束: ${data.victory ? '胜利' : '失败'} <<<`);
+            alert(`战斗结束: ${data.victory ? '胜利' : '失败'}`);
+        });
+
+        Engine.eventBus.on('BATTLE_UPDATE', (data) => {
+            // Update Battle Info Panel
+            battleInfoPanel.style.display = 'block';
+            battleTurn.textContent = data.turn;
+            
+            enemyList.innerHTML = '';
+            if (data.enemies && data.enemies.length > 0) {
+                data.enemies.forEach(enemy => {
+                    const li = document.createElement('li');
+                    li.style.marginBottom = '5px';
+                    li.innerHTML = `<span style="color: #ff8e8e;">${enemy.id}</span> - HP: ${enemy.hp} (Speed: ${enemy.speed})`;
+                    enemyList.appendChild(li);
+                });
+            } else {
+                enemyList.innerHTML = '<li>无敌人</li>';
+            }
         });
 
         Engine.eventBus.on('TICK', (dt) => {

@@ -67,6 +67,7 @@ class CoreEngine {
     }
 
     startBattle() {
+        this.currentTurn = 0;
         this.fsm.changeState('BATTLE_LOOP');
         this.eventBus.emit('BATTLE_START', { 
             player: this.data.playerData, 
@@ -76,13 +77,15 @@ class CoreEngine {
     }
 
     startTurn() {
-        console.log('Turn Started');
+        this.currentTurn++;
+        console.log('Turn Started: ' + this.currentTurn);
         // Reset AP
         if (this.data.playerData) {
             this.data.playerData.stats.ap = this.data.playerData.stats.maxAp;
             this.eventBus.emit('DATA_UPDATE', this.data.playerData);
         }
-        this.eventBus.emit('TURN_START', { turn: 1 }); // Mock turn number
+        this.eventBus.emit('TURN_START', { turn: this.currentTurn });
+        this.emitBattleUpdate();
     }
 
     castSkill(skillId, targetId, bodyPart) {
@@ -104,12 +107,51 @@ class CoreEngine {
         
         // Mock damage calculation
         const damage = 20;
-        const log = `玩家使用 ${skillId} 攻击 ${targetId} 造成 ${damage} 点伤害!`;
+        
+        // Update Enemy Data
+        let targetName = targetId;
+        if (this.data.currentLevelData && this.data.currentLevelData.enemies) {
+            const enemy = this.data.currentLevelData.enemies.find(e => e.id === targetId);
+            if (enemy) {
+                enemy.hp -= damage;
+                if (enemy.hp < 0) enemy.hp = 0;
+                targetName = `${enemy.id} (HP: ${enemy.hp})`;
+            }
+        }
+
+        const log = `玩家使用 ${skillId} 攻击 ${targetName} 造成 ${damage} 点伤害!`;
         
         this.eventBus.emit('BATTLE_LOG', { text: log });
+        this.emitBattleUpdate();
         
-        // Check for victory/defeat (Mock)
-        // ...
+        this.checkBattleStatus();
+    }
+
+    checkBattleStatus() {
+        if (!this.data.currentLevelData || !this.data.currentLevelData.enemies) return;
+
+        const enemies = this.data.currentLevelData.enemies;
+        const player = this.data.playerData;
+
+        // Check Victory
+        if (enemies.every(e => e.hp <= 0)) {
+            this.endBattle(true);
+            return;
+        }
+
+        // Check Defeat
+        if (player.stats.hp <= 0) {
+            this.endBattle(false);
+            return;
+        }
+    }
+
+    endBattle(isVictory) {
+        const result = isVictory ? '胜利' : '失败';
+        this.eventBus.emit('BATTLE_LOG', { text: `战斗结束: ${result}!` });
+        
+        this.fsm.changeState('MAIN_MENU');
+        this.eventBus.emit('BATTLE_END', { victory: isVictory });
     }
 
     endTurn() {
@@ -117,6 +159,14 @@ class CoreEngine {
         console.log('Player ended turn.');
         // Enemy turn logic would go here
         this.startTurn(); // Loop back to start turn
+    }
+
+    emitBattleUpdate() {
+        this.eventBus.emit('BATTLE_UPDATE', {
+            player: this.data.playerData,
+            enemies: this.data.currentLevelData ? this.data.currentLevelData.enemies : [],
+            turn: this.currentTurn
+        });
     }
 }
 
