@@ -106,6 +106,17 @@
         <button id="btnCommitTurn" disabled>执行回合</button>
     </div>
 
+    <!-- DataConfig Test Controls -->
+    <div class="panel" style="margin-bottom: 10px;">
+        <h3 style="color: #d4ff81;">DataConfig 测试</h3>
+        <div class="controls-area">
+            <button id="btnSaveGame">保存游戏 (Save)</button>
+            <button id="btnLoadGame">读取游戏 (Load)</button>
+            <button id="btnShowData">显示 DataConfig</button>
+        </div>
+        <textarea id="dataConfigOutput" style="width: 100%; height: 100px; background: #111; color: #aaa; border: 1px solid #444; font-family: monospace; font-size: 10px;" readonly></textarea>
+    </div>
+
     <div id="console"></div>
 
     <script type="module">
@@ -118,6 +129,12 @@
         const btnCommitTurn = document.getElementById('btnCommitTurn');
         const inputUsername = document.getElementById('username');
         const skillButtonsContainer = document.getElementById('skillButtons');
+
+        // DataConfig Controls
+        const btnSaveGame = document.getElementById('btnSaveGame');
+        const btnLoadGame = document.getElementById('btnLoadGame');
+        const btnShowData = document.getElementById('btnShowData');
+        const dataConfigOutput = document.getElementById('dataConfigOutput');
 
         // Stats Elements
         const statPanel = document.getElementById('playerStats');
@@ -139,6 +156,44 @@
             div.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
             consoleDiv.appendChild(div);
             consoleDiv.scrollTop = consoleDiv.scrollHeight;
+        }
+
+        // Subscribe to Engine Events
+        Engine.eventBus.on('STATE_CHANGED', (data) => {
+            log(`状态变更: ${data.from} -> ${data.to}`);
+            updateButtons(data.to);
+        });
+
+        // DataConfig Event Handlers
+        btnSaveGame.onclick = () => {
+            Engine.data.saveGame();
+            log("游戏已保存。");
+            updateDataDisplay();
+        };
+
+        btnLoadGame.onclick = () => {
+            if (Engine.data.loadGame()) {
+                log("游戏已读取。");
+                updateDataDisplay();
+                // Refresh UI with loaded data
+                if (Engine.data.playerData) {
+                    Engine.eventBus.emit('DATA_UPDATE', Engine.data.playerData);
+                }
+            } else {
+                log("读取失败或无存档。");
+            }
+        };
+
+        btnShowData.onclick = () => {
+            updateDataDisplay();
+        };
+
+        function updateDataDisplay() {
+            if (Engine.data.dataConfig) {
+                dataConfigOutput.value = JSON.stringify(Engine.data.dataConfig, null, 2);
+            } else {
+                dataConfigOutput.value = "No DataConfig available.";
+            }
         }
 
         // Subscribe to Engine Events

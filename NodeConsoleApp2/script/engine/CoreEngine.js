@@ -1,7 +1,7 @@
 import EventBus from './EventBus.js';
 import GameFSM from './GameFSM.js';
 import GameLoop from './GameLoop.js';
-import DataManager from './DataManager.js';
+import DataManager from './DataManagerV2.js';
 
 class CoreEngine {
     constructor() {
