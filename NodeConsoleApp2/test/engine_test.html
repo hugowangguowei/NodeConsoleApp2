@@ -91,11 +91,25 @@
                 </ul>
             </div>
         </div>
+
+        <!-- DataConfig Test Controls -->
+        <div class="panel" style="margin-bottom: 10px;">
+            <h3 style="color: #d4ff81;">DataConfig 测试</h3>
+            <div class="controls-area">
+                <button id="btnSaveGame">保存游戏 (Save)</button>
+                <button id="btnLoadGame">读取游戏 (Load)</button>
+                <button id="btnShowData">显示 DataConfig</button>
+            </div>
+            <textarea id="dataConfigOutput" style="width: 100%; height: 160px; box-sizing: border-box; background: #111; color: #aaa; border: 1px solid #444; font-family: monospace; font-size: 12px;" readonly></textarea>
+        </div>
+
+        <div id="console"></div>
     </div>
 
     <div class="controls-area">
         <input type="text" id="username" placeholder="用户名" value="Hero">
-        <button id="btnLogin">登录</button>
+        <button id="btnLogin">登录 (Continue)</button>
+        <button id="btnNewGame">新游戏 (New Game)</button>
         <span style="color: #444;">|</span>
         <button id="btnSelectLevel" disabled>选择关卡 1-1</button>
         <span style="color: #444;">|</span>
@@ -106,24 +120,12 @@
         <button id="btnCommitTurn" disabled>执行回合</button>
     </div>
 
-    <!-- DataConfig Test Controls -->
-    <div class="panel" style="margin-bottom: 10px;">
-        <h3 style="color: #d4ff81;">DataConfig 测试</h3>
-        <div class="controls-area">
-            <button id="btnSaveGame">保存游戏 (Save)</button>
-            <button id="btnLoadGame">读取游戏 (Load)</button>
-            <button id="btnShowData">显示 DataConfig</button>
-        </div>
-        <textarea id="dataConfigOutput" style="width: 100%; height: 100px; background: #111; color: #aaa; border: 1px solid #444; font-family: monospace; font-size: 10px;" readonly></textarea>
-    </div>
-
-    <div id="console"></div>
-
     <script type="module">
         import Engine from '../script/engine/CoreEngine.js';
 
         const consoleDiv = document.getElementById('console');
         const btnLogin = document.getElementById('btnLogin');
+        const btnNewGame = document.getElementById('btnNewGame');
         const btnSelectLevel = document.getElementById('btnSelectLevel');
         // const btnAddSkill = document.getElementById('btnAddSkill'); // Removed fixed button
         const btnCommitTurn = document.getElementById('btnCommitTurn');
@@ -298,6 +300,18 @@
         btnLogin.onclick = () => {
             const name = inputUsername.value;
             if(name) Engine.input.login(name);
+        };
+
+        btnNewGame.onclick = () => {
+            const name = inputUsername.value;
+            if(name) {
+                // If engine is already initialized/logged in, we can just call reset
+                // But if we are at LOGIN screen, we might need to handle it.
+                // CoreEngine.resetGame handles both.
+                Engine.resetGame(name);
+                // Also ensure buttons are updated if we were in LOGIN
+                updateButtons('MAIN_MENU'); 
+            }
         };
 
         btnSelectLevel.onclick = () => {

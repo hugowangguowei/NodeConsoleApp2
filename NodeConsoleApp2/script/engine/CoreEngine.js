@@ -44,12 +44,28 @@ class CoreEngine {
         if (this.fsm.currentState !== 'LOGIN') return;
 
         console.log(`User logging in: ${username}`);
+        // Try to load existing game first
         if (!this.data.loadGame()) {
             this.data.createNewGame(username);
         }
         
         this.fsm.changeState('MAIN_MENU');
         this.eventBus.emit('DATA_UPDATE', this.data.playerData);
+    }
+
+    // Force create a new game, overwriting existing save
+    resetGame(username) {
+        console.log(`Resetting game for user: ${username}`);
+        this.data.createNewGame(username);
+        
+        // If we are in LOGIN state, transition to MAIN_MENU
+        // If we are already playing, just update data
+        if (this.fsm.currentState === 'LOGIN') {
+            this.fsm.changeState('MAIN_MENU');
+        }
+        
+        this.eventBus.emit('DATA_UPDATE', this.data.playerData);
+        this.eventBus.emit('BATTLE_LOG', { text: 'Game has been reset. New game started.' });
     }
 
     selectLevel(levelId) {
