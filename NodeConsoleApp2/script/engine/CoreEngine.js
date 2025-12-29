@@ -96,19 +96,26 @@ class CoreEngine {
         }
         this.eventBus.emit('TURN_START', { turn: this.currentTurn });
         this.emitBattleUpdate();
-        this.eventBus.emit('BATTLE_LOG', { text: `回合 ${this.currentTurn} 开始，请配置技能。` });
+        this.eventBus.emit('BATTLE_LOG', { text: `Turn ${this.currentTurn} started. Please configure skills.` });
     }
 
     addSkillToQueue(skillId, targetId, bodyPart) {
         if (this.fsm.currentState !== 'BATTLE_LOOP' || this.battlePhase !== 'PLANNING') return;
 
         const player = this.data.playerData;
-        const cost = 2; // Mock cost
+        const skillConfig = this.data.getSkillConfig(skillId);
+        
+        if (!skillConfig) {
+            this.eventBus.emit('BATTLE_LOG', { text: `Unknown skill: ${skillId}` });
+            return;
+        }
+
+        const cost = skillConfig.cost;
 
         // Calculate current AP usage
         const currentQueueCost = this.playerSkillQueue.reduce((sum, action) => sum + action.cost, 0);
         if (player.stats.ap < currentQueueCost + cost) {
-            this.eventBus.emit('BATTLE_LOG', { text: `行动力不足！无法添加更多技能。` });
+            this.eventBus.emit('BATTLE_LOG', { text: `Not enough AP! Cannot add more skills.` });
             return;
         }
 
@@ -117,11 +124,12 @@ class CoreEngine {
             skillId,
             targetId,
             bodyPart,
-            cost
+            cost,
+            speed: (player.stats.speed || 10) + (skillConfig.speed || 0)
         };
         this.playerSkillQueue.push(skillAction);
         
-        this.eventBus.emit('BATTLE_LOG', { text: `已添加技能: ${skillId} (待消耗 ${cost} AP)` });
+        this.eventBus.emit('BATTLE_LOG', { text: `Added skill: ${skillConfig.name} (Cost: ${cost} AP)` });
         this.emitBattleUpdate();
     }
 
@@ -130,7 +138,7 @@ class CoreEngine {
         
         if (index >= 0 && index < this.playerSkillQueue.length) {
             const removed = this.playerSkillQueue.splice(index, 1)[0];
-            this.eventBus.emit('BATTLE_LOG', { text: `已移除技能: ${removed.skillId}` });
+            this.eventBus.emit('BATTLE_LOG', { text: `Removed skill: ${removed.skillId}` });
             this.emitBattleUpdate();
         }
     }
@@ -146,13 +154,18 @@ class CoreEngine {
         if (this.data.currentLevelData && this.data.currentLevelData.enemies) {
             this.data.currentLevelData.enemies.forEach(enemy => {
                 if (enemy.hp > 0) {
+                    // Simple AI: Pick first available skill or default
+                    const skillId = (enemy.skills && enemy.skills.length > 0) ? enemy.skills[0] : 'skill_bite';
+                    const skillConfig = this.data.getSkillConfig(skillId);
+                    const speed = (enemy.speed || 10) + (skillConfig ? skillConfig.speed : 0);
+
                     this.enemySkillQueue.push({
                         source: 'ENEMY',
                         sourceId: enemy.id,
-                        skillId: 'attack_normal',
+                        skillId: skillId,
                         targetId: this.data.playerData.id, // Target Player
-                        cost: 0,
-                        speed: enemy.speed || 10
+                        cost: 0, // Enemies might not use AP in this simple version
+                        speed: speed
                     });
                 }
             });
@@ -163,17 +176,15 @@ class CoreEngine {
 
     async executeTurn() {
         // Merge and Sort
-        const playerSpeed = this.data.playerData.stats.speed || 10;
-        
         const allActions = [
-            ...this.playerSkillQueue.map(a => ({ ...a, speed: playerSpeed })),
+            ...this.playerSkillQueue,
             ...this.enemySkillQueue
         ];
 
         // Sort by speed descending
         allActions.sort((a, b) => b.speed - a.speed);
 
-        this.eventBus.emit('BATTLE_LOG', { text: `--- 技能释放阶段 ---` });
+        this.eventBus.emit('BATTLE_LOG', { text: `--- Execution Phase ---` });
 
         for (const action of allActions) {
             // Check if battle ended in previous action
@@ -197,19 +208,33 @@ class CoreEngine {
 
     executePlayerSkill(action) {
         const player = this.data.playerData;
+        const skillConfig = this.data.getSkillConfig(action.skillId);
         
+        if (!skillConfig) return;
+
         // Deduct AP (Real deduction)
         player.stats.ap -= action.cost;
         this.eventBus.emit('DATA_UPDATE', player);
 
-        const damage = 20;
+        if (skillConfig.type === 'HEAL') {
+            const healAmount = skillConfig.value;
+            player.stats.hp += healAmount;
+            if (player.stats.hp > player.stats.maxHp) player.stats.hp = player.stats.maxHp;
+            
+            const log = `Player used ${skillConfig.name} healed ${healAmount} HP!`;
+            this.eventBus.emit('BATTLE_LOG', { text: log });
+            this.emitBattleUpdate();
+            return;
+        }
+
+        const damage = skillConfig.value;
         let targetName = action.targetId;
         
         if (this.data.currentLevelData && this.data.currentLevelData.enemies) {
             const enemy = this.data.currentLevelData.enemies.find(e => e.id === action.targetId);
             if (enemy) {
                 if (enemy.hp <= 0) {
-                    this.eventBus.emit('BATTLE_LOG', { text: `目标 ${enemy.id} 已死亡，技能失效。` });
+                    this.eventBus.emit('BATTLE_LOG', { text: `Target ${enemy.id} is dead, skill failed.` });
                     return;
                 }
                 enemy.hp -= damage;
@@ -218,7 +243,7 @@ class CoreEngine {
             }
         }
 
-        const log = `玩家使用 ${action.skillId} 攻击 ${targetName} 造成 ${damage} 点伤害!`;
+        const log = `Player used ${skillConfig.name} attacked ${targetName} for ${damage} damage!`;
         this.eventBus.emit('BATTLE_LOG', { text: log });
         this.emitBattleUpdate();
     }
@@ -227,13 +252,16 @@ class CoreEngine {
         const player = this.data.playerData;
         if (player.stats.hp <= 0) return;
 
-        const damage = 10;
+        const skillConfig = this.data.getSkillConfig(action.skillId);
+        const damage = skillConfig ? skillConfig.value : 10;
+        const skillName = skillConfig ? skillConfig.name : action.skillId;
+
         player.stats.hp -= damage;
         if (player.stats.hp < 0) player.stats.hp = 0;
         
         this.eventBus.emit('DATA_UPDATE', player);
         
-        const log = `敌人 ${action.sourceId} 攻击 玩家 造成 ${damage} 点伤害!`;
+        const log = `Enemy ${action.sourceId} used ${skillName} attacked Player for ${damage} damage!`;
         this.eventBus.emit('BATTLE_LOG', { text: log });
         this.emitBattleUpdate();
     }
@@ -258,8 +286,8 @@ class CoreEngine {
     }
 
     endBattle(isVictory) {
-        const result = isVictory ? '胜利' : '失败';
-        this.eventBus.emit('BATTLE_LOG', { text: `战斗结束: ${result}!` });
+        const result = isVictory ? 'Victory' : 'Defeat';
+        this.eventBus.emit('BATTLE_LOG', { text: `Battle Ended: ${result}!` });
         
         this.fsm.changeState('MAIN_MENU');
         this.eventBus.emit('BATTLE_END', { victory: isVictory });

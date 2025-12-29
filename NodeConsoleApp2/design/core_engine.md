@@ -146,33 +146,106 @@ class EventBus {
 }
 ```
 
-## 6. 数据管理设计 (Data Management)
+## 6. 数据配置设计 (Data Configuration Design)
 
-### 6.1 数据存储 (Persistence)
+为了实现游戏状态的实时保存与加载（Save/Load），我们需要定义一个统一的数据结构 `DataConfig`。该结构包含游戏运行时的所有动态数据。
+
+### 6.1 数据结构总览
+`DataConfig` 分为三个主要部分：
+1.  **GlobalData**: 全局持久化数据（玩家属性、背包、进度）。
+2.  **RuntimeData**: 运行时临时数据（当前战斗状态、场景状态）。
+3.  **Settings**: 系统设置（音量、按键）。
+
+```json
+{
+  "version": "1.0.0",
+  "timestamp": 1703856000000,
+  "global": { ... },
+  "runtime": { ... },
+  "settings": { ... }
+}
+```
+
+### 6.2 GlobalData (全局存档数据)
+这部分数据在游戏整个生命周期中持续存在，是存档的核心。
+
+```json
+{
+  "player": {
+    "id": "player_001",
+    "name": "Hero",
+    "stats": { "hp": 100, "maxHp": 100, "ap": 4, "maxAp": 6, "speed": 10 },
+    "equipment": { "weapon": "sword_01", "armor": { "head": "helm_01" } },
+    "skills": ["skill_slash", "skill_heal"],
+    "inventory": [
+      { "itemId": "potion_hp", "count": 5 },
+      { "itemId": "material_iron", "count": 2 }
+    ]
+  },
+  "progress": {
+    "unlockedLevels": ["level_1", "level_2"],
+    "completedQuests": ["quest_001"],
+    "flags": { "has_met_guide": true }
+  }
+}
+```
+
+### 6.3 RuntimeData (运行时状态)
+这部分数据用于记录“当前正在发生的事情”，例如战斗进行到第几回合，敌人的剩余血量等。这使得游戏可以在战斗中途保存并恢复。
+
+```json
+{
+  "currentScene": "BATTLE_SCENE", // 或 "MAIN_MENU", "LEVEL_SELECT"
+  "battleState": {
+    "levelId": "level_1_1",
+    "turnCount": 3,
+    "phase": "EXECUTION_PHASE", // 当前所处阶段
+    "enemies": [
+      { "instanceId": "enemy_1", "templateId": "goblin", "hp": 20, "maxHp": 50, "position": 1, "buffs": [] }
+    ],
+    "actionQueue": [ // 待执行的技能队列
+      { "sourceId": "player_001", "skillId": "skill_slash", "targetId": "enemy_1" }
+    ],
+    "tempBuffs": [] // 战场临时效果
+  }
+}
+```
+
+### 6.4 Settings (系统设置)
+```json
+{
+  "audio": { "bgmVolume": 0.8, "sfxVolume": 1.0 },
+  "display": { "showDamageNumbers": true }
+}
+```
+
+## 7. 数据管理设计 (Data Management)
+
+### 7.1 数据存储 (Persistence)
 *   **用户存档**: 使用 `localStorage` 或 `IndexedDB` 存储用户的进度、背包、角色状态。
-*   **格式**: JSON 字符串序列化。
+*   **格式**: JSON 字符串序列化 `DataConfig` 对象。
 *   **自动保存**: 在 `BATTLE_SETTLEMENT` 和关键状态切换时触发。
 
-### 6.2 静态数据加载 (Asset Loader)
+### 7.2 静态数据加载 (Asset Loader)
 *   **配置表**: 技能、物品、敌人数据存储在 JSON 文件中。
 *   **加载策略**: 游戏启动 (`INIT` 状态) 时预加载核心配置，关卡资源在进入关卡前按需加载。
 
-### 6.3 运行时缓存 (Runtime Cache)
+### 7.3 运行时缓存 (Runtime Cache)
 *   **DataManager**: 维护当前活跃的游戏对象实例，避免频繁反序列化。
 
-## 7. 游戏流程详述
+## 8. 游戏流程详述
 
-### 7.1 登录阶段
+### 8.1 登录阶段
 1.  **输入**: 用户名/密码 (或点击“开始游戏”)。
 2.  **处理**: 检查本地存档，若无则创建新存档 (New Game)，若有则读取 (Load Game)。
 3.  **输出**: 玩家基础数据对象，跳转至 `MAIN_MENU`。
 
-### 7.2 关卡选择
+### 8.2 关卡选择
 1.  **输入**: 玩家点击关卡节点 ID。
 2.  **处理**: 校验前置关卡是否通关，校验体力/消耗品。
 3.  **输出**: 关卡配置数据，跳转至 `BATTLE_PREPARE`。
 
-### 7.3 战斗场景 (核心循环)
+### 8.3 战斗场景 (核心循环)
 1.  **初始化**: 加载场景资源，实例化玩家与敌人对象。
 2.  **回合开始**:
     *   恢复 AP，结算持续性效果 (DOT/HOT)。
@@ -194,7 +267,7 @@ class EventBus {
         *   **延迟**: 每个技能之间预留时间间隙供前端播放动画。
 5.  **回合结束**: 所有技能执行完毕后，循环至“回合开始”。
 
-### 7.4 结算阶段
+### 8.4 结算阶段
 当 `checkBattleStatus()` 检测到满足结束条件时触发：
 1.  **判定条件**:
     *   **胜利**: 所有敌人 HP <= 0。
@@ -206,11 +279,11 @@ class EventBus {
     *   发布 `BATTLE_END` 事件 (包含 `{ victory: boolean }`)。
     *   跳转至 `LEVEL_SELECT` 或 `MAIN_MENU`。
 
-## 8. 引擎输入输出接口规范 (I/O Interface)
+## 9. 引擎输入输出接口规范 (I/O Interface)
 
 引擎不直接操作 DOM，而是通过标准接口与 UI 层交互。
 
-### 8.1 输入接口 (Input)
+### 9.1 输入接口 (Input)
 UI 层调用引擎暴露的方法：
 *   `Engine.input.login(username)`
 *   `Engine.input.selectLevel(levelId)`
@@ -218,7 +291,7 @@ UI 层调用引擎暴露的方法：
 *   `Engine.input.removeSkillFromQueue(index)`
 *   `Engine.input.commitTurn()`
 
-### 8.2 输出接口 (Output)
+### 9.2 输出接口 (Output)
 UI 层监听引擎发布的事件：
 *   `Engine.on('STATE_CHANGED', (state) => { ... })`
 *   `Engine.on('BATTLE_LOG', (log) => { console.log(log.text); renderEffect(log); })`

@@ -99,7 +99,10 @@
         <span style="color: #444;">|</span>
         <button id="btnSelectLevel" disabled>选择关卡 1-1</button>
         <span style="color: #444;">|</span>
-        <button id="btnAddSkill" disabled>添加技能：斩击 (2 AP)</button>
+        <div id="skillButtons" style="display: inline-flex; gap: 5px;">
+            <!-- Skill buttons generated here -->
+            <button id="btnAddSkill" disabled>添加技能：斩击 (2 AP)</button>
+        </div>
         <button id="btnCommitTurn" disabled>执行回合</button>
     </div>
 
@@ -111,9 +114,10 @@
         const consoleDiv = document.getElementById('console');
         const btnLogin = document.getElementById('btnLogin');
         const btnSelectLevel = document.getElementById('btnSelectLevel');
-        const btnAddSkill = document.getElementById('btnAddSkill');
+        // const btnAddSkill = document.getElementById('btnAddSkill'); // Removed fixed button
         const btnCommitTurn = document.getElementById('btnCommitTurn');
         const inputUsername = document.getElementById('username');
+        const skillButtonsContainer = document.getElementById('skillButtons');
 
         // Stats Elements
         const statPanel = document.getElementById('playerStats');
@@ -153,6 +157,24 @@
             statMaxHp.textContent = data.stats.maxHp;
             statAp.textContent = data.stats.ap;
             statMaxAp.textContent = data.stats.maxAp;
+
+            // Generate Skill Buttons if needed
+            if (data.skills && skillButtonsContainer.children.length <= 1) { // Check if already generated
+                skillButtonsContainer.innerHTML = ''; // Clear default
+                data.skills.forEach(skillId => {
+                    const skillConfig = Engine.data.getSkillConfig(skillId);
+                    if (skillConfig) {
+                        const btn = document.createElement('button');
+                        btn.textContent = `${skillConfig.name} (${skillConfig.cost} AP)`;
+                        btn.onclick = () => {
+                            Engine.input.addSkillToQueue(skillId, 'goblin_01', 'chest');
+                        };
+                        btn.disabled = true; // Initially disabled until battle starts
+                        btn.dataset.skillBtn = "true";
+                        skillButtonsContainer.appendChild(btn);
+                    }
+                });
+            }
         });
 
         Engine.eventBus.on('BATTLE_START', (data) => {
@@ -199,7 +221,11 @@
 
             // Update Buttons based on phase
             const isPlanning = data.phase === 'PLANNING';
-            btnAddSkill.disabled = !isPlanning;
+            // btnAddSkill.disabled = !isPlanning; // Removed
+            
+            const skillBtns = document.querySelectorAll('[data-skill-btn="true"]');
+            skillBtns.forEach(btn => btn.disabled = !isPlanning);
+
             btnCommitTurn.disabled = !isPlanning;
         });
 
@@ -223,9 +249,9 @@
             Engine.input.selectLevel('level_1_1');
         };
 
-        btnAddSkill.onclick = () => {
-            Engine.input.addSkillToQueue('skill_slash', 'goblin_01', 'chest');
-        };
+        // btnAddSkill.onclick = () => {
+        //     Engine.input.addSkillToQueue('skill_slash', 'goblin_01', 'chest');
+        // };
 
         btnCommitTurn.onclick = () => {
             Engine.input.commitTurn();
@@ -237,7 +263,8 @@
             
             // Battle buttons are handled by BATTLE_UPDATE
             if (state !== 'BATTLE_LOOP') {
-                btnAddSkill.disabled = true;
+                const skillBtns = document.querySelectorAll('[data-skill-btn="true"]');
+                skillBtns.forEach(btn => btn.disabled = true);
                 btnCommitTurn.disabled = true;
             }
         }
