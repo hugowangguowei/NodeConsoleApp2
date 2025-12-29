@@ -13,9 +13,14 @@ class CoreEngine {
         this.input = {
             login: this.login.bind(this),
             selectLevel: this.selectLevel.bind(this),
-            castSkill: this.castSkill.bind(this),
-            endTurn: this.endTurn.bind(this)
+            addSkillToQueue: this.addSkillToQueue.bind(this),
+            removeSkillFromQueue: this.removeSkillFromQueue.bind(this),
+            commitTurn: this.commitTurn.bind(this)
         };
+
+        this.playerSkillQueue = [];
+        this.enemySkillQueue = [];
+        this.battlePhase = 'IDLE'; // IDLE, PLANNING, EXECUTION
 
         this.init();
     }
@@ -79,6 +84,11 @@ class CoreEngine {
     startTurn() {
         this.currentTurn++;
         console.log('Turn Started: ' + this.currentTurn);
+        
+        this.battlePhase = 'PLANNING';
+        this.playerSkillQueue = [];
+        this.enemySkillQueue = [];
+
         // Reset AP
         if (this.data.playerData) {
             this.data.playerData.stats.ap = this.data.playerData.stats.maxAp;
@@ -86,45 +96,146 @@ class CoreEngine {
         }
         this.eventBus.emit('TURN_START', { turn: this.currentTurn });
         this.emitBattleUpdate();
+        this.eventBus.emit('BATTLE_LOG', { text: `回合 ${this.currentTurn} 开始，请配置技能。` });
     }
 
-    castSkill(skillId, targetId, bodyPart) {
-        if (this.fsm.currentState !== 'BATTLE_LOOP') return;
+    addSkillToQueue(skillId, targetId, bodyPart) {
+        if (this.fsm.currentState !== 'BATTLE_LOOP' || this.battlePhase !== 'PLANNING') return;
 
         const player = this.data.playerData;
         const cost = 2; // Mock cost
 
-        if (player.stats.ap < cost) {
-            this.eventBus.emit('BATTLE_LOG', { text: `行动力不足！需要 ${cost} AP` });
+        // Calculate current AP usage
+        const currentQueueCost = this.playerSkillQueue.reduce((sum, action) => sum + action.cost, 0);
+        if (player.stats.ap < currentQueueCost + cost) {
+            this.eventBus.emit('BATTLE_LOG', { text: `行动力不足！无法添加更多技能。` });
             return;
         }
 
-        console.log(`Casting skill ${skillId} on ${targetId} at ${bodyPart}`);
+        const skillAction = {
+            source: 'PLAYER',
+            skillId,
+            targetId,
+            bodyPart,
+            cost
+        };
+        this.playerSkillQueue.push(skillAction);
         
-        // Deduct AP
-        player.stats.ap -= cost;
-        this.eventBus.emit('DATA_UPDATE', player);
+        this.eventBus.emit('BATTLE_LOG', { text: `已添加技能: ${skillId} (待消耗 ${cost} AP)` });
+        this.emitBattleUpdate();
+    }
+
+    removeSkillFromQueue(index) {
+        if (this.fsm.currentState !== 'BATTLE_LOOP' || this.battlePhase !== 'PLANNING') return;
         
-        // Mock damage calculation
-        const damage = 20;
+        if (index >= 0 && index < this.playerSkillQueue.length) {
+            const removed = this.playerSkillQueue.splice(index, 1)[0];
+            this.eventBus.emit('BATTLE_LOG', { text: `已移除技能: ${removed.skillId}` });
+            this.emitBattleUpdate();
+        }
+    }
+
+    commitTurn() {
+        if (this.fsm.currentState !== 'BATTLE_LOOP' || this.battlePhase !== 'PLANNING') return;
+
+        console.log('Player committed turn.');
+        this.battlePhase = 'EXECUTION';
+        this.emitBattleUpdate(); // Update UI to disable controls
         
-        // Update Enemy Data
-        let targetName = targetId;
+        // Generate Enemy Actions (Mock)
         if (this.data.currentLevelData && this.data.currentLevelData.enemies) {
-            const enemy = this.data.currentLevelData.enemies.find(e => e.id === targetId);
+            this.data.currentLevelData.enemies.forEach(enemy => {
+                if (enemy.hp > 0) {
+                    this.enemySkillQueue.push({
+                        source: 'ENEMY',
+                        sourceId: enemy.id,
+                        skillId: 'attack_normal',
+                        targetId: this.data.playerData.id, // Target Player
+                        cost: 0,
+                        speed: enemy.speed || 10
+                    });
+                }
+            });
+        }
+
+        this.executeTurn();
+    }
+
+    async executeTurn() {
+        // Merge and Sort
+        const playerSpeed = this.data.playerData.stats.speed || 10;
+        
+        const allActions = [
+            ...this.playerSkillQueue.map(a => ({ ...a, speed: playerSpeed })),
+            ...this.enemySkillQueue
+        ];
+
+        // Sort by speed descending
+        allActions.sort((a, b) => b.speed - a.speed);
+
+        this.eventBus.emit('BATTLE_LOG', { text: `--- 技能释放阶段 ---` });
+
+        for (const action of allActions) {
+            // Check if battle ended in previous action
+            if (this.fsm.currentState !== 'BATTLE_LOOP') break;
+
+            await new Promise(resolve => setTimeout(resolve, 1000)); // Delay for animation
+
+            if (action.source === 'PLAYER') {
+                this.executePlayerSkill(action);
+            } else {
+                this.executeEnemySkill(action);
+            }
+            
+            this.checkBattleStatus();
+        }
+
+        if (this.fsm.currentState === 'BATTLE_LOOP') {
+            this.startTurn();
+        }
+    }
+
+    executePlayerSkill(action) {
+        const player = this.data.playerData;
+        
+        // Deduct AP (Real deduction)
+        player.stats.ap -= action.cost;
+        this.eventBus.emit('DATA_UPDATE', player);
+
+        const damage = 20;
+        let targetName = action.targetId;
+        
+        if (this.data.currentLevelData && this.data.currentLevelData.enemies) {
+            const enemy = this.data.currentLevelData.enemies.find(e => e.id === action.targetId);
             if (enemy) {
+                if (enemy.hp <= 0) {
+                    this.eventBus.emit('BATTLE_LOG', { text: `目标 ${enemy.id} 已死亡，技能失效。` });
+                    return;
+                }
                 enemy.hp -= damage;
                 if (enemy.hp < 0) enemy.hp = 0;
                 targetName = `${enemy.id} (HP: ${enemy.hp})`;
             }
         }
 
-        const log = `玩家使用 ${skillId} 攻击 ${targetName} 造成 ${damage} 点伤害!`;
-        
+        const log = `玩家使用 ${action.skillId} 攻击 ${targetName} 造成 ${damage} 点伤害!`;
         this.eventBus.emit('BATTLE_LOG', { text: log });
         this.emitBattleUpdate();
+    }
+
+    executeEnemySkill(action) {
+        const player = this.data.playerData;
+        if (player.stats.hp <= 0) return;
+
+        const damage = 10;
+        player.stats.hp -= damage;
+        if (player.stats.hp < 0) player.stats.hp = 0;
         
-        this.checkBattleStatus();
+        this.eventBus.emit('DATA_UPDATE', player);
+        
+        const log = `敌人 ${action.sourceId} 攻击 玩家 造成 ${damage} 点伤害!`;
+        this.eventBus.emit('BATTLE_LOG', { text: log });
+        this.emitBattleUpdate();
     }
 
     checkBattleStatus() {
@@ -154,18 +265,13 @@ class CoreEngine {
         this.eventBus.emit('BATTLE_END', { victory: isVictory });
     }
 
-    endTurn() {
-        if (this.fsm.currentState !== 'BATTLE_LOOP') return;
-        console.log('Player ended turn.');
-        // Enemy turn logic would go here
-        this.startTurn(); // Loop back to start turn
-    }
-
     emitBattleUpdate() {
         this.eventBus.emit('BATTLE_UPDATE', {
             player: this.data.playerData,
             enemies: this.data.currentLevelData ? this.data.currentLevelData.enemies : [],
-            turn: this.currentTurn
+            turn: this.currentTurn,
+            phase: this.battlePhase,
+            queue: this.playerSkillQueue
         });
     }
 }

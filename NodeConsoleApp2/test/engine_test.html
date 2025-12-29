@@ -84,6 +84,12 @@
             <ul id="enemyList">
                 <!-- Enemies will be injected here -->
             </ul>
+            <div style="margin-top: 10px; border-top: 1px solid #333; padding-top: 5px;">
+                <div>待释放技能队列:</div>
+                <ul id="skillQueue" style="color: #aaa;">
+                    <li>(空)</li>
+                </ul>
+            </div>
         </div>
     </div>
 
@@ -93,8 +99,8 @@
         <span style="color: #444;">|</span>
         <button id="btnSelectLevel" disabled>选择关卡 1-1</button>
         <span style="color: #444;">|</span>
-        <button id="btnSkill" disabled>释放技能：斩击 (2 AP)</button>
-        <button id="btnEndTurn" disabled>结束回合</button>
+        <button id="btnAddSkill" disabled>添加技能：斩击 (2 AP)</button>
+        <button id="btnCommitTurn" disabled>执行回合</button>
     </div>
 
     <div id="console"></div>
@@ -105,8 +111,8 @@
         const consoleDiv = document.getElementById('console');
         const btnLogin = document.getElementById('btnLogin');
         const btnSelectLevel = document.getElementById('btnSelectLevel');
-        const btnSkill = document.getElementById('btnSkill');
-        const btnEndTurn = document.getElementById('btnEndTurn');
+        const btnAddSkill = document.getElementById('btnAddSkill');
+        const btnCommitTurn = document.getElementById('btnCommitTurn');
         const inputUsername = document.getElementById('username');
 
         // Stats Elements
@@ -121,6 +127,7 @@
         const battleInfoPanel = document.getElementById('battleInfo');
         const battleTurn = document.getElementById('battleTurn');
         const enemyList = document.getElementById('enemyList');
+        const skillQueueList = document.getElementById('skillQueue');
 
         function log(msg) {
             const div = document.createElement('div');
@@ -177,7 +184,29 @@
             } else {
                 enemyList.innerHTML = '<li>无敌人</li>';
             }
+
+            // Update Skill Queue
+            skillQueueList.innerHTML = '';
+            if (data.queue && data.queue.length > 0) {
+                data.queue.forEach((action, index) => {
+                    const li = document.createElement('li');
+                    li.innerHTML = `${index + 1}. <span style="color: #7bffcf;">${action.skillId}</span> -> ${action.targetId} <button onclick="window.removeSkill(${index})" style="padding: 0 4px; margin-left: 5px;">x</button>`;
+                    skillQueueList.appendChild(li);
+                });
+            } else {
+                skillQueueList.innerHTML = '<li>(空)</li>';
+            }
+
+            // Update Buttons based on phase
+            const isPlanning = data.phase === 'PLANNING';
+            btnAddSkill.disabled = !isPlanning;
+            btnCommitTurn.disabled = !isPlanning;
         });
+
+        // Global handler for removing skills (since we inject HTML)
+        window.removeSkill = (index) => {
+            Engine.input.removeSkillFromQueue(index);
+        };
 
         Engine.eventBus.on('TICK', (dt) => {
             // Too spammy to log every tick
@@ -194,21 +223,23 @@
             Engine.input.selectLevel('level_1_1');
         };
 
-        btnSkill.onclick = () => {
-            Engine.input.castSkill('skill_slash', 'goblin_01', 'chest');
+        btnAddSkill.onclick = () => {
+            Engine.input.addSkillToQueue('skill_slash', 'goblin_01', 'chest');
         };
 
-        btnEndTurn.onclick = () => {
-            Engine.input.endTurn();
+        btnCommitTurn.onclick = () => {
+            Engine.input.commitTurn();
         };
 
         function updateButtons(state) {
             btnLogin.disabled = state !== 'LOGIN';
             btnSelectLevel.disabled = state !== 'MAIN_MENU';
             
-            const isBattle = state === 'BATTLE_LOOP';
-            btnSkill.disabled = !isBattle;
-            btnEndTurn.disabled = !isBattle;
+            // Battle buttons are handled by BATTLE_UPDATE
+            if (state !== 'BATTLE_LOOP') {
+                btnAddSkill.disabled = true;
+                btnCommitTurn.disabled = true;
+            }
         }
 
         log('测试页面已加载。引擎正在初始化...');

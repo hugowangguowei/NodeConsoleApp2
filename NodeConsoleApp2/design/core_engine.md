@@ -175,19 +175,36 @@ class EventBus {
 ### 7.3 战斗场景 (核心循环)
 1.  **初始化**: 加载场景资源，实例化玩家与敌人对象。
 2.  **回合开始**:
-    *   计算双方速度，生成 `ActionQueue` (行动队列)。
     *   恢复 AP，结算持续性效果 (DOT/HOT)。
-3.  **玩家行动**:
-    *   **输入**: 技能ID + 目标ID + 攻击部位。
-    *   **处理**: 扣除 AP，计算命中/暴击/伤害/护甲损耗。
-    *   **输出**: `BATTLE_LOG` 事件 (包含伤害数值、状态变更)。
-4.  **敌人行动**: AI 根据策略选择技能与目标，输出同上。
-5.  **回合结束**: 检查胜负条件。若未分胜负，循环至“回合开始”。
+    *   进入 **技能配置阶段 (Planning Phase)**。
+3.  **技能配置阶段**:
+    *   **玩家输入**:
+        *   `addSkillToQueue`: 将技能加入待释放队列 (检查 AP 是否足够)。
+        *   `removeSkillFromQueue`: 从队列中移除技能 (返还占用 AP)。
+        *   `commitTurn`: 确认技能配置完成，锁定玩家输入。
+    *   **敌人AI**: 在玩家确认后，AI 根据策略生成技能队列。
+    *   **状态流转**: 双方确认后，进入 **技能释放阶段 (Execution Phase)**。
+4.  **技能释放阶段**:
+    *   **排序**: 将双方队列中的所有技能合并，根据角色速度 + 技能速度修正值进行排序，生成本回合的 `ActionTimeline`。
+    *   **执行循环**:
+        *   按顺序取出下一个技能行动。
+        *   **处理**: 执行技能逻辑，计算命中/暴击/伤害/护甲损耗。
+        *   **状态检查**: 每次造成伤害后立即调用 `checkBattleStatus()`。若战斗结束，中断循环。
+        *   **输出**: `BATTLE_LOG` 事件 (包含伤害数值、状态变更)。
+        *   **延迟**: 每个技能之间预留时间间隙供前端播放动画。
+5.  **回合结束**: 所有技能执行完毕后，循环至“回合开始”。
 
 ### 7.4 结算阶段
-1.  **胜利**: 发放经验、金币、掉落物，更新存档进度。
-2.  **失败**: 显示重试或返回菜单选项。
-3.  **输出**: 结算清单数据，跳转至 `LEVEL_SELECT` 或 `MAIN_MENU`。
+当 `checkBattleStatus()` 检测到满足结束条件时触发：
+1.  **判定条件**:
+    *   **胜利**: 所有敌人 HP <= 0。
+    *   **失败**: 玩家 HP <= 0。
+2.  **处理逻辑**:
+    *   **胜利**: 发放经验、金币、掉落物，更新存档进度。
+    *   **失败**: 显示重试或返回菜单选项。
+3.  **输出**: 
+    *   发布 `BATTLE_END` 事件 (包含 `{ victory: boolean }`)。
+    *   跳转至 `LEVEL_SELECT` 或 `MAIN_MENU`。
 
 ## 8. 引擎输入输出接口规范 (I/O Interface)
 
@@ -197,11 +214,14 @@ class EventBus {
 UI 层调用引擎暴露的方法：
 *   `Engine.input.login(username)`
 *   `Engine.input.selectLevel(levelId)`
-*   `Engine.input.castSkill(skillId, targetId, bodyPart)`
-*   `Engine.input.endTurn()`
+*   `Engine.input.addSkillToQueue(skillId, targetId, bodyPart)`
+*   `Engine.input.removeSkillFromQueue(index)`
+*   `Engine.input.commitTurn()`
 
 ### 8.2 输出接口 (Output)
 UI 层监听引擎发布的事件：
-*   `Engine.on('STATE_CHANGE', (state) => { ... })`
+*   `Engine.on('STATE_CHANGED', (state) => { ... })`
 *   `Engine.on('BATTLE_LOG', (log) => { console.log(log.text); renderEffect(log); })`
 *   `Engine.on('DATA_UPDATE', (data) => { updateUI(data); })`
+*   `Engine.on('BATTLE_UPDATE', (data) => { updateBattleUI(data); })`
+*   `Engine.on('BATTLE_END', (result) => { showResult(result.victory); })`
