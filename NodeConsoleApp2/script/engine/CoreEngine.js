@@ -15,7 +15,8 @@ class CoreEngine {
             selectLevel: this.selectLevel.bind(this),
             addSkillToQueue: this.addSkillToQueue.bind(this),
             removeSkillFromQueue: this.removeSkillFromQueue.bind(this),
-            commitTurn: this.commitTurn.bind(this)
+            commitTurn: this.commitTurn.bind(this),
+            saveGame: this.saveGame.bind(this)
         };
 
         this.playerSkillQueue = [];
@@ -47,9 +48,17 @@ class CoreEngine {
         // Try to load existing game first
         if (!this.data.loadGame()) {
             this.data.createNewGame(username);
+            this.fsm.changeState('MAIN_MENU');
+        } else {
+            // Check if we were in a battle
+            if (this.data.dataConfig.runtime && this.data.dataConfig.runtime.levelData) {
+                console.log('Resuming saved battle...');
+                this.resumeBattle();
+            } else {
+                this.fsm.changeState('MAIN_MENU');
+            }
         }
         
-        this.fsm.changeState('MAIN_MENU');
         this.eventBus.emit('DATA_UPDATE', this.data.playerData);
     }
 
@@ -90,6 +99,31 @@ class CoreEngine {
     startBattle() {
         this.currentTurn = 0;
         this.fsm.changeState('BATTLE_LOOP');
+        
+        // Initialize Runtime Data Structures
+        if (!this.data.dataConfig.runtime) this.data.dataConfig.runtime = {};
+        const runtime = this.data.dataConfig.runtime;
+
+        // 1. Initial State Snapshot
+        runtime.initialState = {
+            enemies: JSON.parse(JSON.stringify(this.data.currentLevelData.enemies))
+        };
+
+        // 2. History
+        runtime.history = [];
+
+        // 3. Queues
+        runtime.queues = {
+            player: [],
+            enemy: []
+        };
+
+        // 4. Player Temp State
+        runtime.playerTempState = {
+            buffs: [],
+            tempStatModifiers: {}
+        };
+
         this.eventBus.emit('BATTLE_START', { 
             player: this.data.playerData, 
             level: this.data.currentLevelData 
@@ -97,11 +131,88 @@ class CoreEngine {
         this.startTurn();
     }
 
+    resumeBattle() {
+        const runtime = this.data.dataConfig.runtime;
+        this.currentTurn = runtime.turn || 1;
+        this.battlePhase = runtime.phase || 'PLANNING';
+        
+        // Restore queues
+        this.playerSkillQueue = runtime.queues ? (runtime.queues.player || []) : [];
+        this.enemySkillQueue = runtime.queues ? (runtime.queues.enemy || []) : [];
+
+        this.fsm.changeState('BATTLE_LOOP');
+        this.eventBus.emit('BATTLE_START', { 
+            player: this.data.playerData, 
+            level: this.data.currentLevelData 
+        });
+        
+        console.log(`Resumed battle at Turn ${this.currentTurn}, Phase ${this.battlePhase}`);
+        
+        // If we resumed in EXECUTION phase, we might need to continue execution or restart the turn logic
+        // For simplicity, if resumed in EXECUTION, we might just restart the turn or reset to PLANNING
+        // But let's assume we just resume UI state.
+        
+        this.emitBattleUpdate();
+        this.eventBus.emit('BATTLE_LOG', { text: `Game Resumed. Turn ${this.currentTurn}.` });
+    }
+
+    saveGame() {
+        // Sync current battle state to DataManager before saving
+        if (this.fsm.currentState === 'BATTLE_LOOP') {
+            this.saveBattleState();
+        } else {
+            // If not in battle, clear battle runtime data
+            if (this.data.dataConfig.runtime) {
+                delete this.data.dataConfig.runtime.levelData;
+                delete this.data.dataConfig.runtime.turn;
+                delete this.data.dataConfig.runtime.phase;
+                delete this.data.dataConfig.runtime.initialState;
+                delete this.data.dataConfig.runtime.history;
+                delete this.data.dataConfig.runtime.queues;
+                delete this.data.dataConfig.runtime.playerTempState;
+            }
+            this.data.currentLevelData = null;
+        }
+        
+        this.data.saveGame();
+        this.eventBus.emit('BATTLE_LOG', { text: 'Game Saved.' });
+    }
+
     startTurn() {
         this.currentTurn++;
         console.log('Turn Started: ' + this.currentTurn);
         
         this.battlePhase = 'PLANNING';
+        
+        // Record Snapshot for History
+        if (this.data.dataConfig.runtime) {
+            if (!this.data.dataConfig.runtime.history) this.data.dataConfig.runtime.history = [];
+            
+            const snapshot = {
+                player: { 
+                    hp: this.data.playerData.stats.hp, 
+                    ap: this.data.playerData.stats.ap 
+                },
+                enemies: this.data.currentLevelData.enemies.map(e => ({
+                    id: e.id,
+                    hp: e.hp,
+                    pos: e.position || 0
+                }))
+            };
+
+            this.currentHistoryEntry = {
+                turn: this.currentTurn,
+                timestamp: Date.now(),
+                seed: 'mock_seed_' + Date.now(),
+                snapshot: snapshot,
+                systemEvents: [],
+                actions: []
+            };
+            this.data.dataConfig.runtime.history.push(this.currentHistoryEntry);
+        }
+
+        this.saveBattleState();
+
         this.playerSkillQueue = [];
         this.enemySkillQueue = [];
 
@@ -164,7 +275,6 @@ class CoreEngine {
 
         console.log('Player committed turn.');
         this.battlePhase = 'EXECUTION';
-        this.emitBattleUpdate(); // Update UI to disable controls
         
         // Generate Enemy Actions (Mock)
         if (this.data.currentLevelData && this.data.currentLevelData.enemies) {
@@ -187,6 +297,9 @@ class CoreEngine {
             });
         }
 
+        this.saveBattleState(); // Sync state (including queues)
+        this.emitBattleUpdate(); // Update UI to disable controls
+
         this.executeTurn();
     }
 
@@ -202,18 +315,31 @@ class CoreEngine {
 
         this.eventBus.emit('BATTLE_LOG', { text: `--- Execution Phase ---` });
 
+        let actionOrder = 0;
         for (const action of allActions) {
             // Check if battle ended in previous action
             if (this.fsm.currentState !== 'BATTLE_LOOP') break;
 
             await new Promise(resolve => setTimeout(resolve, 1000)); // Delay for animation
 
+            actionOrder++;
+            let result = null;
+
             if (action.source === 'PLAYER') {
-                this.executePlayerSkill(action);
+                result = this.executePlayerSkill(action);
             } else {
-                this.executeEnemySkill(action);
+                result = this.executeEnemySkill(action);
             }
             
+            // Record Action to History
+            if (this.currentHistoryEntry) {
+                this.currentHistoryEntry.actions.push({
+                    order: actionOrder,
+                    ...action,
+                    result: result
+                });
+            }
+
             this.checkBattleStatus();
         }
 
@@ -226,7 +352,7 @@ class CoreEngine {
         const player = this.data.playerData;
         const skillConfig = this.data.getSkillConfig(action.skillId);
         
-        if (!skillConfig) return;
+        if (!skillConfig) return null;
 
         // Deduct AP (Real deduction)
         player.stats.ap -= action.cost;
@@ -240,33 +366,36 @@ class CoreEngine {
             const log = `Player used ${skillConfig.name} healed ${healAmount} HP!`;
             this.eventBus.emit('BATTLE_LOG', { text: log });
             this.emitBattleUpdate();
-            return;
+            return { isHit: true, heal: healAmount, targetHpRemaining: player.stats.hp };
         }
 
         const damage = skillConfig.value;
         let targetName = action.targetId;
+        let result = { isHit: false, damage: 0 };
         
         if (this.data.currentLevelData && this.data.currentLevelData.enemies) {
             const enemy = this.data.currentLevelData.enemies.find(e => e.id === action.targetId);
             if (enemy) {
                 if (enemy.hp <= 0) {
                     this.eventBus.emit('BATTLE_LOG', { text: `Target ${enemy.id} is dead, skill failed.` });
-                    return;
+                    return { isHit: false, reason: 'dead' };
                 }
                 enemy.hp -= damage;
                 if (enemy.hp < 0) enemy.hp = 0;
                 targetName = `${enemy.id} (HP: ${enemy.hp})`;
+                result = { isHit: true, damage: damage, targetHpRemaining: enemy.hp };
             }
         }
 
         const log = `Player used ${skillConfig.name} attacked ${targetName} for ${damage} damage!`;
         this.eventBus.emit('BATTLE_LOG', { text: log });
         this.emitBattleUpdate();
+        return result;
     }
 
     executeEnemySkill(action) {
         const player = this.data.playerData;
-        if (player.stats.hp <= 0) return;
+        if (player.stats.hp <= 0) return { isHit: false, reason: 'dead' };
 
         const skillConfig = this.data.getSkillConfig(action.skillId);
         const damage = skillConfig ? skillConfig.value : 10;
@@ -280,6 +409,7 @@ class CoreEngine {
         const log = `Enemy ${action.sourceId} used ${skillName} attacked Player for ${damage} damage!`;
         this.eventBus.emit('BATTLE_LOG', { text: log });
         this.emitBattleUpdate();
+        return { isHit: true, damage: damage, targetHpRemaining: player.stats.hp };
     }
 
     checkBattleStatus() {
@@ -305,8 +435,35 @@ class CoreEngine {
         const result = isVictory ? 'Victory' : 'Defeat';
         this.eventBus.emit('BATTLE_LOG', { text: `Battle Ended: ${result}!` });
         
+        // Clear battle state from DataManager
+        if (this.data.dataConfig.runtime) {
+            delete this.data.dataConfig.runtime.levelData;
+            delete this.data.dataConfig.runtime.turn;
+            delete this.data.dataConfig.runtime.phase;
+            delete this.data.dataConfig.runtime.initialState;
+            delete this.data.dataConfig.runtime.history;
+            delete this.data.dataConfig.runtime.queues;
+            delete this.data.dataConfig.runtime.playerTempState;
+        }
+        this.data.currentLevelData = null;
+        this.data.saveGame(); // Auto-save on battle end
+
         this.fsm.changeState('MAIN_MENU');
         this.eventBus.emit('BATTLE_END', { victory: isVictory });
+    }
+
+    saveBattleState() {
+        if (this.fsm.currentState === 'BATTLE_LOOP') {
+            if (!this.data.dataConfig.runtime) this.data.dataConfig.runtime = {};
+            const runtime = this.data.dataConfig.runtime;
+            runtime.turn = this.currentTurn;
+            runtime.phase = this.battlePhase;
+            
+            // Save Queues
+            if (!runtime.queues) runtime.queues = {};
+            runtime.queues.player = this.playerSkillQueue;
+            runtime.queues.enemy = this.enemySkillQueue;
+        }
     }
 
     emitBattleUpdate() {

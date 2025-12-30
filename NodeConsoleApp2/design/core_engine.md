@@ -191,22 +191,113 @@ class EventBus {
 ```
 
 ### 6.3 RuntimeData (运行时状态)
-这部分数据用于记录“当前正在发生的事情”，例如战斗进行到第几回合，敌人的剩余血量等。这使得游戏可以在战斗中途保存并恢复。
+这部分数据用于记录“当前正在发生的事情”。为了支持战斗中断后的完美恢复（Resume），我们需要记录战斗的初始配置、当前动态状态以及历史回溯信息。
 
 ```json
 {
-  "currentScene": "BATTLE_SCENE", // 或 "MAIN_MENU", "LEVEL_SELECT"
+  "currentScene": "BATTLE_LOOP", // 或 "MAIN_MENU", "LEVEL_SELECT"
   "battleState": {
     "levelId": "level_1_1",
     "turnCount": 3,
-    "phase": "EXECUTION_PHASE", // 当前所处阶段
+    "phase": "PLANNING", // PLANNING (配置阶段) 或 EXECUTION (执行阶段)
+    
+    // 1. 初始状态快照 (Initial State Snapshot)
+    // 用于重置战斗或计算某些基于初始值的百分比
+    "initialState": {
+      "enemies": [
+        { "instanceId": "enemy_1", "templateId": "goblin", "maxHp": 50, "stats": { ... } }
+      ]
+    },
+
+    // 2. 当前动态状态 (Current Dynamic State)
+    // 记录战斗中实时变化的数值
     "enemies": [
-      { "instanceId": "enemy_1", "templateId": "goblin", "hp": 20, "maxHp": 50, "position": 1, "buffs": [] }
+      { 
+        "instanceId": "enemy_1", 
+        "templateId": "goblin", 
+        "hp": 20, 
+        "maxHp": 50, 
+        "position": 1, 
+        "buffs": [
+           { "id": "buff_burn", "duration": 2, "sourceId": "player_001" }
+        ],
+        // 护甲/部位状态 (支持部位破坏)
+        "bodyParts": {
+           "head": { "hp": 0, "maxHp": 20, "armor": 0, "status": "BROKEN" },
+           "body": { "hp": 30, "maxHp": 50, "armor": 5, "status": "NORMAL" }
+        }
+      }
     ],
-    "actionQueue": [ // 待执行的技能队列
-      { "sourceId": "player_001", "skillId": "skill_slash", "targetId": "enemy_1" }
-    ],
-    "tempBuffs": [] // 战场临时效果
+    
+    // 玩家在战斗中的临时状态 (如临时Buff，非永久属性变更)
+    "playerTempState": {
+        "buffs": [],
+        "tempStatModifiers": { "speed": 2 }
+    },
+
+    // 3. 行动队列 (Action Queues)
+    // 记录当前回合双方已配置但未执行的技能
+    "queues": {
+        "player": [
+            { "skillId": "skill_slash", "targetId": "enemy_1", "bodyPart": "body", "cost": 2 }
+        ],
+        "enemy": [
+            // 在 EXECUTION 阶段前生成
+        ]
+    },
+
+    // 4. 历史记录 (History)
+    // 记录过去回合的完整行为与结果，用于战斗回放、逻辑校验或撤销操作
+    "history": [
+        {
+            "turn": 1,
+            "timestamp": 1703856000000,
+            "seed": "rng_seed_x8s7", // 用于复现随机结果
+            
+            // [新增] 回合开始时的简要状态快照，用于快速恢复/回放定位
+            "snapshot": {
+                "player": { "hp": 100, "ap": 4 },
+                "enemies": [
+                    { "id": "enemy_1", "hp": 50, "pos": 1 }
+                ]
+            },
+
+            // [新增] 回合开始/结束时的系统结算（非角色主动行为）
+            "systemEvents": [
+                { "type": "BUFF_TICK", "targetId": "enemy_1", "buffId": "poison", "value": -5 },
+                { "type": "BUFF_EXPIRE", "targetId": "player_001", "buffId": "shield" }
+            ],
+
+            "actions": [
+                {
+                    "order": 1,
+                    "sourceId": "player_001",
+                    "skillId": "skill_slash",
+                    "targetId": "enemy_1",
+                    "bodyPart": "body",
+                    "result": {
+                        "isHit": true,
+                        "isCrit": false,
+                        "damage": 15,
+                        "targetHpRemaining": 35,
+                        "armorDamage": 5,
+                        "addedBuffs": []
+                    }
+                },
+                {
+                    "order": 2,
+                    "sourceId": "enemy_1",
+                    "skillId": "skill_bite",
+                    "targetId": "player_001",
+                    "result": {
+                        "isHit": true,
+                        "damage": 5,
+                        "targetHpRemaining": 95
+                    }
+                }
+            ]
+        }
+    ]
   }
 }
 ```

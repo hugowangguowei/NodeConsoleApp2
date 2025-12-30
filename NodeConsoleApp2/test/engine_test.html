@@ -168,22 +168,17 @@
 
         // DataConfig Event Handlers
         btnSaveGame.onclick = () => {
-            Engine.data.saveGame();
+            Engine.input.saveGame(); // Use Engine input interface
             log("游戏已保存。");
             updateDataDisplay();
         };
 
         btnLoadGame.onclick = () => {
-            if (Engine.data.loadGame()) {
-                log("游戏已读取。");
-                updateDataDisplay();
-                // Refresh UI with loaded data
-                if (Engine.data.playerData) {
-                    Engine.eventBus.emit('DATA_UPDATE', Engine.data.playerData);
-                }
-            } else {
-                log("读取失败或无存档。");
-            }
+            // Reload page to simulate fresh load, or just call login again if we want to test runtime reload
+            // For this test, let's just re-login which triggers loadGame inside engine
+            const username = inputUsername.value;
+            Engine.input.login(username);
+            updateDataDisplay();
         };
 
         btnShowData.onclick = () => {

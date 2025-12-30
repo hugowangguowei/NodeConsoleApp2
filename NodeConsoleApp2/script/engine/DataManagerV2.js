@@ -30,6 +30,18 @@ class DataManager {
 
     saveGame() {
         if (this.dataConfig.global) {
+            // Sync runtime data before saving
+            if (!this.dataConfig.runtime) {
+                this.dataConfig.runtime = {};
+            }
+            
+            // Save current level state (including enemies HP)
+            if (this._currentLevelConfig) {
+                this.dataConfig.runtime.levelData = this._currentLevelConfig;
+            } else {
+                delete this.dataConfig.runtime.levelData;
+            }
+
             this.dataConfig.timestamp = Date.now();
             const json = JSON.stringify(this.dataConfig);
             localStorage.setItem('save_game', json);
@@ -46,6 +58,11 @@ class DataManager {
                 // Check if it's the new format or legacy format
                 if (parsed.version && parsed.global) {
                     this.dataConfig = parsed;
+                    
+                    // Restore runtime level data
+                    if (this.dataConfig.runtime && this.dataConfig.runtime.levelData) {
+                        this._currentLevelConfig = this.dataConfig.runtime.levelData;
+                    }
                 } else {
                     // Migration: Legacy save was just the player object
                     console.log("Migrating legacy save...");
@@ -131,7 +148,17 @@ class DataManager {
                 'level_1_1': { 
                     id: 'level_1_1', 
                     name: 'Forest Edge', 
-                    enemies: [{ id: 'goblin_01', hp: 50, speed: 8, skills: ['skill_bite'] }] 
+                    enemies: [{ 
+                        id: 'goblin_01', 
+                        hp: 50, 
+                        maxHp: 50,
+                        speed: 8, 
+                        skills: ['skill_bite'],
+                        bodyParts: {
+                            head: { hp: 20, maxHp: 20, armor: 0, status: 'NORMAL' },
+                            body: { hp: 30, maxHp: 30, armor: 2, status: 'NORMAL' }
+                        }
+                    }] 
                 }
             }
         };
