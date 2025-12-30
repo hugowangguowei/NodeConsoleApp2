@@ -49,7 +49,11 @@ class CoreEngine {
         if (!this.data.loadGame()) {
             this.data.createNewGame(username);
             this.fsm.changeState('MAIN_MENU');
+            this.eventBus.emit('DATA_UPDATE', this.data.playerData);
         } else {
+            // Emit data update first to ensure UI elements (like skill buttons) are generated
+            this.eventBus.emit('DATA_UPDATE', this.data.playerData);
+
             // Check if we were in a battle
             if (this.data.dataConfig.runtime && this.data.dataConfig.runtime.levelData) {
                 console.log('Resuming saved battle...');
