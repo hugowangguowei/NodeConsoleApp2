@@ -114,3 +114,67 @@
 *   **触发时机**: HP 归零时。
 *   **数据结构**: `{ "targetId": "enemy" }`
 *   **响应**: 播放死亡倒地动画，并保持倒地状态或淡出消失。
+
+## 5. 系统模态窗口 (System Modal) 设计方案
+
+### 5.1 设计定位
+模态窗口（Modal）是独立于战斗场景（Battle Scene）之上的高层级 UI 交互层。它主要承担 `core_engine.md` 中定义的非战斗状态（如 `MAIN_MENU`, `LEVEL_SELECT`）的视觉表现，以及系统级功能（存档、读档、设置）的承载。
+
+### 5.2 界面架构 (UI Architecture)
+模态窗口采用 **Overlay (遮罩) + Panel (面板)** 的经典结构，`z-index` 必须高于战斗场景的特效层。
+
+*   **遮罩层 (Backdrop)**:
+    *   全屏半透明黑色 (`rgba(0, 0, 0, 0.8)`).
+    *   功能：视觉上聚焦中心内容，逻辑上阻断对底层战斗场景的点击操作。
+*   **主面板 (Main Panel)**:
+    *   居中显示的容器，风格需与游戏整体 UI 统一（如像素风或复古边框）。
+    *   **Header**: 标题栏（如 "Select Level", "System Menu"）及关闭按钮。
+    *   **Body**: 动态内容区域（根据功能挂载不同的子视图）。
+    *   **Footer**: 操作栏（确认、取消、应用）。
+
+### 5.3 功能模块与状态映射
+模态窗口的内容根据 `GameFSM` 的状态或特定 UI 事件进行动态切换。
+
+#### 5.3.1 关卡选择 (Level Selection)
+*   **对应状态**: `LEVEL_SELECT`
+*   **触发**: 游戏启动后或战斗结算完成后。
+*   **内容设计**:
+    *   **章节列表**: 左侧导航栏切换章节（Forest, Dungeon, Castle）。
+    *   **关卡节点**: 右侧显示具体关卡（1-1, 1-2）。
+    *   **信息预览**: 点击关卡显示敌方阵容缩略图、推荐等级、潜在掉落。
+*   **交互**: 点击“Start Battle” -> 触发事件 `UI:LEVEL_START` -> 引擎切换至 `BATTLE_PREPARE` 或 `BATTLE_LOOP`。
+
+#### 5.3.2 游戏菜单 (Game Menu)
+*   **对应状态**: `MAIN_MENU` (或战斗内暂停)
+*   **触发**: 点击界面右上角“齿轮”图标或按 `ESC` 键。
+*   **内容设计**:
+    *   **Resume**: 继续游戏（仅暂停时出现）。
+    *   **Save/Load**: 进入存读档子界面。
+    *   **Settings**: 音量、显示设置。
+    *   **Quit**: 返回标题画面。
+
+#### 5.3.3 存档/读档管理 (Save/Load Manager)
+*   **功能**: 实现数据的持久化。
+*   **内容设计**:
+    *   **槽位列表 (Slots)**: 显示 3-5 个存档槽位。
+    *   **槽位信息**: 显示截图（可选）、存档时间、当前关卡、玩家 HP/等级。
+    *   **操作**: 覆盖 (Overwrite)、读取 (Load)、删除 (Delete)。
+*   **数据流**:
+    *   **保存**: 触发 `UI:GAME_SAVE` -> 引擎序列化 `DataManager` 数据 -> 写入 LocalStorage。
+    *   **读取**: 触发 `UI:GAME_LOAD` -> 引擎反序列化数据 -> 刷新 `GameFSM` 状态和场景。
+
+### 5.4 交互逻辑与事件流 (Interaction Flow)
+
+模态窗口作为视图层的一部分，同样遵循 **发布-订阅** 模式，不直接修改游戏数据。
+
+1.  **监听状态变更 (Listening)**:
+    *   模态管理器监听 `GameFSM` 的 `STATE_CHANGED` 事件。
+    *   `IF state == 'LEVEL_SELECT' THEN OpenModal('LevelSelectView')`
+    *   `IF state == 'BATTLE_LOOP' THEN CloseAllModals()`
+
+2.  **用户操作反馈 (Feedback)**:
+    *   用户在模态窗中的操作（如选择关卡）仅产生 UI 变化（高亮选中项）。
+    *   用户点击“确认”时，发布业务事件（如 `UI:SELECT_LEVEL`）。
+
+3.  **数据驱动更新 (Update)**:
+    *   例如：存档成功后，引擎发布 `SYSTEM:SAVE_SUCCESS`，模态窗收到后弹出“保存成功”的 Toast 提示，并刷新槽位显示。
