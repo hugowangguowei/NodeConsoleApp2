@@ -1,0 +1,17 @@
+{
+    "default": {
+        "stats": {
+            "hp": 100,
+            "maxHp": 100,
+            "ap": 4,
+            "maxAp": 6,
+            "speed": 10
+        },
+        "skills": ["skill_slash", "skill_heal", "skill_fireball"],
+        "equipment": {
+            "weapon": null,
+            "armor": { "head": null, "chest": null }
+        },
+        "inventory": []
+    }
+}

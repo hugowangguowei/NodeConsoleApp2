@@ -84,14 +84,14 @@ class CoreEngine {
     selectLevel(levelId) {
         if (this.fsm.currentState !== 'MAIN_MENU' && this.fsm.currentState !== 'LEVEL_SELECT') return;
 
-        const levelConfig = this.data.getLevelConfig(levelId);
-        if (!levelConfig) {
+        const levelData = this.data.instantiateLevel(levelId);
+        if (!levelData) {
             console.error('Level not found:', levelId);
             return;
         }
 
         console.log(`Level selected: ${levelId}`);
-        this.data.currentLevelData = levelConfig;
+        this.data.currentLevelData = levelData;
         this.fsm.changeState('BATTLE_PREPARE');
         
         // Simulate entering battle immediately for now

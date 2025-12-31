@@ -1,0 +1,19 @@
+{
+  "level_1_1": {
+    "id": "level_1_1",
+    "name": "幽暗森林边缘",
+    "description": "森林外围，常有哥布林出没。",
+    "background": "bg_forest_01",
+    "waves": [
+      {
+        "enemies": [
+          { "templateId": "goblin_01", "position": 1 }
+        ]
+      }
+    ],
+    "rewards": {
+      "exp": 100,
+      "gold": 50
+    }
+  }
+}

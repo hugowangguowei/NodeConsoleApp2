@@ -318,8 +318,106 @@ class EventBus {
 *   **自动保存**: 在 `BATTLE_SETTLEMENT` 和关键状态切换时触发。
 
 ### 7.2 静态数据加载 (Asset Loader)
-*   **配置表**: 技能、物品、敌人数据存储在 JSON 文件中。
-*   **加载策略**: 游戏启动 (`INIT` 状态) 时预加载核心配置，关卡资源在进入关卡前按需加载。
+为了支持数据驱动的开发模式，游戏的核心配置（关卡、敌人、技能、物品）将从外部 JSON 文件加载，而非硬编码在代码中。
+
+#### 7.2.1 目录结构
+建议在 `assets/data/` 目录下组织配置文件：
+```
+assets/data/
+├── skills.json       # 技能定义
+├── items.json        # 物品定义
+├── enemies.json      # 敌人模板定义
+├── levels.json       # 关卡流程定义
+└── player.json       # 玩家初始配置
+```
+
+#### 7.2.2 JSON 配置规范
+
+**1. 玩家配置 (player.json)**
+定义玩家初始状态。
+```json
+{
+    "default": {
+        "stats": {
+            "hp": 100,
+            "maxHp": 100,
+            "ap": 4,
+            "maxAp": 6,
+            "speed": 10
+        },
+        "skills": ["skill_slash", "skill_heal", "skill_fireball"],
+        "equipment": {
+            "weapon": null,
+            "armor": { "head": null, "chest": null }
+        },
+        "inventory": []
+    }
+}
+```
+
+**2. 敌人模板 (enemies.json)**
+定义敌人的基础属性、技能和部位结构。
+```json
+{
+  "goblin_scout": {
+    "id": "goblin_scout",
+    "name": "哥布林斥候",
+    "stats": {
+      "hp": 50,
+      "maxHp": 50,
+      "speed": 12,
+      "ap": 3
+    },
+    "skills": ["skill_bite", "skill_throw_stone"],
+    "bodyParts": {
+      "head": { "maxHp": 20, "armor": 0, "weakness": 1.5 }, // weakness: 伤害倍率
+      "body": { "maxHp": 30, "armor": 2, "weakness": 1.0 }
+    },
+    "dropTable": "drop_goblin_common"
+  },
+  "orc_warrior": {
+    "id": "orc_warrior",
+    "name": "兽人战士",
+    "stats": { "hp": 120, "maxHp": 120, "speed": 8, "ap": 4 },
+    "skills": ["skill_smash", "skill_warcry"],
+    "bodyParts": {
+      "head": { "maxHp": 40, "armor": 5, "weakness": 1.2 },
+      "body": { "maxHp": 80, "armor": 10, "weakness": 0.8 }
+    }
+  }
+}
+```
+
+**3. 关卡配置 (levels.json)**
+定义关卡的结构、敌人波次和奖励。
+```json
+{
+  "level_1_1": {
+    "id": "level_1_1",
+    "name": "幽暗森林边缘",
+    "description": "森林外围，常有哥布林出没。",
+    "background": "bg_forest_01",
+    "waves": [
+      {
+        "enemies": [
+          { "templateId": "goblin_scout", "position": 1 },
+          { "templateId": "goblin_scout", "position": 2 }
+        ]
+      }
+    ],
+    "rewards": {
+      "exp": 100,
+      "gold": 50,
+      "firstClearBonus": { "itemId": "wp_dagger_01", "count": 1 }
+    }
+  }
+}
+```
+
+#### 7.2.3 加载流程
+1.  **初始化阶段 (`INIT`)**: `DataManager` 使用 `fetch` API 并行请求所有 JSON 配置文件。
+2.  **解析与缓存**: 将加载的 JSON 数据解析并存储在 `DataManager.gameConfig` 对象中（如 `gameConfig.enemies`, `gameConfig.levels`）。
+3.  **实例化**: 进入战斗时，根据 `levels.json` 中的 `templateId` 从 `enemies.json` 查找模板，深拷贝生成运行时的敌人实例。
 
 ### 7.3 运行时缓存 (Runtime Cache)
 *   **DataManager**: 维护当前活跃的游戏对象实例，避免频繁反序列化。

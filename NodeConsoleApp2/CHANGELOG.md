@@ -38,3 +38,12 @@
 
 ### 修复
 - 修复了在战斗中重新加载游戏会丢失当前回合进度和敌人状态的问题。
+- 修复了重新加载游戏后，技能按钮可能保持禁用状态的问题（通过调整 `DATA_UPDATE` 和 `BATTLE_UPDATE` 的触发顺序）。
+
+### 变更 (2025-12-31)
+- **数据驱动配置**:
+    - 引入了 JSON 配置文件系统，位于 `assets/data/` 目录下 (`skills.json`, `items.json`, `enemies.json`, `levels.json`)。
+    - `DataManager` 现在尝试从这些 JSON 文件加载游戏配置，如果加载失败（如本地文件协议限制），则回退到内置的模拟数据。
+    - 实现了 `instantiateLevel` 方法，支持从 `levels.json` 定义的波次和 `enemies.json` 定义的模板动态生成战斗关卡和敌人实例。
+- **CoreEngine**:
+    - 更新了 `selectLevel` 方法，使用 `instantiateLevel` 来生成关卡数据，确保每次进入关卡都是全新的状态。
