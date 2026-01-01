@@ -9,8 +9,8 @@
         },
         "skills": ["skill_slash", "skill_heal", "skill_fireball"],
         "equipment": {
-            "weapon": null,
-            "armor": { "head": null, "chest": null }
+            "weapon": "wp_sword_01",
+            "armor": { "head": "helm_01", "chest": "plate_01" }
         },
         "inventory": []
     }

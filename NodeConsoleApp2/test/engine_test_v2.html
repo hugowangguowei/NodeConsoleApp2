@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>核心引擎测试</title>
+    <title>核心引擎测试 V2 (Armor & Body Parts)</title>
     <style>
         body { font-family: monospace; background: #222; color: #eee; padding: 10px; font-size: 12px; }
         h1 { font-size: 1.2em; margin: 0 0 10px 0; }
@@ -63,7 +63,7 @@
     </style>
 </head>
 <body>
-    <h1>核心引擎测试</h1>
+    <h1>核心引擎测试 V2 (Armor & Body Parts)</h1>
     
     <div class="layout-grid">
         <!-- Player Stats Panel -->
@@ -73,6 +73,12 @@
                 <div>名称: <span id="statName" style="color: #fff; font-weight: bold;">-</span></div>
                 <div>HP: <span id="statHp" style="color: #ff8e8e;">-</span> / <span id="statMaxHp">-</span></div>
                 <div>AP: <span id="statAp" style="color: #7bffcf;">-</span> / <span id="statMaxAp">-</span></div>
+            </div>
+            <div style="margin-top: 10px; border-top: 1px solid #333; padding-top: 5px;">
+                <div>装备:</div>
+                <ul id="equipmentList" style="color: #aaa;">
+                    <li>-</li>
+                </ul>
             </div>
         </div>
 
@@ -94,9 +100,6 @@
                     </select>
                     <select id="partSelect" style="background: #333; color: #fff; border: 1px solid #555; padding: 2px;">
                         <option value="">-- 选择部位 --</option>
-                        <option value="head">头部 (Head)</option>
-                        <option value="body">身体 (Body)</option>
-                        <option value="chest">胸部 (Chest)</option>
                     </select>
                 </div>
             </div>
@@ -144,7 +147,6 @@
         const btnLogin = document.getElementById('btnLogin');
         const btnNewGame = document.getElementById('btnNewGame');
         const btnSelectLevel = document.getElementById('btnSelectLevel');
-        // const btnAddSkill = document.getElementById('btnAddSkill'); // Removed fixed button
         const btnCommitTurn = document.getElementById('btnCommitTurn');
         const inputUsername = document.getElementById('username');
         const skillButtonsContainer = document.getElementById('skillButtons');
@@ -162,6 +164,7 @@
         const statMaxHp = document.getElementById('statMaxHp');
         const statAp = document.getElementById('statAp');
         const statMaxAp = document.getElementById('statMaxAp');
+        const equipmentList = document.getElementById('equipmentList');
 
         // Battle Info Elements
         const battleInfoPanel = document.getElementById('battleInfo');
@@ -170,6 +173,11 @@
         const skillQueueList = document.getElementById('skillQueue');
         const targetSelect = document.getElementById('targetSelect');
         const partSelect = document.getElementById('partSelect');
+
+        // Add change listener to targetSelect
+        targetSelect.onchange = () => {
+            updatePartSelect(targetSelect.value);
+        };
 
         function log(msg) {
             const div = document.createElement('div');
@@ -193,8 +201,6 @@
         };
 
         btnLoadGame.onclick = () => {
-            // Reload page to simulate fresh load, or just call login again if we want to test runtime reload
-            // For this test, let's just re-login which triggers loadGame inside engine
             const username = inputUsername.value;
             Engine.input.login(username);
             updateDataDisplay();
@@ -212,12 +218,6 @@
             }
         }
 
-        // Subscribe to Engine Events
-        Engine.eventBus.on('STATE_CHANGED', (data) => {
-            log(`状态变更: ${data.from} -> ${data.to}`);
-            updateButtons(data.to);
-        });
-
         Engine.eventBus.on('DATA_UPDATE', (data) => {
             log(`数据更新: 玩家 ${data.name} (HP: ${data.stats.hp}, AP: ${data.stats.ap})`);
             
@@ -228,6 +228,25 @@
             statMaxHp.textContent = data.stats.maxHp;
             statAp.textContent = data.stats.ap;
             statMaxAp.textContent = data.stats.maxAp;
+
+            // Update Equipment List
+            equipmentList.innerHTML = '';
+            if (data.equipment) {
+                if (data.equipment.weapon) {
+                    const li = document.createElement('li');
+                    li.textContent = `Weapon: ${data.equipment.weapon}`;
+                    equipmentList.appendChild(li);
+                }
+                if (data.equipment.armor) {
+                    for (const [slot, itemId] of Object.entries(data.equipment.armor)) {
+                        if (itemId) {
+                            const li = document.createElement('li');
+                            li.textContent = `${slot}: ${itemId}`;
+                            equipmentList.appendChild(li);
+                        }
+                    }
+                }
+            }
 
             // Generate Skill Buttons if needed
             if (data.skills && skillButtonsContainer.children.length <= 1) { // Check if already generated
@@ -277,16 +296,6 @@
             
             enemyList.innerHTML = '';
             
-            // Update Target Select options if needed (e.g. if enemy died)
-            // For simplicity, we just rebuild it or keep it if we want to preserve selection
-            // But enemies might die, so we should probably refresh it or handle dead targets.
-            // Let's refresh it if the count changes or just always refresh for safety in this test.
-            // Actually, we need access to player data here too for "Self" targeting.
-            // data.enemies is available. data.player might not be in BATTLE_UPDATE payload?
-            // Let's check CoreEngine.emitBattleUpdate.
-            // It sends { turn, phase, queue: playerSkillQueue, enemies: ... }
-            // It doesn't send player object. But we have Engine.data.playerData.
-            
             updateTargetSelect(Engine.data.playerData, data.enemies);
 
             if (data.enemies && data.enemies.length > 0) {
@@ -294,6 +303,22 @@
                     const li = document.createElement('li');
                     li.style.marginBottom = '5px';
                     li.innerHTML = `<span style="color: #ff8e8e;">${enemy.id}</span> - HP: ${enemy.hp} (Speed: ${enemy.speed})`;
+                    
+                    // Show body parts info if available
+                    if (enemy.bodyParts) {
+                        const partsInfo = document.createElement('div');
+                        partsInfo.style.fontSize = '10px';
+                        partsInfo.style.color = '#888';
+                        partsInfo.style.marginLeft = '10px';
+                        
+                        let partsText = [];
+                        for (const [partName, partData] of Object.entries(enemy.bodyParts)) {
+                            partsText.push(`${partName}: ${partData.hp}/${partData.maxHp} (Armor: ${partData.armor})`);
+                        }
+                        partsInfo.textContent = partsText.join(' | ');
+                        li.appendChild(partsInfo);
+                    }
+                    
                     enemyList.appendChild(li);
                 });
             } else {
@@ -305,7 +330,7 @@
             if (data.queue && data.queue.length > 0) {
                 data.queue.forEach((action, index) => {
                     const li = document.createElement('li');
-                    li.innerHTML = `${index + 1}. <span style="color: #7bffcf;">${action.skillId}</span> -> ${action.targetId} <button onclick="window.removeSkill(${index})" style="padding: 0 4px; margin-left: 5px;">x</button>`;
+                    li.innerHTML = `${index + 1}. <span style="color: #7bffcf;">${action.skillId}</span> -> ${action.targetId} (${action.bodyPart || 'Global'}) <button onclick="window.removeSkill(${index})" style="padding: 0 4px; margin-left: 5px;">x</button>`;
                     skillQueueList.appendChild(li);
                 });
             } else {
@@ -314,7 +339,6 @@
 
             // Update Buttons based on phase
             const isPlanning = data.phase === 'PLANNING';
-            // btnAddSkill.disabled = !isPlanning; // Removed
             
             const skillBtns = document.querySelectorAll('[data-skill-btn="true"]');
             skillBtns.forEach(btn => btn.disabled = !isPlanning);
@@ -356,6 +380,55 @@
                     }
                 }
             }
+            
+            // Update parts based on current selection (whether restored or reset)
+            updatePartSelect(targetSelect.value);
+        }
+
+        function updatePartSelect(targetId) {
+            const currentPart = partSelect.value;
+            partSelect.innerHTML = '<option value="">-- 选择部位 --</option>';
+            
+            if (!targetId) return;
+
+            let target = null;
+            // Access data via Engine.data which is DataManager instance
+            if (Engine.data.playerData && Engine.data.playerData.id === targetId) {
+                target = Engine.data.playerData;
+            } else if (Engine.data.currentLevelData && Engine.data.currentLevelData.enemies) {
+                target = Engine.data.currentLevelData.enemies.find(e => e.id === targetId);
+            }
+
+            if (target) {
+                if (target.bodyParts) {
+                    // Enemy with explicit bodyParts
+                    for (const part in target.bodyParts) {
+                        const opt = document.createElement('option');
+                        opt.value = part;
+                        const partData = target.bodyParts[part];
+                        opt.textContent = `${part} (HP: ${partData.hp}/${partData.maxHp})`;
+                        partSelect.appendChild(opt);
+                    }
+                } else if (target.equipment && target.equipment.armor) {
+                    // Player (using armor slots as body parts)
+                    for (const slot in target.equipment.armor) {
+                         const opt = document.createElement('option');
+                         opt.value = slot;
+                         opt.textContent = slot; 
+                         partSelect.appendChild(opt);
+                    }
+                }
+            }
+            
+            // Restore part selection if valid for the new target
+            if (currentPart) {
+                for (let i = 0; i < partSelect.options.length; i++) {
+                    if (partSelect.options[i].value === currentPart) {
+                        partSelect.value = currentPart;
+                        break;
+                    }
+                }
+            }
         }
 
         // Global handler for removing skills (since we inject HTML)
@@ -377,11 +450,7 @@
         btnNewGame.onclick = () => {
             const name = inputUsername.value;
             if(name) {
-                // If engine is already initialized/logged in, we can just call reset
-                // But if we are at LOGIN screen, we might need to handle it.
-                // CoreEngine.resetGame handles both.
                 Engine.resetGame(name);
-                // Also ensure buttons are updated if we were in LOGIN
                 updateButtons('MAIN_MENU'); 
             }
         };
@@ -389,10 +458,6 @@
         btnSelectLevel.onclick = () => {
             Engine.input.selectLevel('level_1_1');
         };
-
-        // btnAddSkill.onclick = () => {
-        //     Engine.input.addSkillToQueue('skill_slash', 'goblin_01', 'chest');
-        // };
 
         btnCommitTurn.onclick = () => {
             Engine.input.commitTurn();
@@ -410,7 +475,7 @@
             }
         }
 
-        log('测试页面已加载。引擎正在初始化...');
+        log('测试页面 V2 已加载。引擎正在初始化...');
 
     </script>
 </body>

@@ -1,6 +1,6 @@
 {
-    "skill_slash": { "id": "skill_slash", "name": "斩击", "cost": 2, "type": "DAMAGE", "value": 20, "speed": 0 },
-    "skill_heal": { "id": "skill_heal", "name": "治疗", "cost": 3, "type": "HEAL", "value": 30, "speed": -2 },
-    "skill_fireball": { "id": "skill_fireball", "name": "火球术", "cost": 4, "type": "DAMAGE", "value": 40, "speed": -5 },
-    "skill_bite": { "id": "skill_bite", "name": "撕咬", "cost": 2, "type": "DAMAGE", "value": 15, "speed": 2 }
+    "skill_slash": { "id": "skill_slash", "name": "斩击", "cost": 2, "type": "DAMAGE", "value": 20, "speed": 0, "targetType": "SINGLE_PART" },
+    "skill_heal": { "id": "skill_heal", "name": "治疗", "cost": 3, "type": "HEAL", "value": 30, "speed": -2, "targetType": "GLOBAL" },
+    "skill_fireball": { "id": "skill_fireball", "name": "火球术", "cost": 4, "type": "DAMAGE", "value": 40, "speed": -5, "targetType": "SINGLE_PART" },
+    "skill_bite": { "id": "skill_bite", "name": "撕咬", "cost": 2, "type": "DAMAGE", "value": 15, "speed": 2, "targetType": "SINGLE_PART" }
 }

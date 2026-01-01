@@ -1,3 +1,5 @@
 {
-    "wp_sword_01": { "id": "wp_sword_01", "name": "铁剑", "type": "WEAPON", "value": 10 }
+    "wp_sword_01": { "id": "wp_sword_01", "name": "铁剑", "type": "WEAPON", "value": 10 },
+    "helm_01": { "id": "helm_01", "name": "皮帽", "type": "ARMOR", "slot": "head", "defense": 2, "durability": 20 },
+    "plate_01": { "id": "plate_01", "name": "皮甲", "type": "ARMOR", "slot": "chest", "defense": 5, "durability": 50 }
 }

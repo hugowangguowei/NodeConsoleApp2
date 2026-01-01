@@ -34,27 +34,27 @@ class CoreEngine {
         
         this.loop.start();
         
-        // Auto transition to LOGIN after init
+        // 初始化后自动跳转到登录状态
         this.fsm.changeState('LOGIN');
         console.log('Engine initialized.');
     }
 
-    // --- Input Handlers ---
+    // --- 输入处理程序 ---
 
     login(username) {
         if (this.fsm.currentState !== 'LOGIN') return;
 
         console.log(`User logging in: ${username}`);
-        // Try to load existing game first
+        // 尝试先加载现有游戏
         if (!this.data.loadGame()) {
             this.data.createNewGame(username);
             this.fsm.changeState('MAIN_MENU');
             this.eventBus.emit('DATA_UPDATE', this.data.playerData);
         } else {
-            // Emit data update first to ensure UI elements (like skill buttons) are generated
+            // 先发出数据更新以确保生成 UI 元素（如技能按钮）
             this.eventBus.emit('DATA_UPDATE', this.data.playerData);
 
-            // Check if we were in a battle
+            // 检查我们是否在战斗中
             if (this.data.dataConfig.runtime && this.data.dataConfig.runtime.levelData) {
                 console.log('Resuming saved battle...');
                 this.resumeBattle();
@@ -66,13 +66,13 @@ class CoreEngine {
         this.eventBus.emit('DATA_UPDATE', this.data.playerData);
     }
 
-    // Force create a new game, overwriting existing save
+    // 强制创建新游戏，覆盖现有存档
     resetGame(username) {
         console.log(`Resetting game for user: ${username}`);
         this.data.createNewGame(username);
         
-        // If we are in LOGIN state, transition to MAIN_MENU
-        // If we are already playing, just update data
+        // 如果我们在登录状态，转换到主菜单
+        // 如果我们已经在游戏中，只需更新数据
         if (this.fsm.currentState === 'LOGIN') {
             this.fsm.changeState('MAIN_MENU');
         }
@@ -94,7 +94,7 @@ class CoreEngine {
         this.data.currentLevelData = levelData;
         this.fsm.changeState('BATTLE_PREPARE');
         
-        // Simulate entering battle immediately for now
+        // 暂时模拟立即进入战斗
         setTimeout(() => {
             this.startBattle();
         }, 500);
@@ -104,25 +104,25 @@ class CoreEngine {
         this.currentTurn = 0;
         this.fsm.changeState('BATTLE_LOOP');
         
-        // Initialize Runtime Data Structures
+        // 初始化运行时数据结构
         if (!this.data.dataConfig.runtime) this.data.dataConfig.runtime = {};
         const runtime = this.data.dataConfig.runtime;
 
-        // 1. Initial State Snapshot
+        // 1. 初始状态快照
         runtime.initialState = {
             enemies: JSON.parse(JSON.stringify(this.data.currentLevelData.enemies))
         };
 
-        // 2. History
+        // 2. 历史记录
         runtime.history = [];
 
-        // 3. Queues
+        // 3. 队列
         runtime.queues = {
             player: [],
             enemy: []
         };
 
-        // 4. Player Temp State
+        // 4. 玩家临时状态
         runtime.playerTempState = {
             buffs: [],
             tempStatModifiers: {}
@@ -140,7 +140,7 @@ class CoreEngine {
         this.currentTurn = runtime.turn || 1;
         this.battlePhase = runtime.phase || 'PLANNING';
         
-        // Restore queues
+        // 恢复队列
         this.playerSkillQueue = runtime.queues ? (runtime.queues.player || []) : [];
         this.enemySkillQueue = runtime.queues ? (runtime.queues.enemy || []) : [];
 
@@ -152,20 +152,20 @@ class CoreEngine {
         
         console.log(`Resumed battle at Turn ${this.currentTurn}, Phase ${this.battlePhase}`);
         
-        // If we resumed in EXECUTION phase, we might need to continue execution or restart the turn logic
-        // For simplicity, if resumed in EXECUTION, we might just restart the turn or reset to PLANNING
-        // But let's assume we just resume UI state.
+        // 如果我们在执行阶段恢复，我们可能需要继续执行或重新开始回合逻辑
+        // 为简单起见，如果在执行阶段恢复，我们可能只是重新开始回合或重置为规划阶段
+        // 但让我们假设我们只是恢复 UI 状态。
         
         this.emitBattleUpdate();
         this.eventBus.emit('BATTLE_LOG', { text: `Game Resumed. Turn ${this.currentTurn}.` });
     }
 
     saveGame() {
-        // Sync current battle state to DataManager before saving
+        // 保存前将当前战斗状态同步到 DataManager
         if (this.fsm.currentState === 'BATTLE_LOOP') {
             this.saveBattleState();
         } else {
-            // If not in battle, clear battle runtime data
+            // 如果不在战斗中，清除战斗运行时数据
             if (this.data.dataConfig.runtime) {
                 delete this.data.dataConfig.runtime.levelData;
                 delete this.data.dataConfig.runtime.turn;
@@ -188,7 +188,7 @@ class CoreEngine {
         
         this.battlePhase = 'PLANNING';
         
-        // Record Snapshot for History
+        // 记录历史快照
         if (this.data.dataConfig.runtime) {
             if (!this.data.dataConfig.runtime.history) this.data.dataConfig.runtime.history = [];
             
@@ -220,7 +220,7 @@ class CoreEngine {
         this.playerSkillQueue = [];
         this.enemySkillQueue = [];
 
-        // Reset AP
+        // 重置 AP
         if (this.data.playerData) {
             this.data.playerData.stats.ap = this.data.playerData.stats.maxAp;
             this.eventBus.emit('DATA_UPDATE', this.data.playerData);
@@ -241,9 +241,48 @@ class CoreEngine {
             return;
         }
 
+        // 验证目标身体部位
+        // 攻击和辅助技能需要身体部位，除非它们是全局/AOE
+        const requiresBodyPart = (skillConfig.type === 'DAMAGE' || skillConfig.type === 'HEAL' || skillConfig.type === 'BUFF') && skillConfig.targetType !== 'GLOBAL' && skillConfig.targetType !== 'AOE';
+
+        if (requiresBodyPart) {
+            if (!bodyPart) {
+                this.eventBus.emit('BATTLE_LOG', { text: `Skill ${skillConfig.name} requires a target body part.` });
+                return;
+            }
+
+            // 查找目标
+            let target = null;
+            if (targetId === this.data.playerData.id) {
+                target = this.data.playerData;
+            } else if (this.data.currentLevelData && this.data.currentLevelData.enemies) {
+                target = this.data.currentLevelData.enemies.find(e => e.id === targetId);
+            }
+
+            if (!target) {
+                this.eventBus.emit('BATTLE_LOG', { text: `Invalid target: ${targetId}` });
+                return;
+            }
+
+            // 检查目标是否存在身体部位
+            let isValidPart = false;
+            if (target.bodyParts) {
+                // 具有明确身体部位的敌人
+                if (target.bodyParts[bodyPart]) isValidPart = true;
+            } else if (target.equipment && target.equipment.armor) {
+                // 玩家（使用护甲槽作为身体部位）
+                if (target.equipment.armor.hasOwnProperty(bodyPart)) isValidPart = true;
+            }
+
+            if (!isValidPart) {
+                this.eventBus.emit('BATTLE_LOG', { text: `Invalid body part '${bodyPart}' for target.` });
+                return;
+            }
+        }
+
         const cost = skillConfig.cost;
 
-        // Calculate current AP usage
+        // 计算当前 AP 使用量
         const currentQueueCost = this.playerSkillQueue.reduce((sum, action) => sum + action.cost, 0);
         if (player.stats.ap < currentQueueCost + cost) {
             this.eventBus.emit('BATTLE_LOG', { text: `Not enough AP! Cannot add more skills.` });
@@ -280,11 +319,11 @@ class CoreEngine {
         console.log('Player committed turn.');
         this.battlePhase = 'EXECUTION';
         
-        // Generate Enemy Actions (Mock)
+        // 生成敌人行动（模拟）
         if (this.data.currentLevelData && this.data.currentLevelData.enemies) {
             this.data.currentLevelData.enemies.forEach(enemy => {
                 if (enemy.hp > 0) {
-                    // Simple AI: Pick first available skill or default
+                    // 简单 AI：选择第一个可用技能或默认技能
                     const skillId = (enemy.skills && enemy.skills.length > 0) ? enemy.skills[0] : 'skill_bite';
                     const skillConfig = this.data.getSkillConfig(skillId);
                     const speed = (enemy.speed || 10) + (skillConfig ? skillConfig.speed : 0);
@@ -293,38 +332,38 @@ class CoreEngine {
                         source: 'ENEMY',
                         sourceId: enemy.id,
                         skillId: skillId,
-                        targetId: this.data.playerData.id, // Target Player
-                        cost: 0, // Enemies might not use AP in this simple version
+                        targetId: this.data.playerData.id, // 目标玩家
+                        cost: 0, // 敌人在这个简单版本中可能不使用 AP
                         speed: speed
                     });
                 }
             });
         }
 
-        this.saveBattleState(); // Sync state (including queues)
-        this.emitBattleUpdate(); // Update UI to disable controls
+        this.saveBattleState(); // 同步状态（包括队列）
+        this.emitBattleUpdate(); // 更新 UI 以禁用控件
 
         this.executeTurn();
     }
 
     async executeTurn() {
-        // Merge and Sort
+        // 合并和排序
         const allActions = [
             ...this.playerSkillQueue,
             ...this.enemySkillQueue
         ];
 
-        // Sort by speed descending
+        // 按速度降序排序
         allActions.sort((a, b) => b.speed - a.speed);
 
         this.eventBus.emit('BATTLE_LOG', { text: `--- Execution Phase ---` });
 
         let actionOrder = 0;
         for (const action of allActions) {
-            // Check if battle ended in previous action
+            // 检查战斗是否在上一个动作中结束
             if (this.fsm.currentState !== 'BATTLE_LOOP') break;
 
-            await new Promise(resolve => setTimeout(resolve, 1000)); // Delay for animation
+            await new Promise(resolve => setTimeout(resolve, 1000)); // 延迟动画
 
             actionOrder++;
             let result = null;
@@ -335,7 +374,7 @@ class CoreEngine {
                 result = this.executeEnemySkill(action);
             }
             
-            // Record Action to History
+            // 将动作记录到历史记录
             if (this.currentHistoryEntry) {
                 this.currentHistoryEntry.actions.push({
                     order: actionOrder,
@@ -358,7 +397,7 @@ class CoreEngine {
         
         if (!skillConfig) return null;
 
-        // Deduct AP (Real deduction)
+        // 扣除 AP（实际扣除）
         player.stats.ap -= action.cost;
         this.eventBus.emit('DATA_UPDATE', player);
 
@@ -422,13 +461,13 @@ class CoreEngine {
         const enemies = this.data.currentLevelData.enemies;
         const player = this.data.playerData;
 
-        // Check Victory
+        // 检查胜利
         if (enemies.every(e => e.hp <= 0)) {
             this.endBattle(true);
             return;
         }
 
-        // Check Defeat
+        // 检查失败
         if (player.stats.hp <= 0) {
             this.endBattle(false);
             return;
@@ -439,7 +478,7 @@ class CoreEngine {
         const result = isVictory ? 'Victory' : 'Defeat';
         this.eventBus.emit('BATTLE_LOG', { text: `Battle Ended: ${result}!` });
         
-        // Clear battle state from DataManager
+        // 从 DataManager 清除战斗状态
         if (this.data.dataConfig.runtime) {
             delete this.data.dataConfig.runtime.levelData;
             delete this.data.dataConfig.runtime.turn;
@@ -450,7 +489,7 @@ class CoreEngine {
             delete this.data.dataConfig.runtime.playerTempState;
         }
         this.data.currentLevelData = null;
-        this.data.saveGame(); // Auto-save on battle end
+        this.data.saveGame(); // 战斗结束时自动保存
 
         this.fsm.changeState('MAIN_MENU');
         this.eventBus.emit('BATTLE_END', { victory: isVictory });
@@ -463,7 +502,7 @@ class CoreEngine {
             runtime.turn = this.currentTurn;
             runtime.phase = this.battlePhase;
             
-            // Save Queues
+            // 保存队列
             if (!runtime.queues) runtime.queues = {};
             runtime.queues.player = this.playerSkillQueue;
             runtime.queues.enemy = this.enemySkillQueue;
@@ -481,6 +520,6 @@ class CoreEngine {
     }
 }
 
-// Export a singleton instance
+// 导出单例实例
 window.Engine = new CoreEngine();
 export default window.Engine;

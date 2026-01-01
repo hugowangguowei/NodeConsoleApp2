@@ -441,8 +441,13 @@ assets/data/
     *   进入 **技能配置阶段 (Planning Phase)**。
 3.  **技能配置阶段**:
     *   **玩家输入**:
-        *   `addSkillToQueue`: 将技能加入待释放队列 (检查 AP 是否足够)。
-        *   `removeSkillFromQueue`: 从队列中移除技能 (返还占用 AP)。
+        *   `addSkillToQueue(skillId, targetId, targetBodyPart?)`: 
+            *   **技能类型校验**: 
+                *   **攻击技能**: 必须指定敌方目标的具体部位 (如 `head`, `body`)，除非技能定义为AOE或自动索敌。
+                *   **治疗/增益技能**: 必须指定己方目标的具体部位 (如修复头盔护甲)，除非技能定义为全局回复。
+                *   **通用技能**: 部分技能 (如全局Buff、姿态切换) 不需要指定部位。
+            *   **合法性校验**: 检查 AP 是否足够，检查目标部位是否存在/已毁坏 (视技能逻辑而定)。
+        *   `removeSkillFromQueue(index)`: 从队列中移除技能 (返还占用 AP)。
         *   `commitTurn`: 确认技能配置完成，锁定玩家输入。
     *   **敌人AI**: 在玩家确认后，AI 根据策略生成技能队列。
     *   **状态流转**: 双方确认后，进入 **技能释放阶段 (Execution Phase)**。
@@ -476,7 +481,8 @@ assets/data/
 UI 层调用引擎暴露的方法：
 *   `Engine.input.login(username)`
 *   `Engine.input.selectLevel(levelId)`
-*   `Engine.input.addSkillToQueue(skillId, targetId, bodyPart)`
+*   `Engine.input.addSkillToQueue(skillId, targetId, targetBodyPart)`
+    *   `targetBodyPart`: 可选。对于攻击/治疗特定部位的技能必填 (例如 "head", "body")。
 *   `Engine.input.removeSkillFromQueue(index)`
 *   `Engine.input.commitTurn()`
 
