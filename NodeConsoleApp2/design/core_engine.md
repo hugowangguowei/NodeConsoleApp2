@@ -108,8 +108,8 @@ class EventBus {
   "equipment": {
     "weapon": "wp_sword_01",
     "armor": {
-      "head": { "id": "helm_01", "durability": 30, "defense": 5 },
-      "chest": { "id": "plate_01", "durability": 60, "defense": 15 }
+      "head": { "id": "helm_01", "durability": 30, "maxDurability": 30, "defense": 5 },
+      "chest": { "id": "plate_01", "durability": 60, "maxDurability": 60, "defense": 15 }
     }
   },
   "skills": ["skill_slash", "skill_defend"],
@@ -175,7 +175,13 @@ class EventBus {
     "id": "player_001",
     "name": "Hero",
     "stats": { "hp": 100, "maxHp": 100, "ap": 4, "maxAp": 6, "speed": 10 },
-    "equipment": { "weapon": "sword_01", "armor": { "head": "helm_01" } },
+    "equipment": { 
+        "weapon": "sword_01", 
+        "armor": { 
+            "head": { "itemId": "helm_01", "durability": 25 },
+            "chest": { "itemId": "plate_01", "durability": 50 }
+        } 
+    },
     "skills": ["skill_slash", "skill_heal"],
     "inventory": [
       { "itemId": "potion_hp", "count": 5 },
@@ -223,16 +229,22 @@ class EventBus {
         ],
         // 护甲/部位状态 (支持部位破坏)
         "bodyParts": {
-           "head": { "hp": 0, "maxHp": 20, "armor": 0, "status": "BROKEN" },
-           "body": { "hp": 30, "maxHp": 50, "armor": 5, "status": "NORMAL" }
+           "head": { "armor": 0, "maxArmor": 0, "weakness": 1.5, "status": "NORMAL" },
+           "body": { "armor": 5, "maxArmor": 10, "weakness": 1.0, "status": "NORMAL" }
         }
       }
     ],
     
     // 玩家在战斗中的临时状态 (如临时Buff，非永久属性变更)
-    "playerTempState": {
+    "playerBattleState": {
         "buffs": [],
-        "tempStatModifiers": { "speed": 2 }
+        "tempStatModifiers": { "speed": 2 },
+        // [新增] 玩家部位状态 (从装备映射而来)
+        // 映射逻辑: maxArmor = 装备maxDurability, armor = 装备currentDurability
+        "bodyParts": {
+           "head": { "armor": 25, "maxArmor": 30, "weakness": 1.0, "status": "NORMAL" },
+           "body": { "armor": 50, "maxArmor": 60, "weakness": 1.0, "status": "NORMAL" }
+        }
     },
 
     // 3. 行动队列 (Action Queues)
@@ -370,8 +382,8 @@ assets/data/
     },
     "skills": ["skill_bite", "skill_throw_stone"],
     "bodyParts": {
-      "head": { "maxHp": 20, "armor": 0, "weakness": 1.5 }, // weakness: 伤害倍率
-      "body": { "maxHp": 30, "armor": 2, "weakness": 1.0 }
+      "head": { "maxArmor": 0, "weakness": 1.5 }, // weakness: 伤害倍率
+      "body": { "maxArmor": 5, "weakness": 1.0 }
     },
     "dropTable": "drop_goblin_common"
   },
@@ -381,8 +393,8 @@ assets/data/
     "stats": { "hp": 120, "maxHp": 120, "speed": 8, "ap": 4 },
     "skills": ["skill_smash", "skill_warcry"],
     "bodyParts": {
-      "head": { "maxHp": 40, "armor": 5, "weakness": 1.2 },
-      "body": { "maxHp": 80, "armor": 10, "weakness": 0.8 }
+      "head": { "maxArmor": 10, "weakness": 1.2 },
+      "body": { "maxArmor": 20, "weakness": 0.8 }
     }
   }
 }

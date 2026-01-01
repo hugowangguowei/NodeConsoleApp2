@@ -123,9 +123,10 @@ class CoreEngine {
         };
 
         // 4. Íæ¼ÒÁÙÊ±×´Ì¬
-        runtime.playerTempState = {
+        runtime.playerBattleState = {
             buffs: [],
-            tempStatModifiers: {}
+            tempStatModifiers: {},
+            bodyParts: this.initializePlayerBodyParts(this.data.playerData)
         };
 
         this.eventBus.emit('BATTLE_START', { 
@@ -133,6 +134,31 @@ class CoreEngine {
             level: this.data.currentLevelData 
         });
         this.startTurn();
+    }
+
+    initializePlayerBodyParts(playerData) {
+        const bodyParts = {};
+        if (playerData.equipment && playerData.equipment.armor) {
+            for (const [slot, item] of Object.entries(playerData.equipment.armor)) {
+                // Map equipment slot to body part
+                // Assuming slot names 'head', 'chest' etc. map directly or via some logic
+                // For now, direct mapping: head -> head, chest -> body
+                let partName = slot;
+                if (slot === 'chest') partName = 'body';
+
+                bodyParts[partName] = {
+                    armor: item.durability || 0,
+                    maxArmor: item.maxDurability || (item.durability || 0),
+                    weakness: 1.0, // Default weakness
+                    status: 'NORMAL'
+                };
+            }
+        }
+        // Ensure basic parts exist if no armor
+        if (!bodyParts.head) bodyParts.head = { armor: 0, maxArmor: 0, weakness: 1.5, status: 'NORMAL' };
+        if (!bodyParts.body) bodyParts.body = { armor: 0, maxArmor: 0, weakness: 1.0, status: 'NORMAL' };
+        
+        return bodyParts;
     }
 
     resumeBattle() {
@@ -423,14 +449,53 @@ class CoreEngine {
                     this.eventBus.emit('BATTLE_LOG', { text: `Target ${enemy.id} is dead, skill failed.` });
                     return { isHit: false, reason: 'dead' };
                 }
-                enemy.hp -= damage;
-                if (enemy.hp < 0) enemy.hp = 0;
+
+                // New Damage Logic: Armor -> HP
+                let actualDamage = damage;
+                let armorDamage = 0;
+                let targetPart = action.bodyPart || 'body'; // Default to body if not specified
+                
+                if (enemy.bodyParts && enemy.bodyParts[targetPart]) {
+                    const part = enemy.bodyParts[targetPart];
+                    
+                    // Apply weakness
+                    if (part.weakness) {
+                        actualDamage = Math.floor(actualDamage * part.weakness);
+                    }
+
+                    // Reduce Armor first
+                    if (part.armor > 0) {
+                        if (part.armor >= actualDamage) {
+                            part.armor -= actualDamage;
+                            armorDamage = actualDamage;
+                            actualDamage = 0;
+                        } else {
+                            armorDamage = part.armor;
+                            actualDamage -= part.armor;
+                            part.armor = 0;
+                            part.status = 'BROKEN';
+                        }
+                    }
+                }
+
+                // Remaining damage goes to HP
+                if (actualDamage > 0) {
+                    enemy.hp -= actualDamage;
+                    if (enemy.hp < 0) enemy.hp = 0;
+                }
+
                 targetName = `${enemy.id} (HP: ${enemy.hp})`;
-                result = { isHit: true, damage: damage, targetHpRemaining: enemy.hp };
+                result = { 
+                    isHit: true, 
+                    damage: actualDamage, 
+                    armorDamage: armorDamage,
+                    targetHpRemaining: enemy.hp,
+                    targetPart: targetPart
+                };
             }
         }
 
-        const log = `Player used ${skillConfig.name} attacked ${targetName} for ${damage} damage!`;
+        const log = `Player used ${skillConfig.name} attacked ${targetName} for ${result.damage} HP damage (Armor: ${result.armorDamage})!`;
         this.eventBus.emit('BATTLE_LOG', { text: log });
         this.emitBattleUpdate();
         return result;
@@ -441,18 +506,67 @@ class CoreEngine {
         if (player.stats.hp <= 0) return { isHit: false, reason: 'dead' };
 
         const skillConfig = this.data.getSkillConfig(action.skillId);
-        const damage = skillConfig ? skillConfig.value : 10;
+        const baseDamage = skillConfig ? skillConfig.value : 10;
         const skillName = skillConfig ? skillConfig.name : action.skillId;
 
-        player.stats.hp -= damage;
-        if (player.stats.hp < 0) player.stats.hp = 0;
+        // New Damage Logic for Player
+        let actualDamage = baseDamage;
+        let armorDamage = 0;
+        let targetPart = action.bodyPart || 'body'; // Default to body
+        
+        // Access player battle state for body parts
+        const runtime = this.data.dataConfig.runtime;
+        const playerBattleState = runtime ? runtime.playerBattleState : null;
+
+        if (playerBattleState && playerBattleState.bodyParts && playerBattleState.bodyParts[targetPart]) {
+            const part = playerBattleState.bodyParts[targetPart];
+            
+            // Apply weakness
+            if (part.weakness) {
+                actualDamage = Math.floor(actualDamage * part.weakness);
+            }
+
+            // Reduce Armor first
+            if (part.armor > 0) {
+                if (part.armor >= actualDamage) {
+                    part.armor -= actualDamage;
+                    armorDamage = actualDamage;
+                    actualDamage = 0;
+                } else {
+                    armorDamage = part.armor;
+                    actualDamage -= part.armor;
+                    part.armor = 0;
+                    part.status = 'BROKEN';
+                }
+                
+                // Sync back to equipment durability
+                // Mapping: head -> head, body -> chest
+                let equipSlot = targetPart;
+                if (targetPart === 'body') equipSlot = 'chest';
+                
+                if (player.equipment.armor && player.equipment.armor[equipSlot]) {
+                    player.equipment.armor[equipSlot].durability = part.armor;
+                }
+            }
+        }
+
+        if (actualDamage > 0) {
+            player.stats.hp -= actualDamage;
+            if (player.stats.hp < 0) player.stats.hp = 0;
+        }
         
         this.eventBus.emit('DATA_UPDATE', player);
         
-        const log = `Enemy ${action.sourceId} used ${skillName} attacked Player for ${damage} damage!`;
+        const log = `${action.sourceId} used ${skillName} attacked Player for ${actualDamage} HP damage (Armor: ${armorDamage})!`;
         this.eventBus.emit('BATTLE_LOG', { text: log });
         this.emitBattleUpdate();
-        return { isHit: true, damage: damage, targetHpRemaining: player.stats.hp };
+
+        return { 
+            isHit: true, 
+            damage: actualDamage, 
+            armorDamage: armorDamage,
+            targetHpRemaining: player.stats.hp 
+        };
     }
 
     checkBattleStatus() {

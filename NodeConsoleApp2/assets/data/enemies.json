@@ -8,12 +8,22 @@
       "speed": 12,
       "ap": 3
     },
-    "skills": ["skill_bite"],
+    "skills": ["skill_bite", "skill_throw_stone"],
     "bodyParts": {
-      "head": { "maxHp": 20, "armor": 0, "weakness": 1.5 },
-      "body": { "maxHp": 30, "armor": 2, "weakness": 1.0 }
+      "head": { "maxArmor": 0, "weakness": 1.5 },
+      "body": { "maxArmor": 5, "weakness": 1.0 }
     },
     "dropTable": "drop_goblin_common"
+  },
+  "orc_warrior": {
+    "id": "orc_warrior",
+    "name": "兽人战士",
+    "stats": { "hp": 120, "maxHp": 120, "speed": 8, "ap": 4 },
+    "skills": ["skill_smash", "skill_warcry"],
+    "bodyParts": {
+      "head": { "maxArmor": 10, "weakness": 1.2 },
+      "body": { "maxArmor": 20, "weakness": 0.8 }
+    }
   },
   "goblin_01": {
     "id": "goblin_01",
@@ -26,8 +36,8 @@
     },
     "skills": ["skill_bite"],
     "bodyParts": {
-        "head": { "maxHp": 20, "armor": 0, "weakness": 1.5 },
-        "body": { "maxHp": 30, "armor": 2, "weakness": 1.0 }
+        "head": { "maxArmor": 0, "weakness": 1.5 },
+        "body": { "maxArmor": 2, "weakness": 1.0 }
     }
   }
 }

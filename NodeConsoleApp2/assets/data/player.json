@@ -10,7 +10,10 @@
         "skills": ["skill_slash", "skill_heal", "skill_fireball"],
         "equipment": {
             "weapon": "wp_sword_01",
-            "armor": { "head": "helm_01", "chest": "plate_01" }
+            "armor": { 
+                "head": { "itemId": "helm_01", "durability": 20, "maxDurability": 20 },
+                "chest": { "itemId": "plate_01", "durability": 50, "maxDurability": 50 }
+            }
         },
         "inventory": []
     }

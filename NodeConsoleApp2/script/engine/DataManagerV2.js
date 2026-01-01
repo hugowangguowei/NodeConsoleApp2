@@ -188,8 +188,8 @@ class DataManager {
                     stats: { hp: 50, maxHp: 50, speed: 8, ap: 3 },
                     skills: ['skill_bite'],
                     bodyParts: {
-                        head: { maxHp: 20, armor: 0, weakness: 1.5 },
-                        body: { maxHp: 30, armor: 2, weakness: 1.0 }
+                        head: { maxArmor: 0, weakness: 1.5 },
+                        body: { maxArmor: 2, weakness: 1.0 }
                     }
                 }
             },
@@ -239,10 +239,9 @@ class DataManager {
                     // Initialize Body Parts Runtime State
                     if (enemyInstance.bodyParts) {
                         for (let part in enemyInstance.bodyParts) {
-                            enemyInstance.bodyParts[part].hp = enemyInstance.bodyParts[part].maxHp;
+                            // Initialize armor from maxArmor
+                            enemyInstance.bodyParts[part].armor = enemyInstance.bodyParts[part].maxArmor || 0;
                             enemyInstance.bodyParts[part].status = 'NORMAL';
-                            // Ensure armor is set if not in template (default 0)
-                            if (enemyInstance.bodyParts[part].armor === undefined) enemyInstance.bodyParts[part].armor = 0;
                         }
                     }
                     

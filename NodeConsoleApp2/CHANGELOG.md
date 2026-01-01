@@ -47,3 +47,22 @@
     - 实现了 `instantiateLevel` 方法，支持从 `levels.json` 定义的波次和 `enemies.json` 定义的模板动态生成战斗关卡和敌人实例。
 - **CoreEngine**:
     - 更新了 `selectLevel` 方法，使用 `instantiateLevel` 来生成关卡数据，确保每次进入关卡都是全新的状态。
+
+### 变更 (2026-01-01)
+- **战斗系统重构 (Armor & Body Parts)**:
+    - **伤害模型更新**: 实现了“整体血量 + 部位独立护甲”的伤害机制。
+        - 攻击现在针对特定的身体部位（如头部、躯干）。
+        - 伤害首先扣除部位护甲，护甲耗尽后剩余伤害扣除整体 HP。
+        - 引入了部位弱点系数（Weakness），在计算护甲扣除前应用。
+    - **玩家状态映射**:
+        - 在 `RuntimeData` 中新增 `playerBattleState`，包含 `bodyParts` 结构。
+        - 玩家的部位护甲直接映射自装备的耐久度（Head -> Head Armor, Body -> Chest Armor）。
+        - 战斗中造成的护甲损耗会实时同步回装备的耐久度。
+    - **敌人配置更新**:
+        - 更新了 `enemies.json` 和模拟数据，敌人的部位现在使用 `maxArmor` 定义护甲上限，不再分担 HP。
+- **CoreEngine**:
+    - `startBattle`: 初始化 `playerBattleState`，将玩家装备转换为战斗用的部位数据。
+    - `executePlayerSkill`: 更新了伤害计算逻辑，支持部位判定和护甲/HP 溢出伤害。
+    - `executeEnemySkill`: 更新了针对玩家的伤害计算，支持护甲损耗同步。
+- **DataManager**:
+    - `instantiateLevel`: 修复了敌人实例化的逻辑，正确初始化部位护甲（`armor` = `maxArmor`）。

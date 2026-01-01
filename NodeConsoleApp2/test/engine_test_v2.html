@@ -229,8 +229,14 @@
             statAp.textContent = data.stats.ap;
             statMaxAp.textContent = data.stats.maxAp;
 
-            // Update Equipment List
+            // Update Equipment List (Now Body Parts/Armor)
             equipmentList.innerHTML = '';
+            // Change label if possible, or just list items
+            const equipmentLabel = equipmentList.previousElementSibling;
+            if (equipmentLabel && equipmentLabel.textContent === '装备:') {
+                equipmentLabel.textContent = '部位护甲 (Body Parts):';
+            }
+
             if (data.equipment) {
                 if (data.equipment.weapon) {
                     const li = document.createElement('li');
@@ -238,10 +244,14 @@
                     equipmentList.appendChild(li);
                 }
                 if (data.equipment.armor) {
-                    for (const [slot, itemId] of Object.entries(data.equipment.armor)) {
-                        if (itemId) {
+                    for (const [slot, itemData] of Object.entries(data.equipment.armor)) {
+                        if (itemData) {
                             const li = document.createElement('li');
-                            li.textContent = `${slot}: ${itemId}`;
+                            // itemData is { itemId, durability, maxDurability }
+                            // Display as "head: 20/20"
+                            const current = itemData.durability !== undefined ? itemData.durability : 0;
+                            const max = itemData.maxDurability !== undefined ? itemData.maxDurability : 0;
+                            li.textContent = `${slot}: ${current}/${max} (Item: ${itemData.itemId})`;
                             equipmentList.appendChild(li);
                         }
                     }
@@ -313,9 +323,10 @@
                         
                         let partsText = [];
                         for (const [partName, partData] of Object.entries(enemy.bodyParts)) {
-                            partsText.push(`${partName}: ${partData.hp}/${partData.maxHp} (Armor: ${partData.armor})`);
+                            // partData has armor, maxArmor. No hp/maxHp for parts anymore.
+                            partsText.push(`${partName}: ${partData.armor}/${partData.maxArmor}`);
                         }
-                        partsInfo.textContent = partsText.join(' | ');
+                        partsInfo.textContent = 'Armor: ' + partsText.join(' | ');
                         li.appendChild(partsInfo);
                     }
                     
@@ -406,7 +417,8 @@
                         const opt = document.createElement('option');
                         opt.value = part;
                         const partData = target.bodyParts[part];
-                        opt.textContent = `${part} (HP: ${partData.hp}/${partData.maxHp})`;
+                        // Show Armor instead of HP
+                        opt.textContent = `${part} (Armor: ${partData.armor}/${partData.maxArmor})`;
                         partSelect.appendChild(opt);
                     }
                 } else if (target.equipment && target.equipment.armor) {
@@ -414,7 +426,10 @@
                     for (const slot in target.equipment.armor) {
                          const opt = document.createElement('option');
                          opt.value = slot;
-                         opt.textContent = slot; 
+                         const itemData = target.equipment.armor[slot];
+                         const current = itemData ? (itemData.durability || 0) : 0;
+                         const max = itemData ? (itemData.maxDurability || 0) : 0;
+                         opt.textContent = `${slot} (Armor: ${current}/${max})`; 
                          partSelect.appendChild(opt);
                     }
                 }
