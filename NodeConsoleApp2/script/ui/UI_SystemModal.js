@@ -1,15 +1,15 @@
-/**
+ï»¿/**
  * @file UI_SystemModal.js
- * @description ÏµÍ³Ä£Ì¬´°¿Ú UI ×é¼ş£¬¸ºÔğÖ÷²Ëµ¥¡¢¹Ø¿¨Ñ¡Ôñ¡¢´æµµ¶ÁµµµÈ½çÃæµÄÏÔÊ¾Óë½»»¥¡£
- * ×ñÑ­ UI_design.md ÖĞµÄ½Ó¿Ú¹æ·¶Óë´úÂë¹æ·¶¡£
+ * @description ç³»ç»Ÿæ¨¡æ€çª—å£ UI ç»„ä»¶ï¼Œè´Ÿè´£ä¸»èœå•ã€å…³å¡é€‰æ‹©ã€å­˜æ¡£è¯»æ¡£ç­‰ç•Œé¢çš„æ˜¾ç¤ºä¸äº¤äº’ã€‚
+ * éµå¾ª UI_design.md ä¸­çš„æ¥å£è§„èŒƒä¸ä»£ç è§„èŒƒã€‚
  */
 
 export class UI_SystemModal {
     /**
-     * ¹¹Ôìº¯Êı
+     * æ„é€ å‡½æ•°
      */
     constructor() {
-        // DOM ÔªËØ»º´æ
+        // DOM å…ƒç´ ç¼“å­˜
         this.dom = {
             backdrop: null,
             panel: null,
@@ -20,28 +20,28 @@ export class UI_SystemModal {
             menuBtn: null
         };
 
-        // µ±Ç°ÊÓÍ¼×´Ì¬
+        // å½“å‰è§†å›¾çŠ¶æ€
         this.currentView = null;
 
-        // ÒıÇæÒıÓÃ (½öÓÃÓÚ·¢ËÍÖ¸ÁîºÍ¼àÌıÊÂ¼ş)
+        // å¼•æ“å¼•ç”¨ (ä»…ç”¨äºå‘é€æŒ‡ä»¤å’Œç›‘å¬äº‹ä»¶)
         this.engine = null;
     }
 
     /**
-     * ³õÊ¼»¯×é¼ş
-     * @param {Object} engine - ÓÎÏ·ÒıÇæÊµÀı£¬Ğè°üº¬ eventBus, input ºÍ dataManager(¿ÉÑ¡£¬ÓÃÓÚÍ¬²½»ñÈ¡Êı¾İ)
+     * åˆå§‹åŒ–ç»„ä»¶
+     * @param {Object} engine - æ¸¸æˆå¼•æ“å®ä¾‹ï¼Œéœ€åŒ…å« eventBus, input å’Œ dataManager(å¯é€‰ï¼Œç”¨äºåŒæ­¥è·å–æ•°æ®)
      */
     init(engine) {
         this.engine = engine;
         this.bindDOM();
         this.bindEvents();
 
-        // ³õÊ¼Òş²Ø
+        // åˆå§‹éšè—
         this.hide();
     }
 
     /**
-     * °ó¶¨ DOM ÔªËØ
+     * ç»‘å®š DOM å…ƒç´ 
      * @private
      */
     bindDOM() {
@@ -52,36 +52,36 @@ export class UI_SystemModal {
         this.dom.closeBtn = document.getElementById('modalCloseBtn');
         this.dom.menuBtn = document.getElementById('systemMenuBtn');
 
-        // °ó¶¨¹Ø±Õ°´Å¥ÊÂ¼ş
+        // ç»‘å®šå…³é—­æŒ‰é’®äº‹ä»¶
         if (this.dom.closeBtn) {
             this.dom.closeBtn.addEventListener('click', () => this.handleClose());
         }
 
-        // °ó¶¨²Ëµ¥°´Å¥ÊÂ¼ş
+        // ç»‘å®šèœå•æŒ‰é’®äº‹ä»¶
         if (this.dom.menuBtn) {
             this.dom.menuBtn.addEventListener('click', () => this.openMainMenu());
         }
     }
 
     /**
-     * °ó¶¨ÒıÇæÊÂ¼ş
+     * ç»‘å®šå¼•æ“äº‹ä»¶
      * @private
      */
     bindEvents() {
         if (!this.engine || !this.engine.eventBus) return;
 
-        // ¼àÌı×´Ì¬±ä¸ü
+        // ç›‘å¬çŠ¶æ€å˜æ›´
         this.engine.eventBus.on('STATE_CHANGED', this.handleStateChange.bind(this));
 
-        // ¼àÌıÊı¾İ¸üĞÂ (Èç´æµµÁĞ±í¸üĞÂ)
+        // ç›‘å¬æ•°æ®æ›´æ–° (å¦‚å­˜æ¡£åˆ—è¡¨æ›´æ–°)
         this.engine.eventBus.on('DATA_UPDATE', this.handleDataUpdate.bind(this));
 
-        // ¼àÌı UI ÇëÇó´ò¿ªÄ£Ì¬¿ò
+        // ç›‘å¬ UI è¯·æ±‚æ‰“å¼€æ¨¡æ€æ¡†
         this.engine.eventBus.on('UI:OPEN_MODAL', this.handleOpenModal.bind(this));
     }
 
     /**
-     * ´¦Àí×´Ì¬±ä¸üÊÂ¼ş
+     * å¤„ç†çŠ¶æ€å˜æ›´äº‹ä»¶
      * @param {Object} stateData - { from, to }
      */
     handleStateChange(stateData) {
@@ -93,26 +93,26 @@ export class UI_SystemModal {
         } else if (to === 'BATTLE_LOOP' || to === 'BATTLE_PREPARE') {
             this.hide();
         } else if (to === 'LOGIN') {
-            // ¿ÉÒÔÔÚÕâÀï´¦Àí·µ»Ø±êÌâºóµÄÂß¼­£¬±ÈÈç¹Ø±ÕÄ£Ì¬¿ò
+            // å¯ä»¥åœ¨è¿™é‡Œå¤„ç†è¿”å›æ ‡é¢˜åçš„é€»è¾‘ï¼Œæ¯”å¦‚å…³é—­æ¨¡æ€æ¡†
             this.hide();
         }
     }
 
     /**
-     * ´¦ÀíÊı¾İ¸üĞÂÊÂ¼ş
+     * å¤„ç†æ•°æ®æ›´æ–°äº‹ä»¶
      * @param {Object} updateData - { type, data }
      */
     handleDataUpdate(updateData) {
         const { type, data } = updateData;
 
-        // Èç¹ûµ±Ç°ÕıÔÚÏÔÊ¾´æµµ/¶Áµµ½çÃæ£¬ÇÒÊÕµ½ÁË´æµµÁĞ±í¸üĞÂ
+        // å¦‚æœå½“å‰æ­£åœ¨æ˜¾ç¤ºå­˜æ¡£/è¯»æ¡£ç•Œé¢ï¼Œä¸”æ”¶åˆ°äº†å­˜æ¡£åˆ—è¡¨æ›´æ–°
         if (this.currentView === 'SAVE_LOAD' && type === 'SAVE_LIST') {
             this.renderSaveLoad(data);
         }
     }
 
     /**
-     * ´¦Àí´ò¿ªÄ£Ì¬¿òÇëÇó
+     * å¤„ç†æ‰“å¼€æ¨¡æ€æ¡†è¯·æ±‚
      * @param {Object} request - { view }
      */
     handleOpenModal(request) {
@@ -124,10 +124,10 @@ export class UI_SystemModal {
     }
 
     /**
-     * ´¦Àí¹Ø±Õ²Ù×÷
+     * å¤„ç†å…³é—­æ“ä½œ
      */
     handleClose() {
-        // Èç¹ûÔÚÖ÷²Ëµ¥»òÉèÖÃ½çÃæ£¬¹Ø±ÕÍ¨³£ÒâÎ¶×Å¡°¼ÌĞøÓÎÏ·¡±
+        // å¦‚æœåœ¨ä¸»èœå•æˆ–è®¾ç½®ç•Œé¢ï¼Œå…³é—­é€šå¸¸æ„å‘³ç€â€œç»§ç»­æ¸¸æˆâ€
         if (this.currentView === 'MAIN_MENU' || this.currentView === 'SETTINGS') {
             if (this.engine.input && this.engine.input.resumeGame) {
                 this.engine.input.resumeGame();
@@ -137,7 +137,7 @@ export class UI_SystemModal {
     }
 
     /**
-     * ÏÔÊ¾Ä£Ì¬¿ò
+     * æ˜¾ç¤ºæ¨¡æ€æ¡†
      */
     show() {
         if (this.dom.backdrop) {
@@ -146,7 +146,7 @@ export class UI_SystemModal {
     }
 
     /**
-     * Òş²ØÄ£Ì¬¿ò
+     * éšè—æ¨¡æ€æ¡†
      */
     hide() {
         if (this.dom.backdrop) {
@@ -156,7 +156,7 @@ export class UI_SystemModal {
     }
 
     /**
-     * ´ò¿ªÖ÷²Ëµ¥
+     * æ‰“å¼€ä¸»èœå•
      */
     openMainMenu() {
         this.renderMainMenu();
@@ -164,22 +164,22 @@ export class UI_SystemModal {
     }
 
     /**
-     * äÖÈ¾Ö÷²Ëµ¥ÊÓÍ¼
+     * æ¸²æŸ“ä¸»èœå•è§†å›¾
      */
     renderMainMenu() {
         this.currentView = 'MAIN_MENU';
-        this.setTitle('ÓÎÏ·²Ëµ¥');
+        this.setTitle('æ¸¸æˆèœå•');
         this.clearContent();
 
         const menu = document.createElement('div');
         menu.className = 'menu-list';
 
         const items = [
-            { label: '¼ÌĞøÓÎÏ·', action: () => this.handleClose() },
-            { label: '¹Ø¿¨Ñ¡Ôñ', action: () => this.renderLevelSelect() },
-            { label: '´æµµ / ¶Áµµ', action: () => this.renderSaveLoad() },
-            { label: 'ÉèÖÃ', action: () => this.renderSettings() },
-            { label: '·µ»Ø±êÌâ', action: () => {
+            { label: 'ç»§ç»­æ¸¸æˆ', action: () => this.handleClose() },
+            { label: 'å…³å¡é€‰æ‹©', action: () => this.renderLevelSelect() },
+            { label: 'å­˜æ¡£ / è¯»æ¡£', action: () => this.renderSaveLoad() },
+            { label: 'è®¾ç½®', action: () => this.renderSettings() },
+            { label: 'è¿”å›æ ‡é¢˜', action: () => {
                 if (this.engine.input && this.engine.input.backToTitle) {
                     this.engine.input.backToTitle();
                 }
@@ -195,26 +195,26 @@ export class UI_SystemModal {
         });
 
         this.dom.body.appendChild(menu);
-        this.clearFooter(); // Ö÷²Ëµ¥Í¨³£²»ĞèÒª Footer °´Å¥
+        this.clearFooter(); // ä¸»èœå•é€šå¸¸ä¸éœ€è¦ Footer æŒ‰é’®
     }
 
     /**
-     * äÖÈ¾¹Ø¿¨Ñ¡ÔñÊÓÍ¼
+     * æ¸²æŸ“å…³å¡é€‰æ‹©è§†å›¾
      */
     renderLevelSelect() {
         this.currentView = 'LEVEL_SELECT';
-        this.setTitle('Ñ¡Ôñ¹Ø¿¨');
+        this.setTitle('é€‰æ‹©å…³å¡');
         this.clearContent();
 
-        // »ñÈ¡¹Ø¿¨Êı¾İ (¼ÙÉè DataManager ÓĞÍ¬²½½Ó¿Ú£¬»òÕßÍ¨¹ı Engine »ñÈ¡)
+        // è·å–å…³å¡æ•°æ® (å‡è®¾ DataManager æœ‰åŒæ­¥æ¥å£ï¼Œæˆ–è€…é€šè¿‡ Engine è·å–)
         let levels = [];
         if (this.engine.dataManager && this.engine.dataManager.getLevels) {
             levels = this.engine.dataManager.getLevels();
         } else {
             // Fallback / Mock data
              levels = [
-                { id: '1-1', name: 'É­ÁÖ±ßÔµ', desc: 'Lv.1 - Ê·À³Ä·' },
-                { id: '1-2', name: 'ÓÄ°µÃÜÁÖ', desc: 'Lv.3 - ÀÇÈº' }
+                { id: '1-1', name: 'æ£®æ—è¾¹ç¼˜', desc: 'Lv.1 - å²è±å§†' },
+                { id: '1-2', name: 'å¹½æš—å¯†æ—', desc: 'Lv.3 - ç‹¼ç¾¤' }
             ];
         }
 
@@ -224,36 +224,36 @@ export class UI_SystemModal {
         levels.forEach(lvl => {
             const card = document.createElement('div');
             card.className = 'level-card';
-            // ¼ÙÉè lvl ¶ÔÏó½á¹¹·ûºÏ UI ĞèÇó
+            // å‡è®¾ lvl å¯¹è±¡ç»“æ„ç¬¦åˆ UI éœ€æ±‚
             card.innerHTML = `<h4>${lvl.id}</h4><p>${lvl.name}</p><p>${lvl.desc || ''}</p>`;
             card.onclick = () => {
                 if (this.engine.input && this.engine.input.selectLevel) {
                     this.engine.input.selectLevel(lvl.id);
                 }
-                // ×¢Òâ£º²»ĞèÒªÊÖ¶¯ hide£¬ÒòÎª selectLevel »á´¥·¢ STATE_CHANGED -> BATTLE_PREPARE£¬´Ó¶ø´¥·¢ hide
+                // æ³¨æ„ï¼šä¸éœ€è¦æ‰‹åŠ¨ hideï¼Œå› ä¸º selectLevel ä¼šè§¦å‘ STATE_CHANGED -> BATTLE_PREPAREï¼Œä»è€Œè§¦å‘ hide
             };
             grid.appendChild(card);
         });
 
         this.dom.body.appendChild(grid);
 
-        // Footer: ·µ»Ø°´Å¥
+        // Footer: è¿”å›æŒ‰é’®
         this.renderFooterBackBtn(() => this.openMainMenu());
     }
 
     /**
-     * äÖÈ¾´æµµ/¶ÁµµÊÓÍ¼
-     * @param {Array} [saveList] - ¿ÉÑ¡µÄ´æµµÁĞ±íÊı¾İ£¬Èô²»´«Ôò³¢ÊÔ»ñÈ¡
+     * æ¸²æŸ“å­˜æ¡£/è¯»æ¡£è§†å›¾
+     * @param {Array} [saveList] - å¯é€‰çš„å­˜æ¡£åˆ—è¡¨æ•°æ®ï¼Œè‹¥ä¸ä¼ åˆ™å°è¯•è·å–
      */
     renderSaveLoad(saveList) {
         this.currentView = 'SAVE_LOAD';
-        this.setTitle('´æµµ / ¶Áµµ');
+        this.setTitle('å­˜æ¡£ / è¯»æ¡£');
         this.clearContent();
 
         const slots = saveList || (this.engine.dataManager && this.engine.dataManager.getSaveList ? this.engine.dataManager.getSaveList() : [
-            { id: 1, date: '¿Õ', level: '-', hp: '-' },
-            { id: 2, date: '¿Õ', level: '-', hp: '-' },
-            { id: 3, date: '¿Õ', level: '-', hp: '-' }
+            { id: 1, date: 'ç©º', level: '-', hp: '-' },
+            { id: 2, date: 'ç©º', level: '-', hp: '-' },
+            { id: 3, date: 'ç©º', level: '-', hp: '-' }
         ]);
 
         slots.forEach(slot => {
@@ -262,25 +262,25 @@ export class UI_SystemModal {
 
             const info = document.createElement('div');
             info.className = 'save-slot-info';
-            info.innerHTML = `<h4>´æµµÎ» ${slot.id}</h4><div class="save-slot-meta">${slot.date} | ¹Ø¿¨: ${slot.level}</div>`;
+            info.innerHTML = `<h4>å­˜æ¡£ä½ ${slot.id}</h4><div class="save-slot-meta">${slot.date} | å…³å¡: ${slot.level}</div>`;
 
             const actions = document.createElement('div');
             actions.className = 'slot-actions';
 
             const saveBtn = document.createElement('button');
             saveBtn.className = 'btn-primary';
-            saveBtn.textContent = '±£´æ';
+            saveBtn.textContent = 'ä¿å­˜';
             saveBtn.onclick = () => {
                 if (this.engine.input && this.engine.input.saveGame) {
                     this.engine.input.saveGame(slot.id);
                 }
-                // ±£´æºóÍ¨³£»á´¥·¢ DATA_UPDATE£¬´Ó¶øË¢ĞÂÁĞ±í
+                // ä¿å­˜åé€šå¸¸ä¼šè§¦å‘ DATA_UPDATEï¼Œä»è€Œåˆ·æ–°åˆ—è¡¨
             };
 
             const loadBtn = document.createElement('button');
             loadBtn.className = 'btn-primary';
-            loadBtn.textContent = '¶ÁÈ¡';
-            loadBtn.disabled = slot.date === '¿Õ';
+            loadBtn.textContent = 'è¯»å–';
+            loadBtn.disabled = slot.date === 'ç©º';
             loadBtn.onclick = () => {
                 if (this.engine.input && this.engine.input.loadGame) {
                     this.engine.input.loadGame(slot.id);
@@ -300,14 +300,14 @@ export class UI_SystemModal {
     }
 
     /**
-     * äÖÈ¾ÉèÖÃÊÓÍ¼
+     * æ¸²æŸ“è®¾ç½®è§†å›¾
      */
     renderSettings() {
         this.currentView = 'SETTINGS';
-        this.setTitle('ÉèÖÃ');
+        this.setTitle('è®¾ç½®');
         this.clearContent();
         
-        this.dom.body.innerHTML = '<p style="text-align:center; color:#888;">ÉèÖÃ¹¦ÄÜ¿ª·¢ÖĞ...</p>';
+        this.dom.body.innerHTML = '<p style="text-align:center; color:#888;">è®¾ç½®åŠŸèƒ½å¼€å‘ä¸­...</p>';
         
         this.renderFooterBackBtn(() => this.openMainMenu());
     }
@@ -332,7 +332,7 @@ export class UI_SystemModal {
 
         const backBtn = document.createElement('button');
         backBtn.className = 'btn-primary';
-        backBtn.textContent = '·µ»Ø';
+        backBtn.textContent = 'è¿”å›';
         backBtn.onclick = callback;
         this.dom.footer.appendChild(backBtn);
     }

@@ -636,4 +636,5 @@ class CoreEngine {
 
 // 导出单例实例
 window.Engine = new CoreEngine();
+export { CoreEngine };
 export default window.Engine;
