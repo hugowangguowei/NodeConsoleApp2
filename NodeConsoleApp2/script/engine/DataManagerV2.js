@@ -259,6 +259,17 @@ class DataManager {
     getLevelConfig(levelId) {
         return this.gameConfig.levels[levelId];
     }
+
+    /**
+     * 获取所有关卡列表
+     * @returns {Array} 关卡对象数组
+     */
+    getLevels() {
+        if (!this.gameConfig || !this.gameConfig.levels) {
+            return [];
+        }
+        return Object.values(this.gameConfig.levels);
+    }
 }
 
 export default new DataManager();

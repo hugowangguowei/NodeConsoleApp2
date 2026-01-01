@@ -32,12 +32,19 @@ export class UI_SystemModal {
      * @param {Object} engine - 游戏引擎实例，需包含 eventBus, input 和 dataManager(可选，用于同步获取数据)
      */
     init(engine) {
+        console.log('[UI_SystemModal] Initializing...');
         this.engine = engine;
         this.bindDOM();
         this.bindEvents();
 
         // 初始隐藏
         this.hide();
+
+        // 检查引擎当前状态，如果已经在 LOGIN 或 LEVEL_SELECT 等状态，立即显示对应 UI
+        if (this.engine.fsm) {
+            console.log(`[UI_SystemModal] Checking initial engine state: ${this.engine.fsm.currentState}`);
+            this.handleStateChange({ to: this.engine.fsm.currentState });
+        }
     }
 
     /**
@@ -86,6 +93,7 @@ export class UI_SystemModal {
      */
     handleStateChange(stateData) {
         const { to } = stateData;
+        console.log(`[UI_SystemModal] State changed to: ${to}`);
 
         if (to === 'LEVEL_SELECT') {
             this.renderLevelSelect();
@@ -93,8 +101,10 @@ export class UI_SystemModal {
         } else if (to === 'BATTLE_LOOP' || to === 'BATTLE_PREPARE') {
             this.hide();
         } else if (to === 'LOGIN') {
-            // 可以在这里处理返回标题后的逻辑，比如关闭模态框
-            this.hide();
+            // 登录状态显示主菜单（或专门的登录界面）
+            // 这里暂时复用主菜单逻辑，或者可以实现 renderLogin()
+            this.renderMainMenu();
+            this.show();
         }
     }
 
@@ -104,6 +114,7 @@ export class UI_SystemModal {
      */
     handleDataUpdate(updateData) {
         const { type, data } = updateData;
+        console.log(`[UI_SystemModal] Data update received: ${type}`);
 
         // 如果当前正在显示存档/读档界面，且收到了存档列表更新
         if (this.currentView === 'SAVE_LOAD' && type === 'SAVE_LIST') {
@@ -117,6 +128,7 @@ export class UI_SystemModal {
      */
     handleOpenModal(request) {
         const { view } = request;
+        console.log(`[UI_SystemModal] Open modal request: ${view}`);
         if (view === 'SETTINGS') {
             this.renderSettings();
             this.show();
@@ -127,6 +139,7 @@ export class UI_SystemModal {
      * 处理关闭操作
      */
     handleClose() {
+        console.log('[UI_SystemModal] Closing modal...');
         // 如果在主菜单或设置界面，关闭通常意味着“继续游戏”
         if (this.currentView === 'MAIN_MENU' || this.currentView === 'SETTINGS') {
             if (this.engine.input && this.engine.input.resumeGame) {
@@ -140,6 +153,7 @@ export class UI_SystemModal {
      * 显示模态框
      */
     show() {
+        console.log('[UI_SystemModal] Showing modal');
         if (this.dom.backdrop) {
             this.dom.backdrop.classList.add('visible');
         }
@@ -149,6 +163,7 @@ export class UI_SystemModal {
      * 隐藏模态框
      */
     hide() {
+        console.log('[UI_SystemModal] Hiding modal');
         if (this.dom.backdrop) {
             this.dom.backdrop.classList.remove('visible');
         }
@@ -159,6 +174,7 @@ export class UI_SystemModal {
      * 打开主菜单
      */
     openMainMenu() {
+        console.log('[UI_SystemModal] Opening Main Menu');
         this.renderMainMenu();
         this.show();
     }
@@ -167,6 +183,7 @@ export class UI_SystemModal {
      * 渲染主菜单视图
      */
     renderMainMenu() {
+        console.log('[UI_SystemModal] Rendering Main Menu');
         this.currentView = 'MAIN_MENU';
         this.setTitle('游戏菜单');
         this.clearContent();
@@ -202,15 +219,19 @@ export class UI_SystemModal {
      * 渲染关卡选择视图
      */
     renderLevelSelect() {
+        console.log('[UI_SystemModal] Rendering Level Select');
         this.currentView = 'LEVEL_SELECT';
         this.setTitle('选择关卡');
         this.clearContent();
 
         // 获取关卡数据 (假设 DataManager 有同步接口，或者通过 Engine 获取)
         let levels = [];
-        if (this.engine.dataManager && this.engine.dataManager.getLevels) {
-            levels = this.engine.dataManager.getLevels();
+        // 修正：CoreEngine 中挂载的是 this.data
+        if (this.engine.data && this.engine.data.getLevels) {
+            levels = this.engine.data.getLevels();
+            console.log('[UI_SystemModal] Loaded levels from DataManager:', levels);
         } else {
+            console.warn('[UI_SystemModal] DataManager not found or getLevels missing. Using mock data.');
             // Fallback / Mock data
              levels = [
                 { id: '1-1', name: '森林边缘', desc: 'Lv.1 - 史莱姆' },
@@ -218,24 +239,31 @@ export class UI_SystemModal {
             ];
         }
 
-        const grid = document.createElement('div');
-        grid.className = 'level-grid';
-
-        levels.forEach(lvl => {
-            const card = document.createElement('div');
-            card.className = 'level-card';
-            // 假设 lvl 对象结构符合 UI 需求
-            card.innerHTML = `<h4>${lvl.id}</h4><p>${lvl.name}</p><p>${lvl.desc || ''}</p>`;
-            card.onclick = () => {
-                if (this.engine.input && this.engine.input.selectLevel) {
-                    this.engine.input.selectLevel(lvl.id);
-                }
-                // 注意：不需要手动 hide，因为 selectLevel 会触发 STATE_CHANGED -> BATTLE_PREPARE，从而触发 hide
-            };
-            grid.appendChild(card);
-        });
-
-        this.dom.body.appendChild(grid);
+        if (levels.length === 0) {
+            this.dom.body.innerHTML = '<p style="text-align:center; color:#888;">暂无可用关卡</p>';
+        } else {
+            const grid = document.createElement('div');
+            grid.className = 'level-grid';
+    
+            levels.forEach(lvl => {
+                const card = document.createElement('div');
+                card.className = 'level-card';
+                // 假设 lvl 对象结构符合 UI 需求
+                card.innerHTML = `<h4>${lvl.name || lvl.id}</h4><p>${lvl.desc || 'No description'}</p>`;
+                card.onclick = () => {
+                    console.log(`[UI_SystemModal] Level card clicked: ${lvl.id}`);
+                    if (this.engine.input && this.engine.input.selectLevel) {
+                        this.engine.input.selectLevel(lvl.id);
+                    } else {
+                        console.error('[UI_SystemModal] engine.input.selectLevel is missing!');
+                    }
+                    // 注意：不需要手动 hide，因为 selectLevel 会触发 STATE_CHANGED -> BATTLE_PREPARE，从而触发 hide
+                };
+                grid.appendChild(card);
+            });
+    
+            this.dom.body.appendChild(grid);
+        }
 
         // Footer: 返回按钮
         this.renderFooterBackBtn(() => this.openMainMenu());
@@ -246,6 +274,7 @@ export class UI_SystemModal {
      * @param {Array} [saveList] - 可选的存档列表数据，若不传则尝试获取
      */
     renderSaveLoad(saveList) {
+        console.log('[UI_SystemModal] Rendering Save/Load');
         this.currentView = 'SAVE_LOAD';
         this.setTitle('存档 / 读档');
         this.clearContent();
@@ -303,6 +332,7 @@ export class UI_SystemModal {
      * 渲染设置视图
      */
     renderSettings() {
+        console.log('[UI_SystemModal] Rendering Settings');
         this.currentView = 'SETTINGS';
         this.setTitle('设置');
         this.clearContent();
