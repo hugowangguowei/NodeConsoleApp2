@@ -279,12 +279,9 @@
   import EventBus from './script/engine/EventBus.js';
   import DataManager from './script/engine/DataManagerV2.js';
   import GameFSM from './script/engine/GameFSM.js';
-  import { CoreEngine } from './script/engine/CoreEngine.js';
+  import engine from './script/engine/CoreEngine.js'; // 直接导入默认实例
   import { UI_SystemModal } from './script/ui/UI_SystemModal.js';
 
-  // 初始化引擎
-  const engine = new CoreEngine();
-  
   // 初始化 UI 组件
   const systemModal = new UI_SystemModal();
   systemModal.init(engine);

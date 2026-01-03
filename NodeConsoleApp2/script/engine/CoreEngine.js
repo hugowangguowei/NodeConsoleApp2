@@ -16,7 +16,10 @@ class CoreEngine {
             addSkillToQueue: this.addSkillToQueue.bind(this),
             removeSkillFromQueue: this.removeSkillFromQueue.bind(this),
             commitTurn: this.commitTurn.bind(this),
-            saveGame: this.saveGame.bind(this)
+            saveGame: this.saveGame.bind(this),
+            loadGame: this.loadGame.bind(this),
+            resumeGame: this.resumeGame.bind(this),
+            backToTitle: this.backToTitle.bind(this)
         };
 
         this.playerSkillQueue = [];
@@ -178,15 +181,52 @@ class CoreEngine {
         
         console.log(`Resumed battle at Turn ${this.currentTurn}, Phase ${this.battlePhase}`);
         
-        // 如果我们在执行阶段恢复，我们可能需要继续执行或重新开始回合逻辑
-        // 为简单起见，如果在执行阶段恢复，我们可能只是重新开始回合或重置为规划阶段
-        // 但让我们假设我们只是恢复 UI 状态。
+        // 如果是在执行阶段恢复，可能需要继续执行或重新开始回合逻辑
+        // 为了简单，如果是在执行阶段恢复，强制重置为规划阶段
+        // 或者如果是结算后，只是恢复 UI 状态。
         
         this.emitBattleUpdate();
         this.eventBus.emit('BATTLE_LOG', { text: `Game Resumed. Turn ${this.currentTurn}.` });
     }
 
-    saveGame() {
+    resumeGame() {
+        console.log('Resume Game requested.');
+        if (this.fsm.currentState === 'MAIN_MENU') {
+             if (this.data.dataConfig.runtime && this.data.dataConfig.runtime.levelData) {
+                this.resumeBattle();
+             } else {
+                 console.warn('No saved battle to resume.');
+             }
+        } else if (this.fsm.currentState === 'BATTLE_LOOP' || this.fsm.currentState === 'BATTLE_PREPARE') {
+            // Just close modal, handled by UI usually, but engine can emit event
+            this.eventBus.emit('UI:CLOSE_MODAL');
+        }
+    }
+
+    backToTitle() {
+        console.log('Returning to title...');
+        this.fsm.changeState('LOGIN');
+        // Reset runtime data if needed, but keep global config?
+        // For now, just switch state.
+    }
+
+    loadGame(slotId) {
+        console.log(`Loading game (slot ${slotId})...`);
+        if (this.data.loadGame(slotId)) {
+            this.eventBus.emit('DATA_UPDATE', this.data.playerData);
+            
+            // Check if we should resume a battle
+            if (this.data.dataConfig.runtime && this.data.dataConfig.runtime.levelData) {
+                this.resumeBattle();
+            } else {
+                this.fsm.changeState('MAIN_MENU');
+            }
+        } else {
+            this.eventBus.emit('BATTLE_LOG', { text: 'Failed to load game.' });
+        }
+    }
+
+    saveGame(slotId) {
         // 保存前将当前战斗状态同步到 DataManager
         if (this.fsm.currentState === 'BATTLE_LOOP') {
             this.saveBattleState();
@@ -634,7 +674,14 @@ class CoreEngine {
     }
 }
 
-// 导出单例实例
-window.Engine = new CoreEngine();
+// 创建单例实例
+const engineInstance = new CoreEngine();
+
+// 挂载到 window 方便调试 (可选，但在本项目中为了兼容性保留)
+window.Engine = engineInstance;
+
+// 默认导出实例
+export default engineInstance;
+
+// 具名导出类 (用于测试或特殊需求)
 export { CoreEngine };
-export default window.Engine;

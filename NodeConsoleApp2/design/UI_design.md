@@ -166,9 +166,9 @@ UI 通过调用引擎提供的 API 或发送事件来传达用户操作：
 *   **Skill Detail**: 纯前端逻辑。点击技能图标时，UI 层直接根据 DOM 数据 (`data-*` 属性) 或缓存的技能数据更新详情面板，无需请求引擎（除非数据是动态变化的）。
 *   **Sorting**: 纯前端逻辑。UI 层根据当前的技能列表 DOM 元素进行排序，不影响引擎内部数据。
 
-### 4.4 模态框接口详解 (System Modal Interface)
+### 4.4 模态窗口接口详解 (System Modal Interface)
 
-模态框作为游戏中的“元操作”界面（菜单、存档、选关），需要与引擎的全局状态紧密配合。
+模态框作为游戏中的“元操作”界面（登录、菜单、存档、选关），是游戏非战斗状态下的主要交互载体。
 
 #### 4.4.1 监听事件 (Engine -> Modal)
 
@@ -176,28 +176,50 @@ UI 通过调用引擎提供的 API 或发送事件来传达用户操作：
 
 | 事件名称 | 触发时机 | 数据结构示例 | 模态框处置逻辑 |
 | :--- | :--- | :--- | :--- |
-| `STATE_CHANGED` | 引擎状态机发生流转时 | `{ from: "LOGIN", to: "LEVEL_SELECT" }` | 若 `to` 为 `LEVEL_SELECT`，自动打开模态框并渲染关卡列表；若为 `BATTLE_LOOP`，关闭模态框。 |
-| `DATA_UPDATE` | 存档数据或全局配置更新时 | `{ type: "SAVE_LIST", data: [{ id: 1, date: "...", level: "1-1" }] }` | 若当前处于“存档/读档”视图，根据 `data` 刷新存档槽位列表。 |
+| `STATE_CHANGED` | 引擎状态机发生流转时 | `{ from: "INIT", to: "LOGIN" }` | 根据 `to` 的状态值切换模态框的根视图（如登录页、主菜单）。 |
+| `DATA_UPDATE` | 存档数据或全局配置更新时 | `{ type: "SAVE_LIST", data: [...] }` | 若当前处于“存档/读档”视图，根据 `data` 刷新存档槽位列表。 |
 | `UI:OPEN_MODAL` | UI 逻辑请求打开模态框（如点击设置按钮） | `{ view: "SETTINGS" }` | 打开模态框并渲染“设置”视图。 |
 
-#### 4.4.2 状态处置与视图渲染
+#### 4.4.2 状态处置与视图渲染 (State & View Routing)
 
-模态框内部维护一个简单的视图路由，根据传入的 `view` 参数渲染不同内容：
+模态框内部维护一个视图路由 (`currentView`)，根据引擎状态 (`fsm.currentState`) 或用户操作切换显示内容。
 
-1.  **Main Menu (主菜单)**
+**核心交互流程**:
+1.  **App Start** -> `LOGIN` 状态 -> 显示 **登录视图**。
+2.  **Login Success** -> `MAIN_MENU` 状态 -> 显示 **主菜单视图**。
+3.  **Select Level** -> `BATTLE_PREPARE` 状态 -> **关闭模态框** (进入战斗界面)。
+4.  **In Battle** -> 用户点击暂停 -> 显示 **暂停/菜单视图**。
+
+**详细视图定义**:
+
+1.  **Login (登录/欢迎页)**
+    *   **触发**: `STATE_CHANGED` -> `LOGIN`.
+    *   **内容**:
+        *   游戏标题 (Logo).
+        *   用户输入框 (`input`): 输入玩家名称。
+        *   确认按钮 ("开始冒险"): 点击触发 `Engine.input.login(username)`.
+    *   **约束**: 此时不可关闭模态框。
+
+2.  **Main Menu (主菜单)**
     *   **触发**: `STATE_CHANGED` -> `MAIN_MENU` 或 用户点击“系统菜单”按钮。
-    *   **内容**: 显示“继续游戏”、“关卡选择”、“存档/读档”、“设置”、“返回标题”按钮。
-    *   **逻辑**: 按钮点击后触发相应的 UI 指令或切换模态框子视图。
+    *   **内容**:
+        *   "继续游戏": 仅当从暂停进入或有中断的战斗存档时显示。
+        *   "关卡选择": 切换至 Level Select 视图。
+        *   "存档 / 读档": 切换至 Save/Load 视图。
+        *   "设置": 切换至 Settings 视图。
+        *   "注销": 调用 `backToTitle` 返回登录页。
 
-2.  **Level Select (关卡选择)**
-    *   **触发**: `STATE_CHANGED` -> `LEVEL_SELECT` 或 从主菜单进入。
-    *   **数据源**: `DataManager.getLevels()` (同步获取) 或监听 `DATA_UPDATE`。
-    *   **渲染**: 遍历关卡列表，生成关卡卡片。已解锁关卡高亮，未解锁关卡置灰。
-
-3.  **Save/Load (存档/读档)**
+3.  **Level Select (关卡选择)**
     *   **触发**: 从主菜单进入。
-    *   **数据源**: `DataManager.getSaveList()`。
-    *   **渲染**: 显示存档槽位。每个槽位包含“保存”和“读取”按钮（视上下文禁用其中之一）。
+    *   **数据源**: `DataManager.getLevels()`.
+    *   **渲染**: 关卡卡片列表。
+    *   **交互**: 点击卡片 -> 调用 `Engine.input.selectLevel(id)`。
+    *   **注意**: 引擎接收指令后会切换状态至 `BATTLE_PREPARE`，模态框监听到状态变化后应自动隐藏。
+
+4.  **Save/Load (存档/读档)**
+    *   **触发**: 从主菜单进入。
+    *   **数据源**: `DataManager.getSaveList()`.
+    *   **渲染**: 显示存档槽位。每个槽位包含“保存”和“读取”按钮。
 
 #### 4.4.3 发送指令 (Modal -> Engine)
 
@@ -205,11 +227,12 @@ UI 通过调用引擎提供的 API 或发送事件来传达用户操作：
 
 | 接口名称 | 参数结构 | 说明 |
 | :--- | :--- | :--- |
-| `Engine.input.selectLevel(levelId)` | `levelId: string` (如 "1-1") | 玩家点击关卡卡片。引擎应加载关卡数据并切换至 `BATTLE_PREPARE`。 |
-| `Engine.input.saveGame(slotId)` | `slotId: number` (1-3) | 玩家点击“保存”。引擎将当前 `DataConfig` 序列化写入存储。 |
-| `Engine.input.loadGame(slotId)` | `slotId: number` (1-3) | 玩家点击“读取”。引擎读取存储并反序列化覆盖当前状态。 |
-| `Engine.input.resumeGame()` | `null` | 玩家点击“继续游戏”或关闭模态框。引擎恢复游戏循环（如从暂停中恢复）。 |
-| `Engine.input.backToTitle()` | `null` | 玩家点击“返回标题”。引擎切换状态至 `LOGIN` 或重置游戏。 |
+| `Engine.input.login(username)` | `username: string` | 玩家在登录页点击开始。引擎加载用户数据并切换至 `MAIN_MENU`。 |
+| `Engine.input.selectLevel(levelId)` | `levelId: string` | 玩家点击关卡卡片。引擎加载关卡并切换至 `BATTLE_PREPARE`。 |
+| `Engine.input.saveGame(slotId)` | `slotId: number` | 玩家点击“保存”。 |
+| `Engine.input.loadGame(slotId)` | `slotId: number` | 玩家点击“读取”。 |
+| `Engine.input.resumeGame()` | `null` | 玩家点击“继续游戏”或关闭模态框。 |
+| `Engine.input.backToTitle()` | `null` | 玩家点击“注销”。引擎切换状态至 `LOGIN`。 |
 
 ## 5. 代码设计规范
 

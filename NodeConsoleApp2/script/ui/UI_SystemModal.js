@@ -85,6 +85,9 @@ export class UI_SystemModal {
 
         // 监听 UI 请求打开模态框
         this.engine.eventBus.on('UI:OPEN_MODAL', this.handleOpenModal.bind(this));
+
+        // 监听关闭模态框请求
+        this.engine.eventBus.on('UI:CLOSE_MODAL', () => this.hide());
     }
 
     /**
@@ -101,11 +104,64 @@ export class UI_SystemModal {
         } else if (to === 'BATTLE_LOOP' || to === 'BATTLE_PREPARE') {
             this.hide();
         } else if (to === 'LOGIN') {
-            // 登录状态显示主菜单（或专门的登录界面）
-            // 这里暂时复用主菜单逻辑，或者可以实现 renderLogin()
+            this.renderLogin();
+            this.show();
+        } else if (to === 'MAIN_MENU') {
             this.renderMainMenu();
             this.show();
         }
+    }
+
+    /**
+     * 渲染登录视图
+     */
+    renderLogin() {
+        console.log('[UI_SystemModal] Rendering Login');
+        this.currentView = 'LOGIN';
+        this.setTitle('欢迎');
+        this.clearContent();
+        this.clearFooter();
+
+        // 隐藏关闭按钮，强制用户登录
+        if (this.dom.closeBtn) this.dom.closeBtn.style.display = 'none';
+
+        const container = document.createElement('div');
+        container.style.display = 'flex';
+        container.style.flexDirection = 'column';
+        container.style.gap = '20px';
+        container.style.padding = '40px';
+        container.style.alignItems = 'center';
+
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.placeholder = '请输入玩家名称';
+        input.value = 'Player1';
+        input.style.padding = '10px';
+        input.style.fontSize = '1.2rem';
+        input.style.width = '200px';
+        input.style.textAlign = 'center';
+        input.style.background = '#1f2440';
+        input.style.color = '#fff';
+        input.style.border = '1px solid #7cf5d9';
+        input.style.borderRadius = '4px';
+
+        const btn = document.createElement('button');
+        btn.className = 'btn-primary'; // 假设 CSS 中有此样式，或者复用 menu-btn
+        btn.textContent = '开始冒险';
+        btn.style.padding = '10px 30px';
+        btn.style.fontSize = '1.2rem';
+        btn.style.cursor = 'pointer';
+        
+        btn.onclick = () => {
+            const username = input.value.trim();
+            if (username && this.engine.input && this.engine.input.login) {
+                this.engine.input.login(username);
+            }
+        };
+
+        container.appendChild(input);
+        container.appendChild(btn);
+        this.dom.body.appendChild(container);
     }
 
     /**
@@ -140,13 +196,16 @@ export class UI_SystemModal {
      */
     handleClose() {
         console.log('[UI_SystemModal] Closing modal...');
-        // 如果在主菜单或设置界面，关闭通常意味着“继续游戏”
-        if (this.currentView === 'MAIN_MENU' || this.currentView === 'SETTINGS') {
-            if (this.engine.input && this.engine.input.resumeGame) {
-                this.engine.input.resumeGame();
-            }
+        
+        // 如果在登录界面，不允许关闭
+        if (this.currentView === 'LOGIN') return;
+
+        // 尝试恢复游戏
+        if (this.engine.input && this.engine.input.resumeGame) {
+            this.engine.input.resumeGame();
+        } else {
+            this.hide();
         }
-        this.hide();
     }
 
     /**
@@ -188,20 +247,43 @@ export class UI_SystemModal {
         this.setTitle('游戏菜单');
         this.clearContent();
 
+        // 检查是否可以继续游戏（在战斗中，或有存档）
+        const isInBattle = this.engine.fsm && (this.engine.fsm.currentState === 'BATTLE_LOOP' || this.engine.fsm.currentState === 'BATTLE_PREPARE');
+        const hasSavedBattle = this.engine.data && this.engine.data.dataConfig && this.engine.data.dataConfig.runtime && this.engine.data.dataConfig.runtime.levelData;
+        const canResume = isInBattle || hasSavedBattle;
+
+        // 如果不能继续游戏，隐藏关闭按钮
+        if (this.dom.closeBtn) {
+            this.dom.closeBtn.style.display = canResume ? '' : 'none';
+        }
+
         const menu = document.createElement('div');
         menu.className = 'menu-list';
 
-        const items = [
-            { label: '继续游戏', action: () => this.handleClose() },
-            { label: '关卡选择', action: () => this.renderLevelSelect() },
+        const items = [];
+
+        if (canResume) {
+            items.push({ label: '继续游戏', action: () => this.handleClose() });
+        }
+
+        items.push(
+            { label: '关卡选择', action: () => {
+                // 切换到关卡选择状态，引擎会触发 STATE_CHANGED -> LEVEL_SELECT -> renderLevelSelect
+                // 但目前 CoreEngine.selectLevel 只是选择关卡，没有单独的 "进入关卡选择界面" 的指令
+                // 我们可以直接调用 renderLevelSelect，或者如果引擎有 changeState('LEVEL_SELECT') 更好
+                // 这里假设直接渲染视图，或者调用引擎方法（如果存在）
+                // 由于 CoreEngine.selectLevel 是“选择并开始”，我们需要一个“进入选择界面”的方法
+                // 暂时直接渲染视图
+                this.renderLevelSelect();
+            }},
             { label: '存档 / 读档', action: () => this.renderSaveLoad() },
             { label: '设置', action: () => this.renderSettings() },
-            { label: '返回标题', action: () => {
+            { label: '注销', action: () => {
                 if (this.engine.input && this.engine.input.backToTitle) {
                     this.engine.input.backToTitle();
                 }
             }}
-        ];
+        );
 
         items.forEach(item => {
             const btn = document.createElement('button');
@@ -279,7 +361,7 @@ export class UI_SystemModal {
         this.setTitle('存档 / 读档');
         this.clearContent();
 
-        const slots = saveList || (this.engine.dataManager && this.engine.dataManager.getSaveList ? this.engine.dataManager.getSaveList() : [
+        const slots = saveList || (this.engine.data && this.engine.data.getSaveList ? this.engine.data.getSaveList() : [
             { id: 1, date: '空', level: '-', hp: '-' },
             { id: 2, date: '空', level: '-', hp: '-' },
             { id: 3, date: '空', level: '-', hp: '-' }
@@ -314,7 +396,7 @@ export class UI_SystemModal {
                 if (this.engine.input && this.engine.input.loadGame) {
                     this.engine.input.loadGame(slot.id);
                 }
-                this.hide();
+                // 不再手动 hide，等待引擎状态变更或事件
             };
 
             actions.appendChild(saveBtn);

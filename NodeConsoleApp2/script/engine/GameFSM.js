@@ -1,4 +1,3 @@
-
 import EventBus from './EventBus.js';
 
 class GameFSM {
@@ -23,6 +22,9 @@ class GameFSM {
 
         const oldState = this.currentState;
         
+        // 0. Log intent before action (Pre-log)
+        console.log(`[FSM] Changing state: ${oldState} -> ${newState}`);
+
         // 1. Trigger onExit of current state
         if (this.states[oldState] && this.states[oldState].onExit) {
             this.states[oldState].onExit();
@@ -38,7 +40,6 @@ class GameFSM {
 
         // 4. Publish STATE_CHANGED event
         EventBus.emit('STATE_CHANGED', { from: oldState, to: newState, params });
-        console.log(`State changed from ${oldState} to ${newState}`);
     }
 }
 
