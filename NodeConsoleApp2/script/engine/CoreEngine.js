@@ -51,21 +51,11 @@ class CoreEngine {
         // 尝试先加载现有游戏
         if (!this.data.loadGame()) {
             this.data.createNewGame(username);
-            this.fsm.changeState('MAIN_MENU');
-            this.eventBus.emit('DATA_UPDATE', this.data.playerData);
-        } else {
-            // 先发出数据更新以确保生成 UI 元素（如技能按钮）
-            this.eventBus.emit('DATA_UPDATE', this.data.playerData);
-
-            // 检查我们是否在战斗中
-            if (this.data.dataConfig.runtime && this.data.dataConfig.runtime.levelData) {
-                console.log('Resuming saved battle...');
-                this.resumeBattle();
-            } else {
-                this.fsm.changeState('MAIN_MENU');
-            }
         }
         
+        // 统一行为：登录后总是进入主菜单
+        // 仅切换状态，具体显示逻辑（如是否显示“继续游戏”）由 UI 层根据数据决定
+        this.fsm.changeState('MAIN_MENU');
         this.eventBus.emit('DATA_UPDATE', this.data.playerData);
     }
 
