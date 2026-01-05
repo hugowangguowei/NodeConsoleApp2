@@ -234,6 +234,48 @@ UI 通过调用引擎提供的 API 或发送事件来传达用户操作：
 | `Engine.input.resumeGame()` | `null` | 玩家点击“继续游戏”或关闭模态框。 |
 | `Engine.input.backToTitle()` | `null` | 玩家点击“注销”。引擎切换状态至 `LOGIN`。 |
 
+### 4.5 战斗主体行接口详解 (Battle Row Interface)
+
+战斗主体行 (`.battle-row`) 是战斗画面的核心区域，包含玩家状态 (`PlayerHUD`)、战斗场景 (`BattleScene`) 和敌人状态 (`EnemyHUD`)。
+
+#### 4.5.1 监听事件 (Engine -> Battle Row)
+
+该模块主要监听战斗循环中的状态更新事件：
+
+| 事件名称 | 触发时机 | 数据结构示例 | 处置逻辑 |
+| :--- | :--- | :--- | :--- |
+| `BATTLE_START` | 战斗初始化时 | `{ player: {...}, level: {...} }` | 初始化玩家和敌人的 HUD，加载场景背景和角色立绘。 |
+| `BATTLE_UPDATE` | 任何战斗数据变更时 | `{ player: {...}, enemies: [...], turn: 1, phase: "PLANNING" }` | 全量或增量更新 HP/AP 条、护甲状态、Buff 图标。 |
+| `TURN_START` | 回合开始时 | `{ turn: 2 }` | (可选) 显示回合开始特效，重置临时状态显示。 |
+| `BATTLE_LOG` | 发生战斗行为时 | `{ text: "...", action: {...}, result: {...} }` | 在角色头顶显示飘字 (Damage Text) 或播放受击特效。 |
+
+#### 4.5.2 状态处置与视图渲染
+
+战斗主体行通常由三个子组件协同工作，它们共享上述事件数据，但关注点不同。
+
+1.  **Player HUD (玩家状态)**
+    *   **数据源**: `data.player`.
+    *   **渲染**:
+        *   **HP/AP Bar**: 根据 `current / max` 计算百分比宽度。
+        *   **Armor List**: 遍历 `bodyParts` 或 `equipment`，渲染各部位护甲值。若护甲为 0，添加 `.broken` 样式。
+        *   **Buffs**: 渲染状态图标列表。
+
+2.  **Enemy HUD (敌人状态)**
+    *   **数据源**: `data.enemies` (通常取第一个或当前选中的敌人).
+    *   **渲染**: 与 Player HUD 类似。若有多个敌人，需根据 `SelectedTarget` 切换显示或显示列表。
+
+3.  **Battle Scene (战斗场景)**
+    *   **数据源**: `data.player` & `data.enemies`.
+    *   **渲染**:
+        *   **立绘**: 根据 ID 加载对应图片。
+        *   **状态反馈**: 若单位死亡 (`hp <= 0`)，添加灰度或淡出效果。
+        *   **特效**: 监听 `BATTLE_LOG` 中的 `action` 和 `result`，在对应位置播放动画（如攻击动作、受击闪烁）。
+
+#### 4.5.3 发送指令 (Battle Row -> Engine)
+
+目前设计中，战斗主体行主要作为 **纯展示模块 (View-Only)**，不直接向引擎发送指令。
+所有的交互操作（如选择技能、切换目标）均由 **技能面板 (.skill-panel)** 或其他控制模块处理。
+
 ## 5. 代码设计规范
 
 为了保证 UI 系统的可维护性与扩展性，所有 UI 模块的开发需遵循以下规范：
