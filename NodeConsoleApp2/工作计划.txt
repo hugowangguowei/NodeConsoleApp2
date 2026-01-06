@@ -123,3 +123,8 @@ gameFSMµÚ40¡¢41ÐÐÏÈ·Ö·¢£¬ÔÙÊä³öÈÕÖ¾£¬Èç¹û·Ö·¢´¦ÀíµÄ²ÎÊý´¦Àí¹ý³ÌÖÐ²úÉúÁËÐÂµÄÈÕÖ¾£
 
 2026-01-05 23:15£¨±à¼­£©
 ÎÒÏ£ÍûÔÚUI_design.mdÖÐÔö¼Ó¹ØÓÚbattle-rowµÄ½Ó¿ÚÉè¼ÆÕÂ½Ú£¬¿ÉÒÔÓë4.4²¢ÁÐ¡£¾ßÌåÄÚÈÝ¿ÉÒÔ²ÎÕÕ4.4 Ä£Ì¬´°¿Ú½Ó¿ÚÏê½â
+
+2026-01-06 23:50£¨±à¼­£©
+ÎÒÏ£ÍûÔÚUI_design.mdÖÐ¶Ôskill-panel½øÐÐÉî»¯Éè¼Æ¡£Çë»ùÓÚcore_engine.mdÖÐ¹ØÓÚ¼¼ÄÜÑ¡ÔñÏà¹ØµÄ×´Ì¬»úÇÐ»»ÒÔ¼°
+½»»¥Éè¼Æ£¬·ÖÎö²¢Éî»¯ÔÚÍøÒ³ÉÏÊµÏÖ¼¼ÄÜÑ¡ÔñÃæ°åµÄ¾ßÌåÉè¼Æ·½°¸¡£°üÀ¨¹¦ÄÜÇø£¬²¼¾Ö£¬½»»¥·½·¨¡£·ÖÎöÍÏ×§µÈ½»»¥²Ù×÷
+·½Ê½ÊÇ·ñ¿É¿¿ÎÈ¶¨¡£ÏÈ²»ÓÃ×Å¼±Ð´´úÂë£¬ÏÈÔÚÉè¼ÆÎÄµµÖÐ²¹³äÕâ¸ö·½°¸¡£

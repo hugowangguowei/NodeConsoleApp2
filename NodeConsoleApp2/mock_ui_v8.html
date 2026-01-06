@@ -1,0 +1,465 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>网页回合制战斗系统 Demo V8 (Skill Panel Deep Dive)</title>
+<link rel="stylesheet" href="mock_ui_v5.css">
+<style>
+  /* 
+    V8 样式增量补丁 
+    基于 UI_design.md 4.6 技能面板深化设计
+  */
+
+  /* 重构 .skill-panel 布局 */
+  .skill-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 8px;
+    height: 100%;
+    box-sizing: border-box;
+  }
+
+  /* 1. 待释放队列区 (Top) */
+  .pending-queue-wrapper {
+    flex: 0 0 60px;
+    background: rgba(20, 24, 40, 0.8);
+    border: 1px solid #4a5a75;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    padding: 0 16px;
+    justify-content: space-between;
+  }
+
+  .queue-info {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .queue-title {
+    font-size: 0.8rem;
+    color: #8fa3bf;
+  }
+
+  .ap-preview {
+    font-size: 1rem;
+    font-weight: bold;
+    color: #7cf5d9;
+  }
+  .ap-preview .cost {
+    color: #ff5f5f;
+    font-size: 0.8rem;
+    margin-left: 4px;
+  }
+
+  .queue-slots {
+    display: flex;
+    gap: 10px;
+  }
+
+  .queue-slot {
+    width: 40px;
+    height: 40px;
+    background: #252b45;
+    border: 1px dashed #4a5a75;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    cursor: pointer;
+    position: relative;
+    transition: all 0.2s;
+  }
+
+  .queue-slot.filled {
+    border: 1px solid #7cf5d9;
+    background: #2c3350;
+    box-shadow: 0 0 5px rgba(124, 245, 217, 0.3);
+  }
+
+  .queue-slot.filled:hover::after {
+    content: "×";
+    position: absolute;
+    inset: 0;
+    background: rgba(0,0,0,0.6);
+    color: #ff5f5f;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+  }
+
+  .queue-slot.active-slot {
+    border-color: #ffd266;
+    animation: pulse 1s infinite;
+  }
+
+  @keyframes pulse {
+    0% { box-shadow: 0 0 0 0 rgba(255, 210, 102, 0.4); }
+    70% { box-shadow: 0 0 0 6px rgba(255, 210, 102, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(255, 210, 102, 0); }
+  }
+
+  /* 主体区域：包含选择区和详情区 */
+  .skill-main-area {
+    display: flex;
+    flex: 1;
+    gap: 10px;
+    min-height: 0; /* 允许子元素滚动 */
+  }
+
+  /* 2. 技能选择区 (Middle/Left) */
+  .skill-selection-wrapper {
+    flex: 2;
+    display: flex;
+    flex-direction: column;
+    background: transparent;
+    border: none;
+    padding: 0;
+  }
+
+  .skill-grid-view {
+    flex: 1;
+    overflow-y: auto;
+    padding-right: 4px;
+    /* 重写 Grid 布局以适应更紧凑的空间 */
+    grid-template-columns: repeat(auto-fill, minmax(64px, 1fr));
+    gap: 6px;
+    align-content: start;
+  }
+
+  .skill-icon-button {
+    width: 100%;
+    aspect-ratio: 1;
+    font-size: 1.8rem;
+  }
+
+  .skill-sort-bar {
+    margin-top: 8px;
+    padding: 4px;
+    background: rgba(0,0,0,0.2);
+  }
+
+  /* 3. 技能详情区 (Middle/Right) */
+  .skill-detail {
+    flex: 1;
+    background: rgba(37, 43, 69, 0.6);
+    padding: 12px;
+    border-left: 1px solid #4a5a75;
+    overflow-y: auto;
+    /* 覆盖 v5.css 的绝对定位或固定高度 */
+    height: auto; 
+    border-radius: 4px;
+  }
+  
+  /* 目标选择模式指引 */
+  .target-selection-overlay {
+    position: absolute;
+    top: 54px; /* header height */
+    left: 0;
+    right: 0;
+    height: 40px;
+    background: rgba(0,0,0,0.7);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+  .target-selection-overlay.show {
+    opacity: 1;
+  }
+</style>
+</head>
+<body>
+<div class="app-shell">
+<main>
+  <section class="scene-wrapper labeled-block">
+    <div class="area-tag">场景区</div>
+    
+    <!-- 复用 Timeline -->
+    <section class="timeline labeled-block">
+      <div class="sub-area-tag">行动顺序区域</div>
+      <div class="timeline-item">
+        玩家 · 重斩
+        <span>速度 14</span>
+      </div>
+      <div class="timeline-item">
+        敌人 · 毒刃
+        <span>速度 10</span>
+      </div>
+    </section>
+
+    <!-- 复用 Battle Row -->
+    <div class="battle-row">
+      <!-- Player HUD -->
+      <section class="hud-panel player-hud labeled-block">
+        <div class="sub-area-tag">玩家状态区域</div>
+        <h2>玩家：王国骑士</h2>
+        <div class="hud-stat">
+          <span>HP 120 / 150</span>
+          <div class="bar hp"><span></span></div>
+        </div>
+        <div class="hud-stat">
+          <span>行动力（AP） 4 / 6</span>
+          <div class="bar ap"><span></span></div>
+        </div>
+        
+        <!-- Simplified Armor for brevity in mock -->
+        <div class="armor-list-wrapper">
+          <div class="armor-row">
+            <span class="armor-name">头部</span>
+            <div class="armor-bar"><span style="width:50%"></span></div>
+            <span class="armor-value">30 / 30</span>
+          </div>
+          <!-- More armor rows... -->
+        </div>
+       </section>
+      
+      <!-- Battle Scene -->
+      <section class="battle-scene labeled-block">
+        <div class="sub-area-tag">战斗场景区域</div>
+        <div class="stage-background">
+          <div class="stage-sky"></div>
+          <div class="stage-floor"></div>
+        </div>
+        <div class="fighters-layer">
+          <div class="fighter player-character">
+            <div class="character-sprite-container">
+               <div class="sprite-layer body"></div>
+               <div class="sprite-layer armor"></div>
+               <div class="sprite-layer weapon"></div>
+            </div>
+            <div class="character-shadow"></div>
+          </div>
+          <div class="fighter enemy-character" id="enemyTarget">
+            <div class="character-sprite-container">
+               <div class="sprite-layer body"></div>
+            </div>
+            <div class="character-shadow"></div>
+            <!-- Hit areas for target selection demo -->
+            <div class="hit-zone head" style="position:absolute; top:0; left:20px; width:40px; height:40px; border:1px solid transparent;" data-part="head"></div>
+            <div class="hit-zone body" style="position:absolute; top:40px; left:10px; width:60px; height:60px; border:1px solid transparent;" data-part="body"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Enemy HUD -->
+      <section class="hud-panel enemy-hud labeled-block">
+        <div class="sub-area-tag">敌方状态区域</div>
+        <h2>敌人：暗影刺客</h2>
+        <div class="hud-stat">
+           <span>HP 80 / 120</span>
+           <div class="bar hp"><span style="width:65%"></span></div>
+        </div>
+        <!-- ... -->
+      </section>
+    </div>
+    
+    <!-- 目标选择提示 -->
+    <div class="target-selection-overlay" id="targetOverlay">
+        请选择目标... (点击敌人部位)
+    </div>
+  </section>
+
+  <section class="action-panel labeled-block">
+    <div class="area-tag">技能操作区域</div>
+    
+    <!-- 新版 Skill Panel 结构 -->
+    <div class="skill-panel">
+      
+      <!-- 1. 待释放队列 -->
+      <div class="pending-queue-wrapper">
+        <div class="queue-info">
+            <span class="queue-title">待执行指令</span>
+            <div class="ap-preview" id="apPreview">AP: 4 / 6 <span class="cost"></span></div>
+        </div>
+        <div class="queue-slots" id="queueSlots">
+            <!-- JS 将动态生成 Slot -->
+            <div class="queue-slot empty"></div>
+            <div class="queue-slot empty"></div>
+            <div class="queue-slot empty"></div>
+        </div>
+      </div>
+
+      <div class="skill-main-area">
+        <!-- 2. 技能选择区 -->
+        <div class="skill-selection-wrapper">
+          <div class="skill-grid-view" id="skillList">
+            <!-- 技能列表 -->
+            <button type="button" class="skill-icon-button type-offense" data-id="s1" data-name="重斩" data-cost="2" data-type="近战" data-effect="150% 物理伤害" data-desc="基础伤害技能" data-target="single">⚔️</button>
+            <button type="button" class="skill-icon-button type-offense" data-id="s2" data-name="火球术" data-cost="3" data-type="魔法" data-effect="120% 火焰伤害 + 燃烧" data-desc="高护甲克星" data-target="single">🔥</button>
+            <button type="button" class="skill-icon-button type-defense" data-id="s3" data-name="钢铁防御" data-cost="1" data-type="防御" data-effect="护甲 +20" data-desc="提升这回合生存力" data-target="self">🛡️</button>
+            <button type="button" class="skill-icon-button type-offense" data-id="s4" data-name="二连击" data-cost="2" data-type="近战" data-effect="2x 60% 物理伤害" data-desc="破除闪避" data-target="random">⚔️</button>
+            <button type="button" class="skill-icon-button type-offense" data-id="s5" data-name="雷击" data-cost="4" data-type="魔法" data-effect="200% 雷伤 + 眩晕" data-desc="高消耗控制技" data-target="single">⚡</button>
+            <button type="button" class="skill-icon-button type-command" data-id="s6" data-name="战吼" data-cost="1" data-type="战术" data-effect="全体攻击 +10%" data-desc="爆发前置" data-target="global">🗣️</button>
+          </div>
+          <div class="skill-sort-bar">
+            <button class="sort-btn active">默认</button>
+            <button class="sort-btn">AP消耗</button>
+          </div>
+        </div>
+
+        <!-- 3. 详情区 -->
+        <section class="skill-detail" id="skillDetail">
+          <h4 id="detailName">请选择技能</h4>
+          <div class="detail-meta" id="detailMeta">--</div>
+          <p class="detail-body" id="detailEffect">--</p>
+          <p class="detail-body" id="detailTip">--</p>
+        </section>
+      </div>
+    
+    </div>
+
+    <!-- Turn Panel -->
+    <aside class="turn-panel">
+      <h4>回合控制</h4>
+      <div class="turn-buttons">
+        <button type="button" class="turn-button">上回合</button>
+        <button type="button" class="turn-button warning">暂停</button>
+        <button type="button" class="turn-button primary">执行</button>
+      </div>
+    </aside>
+  </section>
+</main>
+</div>
+
+<!-- 简单的交互演示脚本 -->
+<script>
+    // 模拟数据
+    const state = {
+        maxAp: 6,
+        currentAp: 4,
+        queue: [], // { skillId, icon, cost }
+    };
+
+    const ui = {
+        apPreview: document.getElementById('apPreview'),
+        queueSlots: document.getElementById('queueSlots'),
+        skillList: document.getElementById('skillList'),
+        enemyTarget: document.getElementById('enemyTarget'),
+        targetOverlay: document.getElementById('targetOverlay'),
+        detail: {
+            name: document.getElementById('detailName'),
+            meta: document.getElementById('detailMeta'),
+            effect: document.getElementById('detailEffect'),
+            tip: document.getElementById('detailTip')
+        }
+    };
+
+    let selectedSkill = null; // 当前选中的技能（待选目标）
+
+    // 更新队列显示
+    function renderQueue() {
+        ui.queueSlots.innerHTML = '';
+        let usedAp = 0;
+        
+        state.queue.forEach((item, index) => {
+            usedAp += parseInt(item.cost);
+            const slot = document.createElement('div');
+            slot.className = 'queue-slot filled';
+            slot.innerHTML = item.icon;
+            slot.title = `撤销 ${item.name}`;
+            slot.onclick = () => removeSkill(index);
+            ui.queueSlots.appendChild(slot);
+        });
+
+        // 填充空槽位
+        for (let i = state.queue.length; i < 3; i++) {
+            const slot = document.createElement('div');
+            slot.className = 'queue-slot empty';
+            ui.queueSlots.appendChild(slot);
+        }
+
+        // 更新 AP 预览
+        const remaining = state.currentAp - usedAp;
+        state.remainingAp = remaining;
+        ui.apPreview.innerHTML = `AP: ${remaining} / ${state.maxAp} <span class="cost">${usedAp > 0 ? '(-' + usedAp + ')' : ''}</span>`;
+        if (remaining < 0) {
+            ui.apPreview.style.color = '#ff5f5f';
+        } else {
+            ui.apPreview.style.color = '#7cf5d9';
+        }
+    }
+
+    // 更新详情
+    function showDetail(dataset) {
+        ui.detail.name.textContent = dataset.name;
+        ui.detail.meta.textContent = `${dataset.type} · AP ${dataset.cost}`;
+        ui.detail.effect.textContent = dataset.effect;
+        ui.detail.tip.textContent = dataset.desc;
+    }
+
+    // 选择技能
+    ui.skillList.addEventListener('click', (e) => {
+        const btn = e.target.closest('.skill-icon-button');
+        if (!btn) return;
+
+        showDetail(btn.dataset);
+        
+        const cost = parseInt(btn.dataset.cost);
+        if (cost > state.remainingAp) {
+            // AP 不足视觉反馈 (Mock)
+            // alert('AP 不足'); get annoying in mock
+            return; 
+        }
+
+        // 进入选敌模式 或 直接加入(如果是 Self/Global)
+        const targetType = btn.dataset.target;
+        
+        if (targetType === 'self' || targetType === 'global') {
+            addSkill(btn);
+        } else {
+            // 需要选敌
+            selectedSkill = btn;
+            enterTargetMode();
+        }
+    });
+
+    function enterTargetMode() {
+        ui.targetOverlay.classList.add('show');
+        ui.enemyTarget.style.cursor = 'crosshair';
+        ui.enemyTarget.style.outline = '2px solid #ff5f5f';
+    }
+
+    function exitTargetMode() {
+        ui.targetOverlay.classList.remove('show');
+        ui.enemyTarget.style.cursor = 'default';
+        ui.enemyTarget.style.outline = 'none';
+        selectedSkill = null;
+    }
+
+    // 模拟选敌
+    ui.enemyTarget.addEventListener('click', () => {
+        if (selectedSkill) {
+            addSkill(selectedSkill);
+            exitTargetMode();
+        }
+    });
+
+    function addSkill(btn) {
+        state.queue.push({
+            id: btn.dataset.id,
+            name: btn.dataset.name,
+            icon: btn.textContent,
+            cost: btn.dataset.cost
+        });
+        renderQueue();
+    }
+
+    function removeSkill(index) {
+        state.queue.splice(index, 1);
+        renderQueue();
+    }
+
+    // Init
+    renderQueue();
+
+</script>
+</body>
+</html>
