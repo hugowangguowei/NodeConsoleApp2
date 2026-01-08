@@ -370,7 +370,7 @@ main { flex: 1; padding: 16px 24px; display: grid; grid-template-rows: 546px 286
 .skill-panel { flex: 9; display: flex; gap: 12px; }
 
 .skill-pool-column {
-  flex: 3; /* 30% */
+  flex: 5; /* 50% */
   display: flex;
   flex-direction: column;
   gap: 10px;
@@ -383,7 +383,7 @@ main { flex: 1; padding: 16px 24px; display: grid; grid-template-rows: 546px 286
 }
 
 .action-matrix-column {
-  flex: 5; /* 50% */
+  flex: 3; /* 30% */
   display: flex;
   flex-direction: column;
   gap: 10px;
@@ -463,7 +463,7 @@ main { flex: 1; padding: 16px 24px; display: grid; grid-template-rows: 546px 286
 .action-matrix-container {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 1px;
   flex: 1;
   overflow-y: auto;
 }
@@ -473,7 +473,6 @@ main { flex: 1; padding: 16px 24px; display: grid; grid-template-rows: 546px 286
   background: rgba(255,255,255,0.03);
   border: 1px solid rgba(255,255,255,0.05);
   border-radius: 8px;
-  padding: 8px;
   gap: 12px;
 }
 .matrix-label {
@@ -502,11 +501,11 @@ main { flex: 1; padding: 16px 24px; display: grid; grid-template-rows: 546px 286
 }
 
 .slot-placeholder {
-  width: 48px;
-  height: 48px;
+  width: 32px;
+  height: 32px;
   background: rgba(0,0,0,0.2);
   border: 1px dashed rgba(255,255,255,0.2);
-  border-radius: 8px;
+  border-radius: 6px;
   cursor: pointer;
   transition: all 0.2s;
 }
