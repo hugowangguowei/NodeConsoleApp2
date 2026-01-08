@@ -363,7 +363,7 @@ main { flex: 1; padding: 16px 24px; display: grid; grid-template-rows: 546px 286
 @keyframes idle { 0%, 100% { transform: translateY(0) scaleY(1); } 50% { transform: translateY(-5px) scaleY(1.02); } }
 .enemy-character { animation-delay: 1s; }
 /* Action Panel & Skill Deck Common */
-.action-panel { background: #2c3350; padding: 20px 20px 20px; border-radius: 14px; display: flex; gap: 16px; box-shadow: 0 15px 30px rgba(6,10,35,0.45); min-height: 0; border: 2px solid #7cf5d9; }
+.action-panel { background: #2c3350; padding: 10px 10px 10px; border-radius: 14px; display: flex; gap: 16px; box-shadow: 0 15px 30px rgba(6,10,35,0.45); min-height: 0; border: 2px solid #7cf5d9; }
 .action-panel .area-tag { color: #7cf5d9; }
 
 /* REFACTORED SKILL PANEL (3-Column Layout) */
@@ -390,7 +390,7 @@ main { flex: 1; padding: 16px 24px; display: grid; grid-template-rows: 546px 286
   background: rgba(12,16,32,0.65);
   border: 1px solid rgba(255,255,255,0.08);
   border-radius: 14px;
-  padding: 12px;
+  padding: 4px;
   min-width: 0;
 }
 
@@ -501,8 +501,8 @@ main { flex: 1; padding: 16px 24px; display: grid; grid-template-rows: 546px 286
 }
 
 .slot-placeholder {
-  width: 32px;
-  height: 32px;
+  width: 25px;
+  height: 25px;
   background: rgba(0,0,0,0.2);
   border: 1px dashed rgba(255,255,255,0.2);
   border-radius: 6px;
