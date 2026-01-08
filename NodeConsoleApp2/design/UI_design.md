@@ -349,7 +349,62 @@ UI 通过调用引擎提供的 API 或发送事件来传达用户操作：
 1.  玩家点击 **回合控制面板** 的 "开始 (Start)" 按钮。
 2.  引擎校验队列合法性，发送 `commitTurn` 指令。
 
-#### 4.6.4 交互方式分析：为什么选择“技能 -> 槽位”？ (Why "Skill to Slot"?)
+#### 4.6.4 交互细节：技能库 (Skill Pool Logic)
+
+*   **数据驱动 (Data Source)**:
+    *   `player.skills`: 基础技能数据（图标、名称、消耗、适用部位）。
+    *   `battle.ap`: 当前剩余行动力，用于判定技能是否可用。
+    *   `skill.cooldown`: 技能冷却状态。
+*   **交互操作 (Interaction)**:
+    *   **左键单击**: 选中一个技能。
+        *   若该技能已选中，则取消选中。
+        *   若 AP 不足或 CD 中，点击无效并反馈（如震动或提示音）。
+*   **区域联动 (Linkage)**:
+    *   **-> 待执行队列**: 选中技能后，通知队列区域进入“待填入模式”。根据技能的 `validParts`（可用部位）和 `targetType`（敌/我），队列区域高亮对应的有效插槽（Placeholders）。
+    *   **-> 动态详情区**: 选中或悬停技能时，详情区显示该技能的静态属性（基础伤害、消耗、描述）。
+*   **引擎交互 (Engine Interface)**:
+    *   此区域的操作主要为纯前端状态切换 (`currentSelection`)，暂不直接向引擎发送指令，直到玩家在队列区域进行确认。
+
+#### 4.6.5 交互细节：待执行队列 (Action Matrix Logic)
+
+*   **数据驱动 (Data Source)**:
+    *   `turn.plannedActions`: 引擎中记录的当前回合已预设的行动列表。
+    *   `ui.selectedSkill`: 前端记录的当前选中技能（来自技能库）。
+    *   `entity.bodyParts`: 玩家和当前敌人的有效部位列表（用于判定部位是否存在）。
+*   **状态显示 (State Display)**:
+    *   **缺失部位处理 (Missing Parts)**: 若某一方（玩家或敌人）不存在特定部位（例如类似史莱姆的敌人没有“头部”或“四肢”，或者特定人形怪没有“腹部”定义），则矩阵中对应的 **行 (Row)** 应被标记为 **不可用 (N/A)**。
+        *   **视觉表现**: 该行对应的区域背景色变深（如使用深灰色掩码），以区别于普通的“未选中”状态。
+        *   **交互限制**: 即使选择了适用该部位的技能，该行的槽位也不会高亮，且无法点击。
+*   **交互操作 (Interaction)**:
+    *   **点击空槽 (Placeholder Click)**:
+        *   **条件**: 必须已有 `selectedSkill`，且该槽位高亮（符合部位/目标限制）。
+        *   **结果**: 将技能填入该槽位，前端预扣除 AP。
+        *   **指令**: `Engine.input.addSkillToQueue(skillId, partId, targetType)`。
+    *   **点击已占槽 (Filled Slot Click)**:
+        *   **结果**: 移除该行动，返还 AP。
+        *   **指令**: `Engine.input.removeSkillFromQueue(actionIndex)`。
+*   **区域联动 (Linkage)**:
+    *   **-> 技能库**: 当 AP 变化时，通知技能库刷新可用状态（如 AP 从 2 降为 0，消耗 1 AP 的技能变灰）。
+    *   **-> 动态详情区**: 鼠标悬停在已填充的行动块上时，详情区显示该行动的上下文信息（例如：预计对该部位造成的最终伤害区间、命中率修正）。
+*   **引擎交互 (Engine Interface)**:
+    *   `addSkillToQueue`: 验证合法性后更新 `plannedActions`。
+    *   `removeSkillFromQueue`: 移除行动。
+
+#### 4.6.6 交互细节：动态详情区 (Context Detail Logic)
+
+*   **数据驱动 (Data Source)**:
+    *   `ui.hoverItem`: 当前鼠标悬停的对象（技能库图标 OR 队列中的行动块）。
+    *   `ui.selectedSkill`: 当前选中的技能。
+*   **交互操作 (Interaction)**:
+    *   本区域主要为被动展示区，无直接交互。
+    *   支持简单的 Tooltip（如鼠标悬停在关键词“燃烧”上显示状态说明）。
+*   **区域联动 (Linkage)**:
+    *   **<- 技能库/待执行队列**: 监听这两者的 Hover/Select 事件来决定显示内容。
+    *   优化体验：若无选中也无悬停，显示默认提示（如“请选择技能”）。
+*   **引擎交互 (Engine Interface)**:
+    *   无直接交互。
+
+#### 4.6.7 交互方式分析：为什么选择“技能 -> 槽位”？ (Why "Skill to Slot"?)
 
 针对本游戏的**精确部位打击**特性，**点选模式更优**：
 
@@ -358,15 +413,9 @@ UI 通过调用引擎提供的 API 或发送事件来传达用户操作：
 3.  **多级选择**: 某些技能可能需要二次确认（如选择 buff 施加给谁）。点选流程天然支持分步操作，而拖拽通常意味着“释放即生效”，难以插入中间步骤（除非设计复杂的悬停菜单）。
 4.  **稳定性**: HTML5 Drag API 在不同浏览器（及移动端 WebView）的表现差异较大，而 Click 事件是最稳定可靠的。
 
-#### 4.6.5 接口定义补充
+#### 4.6.8 接口定义补充
 
 除了通用的 `BATTLE_UPDATE`，建议增加专门针对 **Planning Phase** 的轻量级接口：
-
-| 方法/事件 | 方向 | 说明 |
-| :--- | :--- | :--- |
-| `PreviewStateUpdated` | Engine -> UI | 当队列变化时触发，包含 `currentAP`, `plannedActions` 列表。UI 据此渲染队列和刷新技能库状态。 |
-| `ShowTargetHints` | Engine -> UI | 当技能进入 Active 态，引擎告知 UI 哪些 Entity ID 是合法目标，哪些 BodyPart 可被攻击。 |
-| `CancelPendingSkill` | UI -> Engine | 玩家在选择目标阶段点击由键或空白处，取消当前选中的技能，回到初始状态。 |
 
 ## 5. 代码设计规范
 
