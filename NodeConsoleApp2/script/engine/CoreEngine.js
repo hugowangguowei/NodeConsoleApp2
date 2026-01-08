@@ -19,7 +19,8 @@ class CoreEngine {
             saveGame: this.saveGame.bind(this),
             loadGame: this.loadGame.bind(this),
             resumeGame: this.resumeGame.bind(this),
-            backToTitle: this.backToTitle.bind(this)
+            backToTitle: this.backToTitle.bind(this),
+            resetTurn: this.resetTurn.bind(this)
         };
 
         this.playerSkillQueue = [];
@@ -639,6 +640,16 @@ class CoreEngine {
         this.eventBus.emit('BATTLE_END', { victory: isVictory });
     }
 
+    resetTurn() {
+         if (this.battlePhase !== 'PLANNING') {
+             this.eventBus.emit('BATTLE_LOG', { text: `Cannot reset turn during ${this.battlePhase} phase.` });
+             return;
+         }
+         this.playerSkillQueue = [];
+         this.eventBus.emit('BATTLE_LOG', { text: `Turn actions reset.` });
+         this.emitBattleUpdate();
+    }
+    
     saveBattleState() {
         if (this.fsm.currentState === 'BATTLE_LOOP') {
             if (!this.data.dataConfig.runtime) this.data.dataConfig.runtime = {};
