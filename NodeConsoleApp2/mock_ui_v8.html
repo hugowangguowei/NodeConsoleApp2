@@ -238,7 +238,7 @@
       <!-- 2. Center Column: Action Matrix (待执行队列) -->
       <div class="action-matrix-column">
         <div class="action-matrix-container">
-          <!-- Row: Header (头部) -->
+          <!-- Row 1: Head (头部) -->
           <div class="matrix-row" data-row-part="head">
             <div class="matrix-zone self-zone">
               <div class="slot-placeholder" data-part="head" data-target-type="self"></div>
@@ -250,31 +250,79 @@
               <div class="slot-placeholder" data-part="head" data-target-type="enemy"></div>
             </div>
           </div>
-          <!-- Row: Body (躯干) -->
-          <div class="matrix-row" data-row-part="body">
+          <!-- Row 2: Chest (胸部) -->
+          <div class="matrix-row" data-row-part="chest">
             <div class="matrix-zone self-zone">
-              <div class="slot-placeholder" data-part="body" data-target-type="self"></div>
+              <div class="slot-placeholder" data-part="chest" data-target-type="self"></div>
             </div>
-            <div class="matrix-label">躯干</div>
+            <div class="matrix-label">胸部</div>
             <div class="matrix-zone enemy-zone">
-              <div class="slot-placeholder" data-part="body" data-target-type="enemy"></div>
-              <div class="slot-placeholder" data-part="body" data-target-type="enemy"></div>
-              <div class="slot-placeholder" data-part="body" data-target-type="enemy"></div>
+              <div class="slot-placeholder" data-part="chest" data-target-type="enemy"></div>
+              <div class="slot-placeholder" data-part="chest" data-target-type="enemy"></div>
+              <div class="slot-placeholder" data-part="chest" data-target-type="enemy"></div>
             </div>
           </div>
-          <!-- Row: Limbs (四肢) -->
-          <div class="matrix-row" data-row-part="limbs">
+          <!-- Row 3: Abdomen (腹部) -->
+          <div class="matrix-row" data-row-part="abdomen">
+            <div class="matrix-zone self-zone">
+              <div class="slot-placeholder" data-part="abdomen" data-target-type="self"></div>
+            </div>
+            <div class="matrix-label">腹部</div>
+            <div class="matrix-zone enemy-zone">
+              <div class="slot-placeholder" data-part="abdomen" data-target-type="enemy"></div>
+              <div class="slot-placeholder" data-part="abdomen" data-target-type="enemy"></div>
+              <div class="slot-placeholder" data-part="abdomen" data-target-type="enemy"></div>
+            </div>
+          </div>
+          <!-- Row 4: Left Arm (左臂) -->
+          <div class="matrix-row" data-row-part="left_arm">
              <div class="matrix-zone self-zone">
-               <div class="slot-placeholder" data-part="limbs" data-target-type="self"></div>
+               <div class="slot-placeholder" data-part="left_arm" data-target-type="self"></div>
              </div>
-             <div class="matrix-label">四肢</div>
+             <div class="matrix-label">左臂</div>
              <div class="matrix-zone enemy-zone">
-               <div class="slot-placeholder" data-part="limbs" data-target-type="enemy"></div>
-               <div class="slot-placeholder" data-part="limbs" data-target-type="enemy"></div>
-               <div class="slot-placeholder" data-part="limbs" data-target-type="enemy"></div>
+               <div class="slot-placeholder" data-part="left_arm" data-target-type="enemy"></div>
+               <div class="slot-placeholder" data-part="left_arm" data-target-type="enemy"></div>
+               <div class="slot-placeholder" data-part="left_arm" data-target-type="enemy"></div>
              </div>
           </div>
-          <!-- Row: Global/Other (全身/通用) -->
+          <!-- Row 5: Right Arm (右臂) -->
+          <div class="matrix-row" data-row-part="right_arm">
+             <div class="matrix-zone self-zone">
+               <div class="slot-placeholder" data-part="right_arm" data-target-type="self"></div>
+             </div>
+             <div class="matrix-label">右臂</div>
+             <div class="matrix-zone enemy-zone">
+               <div class="slot-placeholder" data-part="right_arm" data-target-type="enemy"></div>
+               <div class="slot-placeholder" data-part="right_arm" data-target-type="enemy"></div>
+               <div class="slot-placeholder" data-part="right_arm" data-target-type="enemy"></div>
+             </div>
+          </div>
+          <!-- Row 6: Left Leg (左腿) -->
+          <div class="matrix-row" data-row-part="left_leg">
+             <div class="matrix-zone self-zone">
+               <div class="slot-placeholder" data-part="left_leg" data-target-type="self"></div>
+             </div>
+             <div class="matrix-label">左腿</div>
+             <div class="matrix-zone enemy-zone">
+               <div class="slot-placeholder" data-part="left_leg" data-target-type="enemy"></div>
+               <div class="slot-placeholder" data-part="left_leg" data-target-type="enemy"></div>
+               <div class="slot-placeholder" data-part="left_leg" data-target-type="enemy"></div>
+             </div>
+          </div>
+          <!-- Row 7: Right Leg (右腿) -->
+          <div class="matrix-row" data-row-part="right_leg">
+             <div class="matrix-zone self-zone">
+               <div class="slot-placeholder" data-part="right_leg" data-target-type="self"></div>
+             </div>
+             <div class="matrix-label">右腿</div>
+             <div class="matrix-zone enemy-zone">
+               <div class="slot-placeholder" data-part="right_leg" data-target-type="enemy"></div>
+               <div class="slot-placeholder" data-part="right_leg" data-target-type="enemy"></div>
+               <div class="slot-placeholder" data-part="right_leg" data-target-type="enemy"></div>
+             </div>
+          </div>
+          <!-- Row 8: Global/Other (全身/通用) -->
            <div class="matrix-row" data-row-part="global">
             <div class="matrix-zone self-zone">
               <div class="slot-placeholder" data-part="global" data-target-type="self"></div>

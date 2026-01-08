@@ -363,7 +363,7 @@ main { flex: 1; padding: 16px 24px; display: grid; grid-template-rows: 546px 286
 @keyframes idle { 0%, 100% { transform: translateY(0) scaleY(1); } 50% { transform: translateY(-5px) scaleY(1.02); } }
 .enemy-character { animation-delay: 1s; }
 /* Action Panel & Skill Deck Common */
-.action-panel { background: #2c3350; padding: 10px 10px 10px; border-radius: 14px; display: flex; gap: 16px; box-shadow: 0 15px 30px rgba(6,10,35,0.45); min-height: 0; border: 2px solid #7cf5d9; }
+.action-panel { background: #2c3350; padding: 6px 10px 6px; border-radius: 14px; display: flex; gap: 16px; box-shadow: 0 15px 30px rgba(6,10,35,0.45); min-height: 0; border: 2px solid #7cf5d9; }
 .action-panel .area-tag { color: #7cf5d9; }
 
 /* REFACTORED SKILL PANEL (3-Column Layout) */
