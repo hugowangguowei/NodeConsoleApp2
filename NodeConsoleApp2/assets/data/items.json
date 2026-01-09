@@ -1,5 +1,29 @@
 {
-    "wp_sword_01": { "id": "wp_sword_01", "name": "铁剑", "type": "WEAPON", "value": 10 },
-    "helm_01": { "id": "helm_01", "name": "皮帽", "type": "ARMOR", "slot": "head", "defense": 2, "durability": 20 },
-    "plate_01": { "id": "plate_01", "name": "皮甲", "type": "ARMOR", "slot": "chest", "defense": 5, "durability": 50 }
+    "wp_sword_01": { 
+        "id": "wp_sword_01", 
+        "name": "铁剑", 
+        "type": "WEAPON", 
+        "slot": "main_hand",
+        "buffs": [
+            { "type": "BUFF", "effect": "STAT_MOD", "stat": "attack", "value": 10, "mode": "ADD", "duration": -1, "description": "攻击力 +10" }
+        ]
+    },
+    "helm_01": { 
+        "id": "helm_01", 
+        "name": "皮帽", 
+        "type": "ARMOR", 
+        "slot": "head", 
+        "buffs": [
+            { "type": "BUFF", "effect": "STAT_MOD", "stat": "armor_head", "value": 20, "mode": "ADD", "duration": -1, "description": "头部护甲 +20" }
+        ]
+    },
+    "plate_01": { 
+        "id": "plate_01", 
+        "name": "皮甲", 
+        "type": "ARMOR", 
+        "slot": "chest", 
+        "buffs": [
+            { "type": "BUFF", "effect": "STAT_MOD", "stat": "armor_chest", "value": 50, "mode": "ADD", "duration": -1, "description": "胸部护甲 +50" }
+        ]
+    }
 }

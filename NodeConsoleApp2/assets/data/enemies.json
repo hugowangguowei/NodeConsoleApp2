@@ -10,8 +10,13 @@
     },
     "skills": ["skill_bite", "skill_throw_stone"],
     "bodyParts": {
-      "head": { "maxArmor": 0, "weakness": 1.5 },
-      "body": { "maxArmor": 5, "weakness": 1.0 }
+      "head": { "current": 0, "max": 0, "weakness": 1.5 },
+      "chest": { "current": 5, "max": 5, "weakness": 1.0 },
+      "abdomen": { "current": 0, "max": 0, "weakness": 1.2 },
+      "left_arm": { "current": 0, "max": 0, "weakness": 1.0 },
+      "right_arm": { "current": 0, "max": 0, "weakness": 1.0 },
+      "left_leg": { "current": 0, "max": 0, "weakness": 1.0 },
+      "right_leg": { "current": 0, "max": 0, "weakness": 1.0 }
     },
     "dropTable": "drop_goblin_common"
   },
@@ -21,8 +26,13 @@
     "stats": { "hp": 120, "maxHp": 120, "speed": 8, "ap": 4 },
     "skills": ["skill_smash", "skill_warcry"],
     "bodyParts": {
-      "head": { "maxArmor": 10, "weakness": 1.2 },
-      "body": { "maxArmor": 20, "weakness": 0.8 }
+      "head": { "current": 10, "max": 10, "weakness": 1.2 },
+      "chest": { "current": 20, "max": 20, "weakness": 0.8 },
+      "abdomen": { "current": 10, "max": 10, "weakness": 1.0 },
+      "left_arm": { "current": 5, "max": 5, "weakness": 1.0 },
+      "right_arm": { "current": 5, "max": 5, "weakness": 1.0 },
+      "left_leg": { "current": 5, "max": 5, "weakness": 1.0 },
+      "right_leg": { "current": 5, "max": 5, "weakness": 1.0 }
     }
   },
   "goblin_01": {
@@ -36,8 +46,13 @@
     },
     "skills": ["skill_bite"],
     "bodyParts": {
-        "head": { "maxArmor": 0, "weakness": 1.5 },
-        "body": { "maxArmor": 2, "weakness": 1.0 }
+        "head": { "current": 0, "max": 0, "weakness": 1.5 },
+        "chest": { "current": 2, "max": 2, "weakness": 1.0 },
+        "abdomen": { "current": 0, "max": 0, "weakness": 1.0 },
+        "left_arm": { "current": 0, "max": 0, "weakness": 1.0 },
+        "right_arm": { "current": 0, "max": 0, "weakness": 1.0 },
+        "left_leg": { "current": 0, "max": 0, "weakness": 1.0 },
+        "right_leg": { "current": 0, "max": 0, "weakness": 1.0 }
     }
   }
 }

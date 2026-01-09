@@ -205,22 +205,30 @@ export default class UI_SkillPanel {
         if (!this.matrixContainer) return;
         const rows = this.matrixContainer.querySelectorAll('.matrix-row');
         
-        // Player always has standard parts? Or check player anatomy too?
-        // For 'enemy-zone', check enemyData.bodyParts
-        // For 'self-zone', check player.bodyParts
+        // Data Design keys: head, chest, abdomen, left_arm, right_arm, left_leg, right_leg
         
         rows.forEach(row => {
             const part = row.dataset.rowPart;
             if (part === 'global') return; // Always valid
 
             // Check Enemy
-            const hasEnemyPart = enemyData.bodyParts && enemyData.bodyParts[part];
+            const hasEnemyPart = enemyData.bodyParts && enemyData.bodyParts[part] && (enemyData.bodyParts[part].max > 0 || enemyData.bodyParts[part].maxHp > 0); 
+            // Note: Some enemies might have part but 0 armor max, but still hit-able? 
+            // Usually if part exists in bodyParts, it is valid. 
+            // Data Design says: "For slimes.. max set to 0, UI should hide."
+            // So if max is 0, we consider it missing/hidden? Or just unarmored?
+            // Let's assume max > 0 means armor exists, but part always exists structurally unless explicitly null?
+            // Actually Data Design says: "UI Layer should identify and hide that part".
+            // Let's check if max > 0 logic is desired, or if we need a separate flag.
+            // For now, let's treat `max > 0` as "visible part".
             
+            const isVisible = enemyData.bodyParts && enemyData.bodyParts[part] && enemyData.bodyParts[part].max > 0;
+
             // We only disable the Enemy Zone if part is missing
             const enemyZone = row.querySelector('.enemy-zone');
             if (enemyZone) {
-                if (!hasEnemyPart) {
-                    row.classList.add('enemy-part-missing'); // CSS should handle gray out
+                if (!isVisible) {
+                    row.classList.add('enemy-part-missing'); 
                     this.disableZone(enemyZone);
                 } else {
                     row.classList.remove('enemy-part-missing');

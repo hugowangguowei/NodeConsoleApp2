@@ -48,21 +48,31 @@
 - **CoreEngine**:
     - 更新了 `selectLevel` 方法，使用 `instantiateLevel` 来生成关卡数据，确保每次进入关卡都是全新的状态。
 
-### 变更 (2026-01-01)
-- **战斗系统重构 (Armor & Body Parts)**:
-    - **伤害模型更新**: 实现了“整体血量 + 部位独立护甲”的伤害机制。
-        - 攻击现在针对特定的身体部位（如头部、躯干）。
-        - 伤害首先扣除部位护甲，护甲耗尽后剩余伤害扣除整体 HP。
-        - 引入了部位弱点系数（Weakness），在计算护甲扣除前应用。
-    - **玩家状态映射**:
-        - 在 `RuntimeData` 中新增 `playerBattleState`，包含 `bodyParts` 结构。
-        - 玩家的部位护甲直接映射自装备的耐久度（Head -> Head Armor, Body -> Chest Armor）。
-        - 战斗中造成的护甲损耗会实时同步回装备的耐久度。
-    - **敌人配置更新**:
-        - 更新了 `enemies.json` 和模拟数据，敌人的部位现在使用 `maxArmor` 定义护甲上限，不再分担 HP。
+### 变更 (2026-01-10) - 数据架构升级
+- **数据设计标准化**:
+    - 创建了 `design/data_design.md`，统一了游戏核心数据结构。
+    - **身体部位 (Body Parts)**: 将所有角色（玩家和敌人）的身体部位统一扩展为 7 个部位（头部、胸部、腹部、双臂、双腿）。
+    - **装备系统重构**: 装备不再直接定义属性，而是作为 **Buff 容器**。通过装备携带的 `duration: -1` (常驻) Buff 来动态修改角色属性（如 `armor_head`）。
+    - **Buff/Debuff系统**: 确立了通用的 Buff 数据结构，支持属性修正(STAT_MOD)、持续伤害(DOT)等效果。
+
 - **CoreEngine**:
-    - `startBattle`: 初始化 `playerBattleState`，将玩家装备转换为战斗用的部位数据。
-    - `executePlayerSkill`: 更新了伤害计算逻辑，支持部位判定和护甲/HP 溢出伤害。
-    - `executeEnemySkill`: 更新了针对玩家的伤害计算，支持护甲损耗同步。
-- **DataManager**:
-    - `instantiateLevel`: 修复了敌人实例化的逻辑，正确初始化部位护甲（`armor` = `maxArmor`）。
+    - 重写了 `initializePlayerBodyParts` 方法：
+        - 实现了 7 部位系统的初始化。
+        - 实现了基于 Buff 的属性计算逻辑：现在通过遍历装备的 `buffs` 列表来计算各部位的护甲值。
+    
+- **数据文件更新**:
+    - **enemies.json**: 更新所有敌人模板，使其包含完整的 7 个身体部位定义。
+    - **items.json**: 重构装备数据，移除旧的 `defense`/`durability` 字段，改为使用 `buffs` 数组定义属性加成。
+    - **player.json**: 简化 `equipment` 结构，现在仅存储部位与 ItemID 的映射关系。
+
+- **UI Adaptations (v11)**:
+    - **mock_ui_v11.html**:
+        - 更新了玩家和敌人 HUD 的 `armor-list-wrapper`，添加了标准的 `data-key` 属性 (如 `left_arm`, `chest`) 以匹配数据设计。
+    - **UI_BattleRow.js**:
+        - 更新了 `updateArmor` 方法，优先读取 DOM 元素的 `data-key` 属性来查找对应的护甲数据，提高了 UI 绑定的准确性，并不再依赖中文文本匹配。
+    - **UI_SkillPanel.js**:
+        - 增强了 `initMatrixRows` 逻辑，现在能正确读取 `enemies.json` 中的 `bodyParts` 结构（包含 max/maxHp check），并根据数据隐藏或禁用缺失部位的技能槽位。
+    - **CoreEngine Fixes**:
+        - 修正了 `emitBattleUpdate` 和 `startBattle` 中的数据载荷，明确将运行时的 `bodyParts` 状态注入到 `player` 数据对象中，解决了 UI 无法显示玩家护甲的问题。
+        - 更新了 `executePlayerSkill` 和 `executeEnemySkill` 中的伤害计算逻辑，从旧的 `armor` 字段迁移到了新的 `current/max` 结构。
+        - 移除了过时的装备耐久度回写逻辑，符合新的“装备即Buff”设计。

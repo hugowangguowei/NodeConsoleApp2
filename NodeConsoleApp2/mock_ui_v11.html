@@ -1,0 +1,418 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>网页回合制战斗系统 Demo V7 (Battle Row Test)</title>
+<link rel="stylesheet" href="mock_ui_v11.css">
+</head>
+<body>
+<div class="app-shell">
+<main>
+  <section class="scene-wrapper labeled-block">
+    <div class="area-tag">场景区</div>
+    <section class="timeline labeled-block">
+      <div class="sub-area-tag">行动顺序区域</div>
+      <div class="timeline-item">
+        玩家 · 重斩
+        <span>速度 14</span>
+      </div>
+      <div class="timeline-item">
+        敌人 · 毒刃
+        <span>速度 10</span>
+      </div>
+      <div class="timeline-item">
+        玩家 · 钢铁防御
+        <span>速度 9</span>
+      </div>
+      <div class="timeline-item">
+        敌人 · 防御
+        <span>速度 8</span>
+      </div>
+    </section>
+    <div class="battle-row">
+      <section class="hud-panel player-hud labeled-block">
+        <div class="sub-area-tag">玩家状态区域</div>
+      <h2>玩家：王国骑士</h2>
+      <div class="hud-stat">
+        <span>HP 120 / 150</span>
+        <div class="bar hp"><span></span></div>
+      </div>
+      <div class="hud-stat">
+        <span>行动力（AP） 4 / 6</span>
+        <div class="bar ap"><span></span></div>
+      </div>
+      <div class="status-row">
+         <span class="status-label">BUFF</span>
+         <div class="status-icons">
+           <div class="status-icon buff" data-name="圣光护盾" data-desc="受击时减免20%伤害"></div>
+         </div>
+       </div>
+       <div class="status-row">
+         <span class="status-label">DEBUFF</span>
+         <div class="status-icons">
+           <div class="status-icon neutral" data-name="无减益" data-desc="当前无异常状态"></div>
+         </div>
+       </div>
+       <div class="armor-list-wrapper">
+        <div class="armor-row" data-key="head">
+          <span class="armor-name">头部</span>
+          <div class="armor-bar"><span style="width:50%"></span></div>
+          <span class="armor-value">30 / 30</span>
+        </div>
+        <div class="armor-row" data-key="chest">
+          <span class="armor-name">胸部</span>
+          <div class="armor-bar"><span style="width:75%"></span></div>
+          <span class="armor-value">45 / 60</span>
+        </div>
+        <div class="armor-row" data-key="abdomen">
+          <span class="armor-name">腹部</span>
+          <div class="armor-bar"><span style="width:58.3%"></span></div>
+          <span class="armor-value">35 / 50</span>
+        </div>
+        <div class="armor-row" data-key="left_arm">
+          <span class="armor-name">左臂</span>
+          <div class="armor-bar"><span style="width:46.7%"></span></div>
+          <span class="armor-value">28 / 40</span>
+        </div>
+        <div class="armor-row" data-key="right_arm">
+          <span class="armor-name">右臂</span>
+          <div class="armor-bar"><span style="width:53.3%"></span></div>
+          <span class="armor-value">32 / 40</span>
+        </div>
+        <div class="armor-row" data-key="left_leg">
+          <span class="armor-name">左腿</span>
+          <div class="armor-bar"><span style="width:36.7%"></span></div>
+          <span class="armor-value">22 / 35</span>
+        </div>
+        <div class="armor-row" data-key="right_leg">
+          <span class="armor-name">右腿</span>
+          <div class="armor-bar"><span style="width:33.3%"></span></div>
+          <span class="armor-value">20 / 35</span>
+        </div>
+       </div>
+       </section>
+      <section class="battle-scene labeled-block">
+        <div class="sub-area-tag">战斗场景区域</div>
+        
+        <!-- 1. 背景层 (Stage Background) -->
+        <div class="stage-background">
+          <!-- 可选：远景、中景、近景地板 -->
+          <div class="stage-sky"></div>
+          <div class="stage-floor"></div>
+        </div>
+        
+        <!-- 2. 角色层 (Fighters Layer) -->
+        <div class="fighters-layer">
+          <!-- 玩家角色 -->
+          <div class="fighter player-character">
+            <!-- 角色容器：支持分层换装 -->
+            <div class="character-sprite-container">
+               <div class="sprite-layer body"></div>   <!-- 素体 -->
+               <div class="sprite-layer armor"></div>  <!-- 护甲 -->
+               <div class="sprite-layer weapon"></div> <!-- 武器 -->
+            </div>
+            <div class="character-shadow"></div> <!-- 脚底阴影 -->
+            <div class="effect-anchor"></div>    <!-- 特效挂载点 -->
+          </div>
+          
+          <!-- 敌方角色 -->
+          <div class="fighter enemy-character">
+            <div class="character-sprite-container">
+               <div class="sprite-layer body"></div>
+               <div class="sprite-layer armor"></div>
+               <div class="sprite-layer weapon"></div>
+            </div>
+            <div class="character-shadow"></div>
+            <div class="effect-anchor"></div>
+          </div>
+        </div>
+        
+        <!-- 3. 特效层 (FX Layer) -->
+        <div class="fx-layer">
+          <!-- 用于播放打击火花、伤害数字等 -->
+        </div>
+      </section>
+      <section class="hud-panel enemy-hud labeled-block">
+        <div class="sub-area-tag">敌方状态区域</div>
+      <h2>敌人：暗影刺客</h2>
+      <div class="hud-stat">
+        <span>HP 80 / 120</span>
+        <div class="bar hp"><span style="width:65%"></span></div>
+      </div>
+      <div class="hud-stat">
+        <span>行动力（AP） 3 / 5</span>
+        <div class="bar ap"><span style="width:60%"></span></div>
+      </div>
+      <div class="status-row">
+         <span class="status-label">BUFF</span>
+         <div class="status-icons">
+           <div class="status-icon buff" data-name="暗影潜行" data-desc="闪避提升15%"></div>
+         </div>
+       </div>
+       <div class="status-row">
+         <span class="status-label">DEBUFF</span>
+         <div class="status-icons">
+           <div class="status-icon debuff" data-name="流血" data-desc="每回合 -8 HP"></div>
+         </div>
+       </div>
+       <div class="armor-list-wrapper">
+        <div class="armor-row" data-key="head">
+          <span class="armor-name">头部</span>
+          <div class="armor-bar"><span style="width:30%"></span></div>
+          <span class="armor-value">15 / 30</span>
+        </div>
+        <div class="armor-row" data-key="chest">
+          <span class="armor-name">胸部</span>
+          <div class="armor-bar"><span style="width:20%"></span></div>
+          <span class="armor-value">10 / 50</span>
+        </div>
+        <div class="armor-row" data-key="abdomen">
+          <span class="armor-name">腹部</span>
+          <div class="armor-bar"><span style="width:36%"></span></div>
+          <span class="armor-value">18 / 40</span>
+        </div>
+        <div class="armor-row" data-key="left_arm">
+          <span class="armor-name">左臂</span>
+          <div class="armor-bar"><span style="width:16%"></span></div>
+          <span class="armor-value">8 / 30</span>
+        </div>
+        <div class="armor-row" data-key="right_arm">
+          <span class="armor-name">右臂</span>
+          <div class="armor-bar"><span style="width:24%"></span></div>
+          <span class="armor-value">12 / 30</span>
+        </div>
+        <div class="armor-row" data-key="left_leg">
+          <span class="armor-name">左腿</span>
+          <div class="armor-bar"><span style="width:50%"></span></div>
+          <span class="armor-value">25 / 35</span>
+        </div>
+        <div class="armor-row" data-key="right_leg">
+          <span class="armor-name">右腿</span>
+          <div class="armor-bar"><span style="width:54%"></span></div>
+          <span class="armor-value">27 / 35</span>
+        </div>
+       </div>
+        </section>
+    </div>
+  </section>
+
+  <section class="action-panel labeled-block">
+    <div class="area-tag">技能操作区域</div>
+    <div class="skill-panel skill-deck-layout">
+      <!-- 1. Left Column: Skill Pool (技能库) -->
+      <div class="skill-pool-column">
+        <div class="skill-grid-view" id="skillList">
+          <button type="button" class="skill-icon-button type-offense active" data-name="重斩" data-type="近战技能" data-cost="AP 2" data-speed="速度 +1" data-target="命中部位：躯干" data-effect="对目标造成 150% 物理伤害。" data-tags="单体,物理" data-tip="基础的高伤害技能" data-sort-cost="2" data-sort-target="single">⚔️</button>
+          <button type="button" class="skill-icon-button type-offense" data-name="火球术" data-type="魔法技能" data-cost="AP 3" data-speed="速度 -1" data-target="命中部位：全身" data-effect="造成 120% 火焰伤害，并附加燃烧效果。" data-tags="魔法,燃烧" data-tip="对高护甲单位有效" data-sort-cost="3" data-sort-target="single">🔥</button>
+          <button type="button" class="skill-icon-button type-defense" data-name="治愈之光" data-type="神圣技能" data-cost="AP 2" data-speed="速度 0" data-target="效果：恢复生命" data-effect="为友方单位恢复 40 点生命值。" data-tags="治疗,神圣" data-tip="保持队伍生存" data-sort-cost="2" data-sort-target="ally">✨</button>
+          <button type="button" class="skill-icon-button type-defense" data-name="钢铁防御" data-type="防御技能" data-cost="AP 1" data-speed="速度 +2" data-target="效果：提升护甲" data-effect="获得 20 点临时护甲，持续 1 回合。" data-tags="防御,护甲" data-tip="预判敌方攻击时使用" data-sort-cost="1" data-sort-target="self">🛡️</button>
+          <button type="button" class="skill-icon-button type-offense" data-name="二连击" data-type="近战技能" data-cost="AP 2" data-speed="速度 +2" data-target="命中部位：随机" data-effect="进行两次快速攻击，每次造成 60% 伤害。" data-tags="多段,物理" data-tip="适合破除闪避" data-sort-cost="2" data-sort-target="random">⚔️</button>
+          <button type="button" class="skill-icon-button type-offense" data-name="冰锥术" data-type="魔法技能" data-cost="AP 2" data-speed="速度 0" data-target="命中部位：腿部" data-effect="造成 80% 冰霜伤害，并降低目标速度。" data-tags="魔法,减速" data-tip="控制敌方行动顺序" data-sort-cost="2" data-sort-target="single">❄️</button>
+          <button type="button" class="skill-icon-button type-offense" data-name="雷击" data-type="魔法技能" data-cost="AP 4" data-speed="速度 -2" data-target="命中部位：头部" data-effect="造成 200% 雷电伤害，有几率眩晕目标。" data-tags="魔法,控制" data-tip="高消耗高回报" data-sort-cost="4" data-sort-target="single">⚡</button>
+          <button type="button" class="skill-icon-button type-offense" data-name="毒刃" data-type="盗贼技能" data-cost="AP 1" data-speed="速度 +3" data-target="命中部位：四肢" data-effect="造成 50% 伤害，并施加中毒效果。" data-tags="物理,持续伤害" data-tip="长期战斗中收益高" data-sort-cost="1" data-sort-target="single">🗡️</button>
+          <button type="button" class="skill-icon-button type-offense" data-name="盾击" data-type="防御技能" data-cost="AP 2" data-speed="速度 +1" data-target="命中部位：头部" data-effect="造成 80% 伤害，并打断目标施法。" data-tags="物理,打断" data.tip="用于反制法师" data-sort-cost="2" data-sort-target="single">🛡️</button>
+          <button type="button" class="skill-icon-button type-offense" data-name="奥术飞弹" data-type="魔法技能" data-cost="AP 3" data-speed="速度 +1" data-target="命中部位：随机" data-effect="发射 3 枚飞弹，每枚造成 40% 奥术伤害。" data-tags="魔法,多段" data-tip="稳定的输出手段" data-sort-cost="3" data-sort-target="random">🔮</button>
+          <button type="button" class="skill-icon-button type-command" data-name="战吼" data-type="战术技能" data-cost="AP 1" data-speed="立即" data-target="效果：全体增益" data-effect="友方全体攻击力提升 10%，持续 2 回合。" data-tags="增益,群体" data-tip="爆发前使用" data-sort-cost="1" data-sort-target="global">🗣️</button>
+          <button type="button" class="skill-icon-button type-offense" data-name="旋风斩" data-type="近战技能" data-cost="AP 4" data-speed="速度 -1" data-target="命中部位：群体" data-effect="对所有敌人造成 100% 物理伤害。" data-tags="物理,AOE" data_tip="面对多个敌人时使用" data-sort-cost="4" data-sort-target="aoe">🌪️</button>
+          <button type="button" class="skill-icon-button type-offense" data-name="神圣惩击" data-type="神圣技能" data-cost="AP 2" data-speed="速度 0" data-target="命中部位：躯干" data-effect="造成 130% 神圣伤害，对亡灵生物加倍。" data-tags="魔法,神圣" data-tip="针对亡灵敌人" data-sort-cost="2" data-sort-target="single">✝️</button>
+          <button type="button" class="skill-icon-button type-command" data-name="暗影步" data-type="盗贼技能" data-cost="AP 1" data-speed="立即" data-target="效果：位移" data-effect="移动到目标背后，下一次攻击必定暴击。" data-tags="位移,增益" data-tip="配合高伤技能使用" data-sort-cost="1" data-sort-target="self">👻</button>
+          <button type="button" class="skill-icon-button type-offense" data-name="生命吸取" data-type="暗影技能" data-cost="AP 3" data-speed="速度 -1" data-target="命中部位：躯干" data-effect="造成 80% 杀伤，并将伤害转化为自身生命。" data-tags="魔法,吸血" data_tip="攻守兼备" data-sort-cost="3" data-sort-target="single">🩸</button>
+          <button type="button" class="skill-icon-button type-offense" data-name="地震术" data-type="自然技能" data-cost="AP 5" data-speed="速度 -3" data-target="命中部位：群体" data-effect="对所有地面单位造成 150% 杀伤，并降低闪避。" data-tags="魔法,AOE" data_tip="强力清场技能" data-sort-cost="5" data-sort-target="aoe">🌍</button>
+          <button type="button" class="skill-icon-button type-defense" data-name="疾风步" data-type="自然技能" data-cost="AP 2" data-speed="立即" data-target="效果：隐身" data-effect="进入隐身状态，闪避率提升 50%。" data-tags="生存,隐身" data_tip="躲避致命伤害" data-sort-cost="2" data-sort-target="self">🍃</button>
+          <button type="button" class="skill-icon-button type-command" data-name="狂暴" data-type="战术技能" data-cost="AP 0" data-speed="立即" data-target="效果：自身强化" data-effect="攻击力提升 50%，但受到的伤害也增加 20%。" data-tags="增益,风险" data_tip="拼命时使用" data-sort-cost="0" data-sort-target="self">😡</button>
+          <button type="button" class="skill-icon-button type-offense" data-name="陨石术" data-type="魔法技能" data-cost="AP 6" data-speed="速度 -5" data-target="命中部位：群体" data-effect="召唤陨石，造成 300% 毁灭性伤害。" data-tags="魔法,终极" data_tip="消耗巨大但威力惊人" data-sort-cost="6" data-sort-target="aoe">☄️</button>
+          <button type="button" class="skill-icon-button type-defense" data-name="反击姿态" data-type="战术技能" data-cost="AP 2" data-speed="速度 +1" data-target="效果：反击" data-effect="受到近战攻击时，自动反击造成 80% 杀伤。" data-tags="防御,反击" data_tip="对付近战敌人" data-sort-cost="2" data-sort-target="self">🤺</button>
+          <button type="button" class="skill-icon-button type-defense" data-name="祝福" data-type="神圣技能" data-cost="AP 2" data-speed="速度 0" data-target="效果：驱散" data-effect="移除友方单位的所有负面状态。" data-tags="辅助,驱散" data_tip="应对控制和持续伤害" data-sort-cost="2" data-sort-target="ally">🙏</button>
+          <button type="button" class="skill-icon-button type-offense" data-name="诅咒" data-type="暗影技能" data-cost="AP 2" data-speed="速度 0" data-target="命中部位：精神" data-effect="使目标造成的伤害降低 30%。" data-tags="魔法,减益" data.tip="削弱强力敌人" data-sort-cost="2" data-sort-target="single">💀</button>
+          <button type="button" class="skill-icon-button type-command" data-name="召唤幽灵狼" data-type="自然技能" data-cost="AP 4" data-speed="速度 -2" data-target="效果：召唤" data-effect="召唤一只幽灵狼协助战斗。" data-tags="召唤,辅助" data_tip="增加战场单位" data-sort-cost="4" data-sort-target="global">🐺</button>
+          <button type="button" class="skill-icon-button type-defense" data-name="法力护盾" data-type="魔法技能" data-cost="AP 1" data-speed="立即" data-target="效果：护盾" data-effect="消耗法力值抵消受到的伤害。" data-tags="防御,魔法" data_tip="保护脆弱的法师" data-sort-cost="1" data-sort-target="self">🔵</button>
+          <button type="button" class="skill-icon-button type-offense" data-name="斩杀" data-type="近战技能" data-cost="AP 3" data-speed="速度 +1" data-target="命中部位：躯干" data-effect="对生命值低于 30% 的目标造成巨额伤害。" data-tags="物理,终结" data_tip="收割残血敌人" data-sort-cost="3" data-sort-target="single">☠️</button>
+        </div>
+        <div class="skill-sort-bar" id="skillSortBar">
+          <button class="sort-btn active" data-sort="default">默认</button>
+          <button class="sort-btn" data-sort="cost">消耗</button>
+          <button class="sort-btn" data-sort="target">目标</button>
+        </div>
+      </div>
+
+      <!-- 2. Center Column: Action Matrix (待执行队列) -->
+      <div class="action-matrix-column">
+        <div class="action-matrix-container">
+          <!-- Row 1: Head (头部) -->
+          <div class="matrix-row" data-row-part="head">
+            <div class="matrix-zone self-zone">
+              <div class="slot-placeholder" data-part="head" data-target-type="self"></div>
+            </div>
+            <div class="matrix-label">头部</div>
+            <div class="matrix-zone enemy-zone">
+              <div class="slot-placeholder" data-part="head" data-target-type="enemy"></div>
+              <div class="slot-placeholder" data-part="head" data-target-type="enemy"></div>
+              <div class="slot-placeholder" data-part="head" data-target-type="enemy"></div>
+            </div>
+          </div>
+          <!-- Row 2: Chest (胸部) -->
+          <div class="matrix-row" data-row-part="chest">
+            <div class="matrix-zone self-zone">
+              <div class="slot-placeholder" data-part="chest" data-target-type="self"></div>
+            </div>
+            <div class="matrix-label">胸部</div>
+            <div class="matrix-zone enemy-zone">
+              <div class="slot-placeholder" data-part="chest" data-target-type="enemy"></div>
+              <div class="slot-placeholder" data-part="chest" data-target-type="enemy"></div>
+              <div class="slot-placeholder" data-part="chest" data-target-type="enemy"></div>
+            </div>
+          </div>
+          <!-- Row 3: Abdomen (腹部) -->
+          <div class="matrix-row" data-row-part="abdomen">
+            <div class="matrix-zone self-zone">
+              <div class="slot-placeholder" data-part="abdomen" data-target-type="self"></div>
+            </div>
+            <div class="matrix-label">腹部</div>
+            <div class="matrix-zone enemy-zone">
+              <div class="slot-placeholder" data-part="abdomen" data-target-type="enemy"></div>
+              <div class="slot-placeholder" data-part="abdomen" data-target-type="enemy"></div>
+              <div class="slot-placeholder" data-part="abdomen" data-target-type="enemy"></div>
+            </div>
+          </div>
+          <!-- Row 4: Left Arm (左臂) -->
+          <div class="matrix-row" data-row-part="left_arm">
+             <div class="matrix-zone self-zone">
+               <div class="slot-placeholder" data-part="left_arm" data-target-type="self"></div>
+             </div>
+             <div class="matrix-label">左臂</div>
+             <div class="matrix-zone enemy-zone">
+               <div class="slot-placeholder" data-part="left_arm" data-target-type="enemy"></div>
+               <div class="slot-placeholder" data-part="left_arm" data-target-type="enemy"></div>
+               <div class="slot-placeholder" data-part="left_arm" data-target-type="enemy"></div>
+             </div>
+          </div>
+          <!-- Row 5: Right Arm (右臂) -->
+          <div class="matrix-row" data-row-part="right_arm">
+             <div class="matrix-zone self-zone">
+               <div class="slot-placeholder" data-part="right_arm" data-target-type="self"></div>
+             </div>
+             <div class="matrix-label">右臂</div>
+             <div class="matrix-zone enemy-zone">
+               <div class="slot-placeholder" data-part="right_arm" data-target-type="enemy"></div>
+               <div class="slot-placeholder" data-part="right_arm" data-target-type="enemy"></div>
+               <div class="slot-placeholder" data-part="right_arm" data-target-type="enemy"></div>
+             </div>
+          </div>
+          <!-- Row 6: Left Leg (左腿) -->
+          <div class="matrix-row" data-row-part="left_leg">
+             <div class="matrix-zone self-zone">
+               <div class="slot-placeholder" data-part="left_leg" data-target-type="self"></div>
+             </div>
+             <div class="matrix-label">左腿</div>
+             <div class="matrix-zone enemy-zone">
+               <div class="slot-placeholder" data-part="left_leg" data-target-type="enemy"></div>
+               <div class="slot-placeholder" data-part="left_leg" data-target-type="enemy"></div>
+               <div class="slot-placeholder" data-part="left_leg" data-target-type="enemy"></div>
+             </div>
+          </div>
+          <!-- Row 7: Right Leg (右腿) -->
+          <div class="matrix-row" data-row-part="right_leg">
+             <div class="matrix-zone self-zone">
+               <div class="slot-placeholder" data-part="right_leg" data-target-type="self"></div>
+             </div>
+             <div class="matrix-label">右腿</div>
+             <div class="matrix-zone enemy-zone">
+               <div class="slot-placeholder" data-part="right_leg" data-target-type="enemy"></div>
+               <div class="slot-placeholder" data-part="right_leg" data-target-type="enemy"></div>
+               <div class="slot-placeholder" data-part="right_leg" data-target-type="enemy"></div>
+             </div>
+          </div>
+          <!-- Row 8: Global/Other (全身/通用) -->
+           <div class="matrix-row" data-row-part="global">
+            <div class="matrix-zone self-zone">
+              <div class="slot-placeholder" data-part="global" data-target-type="self"></div>
+            </div>
+            <div class="matrix-label">通用</div>
+            <div class="matrix-zone enemy-zone">
+              <div class="slot-placeholder" data-part="global" data-target-type="enemy"></div>
+              <div class="slot-placeholder" data-part="global" data-target-type="enemy"></div>
+              <div class="slot-placeholder" data-part="global" data-target-type="enemy"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 3. Right Column: Detail (详情) -->
+      <div class="skill-detail-column">
+        <section class="skill-detail compact-detail" id="skillDetail">
+          <h4 id="detailName">重斩</h4>
+          <div class="detail-meta" id="detailMeta">近战技能 · AP 2 · 速度 +1</div>
+          <p class="detail-body" id="detailEffect"><strong>效果</strong>：对目标造成 150% 物理伤害。</p>
+          <p class="detail-body" id="detailTarget"><strong>范围</strong>：躯干。</p>
+          <p class="detail-body" id="detailTip"><strong>提示</strong>：基础高伤。</p>
+          <div class="detail-tags" id="detailTags">
+            <span>单体</span>
+            <span>物理</span>
+          </div>
+        </section>
+      </div>
+    </div>
+    <aside class="turn-panel">
+      <h4>回合控制</h4>
+      <div class="turn-buttons">
+        <button type="button" class="turn-button primary" id="btnExecute">执行</button>
+        <button type="button" class="turn-button secondary" id="btnReset">重置</button>
+        <button type="button" class="turn-button neutral" id="btnMenu">设置</button>
+      </div>
+    </aside>
+   </section>
+</main>
+<footer>示意图仅供策划沟通，最终表现由 UI / 美术进一步设计。</footer>
+
+<button class="system-menu-btn" id="systemMenuBtn">⚙️</button>
+
+<div id="systemModal" class="modal-backdrop">
+  <div class="modal-panel">
+    <header class="modal-header">
+      <h3 class="modal-title" id="modalTitle">系统菜单</h3>
+      <button class="modal-close-btn" id="modalCloseBtn">×</button>
+    </header>
+    <div class="modal-body" id="modalBody">
+      <!-- Dynamic Content -->
+    </div>
+    <footer class="modal-footer" id="modalFooter">
+      <!-- Dynamic Actions -->
+    </footer>
+  </div>
+</div>
+
+</div>
+<script type="module">
+        import { CoreEngine } from '../script/engine/CoreEngine.js';
+        import { UI_BattleRow } from '../script/ui/UI_BattleRow.js';
+        import { UI_SystemModal } from '../script/ui/UI_SystemModal.js';
+        import UI_SkillPanel from '../script/ui/UI_SkillPanel.js';
+        import UI_TurnPanel from '../script/ui/UI_TurnPanel.js';
+
+        // Initialize Engine
+        const engine = new CoreEngine();
+        
+        // Expose to window for debugging
+        window.GameEngine = engine;
+
+        // Initialize UI Components
+        const uiBattleRow = new UI_BattleRow();
+        const uiSystemModal = new UI_SystemModal();
+        const uiSkillPanel = new UI_SkillPanel(engine); // Constructor injection
+        const uiTurnPanel = new UI_TurnPanel(engine);
+
+        // Bind UI to Engine
+        uiBattleRow.init(engine);
+        // uiSystemModal.init(engine) covers binding. 
+        // uiSystemModal.bind(engine); <-- Removed incorrect call
+        
+        // Use standard init()
+        if (uiSystemModal.init) uiSystemModal.init(engine);
+
+        console.log('UI System Initialized');
+
+        // Start Game (triggered by engine auto-init usually, or manual)
+        // CoreEngine constructor calls init() -> fsm.changeState('INIT') -> 'LOGIN'
+    </script>
+</body>
+</html>

@@ -114,31 +114,36 @@ class BattleHUD {
         // 这里采用遍历 DOM 的方式
         const rows = this.dom.armorList.querySelectorAll('.armor-row');
         rows.forEach(row => {
-            const nameEl = row.querySelector('.armor-name');
-            const partName = nameEl ? nameEl.textContent.trim() : null;
+            // Priority: data-key attribute (new standard) > text content matching (legacy fallback)
+            let key = row.dataset.key;
             
-            // 简单映射：中文 -> 数据Key (需统一约定，这里假设 data.armor 使用英文 key 如 head, chest)
-            // 实际项目中应在 HTML 中使用 data-key="head"
-            let key = null;
-            if (partName === '头部') key = 'head';
-            else if (partName === '胸部') key = 'chest';
-            else if (partName === '腹部') key = 'abdomen'; // 或 stomach
-            else if (partName === '左臂') key = 'leftArm';
-            else if (partName === '右臂') key = 'rightArm';
-            else if (partName === '左腿') key = 'leftLeg';
-            else if (partName === '右腿') key = 'rightLeg';
+            if (!key) {
+                const nameEl = row.querySelector('.armor-name');
+                const partName = nameEl ? nameEl.textContent.trim() : null;
+                if (partName === '头部') key = 'head';
+                else if (partName === '胸部') key = 'chest';
+                else if (partName === '腹部') key = 'abdomen'; // 或 stomach
+                else if (partName === '左臂') key = 'left_arm';
+                else if (partName === '右臂') key = 'right_arm';
+                else if (partName === '左腿') key = 'left_leg';
+                else if (partName === '右腿') key = 'right_leg';
+            }
 
             if (key && armorData[key]) {
                 const item = armorData[key];
                 // Support both { current, max } and { armor, maxArmor } and { durability, maxDurability }
-                const current = item.current || item.armor || item.durability || 0;
-                const max = item.max || item.maxArmor || item.maxDurability || 100;
+                const current = (item.current !== undefined) ? item.current : (item.armor || item.durability || 0);
+                // Note: item.max might be 0, which is valid for unarmored parts
+                const max = (item.max !== undefined) ? item.max : (item.maxArmor || item.maxDurability || 0);
                 
                 const valEl = row.querySelector('.armor-value');
                 if (valEl) valEl.textContent = `${current} / ${max}`;
 
                 const barEl = row.querySelector('.armor-bar span');
-                if (barEl) barEl.style.width = `${(current / max) * 100}%`;
+                if (barEl) {
+                    const pct = max > 0 ? (current / max) * 100 : 0;
+                    barEl.style.width = `${pct}%`;
+                }
             }
         });
     }

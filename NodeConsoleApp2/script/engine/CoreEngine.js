@@ -124,34 +124,63 @@ class CoreEngine {
             bodyParts: this.initializePlayerBodyParts(this.data.playerData)
         };
 
+        const playerWithRuntime = {
+            ...this.data.playerData,
+            bodyParts: runtime.playerBattleState.bodyParts
+        };
+
         this.eventBus.emit('BATTLE_START', { 
-            player: this.data.playerData, 
+            player: playerWithRuntime, 
             level: this.data.currentLevelData 
         });
         this.startTurn();
     }
 
     initializePlayerBodyParts(playerData) {
+        // 1. Define standard 7 body parts
+        const partNames = ['head', 'chest', 'abdomen', 'left_arm', 'right_arm', 'left_leg', 'right_leg'];
         const bodyParts = {};
-        if (playerData.equipment && playerData.equipment.armor) {
-            for (const [slot, item] of Object.entries(playerData.equipment.armor)) {
-                // Map equipment slot to body part
-                // Assuming slot names 'head', 'chest' etc. map directly or via some logic
-                // For now, direct mapping: head -> head, chest -> body
-                let partName = slot;
-                if (slot === 'chest') partName = 'body';
 
-                bodyParts[partName] = {
-                    armor: item.durability || 0,
-                    maxArmor: item.maxDurability || (item.durability || 0),
-                    weakness: 1.0, // Default weakness
-                    status: 'NORMAL'
-                };
+        // Initialize with base values
+        partNames.forEach(name => {
+            bodyParts[name] = {
+                current: 0,
+                max: 0,
+                weakness: 1.0, 
+                status: 'NORMAL'
+            };
+        });
+
+        // Apply default weaknesses
+        bodyParts.head.weakness = 1.5;
+        bodyParts.abdomen.weakness = 1.1;
+
+        // 2. Apply Equipment Buffs
+        if (playerData.equipment && this.data.gameConfig && this.data.gameConfig.items) {
+            for (const [slot, itemId] of Object.entries(playerData.equipment)) {
+                if (!itemId) continue;
+
+                // Lookup item config
+                const item = this.data.gameConfig.items[itemId];
+                if (!item || !item.buffs) continue;
+
+                // Process passive buffs (duration = -1)
+                item.buffs.forEach(buff => {
+                    if (buff.type === 'BUFF' && buff.effect === 'STAT_MOD' && buff.duration === -1) {
+                        // Handle armor stats (e.g., "armor_head")
+                        if (buff.stat && buff.stat.startsWith('armor_')) {
+                            const partName = buff.stat.replace('armor_', '');
+                            if (bodyParts[partName]) {
+                                bodyParts[partName].max += buff.value;
+                                bodyParts[partName].current += buff.value;
+                            }
+                        }
+                        // Note: Other stats like attack/speed would be handled by a global stat manager,
+                        // effectively modifying the player's runtime stats, not body parts.
+                    }
+                });
             }
         }
-        // Ensure basic parts exist if no armor
-        if (!bodyParts.head) bodyParts.head = { armor: 0, maxArmor: 0, weakness: 1.5, status: 'NORMAL' };
-        if (!bodyParts.body) bodyParts.body = { armor: 0, maxArmor: 0, weakness: 1.0, status: 'NORMAL' };
         
         return bodyParts;
     }
@@ -166,8 +195,15 @@ class CoreEngine {
         this.enemySkillQueue = runtime.queues ? (runtime.queues.enemy || []) : [];
 
         this.fsm.changeState('BATTLE_LOOP');
+        
+        // Prepare player object with runtime body parts
+        const playerWithRuntime = {
+            ...this.data.playerData,
+            bodyParts: (runtime.playerBattleState) ? runtime.playerBattleState.bodyParts : {}
+        };
+
         this.eventBus.emit('BATTLE_START', { 
-            player: this.data.playerData, 
+            player: playerWithRuntime, 
             level: this.data.currentLevelData 
         });
         
@@ -491,7 +527,7 @@ class CoreEngine {
                 // New Damage Logic: Armor -> HP
                 let actualDamage = damage;
                 let armorDamage = 0;
-                let targetPart = action.bodyPart || 'body'; // Default to body if not specified
+                let targetPart = action.bodyPart || 'chest'; // Default to chest
                 
                 if (enemy.bodyParts && enemy.bodyParts[targetPart]) {
                     const part = enemy.bodyParts[targetPart];
@@ -501,16 +537,16 @@ class CoreEngine {
                         actualDamage = Math.floor(actualDamage * part.weakness);
                     }
 
-                    // Reduce Armor first
-                    if (part.armor > 0) {
-                        if (part.armor >= actualDamage) {
-                            part.armor -= actualDamage;
+                    // Reduce Armor first (current)
+                    if (part.current > 0) {
+                        if (part.current >= actualDamage) {
+                            part.current -= actualDamage;
                             armorDamage = actualDamage;
                             actualDamage = 0;
                         } else {
-                            armorDamage = part.armor;
-                            actualDamage -= part.armor;
-                            part.armor = 0;
+                            armorDamage = part.current;
+                            actualDamage -= part.current;
+                            part.current = 0;
                             part.status = 'BROKEN';
                         }
                     }
@@ -550,7 +586,7 @@ class CoreEngine {
         // New Damage Logic for Player
         let actualDamage = baseDamage;
         let armorDamage = 0;
-        let targetPart = action.bodyPart || 'body'; // Default to body
+        let targetPart = action.bodyPart || 'chest'; // Default to chest
         
         // Access player battle state for body parts
         const runtime = this.data.dataConfig.runtime;
@@ -564,26 +600,17 @@ class CoreEngine {
                 actualDamage = Math.floor(actualDamage * part.weakness);
             }
 
-            // Reduce Armor first
-            if (part.armor > 0) {
-                if (part.armor >= actualDamage) {
-                    part.armor -= actualDamage;
+            // Reduce Armor first (current)
+            if (part.current > 0) {
+                if (part.current >= actualDamage) {
+                    part.current -= actualDamage;
                     armorDamage = actualDamage;
                     actualDamage = 0;
                 } else {
-                    armorDamage = part.armor;
-                    actualDamage -= part.armor;
-                    part.armor = 0;
+                    armorDamage = part.current;
+                    actualDamage -= part.current;
+                    part.current = 0;
                     part.status = 'BROKEN';
-                }
-                
-                // Sync back to equipment durability
-                // Mapping: head -> head, body -> chest
-                let equipSlot = targetPart;
-                if (targetPart === 'body') equipSlot = 'chest';
-                
-                if (player.equipment.armor && player.equipment.armor[equipSlot]) {
-                    player.equipment.armor[equipSlot].durability = part.armor;
                 }
             }
         }
@@ -672,8 +699,17 @@ class CoreEngine {
     }
 
     emitBattleUpdate() {
+        // Merge runtime bodyParts into player data for UI
+        let playerPayload = this.data.playerData;
+        if (this.data.dataConfig.runtime && this.data.dataConfig.runtime.playerBattleState) {
+             playerPayload = {
+                 ...this.data.playerData,
+                 bodyParts: this.data.dataConfig.runtime.playerBattleState.bodyParts
+             };
+        }
+
         this.eventBus.emit('BATTLE_UPDATE', {
-            player: this.data.playerData,
+            player: playerPayload,
             enemies: this.data.currentLevelData ? this.data.currentLevelData.enemies : [],
             turn: this.currentTurn,
             phase: this.battlePhase,
