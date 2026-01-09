@@ -110,6 +110,7 @@ class DataManager {
                 name: username,
                 stats: { ...playerTemplate.stats },
                 skills: [...playerTemplate.skills],
+                bodyParts: playerTemplate.bodyParts ? JSON.parse(JSON.stringify(playerTemplate.bodyParts)) : undefined,
                 equipment: JSON.parse(JSON.stringify(playerTemplate.equipment)),
                 inventory: [...playerTemplate.inventory],
             },
@@ -139,13 +140,27 @@ class DataManager {
             // If running from file://, this will likely fail and fall back to mock data.
             const basePath = '../assets/data/'; 
             
+            const fetchConfig = async (filename) => {
+                const url = basePath + filename;
+                const response = await fetch(url);
+                if (!response.ok) {
+                    throw new Error(`HTTP error ${response.status} loading ${url}`);
+                }
+                return await response.json();
+            };
+
             const [skills, items, enemies, levels, player] = await Promise.all([
-                fetch(basePath + 'skills.json').then(r => r.json()),
-                fetch(basePath + 'items.json').then(r => r.json()),
-                fetch(basePath + 'enemies.json').then(r => r.json()),
-                fetch(basePath + 'levels.json').then(r => r.json()),
-                fetch(basePath + 'player.json').then(r => r.json())
+                fetchConfig('skills.json'),
+                fetchConfig('items.json'),
+                fetchConfig('enemies.json'),
+                fetchConfig('levels.json'),
+                fetchConfig('player.json')
             ]);
+            
+            // Validate basic structure
+            if (!skills || !items || !enemies || !levels || !player) {
+                 throw new Error("One or more config files are empty or invalid.");
+            }
 
             this.gameConfig = {
                 skills,
@@ -155,9 +170,10 @@ class DataManager {
                 player
             };
             
-            console.log("Configs loaded from JSON:", this.gameConfig);
+            console.log("? [DataManager] Configs successfully loaded from JSON files.", this.gameConfig);
         } catch (e) {
-            console.warn("Failed to load JSON configs (likely due to file:// protocol), falling back to mock data.", e);
+            console.warn("?? [DataManager] Failed to load JSON configs. Reason:", e.message);
+            console.log("?? [DataManager] Falling back to internal MOCK data.");
             this.loadMockConfigs();
         }
     }
@@ -188,8 +204,8 @@ class DataManager {
                     stats: { hp: 50, maxHp: 50, speed: 8, ap: 3 },
                     skills: ['skill_bite'],
                     bodyParts: {
-                        head: { maxArmor: 0, weakness: 1.5 },
-                        body: { maxArmor: 2, weakness: 1.0 }
+                        head: { max: 0, weakness: 1.5 },
+                        chest: { max: 2, weakness: 1.0 }
                     }
                 }
             },
@@ -238,10 +254,14 @@ class DataManager {
                     
                     // Initialize Body Parts Runtime State
                     if (enemyInstance.bodyParts) {
-                        for (let part in enemyInstance.bodyParts) {
-                            // Initialize armor from maxArmor
-                            enemyInstance.bodyParts[part].armor = enemyInstance.bodyParts[part].maxArmor || 0;
-                            enemyInstance.bodyParts[part].status = 'NORMAL';
+                        for (let partKey in enemyInstance.bodyParts) {
+                            const partData = enemyInstance.bodyParts[partKey];
+                            // Initialize current from max (Data Design V2)
+                            const maxVal = (partData.max !== undefined) ? partData.max : (partData.maxArmor || 0);
+                            
+                            partData.max = maxVal;
+                            partData.current = maxVal;
+                            partData.status = 'NORMAL';
                         }
                     }
                     

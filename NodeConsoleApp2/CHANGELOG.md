@@ -76,7 +76,19 @@
         - 修正了 `emitBattleUpdate` 和 `startBattle` 中的数据载荷，明确将运行时的 `bodyParts` 状态注入到 `player` 数据对象中，解决了 UI 无法显示玩家护甲的问题。
         - 更新了 `executePlayerSkill` 和 `executeEnemySkill` 中的伤害计算逻辑，从旧的 `armor` 字段迁移到了新的 `current/max` 结构。
         - 移除了过时的装备耐久度回写逻辑，符合新的“装备即Buff”设计。
+    - **DataManager**:
+        - 更新 `createNewGame` 方法，确保新创建的玩家数据包含从模板拷贝的 `bodyParts`。
+        - 更新 `instantiateLevel` 方法，正确适配新的敌人 `bodyParts` 结构 (初始化 `current` = `max`)。
+        - 更新模拟数据 `loadMockConfigs` 以符合新的数据字段标准。
     - **Data Design & Player Schema**:
         - `data_design.md`: 明确了玩家 Schema 中需包含完整的 7 身体部位定义。
         - `player.json`: 更新了默认玩家配置，加入了完整的 7 身体部位（初始值为0），作为基础属性。
         - `CoreEngine`: 更新 `initializePlayerBodyParts` 这里优先使用 `player.json` 中定义的部位数据（如果存在），再在此基础上应用装备的 Buff 加成。
+
+### 变更 (2026-01-11)
+- **DataManager 增强**:
+    - **加载策略**: 实现了"优先加载 JSON -> 失败回退到 Mock 数据"的健壮机制。
+    - **错误处理**: 在 `loadConfigs` 中增加了对 `fetch` 响应状态 (HTTP 404 等) 的显式检查，确保文件读取失败时能被正确捕获。
+    - **日志系统**: 改进了控制台输出，清晰标记当前数据来源（Success/Fallback）及失败原因，便于调试。
+- **UI_BattleRow Fix**:
+        - 修复了 `update` 方法中的判断逻辑。现在能正确根据 `data.bodyParts` 的存在与否来触发 `updateArmor`，解决了数据结构更新后护甲面板不刷新的 BUG。

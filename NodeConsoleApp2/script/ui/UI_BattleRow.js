@@ -86,17 +86,9 @@ class BattleHUD {
         }
 
         // 更新护甲
-        if (this.dom.armorList && (data.armor || (data.equipment && data.equipment.armor))) {
-            // Player data has equipment.armor, simple Enemy data might have armor property if flat
-            // But check CoreEngine logic for armor structure
-            // Player uses bodyParts in runtime separately or syncs back?
-            // CoreEngine syncs back to player.equipment.armor which has durability
-            // Enemy has bodyParts with armor
-            
-            // Let's defer strict armor structure fixing, but BattleHUD.updateArmor expects keys like 'head'
-            // Player.equipment.armor keys are 'head', 'chest'.
-            // Enemy.bodyParts keys are 'head', 'body'.
-            this.updateArmor(data.armor || data.bodyParts || (data.equipment ? data.equipment.armor : null));
+        // Compatible check for new bodyParts structure or legacy structures
+        if (this.dom.armorList && (data.bodyParts || data.armor || (data.equipment && data.equipment.armor))) {
+            this.updateArmor(data.bodyParts || data.armor || (data.equipment ? data.equipment.armor : null));
         }
 
         // 更新状态图标
