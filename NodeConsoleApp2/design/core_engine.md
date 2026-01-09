@@ -483,7 +483,7 @@ assets/data/
     *   **失败**: 显示重试或返回菜单选项。
 3.  **输出**: 
     *   发布 `BATTLE_END` 事件 (包含 `{ victory: boolean }`)。
-    *   跳转至 `LEVEL_SELECT` 或 `MAIN_MENU`。
+    *   跳转至 `BATTLE_SETTLEMENT` 状态，等待玩家确认。
 
 ## 9. 引擎输入输出接口规范 (I/O Interface)
 
@@ -497,6 +497,7 @@ UI 层调用引擎暴露的方法：
     *   `targetBodyPart`: 可选。对于攻击/治疗特定部位的技能必填 (例如 "head", "body")。
 *   `Engine.input.removeSkillFromQueue(index)`
 *   `Engine.input.commitTurn()`
+*   `Engine.input.confirmSettlement()`: 在结算界面点击确认后调用，返回主菜单或关卡选择。
 
 ### 9.2 输出接口 (Output)
 UI 层监听引擎发布的事件：

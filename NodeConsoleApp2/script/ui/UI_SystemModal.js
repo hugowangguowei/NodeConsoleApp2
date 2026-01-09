@@ -95,7 +95,7 @@ export class UI_SystemModal {
      * @param {Object} stateData - { from, to }
      */
     handleStateChange(stateData) {
-        const { to } = stateData;
+        const { to, params } = stateData;
         console.log(`[UI_SystemModal] State changed to: ${to}`);
 
         if (to === 'LEVEL_SELECT') {
@@ -109,7 +109,71 @@ export class UI_SystemModal {
         } else if (to === 'MAIN_MENU') {
             this.renderMainMenu();
             this.show();
+        } else if (to === 'BATTLE_SETTLEMENT') {
+            this.renderBattleSettlement(params);
+            this.show();
         }
+    }
+
+    /**
+     * 渲染战斗结算视图
+     * @param {Object} params - { victory: boolean }
+     */
+    renderBattleSettlement(params) {
+        console.log('[UI_SystemModal] Rendering Battle Settlement');
+        this.currentView = 'BATTLE_SETTLEMENT';
+        const isVictory = params && params.victory;
+        
+        this.setTitle(isVictory ? '战斗胜利' : '战斗失败');
+        this.clearContent();
+        this.clearFooter();
+
+        // 隐藏关闭按钮，强制用户点击确认
+        if (this.dom.closeBtn) this.dom.closeBtn.style.display = 'none';
+
+        const container = document.createElement('div');
+        container.style.display = 'flex';
+        container.style.flexDirection = 'column';
+        container.style.gap = '20px';
+        container.style.padding = '40px';
+        container.style.alignItems = 'center';
+        container.style.color = '#fff';
+
+        const message = document.createElement('h2');
+        message.style.fontSize = '1.5rem';
+        message.style.color = isVictory ? '#4cd964' : '#ff3b30';
+        message.textContent = isVictory 
+            ? 'VICTORY!' 
+            : 'DEFEAT...';
+            
+        const subMsg = document.createElement('p');
+        subMsg.textContent = isVictory 
+            ? '战斗结束，你赢得了胜利。' 
+            : '战斗结束，请重新来过。';
+
+        const btn = document.createElement('button');
+        btn.className = 'btn-primary';
+        btn.textContent = '返回主菜单';
+        btn.style.padding = '10px 30px';
+        btn.style.fontSize = '1.2rem';
+        btn.style.marginTop = '20px';
+        btn.style.cursor = 'pointer';
+        /* 简单样，实际应使用 CSS 类 */
+        btn.style.background = '#1f2440';
+        btn.style.color = '#fff';
+        btn.style.border = '1px solid #7cf5d9';
+        btn.style.borderRadius = '4px';
+        
+        btn.onclick = () => {
+            if (this.engine.input && this.engine.input.confirmSettlement) {
+                this.engine.input.confirmSettlement();
+            }
+        };
+
+        container.appendChild(message);
+        container.appendChild(subMsg);
+        container.appendChild(btn);
+        this.dom.body.appendChild(container);
     }
 
     /**

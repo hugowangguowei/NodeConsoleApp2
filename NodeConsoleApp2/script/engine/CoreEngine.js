@@ -20,7 +20,8 @@ class CoreEngine {
             loadGame: this.loadGame.bind(this),
             resumeGame: this.resumeGame.bind(this),
             backToTitle: this.backToTitle.bind(this),
-            resetTurn: this.resetTurn.bind(this)
+            resetTurn: this.resetTurn.bind(this),
+            confirmSettlement: this.confirmSettlement.bind(this)
         };
 
         this.playerSkillQueue = [];
@@ -199,6 +200,12 @@ class CoreEngine {
         this.fsm.changeState('LOGIN');
         // Reset runtime data if needed, but keep global config?
         // For now, just switch state.
+    }
+
+    confirmSettlement() {
+        if (this.fsm.currentState !== 'BATTLE_SETTLEMENT') return;
+        console.log('Confirming settlement, returning to menu...');
+        this.fsm.changeState('MAIN_MENU');
     }
 
     loadGame(slotId) {
@@ -623,7 +630,7 @@ class CoreEngine {
         const result = isVictory ? 'Victory' : 'Defeat';
         this.eventBus.emit('BATTLE_LOG', { text: `Battle Ended: ${result}!` });
         
-        // 从 DataManager 清除战斗状态
+        //  DataManager ???
         if (this.data.dataConfig.runtime) {
             delete this.data.dataConfig.runtime.levelData;
             delete this.data.dataConfig.runtime.turn;
@@ -634,9 +641,9 @@ class CoreEngine {
             delete this.data.dataConfig.runtime.playerTempState;
         }
         this.data.currentLevelData = null;
-        this.data.saveGame(); // 战斗结束时自动保存
+        this.data.saveGame(); // ???
 
-        this.fsm.changeState('MAIN_MENU');
+        this.fsm.changeState('BATTLE_SETTLEMENT', { victory: isVictory });
         this.eventBus.emit('BATTLE_END', { victory: isVictory });
     }
 
