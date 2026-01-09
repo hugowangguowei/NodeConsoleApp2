@@ -61,10 +61,13 @@
   },
   "skills": ["skill_slash", "skill_fireball", "skill_heal_light", "skill_iron_defense"],
   "bodyParts": {
-      // 玩家的 bodyParts 通常由装备提供，此处存储的是运行时计算后的最终护甲值
-      // 或者，玩家存档仅存储 equipment，运行时动态生成 bodyParts
-      "head": { "current": 30, "max": 30, "weakness": 1.0 },
-      // ... 其他6个部位
+      "head":       { "current": 0, "max": 0, "weakness": 1.5 },
+      "chest":      { "current": 0, "max": 0, "weakness": 1.0 },
+      "abdomen":    { "current": 0, "max": 0, "weakness": 1.1 },
+      "left_arm":   { "current": 0, "max": 0, "weakness": 1.0 },
+      "right_arm":  { "current": 0, "max": 0, "weakness": 1.0 },
+      "left_leg":   { "current": 0, "max": 0, "weakness": 1.0 },
+      "right_leg":  { "current": 0, "max": 0, "weakness": 1.0 }
   },
   "equipment": {
       "weapon": "wp_sword_great",

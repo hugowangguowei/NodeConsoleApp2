@@ -139,23 +139,36 @@ class CoreEngine {
     initializePlayerBodyParts(playerData) {
         // 1. Define standard 7 body parts
         const partNames = ['head', 'chest', 'abdomen', 'left_arm', 'right_arm', 'left_leg', 'right_leg'];
-        const bodyParts = {};
+        let bodyParts = {};
 
-        // Initialize with base values
+        // Use defined bodyParts if available, deep copy to avoid mutation
+        if (playerData.bodyParts) {
+            bodyParts = JSON.parse(JSON.stringify(playerData.bodyParts));
+        }
+
+        // Ensure all parts exist and set defaults if missing
         partNames.forEach(name => {
-            bodyParts[name] = {
-                current: 0,
-                max: 0,
-                weakness: 1.0, 
-                status: 'NORMAL'
-            };
+            if (!bodyParts[name]) {
+                bodyParts[name] = {
+                    current: 0,
+                    max: 0,
+                    weakness: 1.0, 
+                    status: 'NORMAL'
+                };
+                
+                // Apply default weaknesses for generated parts
+                if (name === 'head') bodyParts[name].weakness = 1.5;
+                if (name === 'abdomen') bodyParts[name].weakness = 1.1;
+            } else {
+                 // Ensure fields
+                 if (bodyParts[name].current === undefined) bodyParts[name].current = 0;
+                 if (bodyParts[name].max === undefined) bodyParts[name].max = 0;
+                 if (bodyParts[name].weakness === undefined) bodyParts[name].weakness = 1.0;
+                 if (!bodyParts[name].status) bodyParts[name].status = 'NORMAL';
+            }
         });
 
-        // Apply default weaknesses
-        bodyParts.head.weakness = 1.5;
-        bodyParts.abdomen.weakness = 1.1;
-
-        // 2. Apply Equipment Buffs
+        // 2. Apply Equipment Buffs (Add on top of base values)
         if (playerData.equipment && this.data.gameConfig && this.data.gameConfig.items) {
             for (const [slot, itemId] of Object.entries(playerData.equipment)) {
                 if (!itemId) continue;

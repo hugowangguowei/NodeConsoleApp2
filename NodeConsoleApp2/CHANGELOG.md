@@ -76,3 +76,7 @@
         - 修正了 `emitBattleUpdate` 和 `startBattle` 中的数据载荷，明确将运行时的 `bodyParts` 状态注入到 `player` 数据对象中，解决了 UI 无法显示玩家护甲的问题。
         - 更新了 `executePlayerSkill` 和 `executeEnemySkill` 中的伤害计算逻辑，从旧的 `armor` 字段迁移到了新的 `current/max` 结构。
         - 移除了过时的装备耐久度回写逻辑，符合新的“装备即Buff”设计。
+    - **Data Design & Player Schema**:
+        - `data_design.md`: 明确了玩家 Schema 中需包含完整的 7 身体部位定义。
+        - `player.json`: 更新了默认玩家配置，加入了完整的 7 身体部位（初始值为0），作为基础属性。
+        - `CoreEngine`: 更新 `initializePlayerBodyParts` 这里优先使用 `player.json` 中定义的部位数据（如果存在），再在此基础上应用装备的 Buff 加成。
