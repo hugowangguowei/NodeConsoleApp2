@@ -71,6 +71,34 @@ class GameFSM {
 }
 ```
 
+### 3.3 关卡开始时的状态重置规则 (Level Initialization & State Reset)
+
+[新增项] 当玩家进入新关卡（从 `LEVEL_SELECT` 或 `MAIN_MENU` 进入 `BATTLE_PREPARE` / `BATTLE_LOOP`）时，玩家的运行时状态将按照以下规则进行强制重置。此机制确保了每次闯关的独立性，避免因上一局残留的低HP导致的死局。
+
+1.  **HP / 生命值**:
+    *   重置为 `maxHp`。
+2.  **AP / 行动力**:
+    *   重置为 `maxAp`。
+3.  **身体部位 / Body Parts (护甲)**:
+    *   **玩家部位**: 根据当前装备的 `maxDurability` (或部位定义的 `max` 值) 重置 `current` 值。
+    *   **状态**: 所有部位状态重置为 `NORMAL`。
+4.  **Buffs / 状态效果**:
+    *   清空所有临时 Buffs 和 Debuffs。
+5.  **技能冷却 (Cooldowns)**:
+    *   重置所有技能的 CD。
+
+### 3.4 状态机接口
+```javascript
+class GameFSM {
+    changeState(newState, params = {}) {
+        // 1. 触发当前状态的 onExit()
+        // 2. 更新 currentState
+        // 3. 触发新状态的 onEnter(params)
+        // 4. 发布 STATE_CHANGED 事件
+    }
+}
+```
+
 ## 4. 事件系统设计 (Event System)
 
 采用 **发布-订阅 (Publish-Subscribe)** 模式作为模块间通信的核心，实现逻辑层与视图层的彻底解耦。

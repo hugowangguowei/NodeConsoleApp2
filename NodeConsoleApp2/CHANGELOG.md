@@ -92,3 +92,11 @@
     - **日志系统**: 改进了控制台输出，清晰标记当前数据来源（Success/Fallback）及失败原因，便于调试。
 - **UI_BattleRow Fix**:
         - 修复了 `update` 方法中的判断逻辑。现在能正确根据 `data.bodyParts` 的存在与否来触发 `updateArmor`，解决了数据结构更新后护甲面板不刷新的 BUG。
+
+### 修复 (2026-01-xx) - 战斗状态与持久化
+- **战斗状态重置**: 
+    - 修复了 F5 刷新或重新进入战斗时，玩家 HP/AP 继承上次战斗结束状态（导致“血量持续减少”）的问题。
+    - 在 `CoreEngine.startBattle` 中实现了强制状态重置逻辑：
+        - 玩家 HP 重置为 MaxHP。
+        - 玩家 AP 重置为 MaxAP。
+        - 玩家所有身体部位 (Body Parts) 的耐久度修复为最大值，状态重置为 NORMAL。

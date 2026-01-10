@@ -96,6 +96,25 @@ class CoreEngine {
     }
 
     startBattle() {
+        // Reset Player State at start of battle (Design 3.3)
+        if (this.data.playerData) {
+            const p = this.data.playerData;
+            // 1. Reset Stats
+            if (p.stats) {
+                p.stats.hp = p.stats.maxHp;
+                p.stats.ap = p.stats.maxAp;
+            }
+            // 2. Reset Body Parts (Base)
+            if (p.bodyParts) {
+                for (const key in p.bodyParts) {
+                    const part = p.bodyParts[key];
+                    part.current = part.max || 0;
+                    part.status = 'NORMAL';
+                }
+            }
+            this.eventBus.emit('DATA_UPDATE', p);
+        }
+
         this.currentTurn = 0;
         this.fsm.changeState('BATTLE_LOOP');
         
