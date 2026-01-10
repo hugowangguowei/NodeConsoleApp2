@@ -194,3 +194,31 @@ jsonÎÄ¼þ¼ÓÔØÊý¾Ý£¬Èç¹ûjsonÎÄ¼þ²»´æÔÚ£¬ÔÙÊ¹ÓÃ±¾µØ´æ´¢¼ÓÔØÊý¾Ý£¬Í¬Ê±ÔÚconsoleÖÐ¸ø³
 ÎÒÖ»ÊÇÌá¹©Ê¾Àý£¬Ï£ÍûÄã½øÐÐ³ä·ÖÉè¼Æ¡£
 ¼¼ÄÜ×éºÏ£º¼¼ÄÜÖ®¼ä¿ÉÒÔ½øÐÐ×éºÏ£¬ÐÎ³É¸üÇ¿´óµÄÐ§¹û¡£Íæ¼Ò¿ÉÒÔÍ¨¹ýºÏÀí´îÅä¼¼ÄÜÀ´Ó¦¶Ô²»Í¬µÄÕ½¶·³¡¾°¡£
 »ùÓÚÉÏÊöÒªÇó£¬¹¹½¨Ò»¸ö±È½Ï³ÉÊìµÄ¼¼ÄÜÌåÏµÊ¾Àý£¬ÒªÇó°üÀ¨Èý´óÀà£¬6-7Ð¡Àà£¬¶à¸ö¼¼ÄÜ¡£
+
+ÎÒÏ£ÍûÔÚdesignÄ¿Â¼ÏÂ´´½¨Ò»¸ö×°±¸Éè¼ÆÎÄµµitem_design.md£¬ÄÚÈÝ°üÀ¨£º
+×°±¸×ÛÊö£º×°±¸»ùÓÚÎ÷·½Ææ»Ã±³¾°Éè¼Æ£¬×°±¸ÀàÐÍ°üÀ¨ÎäÆ÷¡¢·À¾ß¡¢ÊÎÆ·µÈ¡£Ã¿¸ö×°±¸ÓÐ¶ÀÌØµÄÊôÐÔºÍÐ§¹û¡£
+×°±¸»úÖÆ£º×°±¸Ð§¹ûÈç¹ûÉúÐ§£¬×°±¸Ð§¹ûµÄ´¥·¢Ìõ¼þ£¬×°±¸Ð§¹ûµÄ³ÖÐøÊ±¼äµÈ¡£
+×°±¸Ê¾Àý£ºÌá¹©Ò»Ð©¾ßÌåµÄ×°±¸Ê¾Àý£¬°üÀ¨Ãû³Æ¡¢ÊôÐÔ¡¢Ð§¹ûµÈ¡£
+×°±¸Ï¡ÓÐ¶È£º
+×°±¸»ñÈ¡·½Ê½£º
+×°±¸Éè¼ÆÔ¼Êø¡£
+×°±¸Éè¼ÆÎÄµµ¿ÉÒÔÊÊµ±²Î¿¼skill_design.mdµÄ½á¹¹ºÍÄÚÈÝ¡£
+
+2026-01-11 00:22£¨±à¼­£©
+ÎÒÏ£ÍûÔÚdesignÄ¿Â¼ÏÂ´´½¨Ò»¸öbuffÉè¼ÆÎÄµµbuff_design.md£¬µ±Ç°ÓÎÏ·µÄ×°±¸Ð§¹û¡¢¼¼ÄÜÌØÐ§µÈÒÀÀµbuff/debuffÏµÍ³À´ÊµÏÖ¡£
+°ïÎÒÉè¼ÆÒ»ÏÂbuff/debuffÏµÍ³µÄ¾ßÌåÄÚÈÝ£¬ÀýÈçbuff/debuffÉè¼Æ×ÜÌåÄ¿±ê£¬ÊµÏÖÏ¸½Ú£¬buff/debuffÀàÐÍ£¬buff/debuffÐ§¹ûµÈµÈ¡£
+buffÊ¾Àý¿ÉÒÔ²ÎÕÕskillºÍitemµÄÉè¼ÆÎÄµµ¡£µ«ÊÇbuffÉè¼Æ·½°¸×÷ÎªskillºÍitemÉè¼ÆÎÄµµµÄ»ù´¡£¬ÒÔ¼°±àÂëÊµÏÖµÄºËÐÄ¡£Ó¦¸Ã¶îÍâ²¹³ä
+´¥·¢»úÖÆ£¬ÊµÏÖ¸´ÔÓ¶ÈµÈÄÚÈÝ¡£
+
+ÎÒÒªÉè¼ÆÒ»¸ö¼¼ÄÜ¡¢×°±¸¡¢buffµÄ²âÊÔ·½°¸£¬°ïÎÒ´´½¨Ò»¸öskill_test_design.mdÎÄ¼þ£¬ÄÚÈÝ°üÀ¨£º
+1. ²âÊÔÄ¿±ê£ºÈ·±£¼¼ÄÜ¡¢×°±¸¡¢buffµÄ¹¦ÄÜ·ûºÏÉè¼ÆÒªÇó£¬ÄÜ¹»ÕýÈ·µØÓ°ÏìÓÎÏ·½ÇÉ«µÄÊôÐÔºÍ×´Ì¬¡£
+2. ¼¼ÄÜ»ñÈ¡²âÊÔ£º²âÊÔ½ÇÉ«ÊÇ·ñÄÜ¹»ÕýÈ·µØ»ñÈ¡ºÍ×°±¸¼¼ÄÜ£¬¼¼ÄÜÁÐ±íÊÇ·ñÕýÈ·ÏÔÊ¾ÒÑ×°±¸µÄ¼¼ÄÜ¡£
+3. ×°±¸»ñÈ¡²âÊÔ£º²âÊÔ½ÇÉ«ÊÇ·ñÄÜ¹»ÕýÈ·µØ»ñÈ¡ºÍ×°±¸×°±¸£¬×°±¸ÁÐ±íÊÇ·ñÕýÈ·ÏÔÊ¾ÒÑ×°±¸µÄ×°±¸¡£
+4. BuffÓ¦ÓÃ²âÊÔ£º²âÊÔ¼¼ÄÜºÍ×°±¸ÊÇ·ñÄÜ¹»ÕýÈ·µØÓ¦ÓÃbuff/debuffÐ§¹û£¬½ÇÉ«ÊôÐÔÊÇ·ñÕýÈ·µØÊÜµ½Ó°Ïì¡£
+5. ×÷ÓÃÐ§¹û²âÊÔ£º²âÊÔ¼¼ÄÜºÍ×°±¸µÄ×÷ÓÃÐ§¹ûÊÇ·ñ·ûºÏÔ¤ÆÚ£¬ÀýÈçÉËº¦¼ÆËã¡¢ÖÎÁÆÐ§¹û¡¢ÊôÐÔÌáÉýµÈ¡£
+Çë²¹³ä²âÊÔ·½°¸µÄÏ¸½Ú¡£
+ÎÒÒªÐÂ½¨Ò»¸ö²âÊÔ¹¤¾ß£¬skill_test.html£¬·Åµ½testÄ¿Â¼ÏÂ¡£Õâ¸ö¹¤¾ßÓ¦¸Ã¾ß±¸ÈçÏÂÄÜÁ¦¡£
+1. ¼¼ÄÜ²âÊÔ£ºÄÜ¹»ÏÔÊ¾µ±Ç°¼¼ÄÜÁÐ±í£¬ÄÜ¹»Ä£Äâ»ñÈ¡ÐÂ¼¼ÄÜ£¨3Ñ¡1£©£¬ÄÜ¹»Ä£ÄâÊ¹ÓÃ¼¼ÄÜ²¢ÏÔÊ¾Ð§¹û¡£ÄÜ¹»ÖØÖÃ¼¼ÄÜÏûºÄ¡£ÄÜ¹»½øÐÐ¼¼ÄÜÊÍ·Å¡£
+2. ×°±¸²âÊÔ£ºÄÜ¹»ÏÔÊ¾µ±Ç°×°±¸ÁÐ±í£¬ÄÜ¹»Ä£Äâ»ñÈ¡ÐÂ×°±¸£¨3Ñ¡1£©£¬ÄÜ¹»Ä£Äâ×°±¸ºÍÐ¶ÏÂ×°±¸²¢ÏÔÊ¾Ð§¹û¡£
+3. Buff²âÊÔ£ºÄÜ¹»ÏÔÊ¾µ±Ç°buff/debuffÁÐ±í£¬ÄÜ¹»Ä£ÄâÓ¦ÓÃÐÂµÄbuff/debuff£¬ÄÜ¹»Ä£Äâbuff/debuffµÄ³ÖÐøÊ±¼äºÍÐ§¹û¡£
+Ìá¹©Ò»¸öÐéÄâµÄµÐÈË£¬¼¼ÄÜ¡¢×°±¸µÈÐ§¹ûÄÜ¹»¶ÔµÐÈË²úÉúÓ°Ïì¡£»ùÓÚÕâ¸öÐèÇó£¬ÐÞ¸Ä
