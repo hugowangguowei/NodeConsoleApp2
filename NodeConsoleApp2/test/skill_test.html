@@ -1,0 +1,563 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>技能/装备/Buff 系统独立测试工具</title>
+    <style>
+        body { font-family: "Consolas", "Courier New", monospace; background: #1e1e1e; color: #d4d4d4; padding: 20px; font-size: 13px; }
+        h1 { font-size: 1.4em; color: #569cd6; margin-bottom: 20px; border-bottom: 2px solid #333; padding-bottom: 10px; }
+        h2 { font-size: 1.1em; color: #4ec9b0; margin-top: 0; border-bottom: 1px solid #333; padding-bottom: 5px; }
+        h3 { font-size: 1em; color: #dcdcaa; margin: 10px 0 5px; }
+        
+        .container { display: grid; grid-template-columns: 350px 1fr; gap: 20px; height: calc(100vh - 100px); }
+        .panel { background: #252526; padding: 15px; border: 1px solid #3e3e42; border-radius: 4px; overflow-y: auto; }
+        
+        .control-group { margin-bottom: 20px; border: 1px solid #333; padding: 10px; background: #2d2d30; }
+        
+        button { 
+            background: #3e3e42; color: #fff; border: 1px solid #555; 
+            padding: 5px 10px; margin: 2px; cursor: pointer; font-family: inherit;
+        }
+        button:hover { background: #505055; }
+        button:active { background: #007acc; }
+        button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        select, input { background: #333; color: white; border: 1px solid #555; padding: 4px; }
+
+        ul { padding-left: 20px; margin: 5px 0; }
+        li { margin-bottom: 4px; list-style-type: none; position: relative; }
+        li.selected { background: #37373d; border-left: 3px solid #007acc; padding-left: 5px; }
+
+        .stat-row { display: flex; justify-content: space-between; border-bottom: 1px solid #333; padding: 2px 0; }
+        .stat-label { color: #9cdcfe; }
+        .stat-value { font-weight: bold; }
+        
+        .part-bar { height: 4px; background: #333; margin-top: 2px; position: relative; }
+        .part-fill { height: 100%; background: #4ec9b0; transition: width 0.3s; }
+        .part-fill.broken { background: #f44747; }
+
+        #logPanel { 
+            grid-column: 1 / -1; height: 150px; 
+            background: #111; border: 1px solid #333; 
+            padding: 10px; font-size: 11px; overflow-y: auto; 
+            font-family: monospace;
+        }
+        .log-time { color: #808080; margin-right: 5px; }
+        .log-info { color: #d4d4d4; }
+        .log-warn { color: #cca700; }
+        .log-error { color: #f48771; }
+        .log-success { color: #6a9955; }
+
+        .buff-icon { display: inline-block; width: 16px; height: 16px; background: #555; text-align: center; line-height: 16px; font-size: 10px; margin-right: 2px; border-radius: 2px; }
+        .buff-debuff { background: #800000; }
+        .buff-buff { background: #008000; }
+    </style>
+</head>
+<body>
+
+    <h1>独立测试工具: Skill, Item & Buff System</h1>
+
+    <div class="container">
+        <!-- Control Panel (Left) -->
+        <div class="panel" id="controlPanel">
+            
+            <div class="control-group">
+                <h2>1. 技能 (Skill)</h2>
+                <div style="margin-bottom: 10px;">
+                    <button id="btnRandSkill">随机学习技能</button>
+                    <button id="btnResetAp">重置 AP</button>
+                </div>
+                <h3>已学技能:</h3>
+                <ul id="skillList"></ul> <!-- Populated dynamically -->
+                <div style="margin-top: 10px; padding-top: 5px; border-top: 1px solid #444;">
+                    <label>攻击部位:</label>
+                    <select id="targetPart">
+                        <option value="head">头部 (Head)</option>
+                        <option value="chest" selected>躯干 (Chest)</option>
+                        <option value="left_arm">左臂 (L.Arm)</option>
+                        <option value="right_arm">右臂 (R.Arm)</option>
+                        <option value="left_leg">左腿 (L.Leg)</option>
+                        <option value="right_leg">右腿 (R.Leg)</option>
+                    </select>
+                    <br><br>
+                    <button id="btnExecuteSkill" style="width: 100%; border-color: #007acc;">执行选中技能</button>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <h2>2. 装备 (Item)</h2>
+                <div style="margin-bottom: 10px;">
+                    <button id="btnLootItem">随机掉落装备</button>
+                    <button id="btnUnquipAll">一键卸下</button>
+                </div>
+                <h3>背包 (Inventory):</h3>
+                <ul id="inventoryList"></ul>
+                <h3>已装备 (Equipment):</h3>
+                <ul id="equipmentList"></ul>
+            </div>
+
+            <div class="control-group">
+                <h2>3. Buff / Debuff</h2>
+                <div style="margin-bottom: 10px;">
+                    <select id="buffSelect">
+                        <option value="buff_poison">中毒 (Poison)</option>
+                        <option value="buff_stun">眩晕 (Stun)</option>
+                        <option value="buff_strength">力量增强 (Strength)</option>
+                        <option value="buff_shield">护盾 (Shield)</option>
+                    </select>
+                    <button id="btnApplyPlayer">施加 -> 玩家</button>
+                    <button id="btnApplyEnemy">施加 -> 敌人</button>
+                </div>
+                <button id="btnNextTurn" style="width: 100%;">模拟回合结束 (Tick Buffs)</button>
+            </div>
+
+        </div>
+
+        <!-- Status Display (Right) -->
+        <div class="panel" id="statusPanel">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                
+                <!-- Player Stats -->
+                <div>
+                    <h2>PLAYER (Tester)</h2>
+                    <div id="playerStats">
+                        <div class="stat-row"><span class="stat-label">HP:</span> <span id="plHp">-</span> / <span id="plMaxHp">-</span></div>
+                        <div class="stat-row"><span class="stat-label">AP:</span> <span id="plAp">-</span> / <span id="plMaxAp">-</span></div>
+                        <div class="stat-row"><span class="stat-label">Attack:</span> <span id="plAtk">-</span></div>
+                        <div class="stat-row"><span class="stat-label">Speed:</span> <span id="plSpd">-</span></div>
+                        
+                        <h3>Buffs:</h3>
+                        <div id="playerBuffs"></div>
+
+                        <h3>Body Parts:</h3>
+                        <div id="playerParts"></div>
+                    </div>
+                </div>
+
+                <!-- Dummy Enemy Stats -->
+                <div>
+                    <h2>DUMMY TARGET</h2>
+                    <div id="enemyStats">
+                        <div class="stat-row"><span class="stat-label">HP:</span> <span id="enHp">-</span> / <span id="enMaxHp">-</span></div>
+                        <div class="stat-row"><span class="stat-label">Status:</span> <span id="enStatus">Normal</span></div>
+
+                        <h3>Buffs:</h3>
+                        <div id="enemyBuffs"></div>
+
+                        <h3>Body Parts:</h3>
+                        <div id="enemyParts"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Log Panel -->
+        <div id="logPanel"></div>
+    </div>
+
+    <script type="module">
+        import Engine from '../script/engine/CoreEngine.js';
+
+        // --- Mock Data & State ---
+        let selectedSkillId = null;
+        let dummyEnemy = {
+            id: 'dummy_01',
+            name: 'Training Dummy',
+            stats: { hp: 1000, maxHp: 1000, speed: 5 },
+            bodyParts: {}, // Will be initialized
+            buffs: []
+        };
+
+        // --- UI Elements ---
+        const logPanel = document.getElementById('logPanel');
+        const skillList = document.getElementById('skillList');
+        const inventoryList = document.getElementById('inventoryList');
+        const equipmentList = document.getElementById('equipmentList');
+        
+        // --- Initialization ---
+        async function initTest() {
+            log("Engine initializing...", "info");
+            
+            // Wait for Engine data to be ready (hacky wait, normally use events)
+            let attempts = 0;
+            while (!Engine.data.gameConfig.skills && attempts < 10) {
+                await new Promise(r => setTimeout(r, 200));
+                attempts++;
+            }
+
+            // Create a fresh player session
+            Engine.data.createNewGame("TestUser");
+            const p = Engine.data.playerData;
+            p.stats.maxAp = 10;
+            p.stats.ap = 10;
+            p.skills = ['skill_slash']; // Start with basic skill
+
+            // Initialize Dummy
+            initDummyParts();
+            
+            // Inject Dummy into Engine's Level Data so executePlayerSkill can find it
+            Engine.data._currentLevelConfig = {
+                id: 'test_level',
+                enemies: [dummyEnemy] // Mock the enemies array
+            };
+
+            updateUI();
+            log("Test Environment Ready. Player & Dummy initialized.", "success");
+        }
+
+        function initDummyParts() {
+            const parts = ['head', 'chest', 'left_arm', 'right_arm', 'left_leg', 'right_leg'];
+            parts.forEach(p => {
+                dummyEnemy.bodyParts[p] = {
+                    current: 50, max: 50, weakness: (p === 'head' ? 1.5 : 1.0), status: 'NORMAL'
+                };
+            });
+        }
+
+        // --- Core Logic Mocks ---
+
+        // Mock Stat Calculation (Since Engine might not have it fully implemented yet)
+        function calculatePlayerStats() {
+            const p = Engine.data.playerData;
+            let atk = 10; // Base
+            let spd = p.stats.speed;
+
+            if (p.equipment) {
+                for (let key in p.equipment) {
+                    const itemId = p.equipment[key];
+                    if (!itemId) continue;
+                    const item = Engine.data.gameConfig.items[itemId];
+                    if (item && item.buffs) {
+                        item.buffs.forEach(b => {
+                            if (b.stat === 'attack') atk += b.value;
+                            if (b.stat === 'speed') spd += b.value;
+                        });
+                    }
+                }
+            }
+            return { atk, spd };
+        }
+
+        // --- UI Rendering ---
+
+        function updateUI() {
+            updatePlayerUI();
+            updateEnemyUI();
+            updateSkillList();
+            updateInventory();
+        }
+
+        function updatePlayerUI() {
+            const p = Engine.data.playerData;
+            const stats = calculatePlayerStats();
+
+            document.getElementById('plHp').textContent = p.stats.hp;
+            document.getElementById('plMaxHp').textContent = p.stats.maxHp;
+            document.getElementById('plAp').textContent = p.stats.ap;
+            document.getElementById('plMaxAp').textContent = p.stats.maxAp;
+            document.getElementById('plAtk').textContent = stats.atk;
+            document.getElementById('plSpd').textContent = stats.spd;
+
+            // Render Parts (Mock visualization, assuming Player also has parts logic in Engine)
+            // Note: engine.initializePlayerBodyParts returns the object, it's not stored in persistent playerData usually
+            // We can call it to get current state
+            const parts = Engine.initializePlayerBodyParts(p);
+            renderBodyParts('playerParts', parts);
+        }
+
+        function updateEnemyUI() {
+            const e = dummyEnemy;
+            document.getElementById('enHp').textContent = e.stats.hp;
+            document.getElementById('enMaxHp').textContent = e.stats.maxHp;
+            renderBodyParts('enemyParts', e.bodyParts);
+        }
+
+        function renderBodyParts(containerId, partsObj) {
+            const container = document.getElementById(containerId);
+            container.innerHTML = '';
+            for (let [name, part] of Object.entries(partsObj)) {
+                if (name === 'abdomen') continue; // Skip to save space if needed
+                const percent = (part.current / part.max) * 100;
+                const div = document.createElement('div');
+                div.style.marginBottom = '4px';
+                div.innerHTML = `
+                    <div style="display:flex; justify-content:space-between; font-size:10px;">
+                        <span>${name}</span>
+                        <span>${part.current}/${part.max}</span>
+                    </div>
+                    <div class="part-bar">
+                        <div class="part-fill ${part.current===0?'broken':''}" style="width: ${percent}%;"></div>
+                    </div>
+                `;
+                container.appendChild(div);
+            }
+        }
+
+        function updateSkillList() {
+            const p = Engine.data.playerData;
+            skillList.innerHTML = '';
+            p.skills.forEach(skillId => {
+                const conf = Engine.data.getSkillConfig(skillId);
+                const li = document.createElement('li');
+                li.textContent = `${conf.name} (${conf.cost} AP) - ${conf.type}`;
+                li.style.cursor = 'pointer';
+                if (selectedSkillId === skillId) li.classList.add('selected');
+                
+                li.onclick = () => {
+                    selectedSkillId = skillId;
+                    updateSkillList();
+                };
+                skillList.appendChild(li);
+            });
+        }
+
+        function updateInventory() {
+            const p = Engine.data.playerData;
+            inventoryList.innerHTML = '';
+            p.inventory.forEach((itemId, idx) => {
+                const item = Engine.data.gameConfig.items[itemId];
+                const li = document.createElement('li');
+                li.innerHTML = `<button onclick="window.cmdEquip('${itemId}', ${idx})">装备</button> ${item.name} (${item.slot})`;
+                inventoryList.appendChild(li);
+            });
+
+            equipmentList.innerHTML = '';
+            for (let [slot, itemId] of Object.entries(p.equipment || {})) {
+                if (!itemId) {
+                    equipmentList.innerHTML += `<li><span style="color:#666">${slot}: (Empty)</span></li>`;
+                    continue;
+                }
+                const item = Engine.data.gameConfig.items[itemId];
+                equipmentList.innerHTML += `<li>
+                    <span style="color:#ce9178">${slot}</span>: ${item ? item.name : itemId}
+                    <button onclick="window.cmdUnequip('${slot}')">卸下</button>
+                </li>`;
+            }
+        }
+
+        // --- Actions ---
+
+        function log(msg, type='info') {
+            const div = document.createElement('div');
+            const time = new Date().toLocaleTimeString();
+            div.innerHTML = `<span class="log-time">[${time}]</span><span class="log-${type}">${msg}</span>`;
+            logPanel.prepend(div);
+        }
+
+        // Expose commands to global scope for HTML onclick
+        window.cmdEquip = (itemId, invIndex) => {
+            const p = Engine.data.playerData;
+            const item = Engine.data.gameConfig.items[itemId];
+            if (!item) return;
+
+            // Simple swap logic
+            const slot = item.slot;
+            const oldItem = p.equipment[slot];
+            
+            p.equipment[slot] = itemId;
+            p.inventory.splice(invIndex, 1); // Remove from bag
+            if (oldItem) p.inventory.push(oldItem); // Return old to bag
+
+            log(`Equipped ${item.name} to ${slot}`, 'success');
+            updateUI();
+        };
+
+        window.cmdUnequip = (slot) => {
+            const p = Engine.data.playerData;
+            const itemId = p.equipment[slot];
+            if (itemId) {
+                p.equipment[slot] = null;
+                p.inventory.push(itemId);
+                log(`Unequipped ${itemId}`, 'info');
+                updateUI();
+            }
+        };
+
+        // --- Event Listeners ---
+
+        document.getElementById('btnRandSkill').onclick = () => {
+            const allSkills = Object.keys(Engine.data.gameConfig.skills);
+            const p = Engine.data.playerData;
+            const learnable = allSkills.filter(s => !p.skills.includes(s));
+            if (learnable.length === 0) {
+                log("No more skills to learn!", "warn");
+                return;
+            }
+            const rand = learnable[Math.floor(Math.random() * learnable.length)];
+            p.skills.push(rand);
+            log(`Learned new skill: ${rand}`, 'success');
+            updateUI();
+        };
+
+        document.getElementById('btnResetAp').onclick = () => {
+            const p = Engine.data.playerData;
+            p.stats.ap = p.stats.maxAp;
+            log("AP Reset to max.", 'info');
+            updateUI();
+        };
+
+        document.getElementById('btnExecuteSkill').onclick = () => {
+            if (!selectedSkillId) {
+                log("Select a skill first!", "warn");
+                return;
+            }
+            const p = Engine.data.playerData;
+            const conf = Engine.data.getSkillConfig(selectedSkillId);
+            
+            if (p.stats.ap < conf.cost) {
+                log("Not enough AP!", "error");
+                return;
+            }
+
+            const targetPart = document.getElementById('targetPart').value;
+            
+            // Construct Action
+            const action = {
+                source: 'PLAYER',
+                skillId: selectedSkillId,
+                targetId: dummyEnemy.id,
+                bodyPart: targetPart,
+                cost: conf.cost
+            };
+
+            log(`Executing ${conf.name} on Dummy's ${targetPart}...`, 'info');
+
+            // Use Engine Logic
+            // Note: Engine.executePlayerSkill returns a result object, and modifies Dummy internally (by reference)
+            // We need to patch Engine.data.currentLevelData.enemies temporarily to point to our Dummy
+            // (Done in initTest)
+
+            try {
+                const result = Engine.executePlayerSkill(action);
+                
+                if (result) {
+                    if (result.isHit) {
+                        log(`Hit! Damage: ${result.damage} (Armor Dmg: ${result.armorDamage})`, 'success');
+                        // Sync dummy HP back from the Engine modification (actually Engine modifies the object in array)
+                        // dummyEnemy IS the object in array, so it should be updated.
+                        dummyEnemy.stats.hp = result.targetHpRemaining || dummyEnemy.stats.hp; // Update local tracker if needed
+                    } else {
+                        log(`Miss/Fail: ${result.reason}`, 'warn');
+                    }
+                } else {
+                    log("Engine returned null result.", "error");
+                }
+            } catch (e) {
+                log("Error executing skill: " + e.message, "error");
+                console.error(e);
+            }
+
+            updateUI();
+        };
+
+        document.getElementById('btnLootItem').onclick = () => {
+            const allItems = Object.keys(Engine.data.gameConfig.items);
+            const rand = allItems[Math.floor(Math.random() * allItems.length)];
+            Engine.data.playerData.inventory.push(rand);
+            log(`Looted: ${Engine.data.gameConfig.items[rand].name}`, 'success');
+            updateUI();
+        };
+        
+        document.getElementById('btnUnquipAll').onclick = () => {
+             const p = Engine.data.playerData;
+             for (let slot in p.equipment) {
+                 if (p.equipment[slot]) window.cmdUnequip(slot);
+             }
+        };
+
+        // --- Buff Logic ---
+
+        document.getElementById('btnApplyPlayer').onclick = () => {
+            const buffId = document.getElementById('buffSelect').value;
+            applyBuff(Engine.data.playerData, buffId);
+            updateUI();
+        };
+
+        document.getElementById('btnApplyEnemy').onclick = () => {
+            const buffId = document.getElementById('buffSelect').value;
+            applyBuff(dummyEnemy, buffId);
+            updateUI();
+        };
+
+        function applyBuff(target, buffId) {
+            if (!target.buffs) target.buffs = [];
+            // Simple logic: add or refresh
+            const existing = target.buffs.find(b => b.id === buffId);
+            if (existing) {
+                existing.duration = 3; // Reset duration mock
+                existing.stacks = (existing.stacks || 1) + 1;
+                log(`Refreshed/Stacked Buff ${buffId} on target`, 'info');
+            } else {
+                target.buffs.push({
+                    id: buffId,
+                    duration: 3,
+                    stacks: 1
+                });
+                log(`Applied Buff ${buffId} to target`, 'success');
+            }
+        }
+
+        document.getElementById('btnNextTurn').onclick = () => {
+            log("--- Ticking Turn ---", 'info');
+            
+            // Mock System: Process Buffs
+            [Engine.data.playerData, dummyEnemy].forEach(entity => {
+                if (entity.buffs) {
+                    for (let i = entity.buffs.length - 1; i >= 0; i--) {
+                        const b = entity.buffs[i];
+                        
+                        // Mock Effects
+                        if (b.id === 'buff_poison') {
+                            const dmg = 5 * b.stacks;
+                            entity.stats.hp -= dmg;
+                            log(`Poison dealt ${dmg} dmg to ${entity.name || 'Target'}`, 'warn');
+                        }
+                        
+                        b.duration--;
+                        if (b.duration <= 0) {
+                            entity.buffs.splice(i, 1);
+                            log(`Buff ${b.id} expired`, 'info');
+                        }
+                    }
+                }
+            });
+            updateUI();
+        };
+
+        // --- Render Helpers for Buffs ---
+        
+        const originalUpdatePlayerUI = updatePlayerUI;
+        updatePlayerUI = function() {
+            originalUpdatePlayerUI();
+            renderBuffs('playerBuffs', Engine.data.playerData.buffs);
+        };
+        
+        const originalUpdateEnemyUI = updateEnemyUI;
+        updateEnemyUI = function() {
+            originalUpdateEnemyUI();
+            renderBuffs('enemyBuffs', dummyEnemy.buffs);
+        };
+
+        function renderBuffs(containerId, buffs) {
+            const container = document.getElementById(containerId);
+            container.innerHTML = '';
+            if (!buffs || buffs.length === 0) {
+                container.textContent = 'None';
+                return;
+            }
+            buffs.forEach(b => {
+                const span = document.createElement('span');
+                span.className = 'buff-icon ' + (b.id.includes('poison') ? 'buff-debuff' : 'buff-buff');
+                span.textContent = `${b.id.substring(5,6).toUpperCase()} x${b.stacks}`;
+                span.title = `${b.id} (${b.duration} turns)`;
+                container.appendChild(span);
+            });
+        }
+
+        // --- Start ---
+        window.addEventListener('load', initTest);
+
+    </script>
+</body>
+</html>

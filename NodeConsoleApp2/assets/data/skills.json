@@ -1,6 +1,34 @@
 {
-    "skill_slash": { "id": "skill_slash", "name": "斩击", "cost": 2, "type": "DAMAGE", "value": 20, "speed": 0, "targetType": "SINGLE_PART" },
-    "skill_heal": { "id": "skill_heal", "name": "治疗", "cost": 3, "type": "HEAL", "value": 30, "speed": -2, "targetType": "GLOBAL" },
-    "skill_fireball": { "id": "skill_fireball", "name": "火球术", "cost": 4, "type": "DAMAGE", "value": 40, "speed": -5, "targetType": "SINGLE_PART" },
-    "skill_bite": { "id": "skill_bite", "name": "撕咬", "cost": 2, "type": "DAMAGE", "value": 15, "speed": 2, "targetType": "SINGLE_PART" }
+    "skill_slash": { "id": "skill_slash", "name": "斩击", "cost": 2, "type": "DAMAGE", "value": 20, "speed": 0, "targetType": "SINGLE_PART", "description": "基础的挥砍攻击。" },
+    "skill_heal": { "id": "skill_heal", "name": "治疗", "cost": 3, "type": "HEAL", "value": 30, "speed": -2, "targetType": "GLOBAL", "description": "恢复少量生命值。" },
+    "skill_fireball": { "id": "skill_fireball", "name": "火球术", "cost": 4, "type": "DAMAGE", "value": 50, "speed": -5, "targetType": "SINGLE_PART", "description": "高额火焰伤害，施加燃烧。", "applyBuff": { "id": "buff_burn", "chance": 1.0, "duration": 3 } },
+    "skill_bite": { "id": "skill_bite", "name": "撕咬", "cost": 2, "type": "DAMAGE", "value": 15, "speed": 2, "targetType": "SINGLE_PART", "description": "野兽的撕咬。" },
+
+    "skill_skull_cracker": { "id": "skill_skull_cracker", "name": "碎颅重击", "cost": 4, "type": "DAMAGE", "value": 150, "valueType": "PERCENT", "speed": -3, "targetType": "SINGLE_PART", "requiredPart": "head", "description": "对头部造成 150% 伤害，若有护甲额外造成破甲。" },
+    "skill_shield_bash": { "id": "skill_shield_bash", "name": "盾牌猛击", "cost": 3, "type": "DAMAGE", "value": 10, "speed": 0, "targetType": "SINGLE_PART", "description": "造成少量伤害，50% 概率眩晕。", "effects": [{ "type": "STUN", "chance": 0.5 }] },
+    "skill_shockwave": { "id": "skill_shockwave", "name": "震荡波", "cost": 4, "type": "AOE_DAMAGE", "value": 10, "speed": -2, "targetType": "ALL_PARTS", "description": "全体伤害并减速。", "applyBuff": { "id": "buff_slow", "duration": 1 } },
+    
+    "skill_iron_will": { "id": "skill_iron_will", "name": "钢铁意志", "cost": 2, "type": "REPAIR", "value": 15, "speed": 1, "targetType": "SELF_PARTS", "targetParts": ["head", "chest"], "description": "恢复头部和躯干护甲 15 点。" },
+    "skill_spiked_shell": { "id": "skill_spiked_shell", "name": "尖刺防御", "cost": 3, "type": "BUFF_SELF", "value": 0, "speed": 1, "targetType": "SELF", "description": "获得反伤状态。", "applyBuff": { "id": "buff_thorns", "duration": 2 } },
+    "skill_shield_wall": { "id": "skill_shield_wall", "name": "盾墙", "cost": 5, "type": "BUFF_SELF", "value": 0, "speed": 5, "targetType": "SELF", "description": "大幅提升防御，下回合 AP+2。", "applyBuff": { "id": "buff_shield_wall", "duration": 1 } },
+
+    "skill_artery_slice": { "id": "skill_artery_slice", "name": "血管切割", "cost": 2, "type": "DAMAGE", "value": 15, "speed": 2, "targetType": "SINGLE_PART", "description": "造成伤害并施加流血。", "applyBuff": { "id": "buff_bleed", "duration": 3 } },
+    "skill_precision_thrust": { "id": "skill_precision_thrust", "name": "弱点突刺", "cost": 3, "type": "DAMAGE", "value": 1.5, "valueType": "CRIT_MULTIPLIER", "speed": 3, "targetType": "SINGLE_PART", "description": "必定暴击，只能攻击破损部位。" },
+    "skill_bloody_harvest": { "id": "skill_bloody_harvest", "name": "血腥收割", "cost": 3, "type": "DAMAGE", "value": 1.5, "valueType": "cond_bleed_multiplier", "speed": 2, "targetType": "SINGLE_PART", "description": "对流血目标造成额外 50% 伤害。" },
+
+    "skill_quick_shot": { "id": "skill_quick_shot", "name": "连珠箭", "cost": 1, "type": "DAMAGE", "value": 0.5, "valueType": "PERCENT", "speed": 5, "targetType": "SINGLE_PART", "description": "50% 伤害，低 AP 消耗。" },
+    "skill_tactical_roll": { "id": "skill_tactical_roll", "name": "战术翻滚", "cost": 2, "type": "BUFF_SELF", "speed": 4, "targetType": "SELF", "description": "提升闪避，下一次攻击 0 AP。", "applyBuff": { "id": "buff_evasion", "duration": 1 } },
+    "skill_poison_coating": { "id": "skill_poison_coating", "name": "毒液涂层", "cost": 2, "type": "BUFF_SELF", "speed": 2, "targetType": "SELF", "description": "下回合远程攻击附带中毒。", "applyBuff": { "id": "buff_poison_coating", "duration": 1 } },
+    
+    "skill_piercing_bolt": { "id": "skill_piercing_bolt", "name": "穿甲射击", "cost": 3, "type": "DAMAGE", "value": 30, "speed": 3, "targetType": "SINGLE_PART", "description": "无视 50% 护甲。" },
+    "skill_crippling_shot": { "id": "skill_crippling_shot", "name": "致残射击", "cost": 3, "type": "DAMAGE", "value": 20, "speed": 3, "targetType": "SINGLE_PART", "requiredPart": "leg", "description": "攻击腿部，减少敌人速度。", "applyBuff": { "id": "buff_slow", "duration": 2 } },
+    "skill_mark_target": { "id": "skill_mark_target", "name": "弱点标记", "cost": 2, "type": "DEBUFF_ENEMY", "speed": 4, "targetType": "SINGLE_PART", "description": "标记部位，使其受到伤害增加 30%。", "applyBuff": { "id": "buff_vulnerable", "duration": 1 } },
+
+    "skill_frost_nova": { "id": "skill_frost_nova", "name": "冰霜新星", "cost": 3, "type": "AOE_DAMAGE", "value": 15, "speed": -1, "targetType": "ALL_PARTS", "description": "造成伤害并限制 AP 使用。", "applyBuff": { "id": "buff_freeze", "duration": 1 } },
+    "skill_oil_slick": { "id": "skill_oil_slick", "name": "燃油投掷", "cost": 2, "type": "DEBUFF_ENEMY", "speed": 1, "targetType": "GLOBAL", "description": "施加易燃状态。", "applyBuff": { "id": "buff_oiled", "duration": 3 } },
+    "skill_chain_lightning": { "id": "skill_chain_lightning", "name": "闪电链", "cost": 4, "type": "DAMAGE", "value": 35, "speed": 4, "targetType": "SINGLE_PART", "description": "对潮湿/铁甲敌人伤害增加。" },
+    
+    "skill_holy_light": { "id": "skill_holy_light", "name": "圣光术", "cost": 3, "type": "HEAL", "value": 30, "speed": -2, "targetType": "GLOBAL", "description": "恢复 30 HP。" },
+    "skill_divine_shield": { "id": "skill_divine_shield", "name": "神圣护盾", "cost": 4, "type": "BUFF_SELF", "speed": 5, "targetType": "SELF", "description": "免疫下一次伤害。", "applyBuff": { "id": "buff_invulnerable", "duration": 1 } },
+    "skill_cleansing_fire": { "id": "skill_cleansing_fire", "name": "净化之火", "cost": 3, "type": "CLEANSE", "speed": 1, "targetType": "SELF", "description": "解除 Debuff 并回血。" }
 }

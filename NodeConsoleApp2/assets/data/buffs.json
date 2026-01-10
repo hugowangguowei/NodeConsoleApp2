@@ -1,0 +1,90 @@
+{
+    "buff_poison": {
+        "id": "buff_poison",
+        "name": "中毒",
+        "type": "DEBUFF",
+        "tags": ["poison", "dot"],
+        "duration": 3,
+        "maxStacks": 5,
+        "effects": [
+            { "trigger": "ON_TURN_START", "action": "DAMAGE", "value": 5, "valueType": "FLAT" }
+        ]
+    },
+    "buff_stun": {
+        "id": "buff_stun",
+        "name": "眩晕",
+        "type": "DEBUFF",
+        "tags": ["control"],
+        "duration": 1,
+        "maxStacks": 1,
+        "effects": [
+            { "trigger": "ON_TURN_START", "action": "SKIP_TURN" }
+        ]
+    },
+    "buff_strength": {
+        "id": "buff_strength",
+        "name": "力量增强",
+        "type": "BUFF",
+        "tags": ["stat_up"],
+        "duration": 3,
+        "maxStacks": 3,
+        "effects": [
+            { "type": "STAT_MOD", "stat": "attack", "value": 5, "mode": "ADD" }
+        ]
+    },
+    "buff_shield": {
+        "id": "buff_shield",
+        "name": "护盾",
+        "type": "BUFF",
+        "tags": ["defense"],
+        "duration": 2,
+        "maxStacks": 1,
+        "effects": [
+            { "trigger": "ON_TAKE_DAMAGE", "action": "ABSORB_DAMAGE", "value": 20 }
+        ]
+    },
+    "buff_bleed": {
+        "id": "buff_bleed",
+        "name": "流血",
+        "type": "DEBUFF",
+        "tags": ["physical", "dot"],
+        "duration": 3,
+        "maxStacks": 5,
+        "effects": [
+             { "trigger": "ON_TURN_END", "action": "DAMAGE", "value": 5, "valueType": "FLAT" }
+        ]
+    },
+    "buff_burn": {
+        "id": "buff_burn",
+        "name": "燃烧",
+        "type": "DEBUFF",
+        "tags": ["fire", "dot"],
+        "duration": 3,
+        "maxStacks": 3,
+        "effects": [
+             { "trigger": "ON_TURN_START", "action": "DAMAGE", "value": 10, "valueType": "FLAT" }
+        ]
+    },
+    "buff_freeze": {
+        "id": "buff_freeze",
+        "name": "冰冻",
+        "type": "DEBUFF",
+        "tags": ["ice", "control"],
+        "duration": 1,
+        "maxStacks": 1,
+        "effects": [
+             { "trigger": "ON_TURN_START", "action": "REDUCE_AP", "value": 2 }
+        ]
+    },
+    "buff_invulnerable": {
+        "id": "buff_invulnerable",
+        "name": "无敌",
+        "type": "BUFF",
+        "tags": ["divine"],
+        "duration": 1,
+        "maxStacks": 1,
+        "effects": [
+             { "trigger": "ON_TAKE_DAMAGE", "action": "NULLIFY_DAMAGE" }
+        ]
+    }
+}

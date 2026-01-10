@@ -156,3 +156,39 @@ let oldHp = player.hp;
 player.triggerBuffs("ON_TURN_START");
 console.assert(player.hp < oldHp, "Test Failed: Poison did not deal damage");
 ```
+
+---
+
+## 8. 独立测试工具设计 (Test Tool Design)
+
+为了更高效地验证上述逻辑，我们将开发一个专用的轻量级测试页面 `test/skill_test.html`。该工具脱离完整的 Game Loop，专注于核心对象的单元测试与交互模拟。
+
+### 8.1 界面布局与功能区
+测试页面将分为左右两个主区域：
+*   **左侧 (Control Panel)**: 操作区，包含技能、装备、Buff 的模拟指令按钮。
+*   **右侧 (Status Display)**: 展示区，实时渲染 Player 和 Dummy Enemy 的详细状态（属性、装备槽、Buff列表）。
+*   **底部 (Log Panel)**: 独立的日志区域，实时打印操作反馈。
+
+### 8.2 技能测试模块 (Skill Module)
+*   **列表显示**: 渲染当前 `player.skills`，显示图标、名称、AP消耗、CD。
+*   **模拟获取**: 提供一个“随机学习技能”按钮，点击后弹窗或直接从 `skills.json` 中随机挑选 3 个未学会的技能供选择（模拟 Roguelike 升级奖励）。
+*   **模拟释放**: 选中列表中的技能，点击“释放”，立即对右侧的 Dummy Enemy 执行 `Skill.execute()`。
+    *   *反馈*: 日志输出伤害数值，右侧敌人 HP/护甲条实时扣除。
+*   **重置**: 按钮“重置 AP/CD”，一键回复玩家行动力，清空技能冷却。
+
+### 8.3 装备测试模块 (Item Module)
+*   **列表显示**: 分为“背包”和“已装备槽位”两部分。
+*   **模拟获取**: 按钮“随机掉落装备”，从 `items.json` 中随机生成 3 件不同部位/稀有度的装备供选择。
+*   **穿戴交互**: 
+    *   点击背包物品 -> 装备到对应槽位（自动替换旧装备）。
+    *   点击已装备物品 -> 卸下放入背包。
+    *   *反馈*: 观察右侧状态栏中 Player 属性（如攻击力、护甲上限）的实时变化，验证 Buff 挂载是否正确。
+
+### 8.4 Buff/Debuff 测试模块
+*   **状态监控**: 列表展示当前所有 Buff，包含 Icon、层数、剩余回合。
+*   **注入测试**: 下拉框选择一个预设 Buff (如 Poison, Stun, Heal)，输入持续回合数，可选择点击“施加给玩家”或“施加给敌人”。
+*   **Tick 模拟**: 按钮“模拟回合结束”，触发所有 Buff 的 `ON_TURN_END` 钩子，观察扣血/回复效果及 Duration 衰减。
+
+### 8.5 虚拟环境 (Mock Environment)
+*   **Player Agent**: 实例化一个标准玩家对象，属性实时同步显示。
+*   **Dummy Enemy**: 一个高血量（如 1000 HP）、全裸装的靶子对象，用于承受伤害和 Debuff，直观展示测试效果。
