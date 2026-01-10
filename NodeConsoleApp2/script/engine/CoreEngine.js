@@ -1,4 +1,4 @@
-import EventBus from './EventBus.js';
+ï»¿import EventBus from './EventBus.js';
 import GameFSM from './GameFSM.js';
 import GameLoop from './GameLoop.js';
 import DataManager from './DataManagerV2.js';
@@ -39,35 +39,35 @@ class CoreEngine {
         
         this.loop.start();
         
-        // ³õÊ¼»¯ºó×Ô¶¯Ìø×ªµ½µÇÂ¼×´Ì¬
+        // åˆå§‹åŒ–åŽè‡ªåŠ¨è·³è½¬åˆ°ç™»å½•çŠ¶æ€
         this.fsm.changeState('LOGIN');
         console.log('Engine initialized.');
     }
 
-    // --- ÊäÈë´¦Àí³ÌÐò ---
+    // --- è¾“å…¥å¤„ç†ç¨‹åº ---
 
     login(username) {
         if (this.fsm.currentState !== 'LOGIN') return;
 
         console.log(`User logging in: ${username}`);
-        // ³¢ÊÔÏÈ¼ÓÔØÏÖÓÐÓÎÏ·
+        // å°è¯•å…ˆåŠ è½½çŽ°æœ‰æ¸¸æˆ
         if (!this.data.loadGame()) {
             this.data.createNewGame(username);
         }
         
-        // Í³Ò»ÐÐÎª£ºµÇÂ¼ºó×ÜÊÇ½øÈëÖ÷²Ëµ¥
-        // ½öÇÐ»»×´Ì¬£¬¾ßÌåÏÔÊ¾Âß¼­£¨ÈçÊÇ·ñÏÔÊ¾¡°¼ÌÐøÓÎÏ·¡±£©ÓÉ UI ²ã¸ù¾ÝÊý¾Ý¾ö¶¨
+        // ç»Ÿä¸€è¡Œä¸ºï¼šç™»å½•åŽæ€»æ˜¯è¿›å…¥ä¸»èœå•
+        // ä»…åˆ‡æ¢çŠ¶æ€ï¼Œå…·ä½“æ˜¾ç¤ºé€»è¾‘ï¼ˆå¦‚æ˜¯å¦æ˜¾ç¤ºâ€œç»§ç»­æ¸¸æˆâ€ï¼‰ç”± UI å±‚æ ¹æ®æ•°æ®å†³å®š
         this.fsm.changeState('MAIN_MENU');
         this.eventBus.emit('DATA_UPDATE', this.data.playerData);
     }
 
-    // Ç¿ÖÆ´´½¨ÐÂÓÎÏ·£¬¸²¸ÇÏÖÓÐ´æµµ
+    // å¼ºåˆ¶åˆ›å»ºæ–°æ¸¸æˆï¼Œè¦†ç›–çŽ°æœ‰å­˜æ¡£
     resetGame(username) {
         console.log(`Resetting game for user: ${username}`);
         this.data.createNewGame(username);
         
-        // Èç¹ûÎÒÃÇÔÚµÇÂ¼×´Ì¬£¬×ª»»µ½Ö÷²Ëµ¥
-        // Èç¹ûÎÒÃÇÒÑ¾­ÔÚÓÎÏ·ÖÐ£¬Ö»Ðè¸üÐÂÊý¾Ý
+        // å¦‚æžœæˆ‘ä»¬åœ¨ç™»å½•çŠ¶æ€ï¼Œè½¬æ¢åˆ°ä¸»èœå•
+        // å¦‚æžœæˆ‘ä»¬å·²ç»åœ¨æ¸¸æˆä¸­ï¼Œåªéœ€æ›´æ–°æ•°æ®
         if (this.fsm.currentState === 'LOGIN') {
             this.fsm.changeState('MAIN_MENU');
         }
@@ -89,7 +89,7 @@ class CoreEngine {
         this.data.currentLevelData = levelData;
         this.fsm.changeState('BATTLE_PREPARE');
         
-        // ÔÝÊ±Ä£ÄâÁ¢¼´½øÈëÕ½¶·
+        // æš‚æ—¶æ¨¡æ‹Ÿç«‹å³è¿›å…¥æˆ˜æ–—
         setTimeout(() => {
             this.startBattle();
         }, 500);
@@ -99,25 +99,25 @@ class CoreEngine {
         this.currentTurn = 0;
         this.fsm.changeState('BATTLE_LOOP');
         
-        // ³õÊ¼»¯ÔËÐÐÊ±Êý¾Ý½á¹¹
+        // åˆå§‹åŒ–è¿è¡Œæ—¶æ•°æ®ç»“æž„
         if (!this.data.dataConfig.runtime) this.data.dataConfig.runtime = {};
         const runtime = this.data.dataConfig.runtime;
 
-        // 1. ³õÊ¼×´Ì¬¿ìÕÕ
+        // 1. åˆå§‹çŠ¶æ€å¿«ç…§
         runtime.initialState = {
             enemies: JSON.parse(JSON.stringify(this.data.currentLevelData.enemies))
         };
 
-        // 2. ÀúÊ·¼ÇÂ¼
+        // 2. åŽ†å²è®°å½•
         runtime.history = [];
 
-        // 3. ¶ÓÁÐ
+        // 3. é˜Ÿåˆ—
         runtime.queues = {
             player: [],
             enemy: []
         };
 
-        // 4. Íæ¼ÒÁÙÊ±×´Ì¬
+        // 4. çŽ©å®¶ä¸´æ—¶çŠ¶æ€
         runtime.playerBattleState = {
             buffs: [],
             tempStatModifiers: {},
@@ -203,7 +203,7 @@ class CoreEngine {
         this.currentTurn = runtime.turn || 1;
         this.battlePhase = runtime.phase || 'PLANNING';
         
-        // »Ö¸´¶ÓÁÐ
+        // æ¢å¤é˜Ÿåˆ—
         this.playerSkillQueue = runtime.queues ? (runtime.queues.player || []) : [];
         this.enemySkillQueue = runtime.queues ? (runtime.queues.enemy || []) : [];
 
@@ -222,9 +222,9 @@ class CoreEngine {
         
         console.log(`Resumed battle at Turn ${this.currentTurn}, Phase ${this.battlePhase}`);
         
-        // Èç¹ûÊÇÔÚÖ´ÐÐ½×¶Î»Ö¸´£¬¿ÉÄÜÐèÒª¼ÌÐøÖ´ÐÐ»òÖØÐÂ¿ªÊ¼»ØºÏÂß¼­
-        // ÎªÁË¼òµ¥£¬Èç¹ûÊÇÔÚÖ´ÐÐ½×¶Î»Ö¸´£¬Ç¿ÖÆÖØÖÃÎª¹æ»®½×¶Î
-        // »òÕßÈç¹ûÊÇ½áËãºó£¬Ö»ÊÇ»Ö¸´ UI ×´Ì¬¡£
+        // å¦‚æžœæ˜¯åœ¨æ‰§è¡Œé˜¶æ®µæ¢å¤ï¼Œå¯èƒ½éœ€è¦ç»§ç»­æ‰§è¡Œæˆ–é‡æ–°å¼€å§‹å›žåˆé€»è¾‘
+        // ä¸ºäº†ç®€å•ï¼Œå¦‚æžœæ˜¯åœ¨æ‰§è¡Œé˜¶æ®µæ¢å¤ï¼Œå¼ºåˆ¶é‡ç½®ä¸ºè§„åˆ’é˜¶æ®µ
+        // æˆ–è€…å¦‚æžœæ˜¯ç»“ç®—åŽï¼Œåªæ˜¯æ¢å¤ UI çŠ¶æ€ã€‚
         
         this.emitBattleUpdate();
         this.eventBus.emit('BATTLE_LOG', { text: `Game Resumed. Turn ${this.currentTurn}.` });
@@ -274,11 +274,11 @@ class CoreEngine {
     }
 
     saveGame(slotId) {
-        // ±£´æÇ°½«µ±Ç°Õ½¶·×´Ì¬Í¬²½µ½ DataManager
+        // ä¿å­˜å‰å°†å½“å‰æˆ˜æ–—çŠ¶æ€åŒæ­¥åˆ° DataManager
         if (this.fsm.currentState === 'BATTLE_LOOP') {
             this.saveBattleState();
         } else {
-            // Èç¹û²»ÔÚÕ½¶·ÖÐ£¬Çå³ýÕ½¶·ÔËÐÐÊ±Êý¾Ý
+            // å¦‚æžœä¸åœ¨æˆ˜æ–—ä¸­ï¼Œæ¸…é™¤æˆ˜æ–—è¿è¡Œæ—¶æ•°æ®
             if (this.data.dataConfig.runtime) {
                 delete this.data.dataConfig.runtime.levelData;
                 delete this.data.dataConfig.runtime.turn;
@@ -301,7 +301,7 @@ class CoreEngine {
         
         this.battlePhase = 'PLANNING';
         
-        // ¼ÇÂ¼ÀúÊ·¿ìÕÕ
+        // è®°å½•åŽ†å²å¿«ç…§
         if (this.data.dataConfig.runtime) {
             if (!this.data.dataConfig.runtime.history) this.data.dataConfig.runtime.history = [];
             
@@ -333,7 +333,7 @@ class CoreEngine {
         this.playerSkillQueue = [];
         this.enemySkillQueue = [];
 
-        // ÖØÖÃ AP
+        // é‡ç½® AP
         if (this.data.playerData) {
             this.data.playerData.stats.ap = this.data.playerData.stats.maxAp;
             this.eventBus.emit('DATA_UPDATE', this.data.playerData);
@@ -354,8 +354,8 @@ class CoreEngine {
             return;
         }
 
-        // ÑéÖ¤Ä¿±êÉíÌå²¿Î»
-        // ¹¥»÷ºÍ¸¨Öú¼¼ÄÜÐèÒªÉíÌå²¿Î»£¬³ý·ÇËüÃÇÊÇÈ«¾Ö/AOE
+        // éªŒè¯ç›®æ ‡èº«ä½“éƒ¨ä½
+        // æ”»å‡»å’Œè¾…åŠ©æŠ€èƒ½éœ€è¦èº«ä½“éƒ¨ä½ï¼Œé™¤éžå®ƒä»¬æ˜¯å…¨å±€/AOE
         const requiresBodyPart = (skillConfig.type === 'DAMAGE' || skillConfig.type === 'HEAL' || skillConfig.type === 'BUFF') && skillConfig.targetType !== 'GLOBAL' && skillConfig.targetType !== 'AOE';
 
         if (requiresBodyPart) {
@@ -364,7 +364,7 @@ class CoreEngine {
                 return;
             }
 
-            // ²éÕÒÄ¿±ê
+            // æŸ¥æ‰¾ç›®æ ‡
             let target = null;
             if (targetId === this.data.playerData.id) {
                 target = this.data.playerData;
@@ -377,13 +377,13 @@ class CoreEngine {
                 return;
             }
 
-            // ¼ì²éÄ¿±êÊÇ·ñ´æÔÚÉíÌå²¿Î»
+            // æ£€æŸ¥ç›®æ ‡æ˜¯å¦å­˜åœ¨èº«ä½“éƒ¨ä½
             let isValidPart = false;
             if (target.bodyParts) {
-                // ¾ßÓÐÃ÷È·ÉíÌå²¿Î»µÄµÐÈË
+                // å…·æœ‰æ˜Žç¡®èº«ä½“éƒ¨ä½çš„æ•Œäºº
                 if (target.bodyParts[bodyPart]) isValidPart = true;
             } else if (target.equipment && target.equipment.armor) {
-                // Íæ¼Ò£¨Ê¹ÓÃ»¤¼×²Û×÷ÎªÉíÌå²¿Î»£©
+                // çŽ©å®¶ï¼ˆä½¿ç”¨æŠ¤ç”²æ§½ä½œä¸ºèº«ä½“éƒ¨ä½ï¼‰
                 if (target.equipment.armor.hasOwnProperty(bodyPart)) isValidPart = true;
             }
 
@@ -395,7 +395,7 @@ class CoreEngine {
 
         const cost = skillConfig.cost;
 
-        // ¼ÆËãµ±Ç° AP Ê¹ÓÃÁ¿
+        // è®¡ç®—å½“å‰ AP ä½¿ç”¨é‡
         const currentQueueCost = this.playerSkillQueue.reduce((sum, action) => sum + action.cost, 0);
         if (player.stats.ap < currentQueueCost + cost) {
             this.eventBus.emit('BATTLE_LOG', { text: `Not enough AP! Cannot add more skills.` });
@@ -432,11 +432,11 @@ class CoreEngine {
         console.log('Player committed turn.');
         this.battlePhase = 'EXECUTION';
         
-        // Éú³ÉµÐÈËÐÐ¶¯£¨Ä£Äâ£©
+        // ç”Ÿæˆæ•Œäººè¡ŒåŠ¨ï¼ˆæ¨¡æ‹Ÿ')
         if (this.data.currentLevelData && this.data.currentLevelData.enemies) {
             this.data.currentLevelData.enemies.forEach(enemy => {
                 if (enemy.hp > 0) {
-                    // ¼òµ¥ AI£ºÑ¡ÔñµÚÒ»¸ö¿ÉÓÃ¼¼ÄÜ»òÄ¬ÈÏ¼¼ÄÜ
+                    // ç®€å• AIï¼šé€‰æ‹©ç¬¬ä¸€ä¸ªå¯ç”¨æŠ€èƒ½æˆ–é»˜è®¤æŠ€èƒ½
                     const skillId = (enemy.skills && enemy.skills.length > 0) ? enemy.skills[0] : 'skill_bite';
                     const skillConfig = this.data.getSkillConfig(skillId);
                     const speed = (enemy.speed || 10) + (skillConfig ? skillConfig.speed : 0);
@@ -445,39 +445,39 @@ class CoreEngine {
                         source: 'ENEMY',
                         sourceId: enemy.id,
                         skillId: skillId,
-                        targetId: this.data.playerData.id, // Ä¿±êÍæ¼Ò
-                        cost: 0, // µÐÈËÔÚÕâ¸ö¼òµ¥°æ±¾ÖÐ¿ÉÄÜ²»Ê¹ÓÃ AP
+                        targetId: this.data.playerData.id, // ç›®æ ‡çŽ©å®¶
+                        cost: 0, // æ•Œäººåœ¨è¿™ä¸ªç®€å•ç‰ˆæœ¬ä¸­å¯èƒ½ä¸ä½¿ç”¨ AP
                         speed: speed
                     });
                 }
             });
         }
 
-        this.saveBattleState(); // Í¬²½×´Ì¬£¨°üÀ¨¶ÓÁÐ£©
-        this.emitBattleUpdate(); // ¸üÐÂ UI ÒÔ½ûÓÃ¿Ø¼þ
+        this.saveBattleState(); // åŒæ­¥çŠ¶æ€ï¼ˆåŒ…æ‹¬é˜Ÿåˆ—ï¼‰
+        this.emitBattleUpdate(); // æ›´æ–° UI ä»¥ç¦ç”¨æŽ§ä»¶
 
         this.executeTurn();
     }
 
     async executeTurn() {
-        // ºÏ²¢ºÍÅÅÐò
+        // åˆå¹¶å’ŒæŽ’åº
         const allActions = [
             ...this.playerSkillQueue,
             ...this.enemySkillQueue
         ];
 
-        // °´ËÙ¶È½µÐòÅÅÐò
+        // æŒ‰é€Ÿåº¦é™åºæŽ’åº
         allActions.sort((a, b) => b.speed - a.speed);
 
         this.eventBus.emit('BATTLE_LOG', { text: `--- Execution Phase ---` });
 
         let actionOrder = 0;
         for (const action of allActions) {
-            // ¼ì²éÕ½¶·ÊÇ·ñÔÚÉÏÒ»¸ö¶¯×÷ÖÐ½áÊø
+            // æ£€æŸ¥æˆ˜æ–—æ˜¯å¦åœ¨ä¸Šä¸€ä¸ªåŠ¨ä½œä¸­ç»“æŸ
             if (this.fsm.currentState !== 'BATTLE_LOOP') break;
 
-            await new Promise(resolve => setTimeout(resolve, 1000)); // ÑÓ³Ù¶¯»­
-
+            await new Promise(resolve => setTimeout(resolve, 1000)); // å»¶è¿ŸåŠ¨ç”»
+            
             actionOrder++;
             let result = null;
 
@@ -487,7 +487,7 @@ class CoreEngine {
                 result = this.executeEnemySkill(action);
             }
             
-            // ½«¶¯×÷¼ÇÂ¼µ½ÀúÊ·¼ÇÂ¼
+            // å°†åŠ¨ä½œè®°å½•åˆ°åŽ†å²è®°å½•
             if (this.currentHistoryEntry) {
                 this.currentHistoryEntry.actions.push({
                     order: actionOrder,
@@ -510,7 +510,7 @@ class CoreEngine {
         
         if (!skillConfig) return null;
 
-        // ¿Û³ý AP£¨Êµ¼Ê¿Û³ý£©
+        // æ‰£é™¤ APï¼ˆå®žé™…æ‰£é™¤ï¼‰
         player.stats.ap -= action.cost;
         this.eventBus.emit('DATA_UPDATE', player);
 
@@ -653,13 +653,13 @@ class CoreEngine {
         const enemies = this.data.currentLevelData.enemies;
         const player = this.data.playerData;
 
-        // ¼ì²éÊ¤Àû
+        // æ£€æŸ¥èƒœåˆ©
         if (enemies.every(e => e.hp <= 0)) {
             this.endBattle(true);
             return;
         }
 
-        // ¼ì²éÊ§°Ü
+        // æ£€æŸ¥å¤±è´¥
         if (player.stats.hp <= 0) {
             this.endBattle(false);
             return;
@@ -704,7 +704,7 @@ class CoreEngine {
             runtime.turn = this.currentTurn;
             runtime.phase = this.battlePhase;
             
-            // ±£´æ¶ÓÁÐ
+            // ä¿å­˜é˜Ÿåˆ—
             if (!runtime.queues) runtime.queues = {};
             runtime.queues.player = this.playerSkillQueue;
             runtime.queues.enemy = this.enemySkillQueue;
@@ -731,14 +731,14 @@ class CoreEngine {
     }
 }
 
-// ´´½¨µ¥ÀýÊµÀý
+// åˆ›å»ºå•ä¾‹å®žä¾‹
 const engineInstance = new CoreEngine();
 
-// ¹ÒÔØµ½ window ·½±ãµ÷ÊÔ (¿ÉÑ¡£¬µ«ÔÚ±¾ÏîÄ¿ÖÐÎªÁË¼æÈÝÐÔ±£Áô)
+// æŒ‚è½½åˆ° window æ–¹ä¾¿è°ƒè¯• (å¯é€‰ï¼Œä½†åœ¨æœ¬é¡¹ç›®ä¸­ä¸ºäº†å…¼å®¹æ€§ä¿ç•™)
 window.Engine = engineInstance;
 
-// Ä¬ÈÏµ¼³öÊµÀý
+// é»˜è®¤å¯¼å‡ºå®žä¾‹
 export default engineInstance;
 
-// ¾ßÃûµ¼³öÀà (ÓÃÓÚ²âÊÔ»òÌØÊâÐèÇó)
+// å…·åå¯¼å‡ºç±» (ç”¨äºŽæµ‹è¯•æˆ–ç‰¹æ®Šéœ€æ±‚)
 export { CoreEngine };
