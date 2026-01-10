@@ -48,11 +48,77 @@
     "bodyParts": {
         "head": { "current": 1, "max": 1, "weakness": 1.5 },
         "chest": { "current": 2, "max": 2, "weakness": 1.0 },
-        "abdomen": { "current": 3, "max": 3, "weakness": 1.0 },
-        "left_arm": { "current": 4, "max": 4, "weakness": 1.0 },
-        "right_arm": { "current": 10, "max": 10, "weakness": 1.0 },
-        "left_leg": { "current": 20, "max": 20, "weakness": 1.0 },
-        "right_leg": { "current": 30, "max": 30, "weakness": 1.0 }
+        "abdomen": { "current": 1, "max": 1, "weakness": 1.0 },
+        "left_arm": { "current": 0, "max": 0, "weakness": 1.0 },
+        "right_arm": { "current": 0, "max": 0, "weakness": 1.0 },
+        "left_leg": { "current": 0, "max": 0, "weakness": 1.0 },
+        "right_leg": { "current": 0, "max": 0, "weakness": 1.0 }
     }
+  },
+  "orc_berserker_lvl5": {
+    "id": "orc_berserker_lvl5",
+    "name": "嗜血兽人 (Lv.5)",
+    "race": "orc",
+    "class": "berserker",
+    "stats": {
+      "hp": 200,
+      "maxHp": 200,
+      "speed": 8,
+      "ap": 4
+    },
+    "bodyParts": {
+      "head": { "max": 0, "current": 0, "weakness": 1.5 },
+      "chest": { "max": 50, "current": 50, "weakness": 0.8 },
+      "abdomen": { "max": 20, "current": 20, "weakness": 1.0 },
+      "left_arm": { "max": 10, "current": 10, "weakness": 1.0 },
+      "right_arm": { "max": 10, "current": 10, "weakness": 1.0 },
+      "left_leg": { "max": 10, "current": 10, "weakness": 1.0 },
+      "right_leg": { "max": 10, "current": 10, "weakness": 1.0 }
+    },
+    "skills": ["skill_heavy_smash", "skill_rage", "skill_cleave"]
+  },
+  "goblin_scout_lvl3": {
+    "id": "goblin_scout_lvl3",
+    "name": "哥布林斥候 (Lv.3)",
+    "race": "goblin",
+    "class": "scout",
+    "stats": {
+      "hp": 60,
+      "maxHp": 60,
+      "speed": 15,
+      "ap": 3
+    },
+    "bodyParts": {
+      "head": { "max": 5, "current": 5, "weakness": 1.2 },
+      "chest": { "max": 10, "current": 10, "weakness": 1.0 },
+      "abdomen": { "max": 5, "current": 5, "weakness": 1.2 },
+      "left_arm": { "max": 0, "current": 0, "weakness": 1.0 },
+      "right_arm": { "max": 0, "current": 0, "weakness": 1.0 },
+      "left_leg": { "max": 0, "current": 0, "weakness": 0.9 },
+      "right_leg": { "max": 0, "current": 0, "weakness": 0.9 }
+    },
+    "skills": ["skill_ankle_bite", "skill_throw_stone", "skill_escape"]
+  },
+  "skeleton_guard_lvl4": {
+    "id": "skeleton_guard_lvl4",
+    "name": "骷髅卫士 (Lv.4)",
+    "race": "undead",
+    "class": "defender",
+    "stats": {
+      "hp": 100,
+      "maxHp": 100,
+      "speed": 5,
+      "ap": 3
+    },
+    "bodyParts": {
+      "head": { "max": 20, "current": 20, "weakness": 1.1 },
+      "chest": { "max": 40, "current": 40, "weakness": 0.9 },
+      "abdomen": { "max": 20, "current": 20, "weakness": 1.0 },
+      "left_arm": { "max": 30, "current": 30, "weakness": 0.5 },
+      "right_arm": { "max": 10, "current": 10, "weakness": 1.0 },
+      "left_leg": { "max": 15, "current": 15, "weakness": 1.0 },
+      "right_leg": { "max": 15, "current": 15, "weakness": 1.0 }
+    },
+    "skills": ["skill_shield_bash", "skill_bone_repair"]
   }
 }
