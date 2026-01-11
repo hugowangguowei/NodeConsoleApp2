@@ -3,870 +3,555 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>技能/装备/Buff 系统独立测试工具</title>
+    <title>技能天赋树功能验证 (Skill Tree Test)</title>
     <style>
-        body { font-family: "Consolas", "Courier New", monospace; background: #1e1e1e; color: #d4d4d4; padding: 20px; font-size: 13px; }
-        h1 { font-size: 1.4em; color: #569cd6; margin-bottom: 20px; border-bottom: 2px solid #333; padding-bottom: 10px; }
-        h2 { font-size: 1.1em; color: #4ec9b0; margin-top: 0; border-bottom: 1px solid #333; padding-bottom: 5px; }
-        h3 { font-size: 1em; color: #dcdcaa; margin: 10px 0 5px; }
-        
-        .container { display: grid; grid-template-columns: 1000px 1fr; gap: 20px; height: calc(100vh - 100px); }
-        .panel { background: #252526; padding: 15px; border: 1px solid #3e3e42; border-radius: 4px; overflow-y: auto; }
-        
-        .control-group { margin-bottom: 20px; border: 1px solid #333; padding: 10px; background: #2d2d30; }
-        
-        button { 
-            background: #3e3e42; color: #fff; border: 1px solid #555; 
-            padding: 5px 10px; margin: 2px; cursor: pointer; font-family: inherit;
+        :root {
+            --bg-color: #1a1a1a;
+            --text-color: #e0e0e0;
+            --panel-bg: #2d2d2d;
+            --border-color: #444;
+            --accent-color: #d4af37; /* Gold */
+            --locked-color: #555;
+            --available-color: #00cec9;
+            --learned-color: #fdcb6e;
+            --connector-color: #666;
         }
-        button:hover { background: #505055; }
-        button:active { background: #007acc; }
-        button:disabled { opacity: 0.5; cursor: not-allowed; }
 
-        select, input { background: #333; color: white; border: 1px solid #555; padding: 4px; }
-
-        ul { padding-left: 20px; margin: 5px 0; }
-        li { margin-bottom: 4px; list-style-type: none; position: relative; }
-        li.selected { background: #37373d; border-left: 3px solid #007acc; padding-left: 5px; }
-
-        .stat-row { display: flex; justify-content: space-between; border-bottom: 1px solid #333; padding: 2px 0; }
-        .stat-label { color: #9cdcfe; }
-        .stat-value { font-weight: bold; }
-        
-        .part-bar { height: 4px; background: #333; margin-top: 2px; position: relative; }
-        .part-fill { height: 100%; background: #4ec9b0; transition: width 0.3s; }
-        .part-fill.broken { background: #f44747; }
-
-        #logPanel { 
-            grid-column: 1 / -1; height: 150px; 
-            background: #111; border: 1px solid #333; 
-            padding: 10px; font-size: 11px; overflow-y: auto; 
-            font-family: monospace;
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
         }
-        .log-time { color: #808080; margin-right: 5px; }
-        .log-info { color: #d4d4d4; }
-        .log-warn { color: #cca700; }
-        .log-error { color: #f48771; }
-        .log-success { color: #6a9955; }
 
-        .buff-icon { display: inline-block; width: 16px; height: 16px; background: #555; text-align: center; line-height: 16px; font-size: 10px; margin-right: 2px; border-radius: 2px; }
-        .buff-debuff { background: #800000; }
-        .buff-buff { background: #008000; }
-
-        /* Skill Matrix & Detail Styles */
-        .skill-group-container {
+        h1, h2 { color: var(--accent-color); margin-bottom: 10px; }
+        
+        .control-panel {
+            background: var(--panel-bg);
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
             margin-bottom: 20px;
-        }
-        .skill-group-title {
-            font-size: 12px;
-            color: #888;
-            border-bottom: 1px solid #444;
-            margin-bottom: 8px;
-            padding-bottom: 2px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-        .skill-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(40px, 1fr));
-            gap: 8px;
-            margin-bottom: 15px;
-        }
-        .skill-icon {
-            width: 40px;
-            height: 40px;
-            background: #333;
-            border: 2px solid #555;
             display: flex;
+            gap: 20px;
             align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            position: relative;
-            background-size: cover;
-            border-radius: 4px;
-            transition: all 0.2s;
         }
-        .skill-icon.unlearned {
-            filter: grayscale(100%);
-            opacity: 0.4;
-            border-color: #333;
-        }
-        .skill-icon.learned {
-            /* border-color handled by rarity */
-            box-shadow: 0 0 5px rgba(0,0,0,0.5);
-        }
-        .skill-icon.selected {
-            box-shadow: 0 0 8px #fff;
-            transform: scale(1.1);
-            z-index: 2;
-        }
-        .skill-icon:hover {
-            transform: scale(1.1);
-            z-index: 10;
-        }
-        
-        /* Rarity Borders */
-        .rarity-common { border-color: #d4d4d4; }
-        .rarity-rare { border-color: #007acc; } /* Blue */
-        .rarity-epic { border-color: #c586c0; } /* Purple */
-        .rarity-legendary { border-color: #ffd700; } /* Gold */
 
-        /* Detail Tooltip/Panel */
-        .detail-panel {
-            background: #252526;
-            border: 1px solid #444;
-            padding: 10px;
-            margin-top: 10px;
-            display: none;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        .btn {
+            padding: 8px 16px;
+            cursor: pointer;
+            background: #444;
+            color: white;
+            border: 1px solid #666;
+            border-radius: 4px;
         }
-        .detail-header { font-weight: bold; font-size: 14px; margin-bottom: 5px; color: #fff; }
-        .detail-meta { font-size: 11px; color: #aaa; margin-bottom: 5px; display: flex; gap: 10px; }
-        .detail-desc { font-size: 12px; color: #d4d4d4; line-height: 1.4; }
-        .detail-tag { display: inline-block; background: #333; padding: 2px 4px; border-radius: 2px; font-size: 10px; color: #9cdcfe; margin-right: 4px; }
-        
-        .card-container { display: flex; gap: 10px; justify-content: center; margin-top: 10px; }
-        .skill-card {
+        .btn:hover { background: #555; }
+        .btn-primary { background: var(--accent-color); color: #000; font-weight: bold; }
+        .btn-warning { background: #e17055; color: #fff; }
+
+        .stat-display {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: var(--available-color);
+        }
+
+        /* 布局容器 */
+        .tree-container {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr); /* 7个流派 */
+            gap: 10px;
+            overflow-x: auto;
+            min-height: 800px;
+            background: #222;
+            padding: 10px;
+            position: relative;
+        }
+
+        .school-column {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 4px;
+            padding: 10px;
+            position: relative;
+            min-width: 160px;
+        }
+
+        .school-title {
+            text-align: center;
+            font-weight: bold;
+            font-size: 0.9em;
+            margin-bottom: 20px;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 5px;
+            color: #ccc;
+        }
+
+        /* 技能节点 */
+        .skill-node {
+            width: 60px;
+            height: 60px;
+            margin: 20px auto;
             background: #333;
             border: 2px solid #555;
-            border-radius: 6px;
-            padding: 10px;
-            width: 120px;
+            border-radius: 8px;
+            position: relative;
             cursor: pointer;
-            transition: transform 0.2s;
+            z-index: 2; /* Ensure above canvas */
+            transition: all 0.2s;
+            display: flex;
+            justify-content: center;
+            align-items: center;
             text-align: center;
+            font-size: 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            user-select: none;
         }
-        .skill-card:hover { transform: translateY(-5px); border-color: #fff; }
-        .skill-card-name { font-weight: bold; margin-bottom: 5px; font-size: 12px; }
-        .skill-card-cost { color: #569cd6; font-size: 11px; }
+        
+        .skill-node span { pointer-events: none; padding: 2px; line-height: 1.2;}
+
+        /* 状态样式 */
+        .status-locked {
+            filter: grayscale(100%);
+            opacity: 0.6;
+            border-style: dashed;
+        }
+        .status-available {
+            border-color: var(--available-color);
+            box-shadow: 0 0 10px rgba(0, 206, 201, 0.4);
+            animation: pulse 2s infinite;
+        }
+        .status-learned {
+            border-color: var(--learned-color);
+            background: #4a3b2a;
+            box-shadow: 0 0 8px rgba(253, 203, 110, 0.6);
+            color: #fff;
+        }
+
+        .node-tier-1 { margin-top: 20px; }
+        .node-tier-2 { margin-top: 50px; }
+        .node-tier-3 { margin-top: 50px; }
+        .node-tier-4 { margin-top: 50px; }
+        .node-tier-5 { margin-top: 50px; }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 5px rgba(0, 206, 201, 0.4); }
+            50% { box-shadow: 0 0 15px rgba(0, 206, 201, 0.8); }
+            100% { box-shadow: 0 0 5px rgba(0, 206, 201, 0.4); }
+        }
+
+        /* Tooltip */
+        .tooltip {
+            position: absolute;
+            background: rgba(0, 0, 0, 0.95);
+            border: 1px solid var(--accent-color);
+            padding: 10px;
+            border-radius: 4px;
+            z-index: 100;
+            pointer-events: none;
+            width: 250px;
+            display: none;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+        }
+        .tooltip h4 { margin: 0 0 5px 0; color: var(--accent-color); font-size: 1.1em;}
+        .tooltip p { margin: 4px 0; font-size: 0.9em; color: #ccc; }
+        .tooltip .cost { color: var(--available-color); font-weight: bold; }
+        .tooltip .req { color: #fe5f55; font-style: italic; }
+
+        /* 连线画布 */
+        #connection-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+        }
+        
+        #log-panel {
+            margin-top: 20px;
+            height: 150px;
+            background: #000;
+            color: #0f0;
+            font-family: 'Consolas', monospace;
+            padding: 10px;
+            overflow-y: auto;
+            border: 1px solid #444;
+            font-size: 13px;
+        }
 
     </style>
 </head>
 <body>
 
-    <h1>独立测试工具: Skill, Item & Buff System</h1>
-
-    <div class="container">
-        <!-- Control Panel (Left) -->
-        <div class="panel" id="controlPanel">
-            
-            <div class="control-group">
-                <h2>1. 技能 (Skill)</h2>
-                <div style="margin-bottom: 10px;">
-                    <button id="btnRandSkill">模拟升级奖励 (3选1)</button>
-                    <button id="btnResetAp">重置 AP</button>
-                    <button id="btnResetTree" style="border-color: #f44747; color: #f44747;">重置技能树</button>
-                </div>
-                
-                <!-- Acquisition Modal Area -->
-                <div id="skillSelectionArea" style="display: none; background: rgba(0,0,0,0.8); position: fixed; top:0; left:0; width:100%; height:100%; z-index: 100; display:flex; align-items:center; justify-content:center;">
-                   <div style="background: #252526; padding: 20px; border: 1px solid #444; border-radius: 8px; width: 500px; text-align: center;">
-                        <div style="margin-bottom:15px; color:#4ec9b0; font-weight:bold; font-size: 16px;">选择一个技能学习</div>
-                        <div id="skillChoices" class="card-container"></div>
-                        <button onclick="document.getElementById('skillSelectionArea').style.display='none'" style="margin-top:20px; width:100px;">取消</button>
-                   </div>
-                </div>
-
-                <div style="display: flex; gap: 15px; align-items: flex-start;">
-                    <div style="flex: 1;">
-                        <h3>技能矩阵 (Skill Matrix):</h3>
-                        <div id="skillMatrix" class="skill-grid"></div>
-                    </div>
-                    
-                    <!-- Detail Panel (Right Side) -->
-                    <div style="width: 300px; padding-top: 28px;">
-                         <div id="skillDetail" class="detail-panel" style="margin-top: 0;">
-                            <div id="detailHeader" class="detail-header">Skill Name</div>
-                            <div id="detailMeta" class="detail-meta">
-                                <span>Cost: 2 AP</span>
-                                <span>CD: 0</span>
-                                <span>Target: SINGLE</span>
-                            </div>
-                            <div id="detailTags" style="margin-bottom: 5px;"></div>
-                            <div id="detailDesc" class="detail-desc">Description text...</div>
-                        </div>
-                    </div>
-                </div>
-
-                <div style="margin-top: 10px; padding-top: 5px; border-top: 1px solid #444;">
-                    <label>攻击部位:</label>
-                    <select id="targetPart">
-                        <option value="head">头部 (Head)</option>
-                        <option value="chest" selected>躯干 (Chest)</option>
-                        <option value="left_arm">左臂 (L.Arm)</option>
-                        <option value="right_arm">右臂 (R.Arm)</option>
-                        <option value="left_leg">左腿 (L.Leg)</option>
-                        <option value="right_leg">右腿 (R.Leg)</option>
-                    </select>
-                    <br><br>
-                    <button id="btnExecuteSkill" style="width: 100%; border-color: #007acc;">执行选中技能</button>
-                </div>
-            </div>
-
-            <div class="control-group">
-                <h2>2. 装备 (Item)</h2>
-                <div style="margin-bottom: 10px;">
-                    <button id="btnLootItem">随机掉落装备</button>
-                    <button id="btnUnquipAll">一键卸下</button>
-                </div>
-                <h3>背包 (Inventory):</h3>
-                <ul id="inventoryList"></ul>
-                <h3>已装备 (Equipment):</h3>
-                <ul id="equipmentList"></ul>
-            </div>
-
-            <div class="control-group">
-                <h2>3. Buff / Debuff</h2>
-                <div style="margin-bottom: 10px;">
-                    <select id="buffSelect">
-                        <option value="buff_poison">中毒 (Poison)</option>
-                        <option value="buff_stun">眩晕 (Stun)</option>
-                        <option value="buff_strength">力量增强 (Strength)</option>
-                        <option value="buff_shield">护盾 (Shield)</option>
-                    </select>
-                    <button id="btnApplyPlayer">施加 -> 玩家</button>
-                    <button id="btnApplyEnemy">施加 -> 敌人</button>
-                </div>
-                <button id="btnNextTurn" style="width: 100%;">模拟回合结束 (Tick Buffs)</button>
-            </div>
-
+    <h1>技能天赋树系统验证 (Skill Tree Test)</h1>
+    
+    <div class="control-panel">
+        <div>
+            <label>当前知识点数 (KP): </label>
+            <span id="kp-display" class="stat-display">0</span>
+            <button class="btn" onclick="addKP(1)">+1</button>
+            <button class="btn" onclick="addKP(5)">+5</button>
+            <button class="btn" onclick="addKP(10)">+10</button>
         </div>
-
-        <!-- Status Display (Right) -->
-        <div class="panel" id="statusPanel">
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
-                
-                <!-- Player Stats -->
-                <div>
-                    <h2>PLAYER (Tester)</h2>
-                    <div id="playerStats">
-                        <div class="stat-row"><span class="stat-label">HP:</span> <span id="plHp">-</span> / <span id="plMaxHp">-</span></div>
-                        <div class="stat-row"><span class="stat-label">AP:</span> <span id="plAp">-</span> / <span id="plMaxAp">-</span></div>
-                        <div class="stat-row"><span class="stat-label">Attack:</span> <span id="plAtk">-</span></div>
-                        <div class="stat-row"><span class="stat-label">Speed:</span> <span id="plSpd">-</span></div>
-                        
-                        <h3>Buffs:</h3>
-                        <div id="playerBuffs"></div>
-
-                        <h3>Body Parts:</h3>
-                        <div id="playerParts"></div>
-                    </div>
-                </div>
-
-                <!-- Dummy Enemy Stats -->
-                <div>
-                    <h2>DUMMY TARGET</h2>
-                    <div id="enemyStats">
-                        <div class="stat-row"><span class="stat-label">HP:</span> <span id="enHp">-</span> / <span id="enMaxHp">-</span></div>
-                        <div class="stat-row"><span class="stat-label">Status:</span> <span id="enStatus">Normal</span></div>
-
-                        <h3>Buffs:</h3>
-                        <div id="enemyBuffs"></div>
-
-                        <h3>Body Parts:</h3>
-                        <div id="enemyParts"></div>
-                    </div>
-                </div>
-            </div>
+        <div style="margin-left: auto;">
+            <button class="btn btn-warning" onclick="resetTree()">重置天赋树 (Reset)</button>
+             <button class="btn btn-primary" onclick="window.location.reload()">刷新页面 (Reload)</button>
         </div>
-
-        <!-- Log Panel -->
-        <div id="logPanel"></div>
     </div>
 
-    <script type="module">
-        import Engine from '../script/engine/CoreEngine.js';
+    <div class="tree-container" id="tree-root">
+        <canvas id="connection-canvas"></canvas>
+        <!-- Columns will be injected by JS -->
+    </div>
+    
+    <div id="skill-tooltip" class="tooltip"></div>
 
-        // --- Mock Data & State ---
-        let selectedSkillId = null;
-        let dummyEnemy = {
-            id: 'dummy_01',
-            name: 'Training Dummy',
-            stats: { hp: 1000, maxHp: 1000, speed: 5 },
-            bodyParts: {}, // Will be initialized
-            buffs: []
+    <div id="log-panel">
+        <div>System initialized. Waiting for skills data...</div>
+    </div>
+
+    <!-- Data Mocking & Logic -->
+    <script>
+        // --- 1. CONFIGURATION & MOCK DATA (Injecting Missing JSON Info) ---
+        
+        const SKILL_TREE_CONFIG = {
+            // == Melee A: Juggernaut ==
+            "skill_heavy_swing": { school: "A", tier: 1, cost: 1, prereq: null },
+            "skill_shield_bash": { school: "A", tier: 1, cost: 1, prereq: null },
+            "skill_headbutt":    { school: "A", tier: 1, cost: 1, prereq: null },
+            "skill_savage_charge": { school: "A", tier: 2, cost: 2, prereq: "skill_heavy_swing" },
+            "skill_skull_cracker": { school: "A", tier: 2, cost: 2, prereq: "skill_headbutt" },
+            "skill_shockwave":     { school: "A", tier: 3, cost: 3, prereq: "skill_savage_charge" },
+            "skill_execute":       { school: "A", tier: 3, cost: 3, prereq: "skill_skull_cracker" },
+            "skill_earthquake":    { school: "A", tier: 4, cost: 5, prereq: "skill_shockwave" },
+            "skill_berserk":       { school: "A", tier: 4, cost: 5, prereq: "skill_execute" },
+            "skill_ragnarok":      { school: "A", tier: 5, cost: 8, prereq: "skill_earthquake" },
+
+            // == Melee B: Guardian ==
+            "skill_iron_will":  { school: "B", tier: 1, cost: 1, prereq: null },
+            "skill_block":      { school: "B", tier: 1, cost: 1, prereq: null },
+            "skill_taunt":      { school: "B", tier: 1, cost: 1, prereq: null },
+            "skill_spiked_shell": { school: "B", tier: 2, cost: 2, prereq: "skill_block" },
+            "skill_regroup":      { school: "B", tier: 2, cost: 2, prereq: "skill_iron_will" },
+            "skill_counter_stance": { school: "B", tier: 3, cost: 3, prereq: "skill_spiked_shell" },
+            "skill_futile_struggle": { school: "B", tier: 3, cost: 3, prereq: "skill_taunt" },
+            "skill_shield_wall":     { school: "B", tier: 4, cost: 5, prereq: "skill_regroup" },
+            "skill_immortal_bastion": { school: "B", tier: 4, cost: 5, prereq: "skill_counter_stance" },
+            "skill_aegis":            { school: "B", tier: 5, cost: 8, prereq: "skill_shield_wall" },
+
+            // == Melee C: Duelist ==
+            "skill_artery_slice": { school: "C", tier: 1, cost: 1, prereq: null },
+            "skill_double_thrust": { school: "C", tier: 1, cost: 1, prereq: null },
+            "skill_feint":        { school: "C", tier: 1, cost: 1, prereq: null },
+            "skill_bloodletting": { school: "C", tier: 2, cost: 2, prereq: "skill_artery_slice" },
+            "skill_blade_dance":  { school: "C", tier: 2, cost: 2, prereq: "skill_double_thrust" },
+            "skill_precision_thrust": { school: "C", tier: 3, cost: 3, prereq: "skill_feint" },
+            "skill_bloodthirst":    { school: "C", tier: 3, cost: 3, prereq: "skill_bloodletting" },
+            "skill_bloody_harvest": { school: "C", tier: 4, cost: 5, prereq: "skill_bloodthirst" },
+            "skill_crimson_finale": { school: "C", tier: 4, cost: 5, prereq: "skill_blade_dance" },
+            "skill_thousand_cuts":  { school: "C", tier: 5, cost: 8, prereq: "skill_bloody_harvest" },
+
+            // == Ranged D: Ranger ==
+            "skill_quick_shot":   { school: "D", tier: 1, cost: 1, prereq: null },
+            "skill_quick_step":   { school: "D", tier: 1, cost: 1, prereq: null },
+            "skill_distract_shot": { school: "D", tier: 1, cost: 1, prereq: null },
+            "skill_tactical_roll": { school: "D", tier: 2, cost: 2, prereq: "skill_quick_step" },
+            "skill_wind_arrow":    { school: "D", tier: 2, cost: 2, prereq: "skill_quick_shot" },
+            "skill_poison_coating": { school: "D", tier: 3, cost: 3, prereq: "skill_distract_shot" },
+            "skill_adrenaline":     { school: "D", tier: 3, cost: 3, prereq: "skill_tactical_roll" },
+            "skill_rapid_fire":     { school: "D", tier: 4, cost: 5, prereq: "skill_wind_arrow" },
+            "skill_afterimage":     { school: "D", tier: 4, cost: 5, prereq: "skill_adrenaline" },
+            "skill_time_warp":      { school: "D", tier: 5, cost: 8, prereq: "skill_afterimage" },
+
+             // == Ranged E: Sniper ==
+            "skill_mark_target": { school: "E", tier: 1, cost: 1, prereq: null },
+            "skill_steady_aim":  { school: "E", tier: 1, cost: 1, prereq: null },
+            "skill_knee_shot":   { school: "E", tier: 1, cost: 1, prereq: null },
+            "skill_crippling_shot": { school: "E", tier: 2, cost: 2, prereq: "skill_knee_shot" },
+            "skill_disarm":        { school: "E", tier: 2, cost: 2, prereq: "skill_mark_target" },
+            "skill_piercing_bolt": { school: "E", tier: 3, cost: 3, prereq: "skill_steady_aim" },
+            "skill_headshot":      { school: "E", tier: 3, cost: 3, prereq: "skill_disarm" },
+            "skill_ghost_snipe":   { school: "E", tier: 4, cost: 5, prereq: "skill_headshot" },
+            "skill_eagle_eye":     { school: "E", tier: 4, cost: 5, prereq: "skill_piercing_bolt" },
+            "skill_one_shot":      { school: "E", tier: 5, cost: 8, prereq: "skill_ghost_snipe" },
+
+            // == Magic F: Elementalist ==
+            "skill_fireball":      { school: "F", tier: 1, cost: 1, prereq: null },
+            "skill_lightning_bolt": { school: "F", tier: 1, cost: 1, prereq: null },
+            "skill_oil_slick":     { school: "F", tier: 1, cost: 1, prereq: null },
+            "skill_ice_lance":     { school: "F", tier: 2, cost: 2, prereq: "skill_fireball" },
+            "skill_ring_of_fire":  { school: "F", tier: 2, cost: 2, prereq: "skill_oil_slick" },
+            "skill_frost_nova":    { school: "F", tier: 3, cost: 3, prereq: "skill_ice_lance" },
+            "skill_overload":      { school: "F", tier: 3, cost: 3, prereq: "skill_lightning_bolt" },
+            "skill_chain_lightning": { school: "F", tier: 4, cost: 5, prereq: "skill_overload" },
+            "skill_blizzard":      { school: "F", tier: 4, cost: 5, prereq: "skill_frost_nova" },
+            "skill_meteor_swarm":  { school: "F", tier: 5, cost: 8, prereq: "skill_blizzard" },
+
+            // == Magic G: Cleric ==
+            "skill_holy_light":    { school: "G", tier: 1, cost: 1, prereq: null },
+            "skill_smite":         { school: "G", tier: 1, cost: 1, prereq: null },
+            "skill_bless":         { school: "G", tier: 1, cost: 1, prereq: null },
+            "skill_shield_of_faith": { school: "G", tier: 2, cost: 2, prereq: "skill_holy_light" },
+            "skill_pain_suppression": { school: "G", tier: 2, cost: 2, prereq: "skill_bless" },
+            "skill_cleansing_fire": { school: "G", tier: 3, cost: 3, prereq: "skill_smite" },
+            "skill_holy_shock":    { school: "G", tier: 3, cost: 3, prereq: "skill_shield_of_faith" },
+            "skill_guardian_angel": { school: "G", tier: 4, cost: 5, prereq: "skill_pain_suppression" },
+            "skill_radiant_revitalize": { school: "G", tier: 4, cost: 5, prereq: "skill_cleansing_fire" },
+            "skill_divine_shield": { school: "G", tier: 5, cost: 8, prereq: "skill_guardian_angel" }
         };
 
-        // --- UI Elements ---
-        const logPanel = document.getElementById('logPanel');
-        const skillMatrix = document.getElementById('skillMatrix'); // Changed from skillList
-        const inventoryList = document.getElementById('inventoryList');
-        const equipmentList = document.getElementById('equipmentList');
-        const detailPanel = document.getElementById('skillDetail');
-        
-        // --- Initialization ---
-        async function initTest() {
-            log("Engine initializing...", "info");
-            
-            // Wait for Engine data to be ready (hacky wait, normally use events)
-            let attempts = 0;
-            while (!Engine.data.gameConfig.skills && attempts < 10) {
-                await new Promise(r => setTimeout(r, 200));
-                attempts++;
-            }
-
-            // Create a fresh player session
-            Engine.data.createNewGame("TestUser");
-            const p = Engine.data.playerData;
-            p.stats.maxAp = 10;
-            p.stats.ap = 10;
-            p.skills = ['skill_slash']; // Start with basic skill
-
-            // Initialize Dummy
-            initDummyParts();
-            
-            // Inject Dummy into Engine's Level Data so executePlayerSkill can find it
-            Engine.data._currentLevelConfig = {
-                id: 'test_level',
-                enemies: [dummyEnemy] // Mock the enemies array
-            };
-
-            updateUI();
-            log("Test Environment Ready. Player & Dummy initialized.", "success");
-        }
-
-        function initDummyParts() {
-            const parts = ['head', 'chest', 'left_arm', 'right_arm', 'left_leg', 'right_leg'];
-            parts.forEach(p => {
-                dummyEnemy.bodyParts[p] = {
-                    current: 50, max: 50, weakness: (p === 'head' ? 1.5 : 1.0), status: 'NORMAL'
-                };
-            });
-        }
-
-        // --- Core Logic Mocks ---
-
-        // Mock Stat Calculation (Since Engine might not have it fully implemented yet)
-        function calculatePlayerStats() {
-            const p = Engine.data.playerData;
-            let atk = 10; // Base
-            let spd = p.stats.speed;
-
-            if (p.equipment) {
-                for (let key in p.equipment) {
-                    const itemId = p.equipment[key];
-                    if (!itemId) continue;
-                    const item = Engine.data.gameConfig.items[itemId];
-                    if (item && item.buffs) {
-                        item.buffs.forEach(b => {
-                            if (b.stat === 'attack') atk += b.value;
-                            if (b.stat === 'speed') spd += b.value;
-                        });
-                    }
-                }
-            }
-            return { atk, spd };
-        }
-
-        // --- UI Rendering ---
-
-        function updateUI() {
-            updatePlayerUI();
-            updateEnemyUI();
-            updateSkillMatrix();
-            updateInventory();
-        }
-
-        function updatePlayerUI() {
-            const p = Engine.data.playerData;
-            const stats = calculatePlayerStats();
-
-            document.getElementById('plHp').textContent = p.stats.hp;
-            document.getElementById('plMaxHp').textContent = p.stats.maxHp;
-            document.getElementById('plAp').textContent = p.stats.ap;
-            document.getElementById('plMaxAp').textContent = p.stats.maxAp;
-            document.getElementById('plAtk').textContent = stats.atk;
-            document.getElementById('plSpd').textContent = stats.spd;
-
-            // Render Parts (Mock visualization, assuming Player also has parts logic in Engine)
-            // Note: engine.initializePlayerBodyParts returns the object, it's not stored in persistent playerData usually
-            // We can call it to get current state
-            const parts = Engine.initializePlayerBodyParts(p);
-            renderBodyParts('playerParts', parts);
-        }
-
-        function updateEnemyUI() {
-            const e = dummyEnemy;
-            document.getElementById('enHp').textContent = e.stats.hp;
-            document.getElementById('enMaxHp').textContent = e.stats.maxHp;
-            renderBodyParts('enemyParts', e.bodyParts);
-        }
-
-        function renderBodyParts(containerId, partsObj) {
-            const container = document.getElementById(containerId);
-            container.innerHTML = '';
-            for (let [name, part] of Object.entries(partsObj)) {
-                if (name === 'abdomen') continue; // Skip to save space if needed
-                const percent = (part.current / part.max) * 100;
-                const div = document.createElement('div');
-                div.style.marginBottom = '4px';
-                div.innerHTML = `
-                    <div style="display:flex; justify-content:space-between; font-size:10px;">
-                        <span>${name}</span>
-                        <span>${part.current}/${part.max}</span>
-                    </div>
-                    <div class="part-bar">
-                        <div class="part-fill ${part.current===0?'broken':''}" style="width: ${percent}%;"></div>
-                    </div>
-                `;
-                container.appendChild(div);
-            }
-        }
-
-        // --- Skill Matrix Logic with Grouping ---
-
-        const RARITY_VAL = { "Common": 1, "Uncommon": 2, "Rare": 3, "Epic": 4, "Legendary": 5 };
-        
-        // Define Schools manually mapping to IDs based on Design Doc
-        const SKILL_SCHOOLS = {
-            "Melee: Juggernaut": ["skill_heavy_swing", "skill_shield_bash", "skill_headbutt", "skill_savage_charge", "skill_skull_cracker", "skill_shockwave", "skill_execute", "skill_earthquake", "skill_berserk", "skill_ragnarok"],
-            "Melee: Guardian": ["skill_iron_will", "skill_block", "skill_taunt", "skill_spiked_shell", "skill_regroup", "skill_counter_stance", "skill_futile_struggle", "skill_shield_wall", "skill_immortal_bastion", "skill_aegis"],
-            "Melee: Duelist": ["skill_artery_slice", "skill_double_thrust", "skill_feint", "skill_bloodletting", "skill_blade_dance", "skill_precision_thrust", "skill_bloodthirst", "skill_bloody_harvest", "skill_crimson_finale", "skill_thousand_cuts"],
-            "Ranged: Ranger": ["skill_quick_shot", "skill_quick_step", "skill_distract_shot", "skill_tactical_roll", "skill_wind_arrow", "skill_poison_coating", "skill_adrenaline", "skill_rapid_fire", "skill_afterimage", "skill_time_warp"],
-            "Ranged: Sniper": ["skill_mark_target", "skill_steady_aim", "skill_knee_shot", "skill_crippling_shot", "skill_disarm", "skill_piercing_bolt", "skill_headshot", "skill_ghost_snipe", "skill_eagle_eye", "skill_one_shot"],
-            "Arcane: Elementalist": ["skill_fireball", "skill_lightning_bolt", "skill_oil_slick", "skill_ice_lance", "skill_ring_of_fire", "skill_frost_nova", "skill_overload", "skill_chain_lightning", "skill_blizzard", "skill_meteor_swarm"],
-            "Arcane: Cleric": ["skill_holy_light", "skill_smite", "skill_bless", "skill_shield_of_faith", "skill_pain_suppression", "skill_cleansing_fire", "skill_holy_shock", "skill_guardian_angel", "skill_radiant_revitalize", "skill_divine_shield"]
+        const SCHOOL_NAMES = {
+            "A": "重装猛攻 (Juggernaut)",
+            "B": "铁壁守卫 (Guardian)",
+            "C": "猩红剑术 (Duelist)",
+            "D": "极速游侠 (Ranger)",
+            "E": "精密狙击 (Sniper)",
+            "F": "元素毁灭 (Elementalist)",
+            "G": "神圣祝祷 (Cleric)"
         };
 
-        function getSkillSchool(skillId) {
-            for (const [school, list] of Object.entries(SKILL_SCHOOLS)) {
-                if (list.includes(skillId)) return school;
-            }
-            return "Others";
-        }
+        // Mock State
+        const playerState = {
+            kp: 10,
+            unlockedSkills: new Set()
+        };
 
-        function updateSkillMatrix() {
-            const p = Engine.data.playerData;
-            const allSkills = Engine.data.gameConfig.skills;
-            skillMatrix.innerHTML = '';
-            
-            // 1. Group Skills
-            const grouped = {
-                "Melee: Juggernaut": [], "Melee: Guardian": [], "Melee: Duelist": [],
-                "Ranged: Ranger": [], "Ranged: Sniper": [],
-                "Arcane: Elementalist": [], "Arcane: Cleric": [],
-                "Others": []
-            };
+        let skillData = {};
 
-            Object.values(allSkills).forEach(conf => {
-                const school = getSkillSchool(conf.id);
-                if (grouped[school]) grouped[school].push(conf);
-                else grouped["Others"].push(conf);
-            });
-
-            // 2. Render Groups
-            Object.keys(grouped).forEach(schoolName => {
-                const skills = grouped[schoolName];
-                if (skills.length === 0) return;
-
-                // Sort by Rarity
-                skills.sort((a, b) => {
-                    const rA = RARITY_VAL[a.rarity] || 0;
-                    const rB = RARITY_VAL[b.rarity] || 0;
-                    return rA - rB;
-                });
-
-                // Container
-                const groupDiv = document.createElement('div');
-                groupDiv.className = 'skill-group-container';
-                
-                // Header
-                const title = document.createElement('div');
-                title.className = 'skill-group-title';
-                title.textContent = schoolName;
-                groupDiv.appendChild(title);
-
-                // Grid
-                const grid = document.createElement('div');
-                grid.className = 'skill-grid';
-
-                skills.forEach(conf => {
-                    const isLearned = p.skills.includes(conf.id);
-                    const isSelected = (selectedSkillId === conf.id);
-                    
-                    const div = document.createElement('div');
-                    div.className = `skill-icon ${isLearned ? 'learned' : 'unlearned'}`;
-                    
-                    // Rarity Styling
-                    const rarity = conf.rarity ? conf.rarity.toLowerCase() : 'common';
-                    div.classList.add(`rarity-${rarity}`);
-                    
-                    if (isSelected) div.classList.add('selected');
-
-                    div.textContent = conf.name[0];
-                    div.title = `${conf.name} (${conf.rarity || 'Common'})`;
-
-                    div.onclick = () => {
-                        showSkillDetails(conf);
-                        // Selection Logic
-                        if (isLearned) {
-                            selectedSkillId = conf.id;
-                            updateSkillMatrix(); // Re-render to update selection border
-                        } else {
-                            // Only show detail, don't select for execution
-                        }
-                    };
-                    
-                    grid.appendChild(div);
-                });
-
-                groupDiv.appendChild(grid);
-                skillMatrix.appendChild(groupDiv);
-            });
-        }
-
-        // --- Detail Tooltip/Panel ---
-        // Modified to show in a fixed position above the matrix for design
-        // detailPanel.style.position = 'absolute';
-        // detailPanel.style.left = '20px';
-        // detailPanel.style.top = '80px';
-        // detailPanel.style.zIndex = '200';
-        detailPanel.style.width = '300px'; // Fixed width
-        detailPanel.style.maxHeight = '400px'; // Add max height
-        detailPanel.style.overflowY = 'auto'; // Scrollable if too tall
-        detailPanel.style.display = 'none'; // Hide by default
-
-        function showSkillDetails(conf) {
-            detailPanel.style.display = 'block';
-            document.getElementById('detailHeader').textContent = conf.name;
-            document.getElementById('detailMeta').innerHTML = `
-                <span>AP: ${conf.cost}</span>
-                <span>Speed: ${conf.speed || 0}</span>
-                <span>Type: ${conf.type}</span>
-            `;
-            
-            // Tags
-            const tagContainer = document.getElementById('detailTags');
-            tagContainer.innerHTML = '';
-            const typeTag = document.createElement('span');
-            typeTag.className = 'detail-tag';
-            typeTag.textContent = conf.type;
-            tagContainer.appendChild(typeTag);
-            
-            if (conf.targetType) {
-                 const tTag = document.createElement('span');
-                 tTag.className = 'detail-tag';
-                 tTag.textContent = conf.targetType;
-                 tagContainer.appendChild(tTag);
-            }
-
-            // Description + Effects
-            let desc = conf.description || 'No description.';
-            if (conf.applyBuff) {
-                desc += `<br><br><span style="color:#dcdcaa">Buff: ${conf.applyBuff.id} (${conf.applyBuff.duration} turns)</span>`;
-            }
-            if (conf.effects) {
-                conf.effects.forEach(e => {
-                     desc += `<br><span style="color:#ce9178">Effect: ${e.type} ${(e.chance*100).toFixed(0)}%</span>`;
-                });
-            }
-            
-            document.getElementById('detailDesc').innerHTML = desc;
-        }
-
-        function updateInventory() {
-            const p = Engine.data.playerData;
-            inventoryList.innerHTML = '';
-            p.inventory.forEach((itemId, idx) => {
-                const item = Engine.data.gameConfig.items[itemId];
-                const li = document.createElement('li');
-                li.innerHTML = `<button onclick="window.cmdEquip('${itemId}', ${idx})">装备</button> ${item.name} (${item.slot})`;
-                inventoryList.appendChild(li);
-            });
-
-            equipmentList.innerHTML = '';
-            for (let [slot, itemId] of Object.entries(p.equipment || {})) {
-                if (!itemId) {
-                    equipmentList.innerHTML += `<li><span style="color:#666">${slot}: (Empty)</span></li>`;
-                    continue;
-                }
-                const item = Engine.data.gameConfig.items[itemId];
-                equipmentList.innerHTML += `<li>
-                    <span class="stat-label">${slot}:</span> ${item ? item.name : itemId}
-                    <button onclick="window.cmdUnequip('${slot}')">卸下</button>
-                </li>`;
-            }
-        }
-
-        // --- Actions ---
+        // --- 2. LOGIC ---
 
         function log(msg, type='info') {
-            const div = document.createElement('div');
-            const time = new Date().toLocaleTimeString();
-            div.innerHTML = `<span class="log-time">[${time}]</span><span class="log-${type}">${msg}</span>`;
-            logPanel.prepend(div);
+            const el = document.getElementById('log-panel');
+            const entry = document.createElement('div');
+            entry.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
+            if(type==='error') entry.style.color = 'red';
+            if(type==='success') entry.style.color = '#00cec9';
+            el.appendChild(entry);
+            el.scrollTop = el.scrollHeight;
         }
 
-        // Expose commands to global scope for HTML onclick
-        window.cmdEquip = (itemId, invIndex) => {
-            const p = Engine.data.playerData;
-            const item = Engine.data.gameConfig.items[itemId];
-            if (!item) return;
-
-            // Simple swap logic
-            const slot = item.slot;
-            const oldItem = p.equipment[slot];
-            
-            p.equipment[slot] = itemId;
-            p.inventory.splice(invIndex, 1); // Remove from bag
-            if (oldItem) p.inventory.push(oldItem); // Return old to bag
-
-            log(`Equipped ${item.name} to ${slot}`, 'success');
-            updateUI();
-        };
-
-        window.cmdUnequip = (slot) => {
-            const p = Engine.data.playerData;
-            const itemId = p.equipment[slot];
-            if (itemId) {
-                p.equipment[slot] = null;
-                p.inventory.push(itemId);
-                log(`Unequipped ${itemId}`, 'info');
-                updateUI();
-            }
-        };
-
-        // --- Event Listeners ---
-
-        document.getElementById('btnResetTree').onclick = () => {
-            if (confirm("Reset all learned skills?")) {
-                Engine.data.playerData.skills = [];
-                // Optionally keep basic skill
-                Engine.data.playerData.skills.push('skill_slash');
-                selectedSkillId = null;
-                detailPanel.style.display = 'none';
-                log("Skill Tree Reset.", 'warn');
-                updateUI();
-            }
-        };
-
-        document.getElementById('btnRandSkill').onclick = () => {
-            const allSkills = Object.keys(Engine.data.gameConfig.skills);
-            const p = Engine.data.playerData;
-            const learnable = allSkills.filter(s => !p.skills.includes(s));
-            
-            if (learnable.length === 0) {
-                log("No more skills to learn!", "warn");
-                return;
-            }
-
-            // Shuffle and pick 3 unique skills
-            const choices = [];
-            const temp = [...learnable];
-            for (let i = 0; i < 3 && temp.length > 0; i++) {
-                const idx = Math.floor(Math.random() * temp.length);
-                choices.push(temp.splice(idx, 1)[0]);
-            }
-
-            showSkillSelection(choices);
-        };
-
-        function showSkillSelection(skillIds) {
-            const area = document.getElementById('skillSelectionArea');
-            const container = document.getElementById('skillChoices');
-            container.innerHTML = '';
-            
-            skillIds.forEach(sid => {
-                const conf = Engine.data.getSkillConfig(sid);
-                const card = document.createElement('div');
-                card.className = 'skill-card';
-                card.innerHTML = `
-                    <div class="skill-card-name">${conf.name}</div>
-                    <div class="skill-card-cost" style="margin-bottom: 5px;">${conf.cost} AP</div>
-                    <div style="text-align: left;">
-                        <div><strong>类型:</strong> ${conf.type}</div>
-                        <div><strong>描述:</strong> ${conf.description || '无描述'}</div>
-                    </div>
-                `;
-                card.onclick = () => {
-                    learnSkill(sid);
-                    area.style.display = 'none';
-                };
-                container.appendChild(card);
-            });
-            
-            area.style.display = 'block';
-            log(`Generated ${skillIds.length} skill choices.`, 'info');
-        }
-
-        function learnSkill(skillId) {
-             const p = Engine.data.playerData;
-             if (!p.skills.includes(skillId)) {
-                 const conf = Engine.data.getSkillConfig(skillId);
-                 p.skills.push(skillId);
-                 log(`Learned new skill: ${conf.name}`, 'success');
-                 updateUI();
-             }
-        }
-
-        document.getElementById('btnResetAp').onclick = () => {
-            const p = Engine.data.playerData;
-            p.stats.ap = p.stats.maxAp;
-            log("AP Reset to max.", 'info');
-            updateUI();
-        };
-
-        document.getElementById('btnExecuteSkill').onclick = () => {
-            if (!selectedSkillId) {
-                log("Select a skill first!", "warn");
-                return;
-            }
-            const p = Engine.data.playerData;
-            const conf = Engine.data.getSkillConfig(selectedSkillId);
-            
-            if (p.stats.ap < conf.cost) {
-                log("Not enough AP!", "error");
-                return;
-            }
-
-            const targetPart = document.getElementById('targetPart').value;
-            
-            // Construct Action
-            const action = {
-                source: 'PLAYER',
-                skillId: selectedSkillId,
-                targetId: dummyEnemy.id,
-                bodyPart: targetPart,
-                cost: conf.cost
-            };
-
-            log(`Executing ${conf.name} on Dummy's ${targetPart}...`, 'info');
-
-            // Use Engine Logic
-            // Note: Engine.executePlayerSkill returns a result object, and modifies Dummy internally (by reference)
-            // We need to patch Engine.data.currentLevelData.enemies temporarily to point to our Dummy
-            // (Done in initTest)
-
+        async function init() {
             try {
-                const result = Engine.executePlayerSkill(action);
+                // Try fetching real data (adjust path as needed based on structure)
+                const response = await fetch('../assets/data/skills.json');
+                if (!response.ok) throw new Error("File not found");
+                skillData = await response.json();
                 
-                if (result) {
-                    if (result.isHit) {
-                        log(`Hit! Damage: ${result.damage} (Armor Dmg: ${result.armorDamage})`, 'success');
-                        // Sync dummy HP back from the Engine modification (actually Engine modifies the object in array)
-                        // dummyEnemy IS the object in array, so it should be updated.
-                        dummyEnemy.stats.hp = result.targetHpRemaining || dummyEnemy.stats.hp; // Update local tracker if needed
-                    } else {
-                        log(`Miss/Fail: ${result.reason}`, 'warn');
+                // Merge Data
+                for(let id in skillData) {
+                    if(SKILL_TREE_CONFIG[id]) {
+                        skillData[id].treeConfig = SKILL_TREE_CONFIG[id];
                     }
-                } else {
-                    log("Engine returned null result.", "error");
                 }
-            } catch (e) {
-                log("Error executing skill: " + e.message, "error");
-                console.error(e);
-            }
 
-            updateUI();
-        };
+                // Mock missing skills if JSON is incomplete
+                for(let id in SKILL_TREE_CONFIG) {
+                    if(!skillData[id]) {
+                        console.warn(`Skill ${id} not found in JSON, using Mock.`);
+                        skillData[id] = {
+                            id: id,
+                            name: id.replace("skill_","").replace("_", " ").toUpperCase(),
+                            description: "Skill definition is missing in skills.json (Mocked for tree test).",
+                            type: "MOCK",
+                            value: 0,
+                            treeConfig: SKILL_TREE_CONFIG[id]
+                        };
+                    }
+                }
 
-        document.getElementById('btnLootItem').onclick = () => {
-            const allItems = Object.keys(Engine.data.gameConfig.items);
-            const rand = allItems[Math.floor(Math.random() * allItems.length)];
-            Engine.data.playerData.inventory.push(rand);
-            log(`Looted: ${Engine.data.gameConfig.items[rand].name}`, 'success');
-            updateUI();
-        };
-        
-        document.getElementById('btnUnquipAll').onclick = () => {
-             const p = Engine.data.playerData;
-             for (let slot in p.equipment) {
-                 if (p.equipment[slot]) window.cmdUnequip(slot);
-             }
-        };
+                renderTree();
+                updateUI();
+                log('Skill system loaded successfully. Ready to test.');
 
-        // --- Buff Logic ---
-
-        document.getElementById('btnApplyPlayer').onclick = () => {
-            const buffId = document.getElementById('buffSelect').value;
-            applyBuff(Engine.data.playerData, buffId);
-            updateUI();
-        };
-
-        document.getElementById('btnApplyEnemy').onclick = () => {
-            const buffId = document.getElementById('buffSelect').value;
-            applyBuff(dummyEnemy, buffId);
-            updateUI();
-        };
-
-        function applyBuff(target, buffId) {
-            if (!target.buffs) target.buffs = [];
-            // Simple logic: add or refresh
-            const existing = target.buffs.find(b => b.id === buffId);
-            if (existing) {
-                existing.duration = 3; // Reset duration mock
-                existing.stacks = (existing.stacks || 1) + 1;
-                log(`Refreshed/Stacked Buff ${buffId} on target`, 'info');
-            } else {
-                target.buffs.push({
-                    id: buffId,
-                    duration: 3,
-                    stacks: 1
-                });
-                log(`Applied Buff ${buffId} to target`, 'success');
+            } catch(e) {
+                log('Failed to load skill data: ' + e.message, 'error');
             }
         }
 
-        document.getElementById('btnNextTurn').onclick = () => {
-            log("--- Ticking Turn ---", 'info');
-            
-            // Mock System: Process Buffs
-            [Engine.data.playerData, dummyEnemy].forEach(entity => {
-                if (entity.buffs) {
-                    for (let i = entity.buffs.length - 1; i >= 0; i--) {
-                        const b = entity.buffs[i];
-                        
-                        // Mock Effects
-                        if (b.id === 'buff_poison') {
-                            const dmg = 5 * b.stacks;
-                            entity.stats.hp -= dmg;
-                            log(`Poison dealt ${dmg} dmg to ${entity.name || 'Target'}`, 'warn');
-                        }
-                        
-                        b.duration--;
-                        if (b.duration <= 0) {
-                            entity.buffs.splice(i, 1);
-                            log(`Buff ${b.id} expired`, 'info');
-                        }
-                    }
-                }
-            });
+        function addKP(amount) {
+            playerState.kp += amount;
             updateUI();
-        };
+            log(`Added ${amount} KP. Total: ${playerState.kp}`, 'success');
+        }
 
-        // --- Render Helpers for Buffs ---
-        
-        const originalUpdatePlayerUI = updatePlayerUI;
-        updatePlayerUI = function() {
-            originalUpdatePlayerUI();
-            renderBuffs('playerBuffs', Engine.data.playerData.buffs);
-        };
-        
-        const originalUpdateEnemyUI = updateEnemyUI;
-        updateEnemyUI = function() {
-            originalUpdateEnemyUI();
-            renderBuffs('enemyBuffs', dummyEnemy.buffs);
-        };
+        function resetTree() {
+            playerState.unlockedSkills.clear();
+            playerState.kp = 10;
+            updateUI();
+            renderTree(); 
+            log("Skill tree has been reset.");
+        }
 
-        function renderBuffs(containerId, buffs) {
-            const container = document.getElementById(containerId);
-            container.innerHTML = '';
-            if (!buffs || buffs.length === 0) {
-                container.textContent = 'None';
+        function updateUI() {
+            document.getElementById('kp-display').innerText = playerState.kp;
+            
+            document.querySelectorAll('.skill-node').forEach(node => {
+                const id = node.dataset.id;
+                const status = checkSkillStatus(id);
+                // Preserve base classes
+                node.className = `skill-node node-tier-${node.dataset.tier} status-${status}`;
+            });
+        }
+
+        function checkSkillStatus(skillId) {
+            if(playerState.unlockedSkills.has(skillId)) return 'learned';
+            
+            const config = skillData[skillId]?.treeConfig;
+            if(!config) return 'locked';
+
+            // Check Prereq
+            if(config.prereq) {
+                if(!playerState.unlockedSkills.has(config.prereq)) return 'locked';
+            }
+            // Root nodes are available if not learned
+            return 'available';
+        }
+
+        function onNodeClick(skillId) {
+            const status = checkSkillStatus(skillId);
+            const skill = skillData[skillId];
+
+            if(status === 'learned') {
+                log(`[Simulation] Cast skill: ${skill.name}`, 'success');
                 return;
             }
-            buffs.forEach(b => {
-                const span = document.createElement('span');
-                span.className = 'buff-icon ' + (b.id.includes('poison') ? 'buff-debuff' : 'buff-buff');
-                span.textContent = `${b.id.substring(5,6).toUpperCase()} x${b.stacks}`;
-                span.title = `${b.id} (${b.duration} turns)`;
-                container.appendChild(span);
+
+            if(status === 'locked') {
+                const conf = skill.treeConfig;
+                let reason = "Pre-requisite not met.";
+                if(conf.prereq && !playerState.unlockedSkills.has(conf.prereq)) {
+                    const pname = skillData[conf.prereq]?.name || conf.prereq;
+                    reason = `Need prerequisite: ${pname}`;
+                }
+                log(`[Locked] ${reason}`, 'error');
+                return;
+            }
+
+            if(status === 'available') {
+                const cost = skill.treeConfig.cost;
+                if(playerState.kp >= cost) {
+                    playerState.kp -= cost;
+                    playerState.unlockedSkills.add(skillId);
+                    log(`[Unlock] Learned ${skill.name}! Deducted ${cost} KP.`);
+                    updateUI();
+                } else {
+                    log(`[Failed] Not enough KP. Need ${cost}, Have ${playerState.kp}`, 'error');
+                }
+            }
+        }
+
+        // --- 3. RENDERING ---
+        
+        function renderTree() {
+            const container = document.getElementById('tree-root');
+            const canvas = document.getElementById('connection-canvas');
+            container.innerHTML = '';
+            container.appendChild(canvas);
+
+            const schools = ['A','B','C','D','E','F','G'];
+            
+            schools.forEach(schoolCode => {
+                const col = document.createElement('div');
+                col.className = 'school-column';
+                col.innerHTML = `<div class="school-title">${SCHOOL_NAMES[schoolCode]}</div>`;
+                
+                const skills = Object.values(skillData).filter(s => s.treeConfig && s.treeConfig.school === schoolCode);
+                skills.sort((a,b) => a.treeConfig.tier - b.treeConfig.tier);
+
+                skills.forEach(skill => {
+                    const node = document.createElement('div');
+                    node.className = `skill-node node-tier-${skill.treeConfig.tier}`;
+                    node.dataset.id = skill.id;
+                    node.dataset.tier = skill.treeConfig.tier;
+                    node.innerHTML = `<span>${skill.name}</span>`;
+                    
+                    node.onclick = () => onNodeClick(skill.id);
+                    node.onmouseover = (e) => showTooltip(e, skill);
+                    node.onmouseout = () => hideTooltip();
+                    
+                    col.appendChild(node);
+                });
+
+                container.appendChild(col);
+            });
+
+            setTimeout(drawConnections, 100);
+        }
+
+        function drawConnections() {
+            const canvas = document.getElementById('connection-canvas');
+            const container = document.getElementById('tree-root');
+            
+            if(!container) return;
+            
+            canvas.width = container.scrollWidth;
+            canvas.height = container.scrollHeight;
+            
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.strokeStyle = '#666';
+            ctx.lineWidth = 2;
+
+            document.querySelectorAll('.skill-node').forEach(node => {
+                const id = node.dataset.id;
+                const skill = skillData[id];
+                if(!skill) return;
+                
+                const prereqId = skill.treeConfig.prereq;
+
+                if(prereqId) {
+                    const parentNode = document.querySelector(`.skill-node[data-id="${prereqId}"]`);
+                    if(parentNode) {
+                        drawBezier(ctx, parentNode, node, container);
+                    }
+                }
             });
         }
 
-        // --- Start ---
-        window.addEventListener('load', initTest);
+        function drawBezier(ctx, startElem, endElem, container) {
+            const startRect = startElem.getBoundingClientRect();
+            const endRect = endElem.getBoundingClientRect();
+            const containerRect = container.getBoundingClientRect();
 
+            const x1 = startRect.left + startRect.width/2 - containerRect.left;
+            const y1 = startRect.bottom - containerRect.top;
+            const x2 = endRect.left + endRect.width/2 - containerRect.left;
+            const y2 = endRect.top - containerRect.top;
+
+            ctx.beginPath();
+            ctx.moveTo(x1, y1);
+            ctx.bezierCurveTo(x1, y1 + 20, x2, y2 - 20, x2, y2);
+            ctx.stroke();
+        }
+
+        // TOOLTIP
+        const tooltip = document.getElementById('skill-tooltip');
+        function showTooltip(e, skill) {
+            tooltip.style.display = 'block';
+            tooltip.style.left = (e.pageX + 15) + 'px';
+            tooltip.style.top = (e.pageY + 15) + 'px';
+            
+            const conf = skill.treeConfig;
+            let status = checkSkillStatus(skill.id);
+            let reqName = conf.prereq ? (skillData[conf.prereq]?.name || conf.prereq) : "无";
+
+            tooltip.innerHTML = `
+                <h4>${skill.name} (${status.toUpperCase()})</h4>
+                <p>AP: ${skill.cost} | Type: ${skill.type}</p>
+                <p>${skill.description || "暂无描述"}</p>
+                <hr style="border-color:#444; margin: 8px 0;">
+                <p class="cost">Learning Cost: ${conf.cost} KP</p>
+                <p class="req">Prerequisite: ${reqName}</p>
+            `;
+        }
+        function hideTooltip() { tooltip.style.display = 'none'; }
+        
+        window.addEventListener('resize', drawConnections);
+        
+        // Start Init
+        window.onload = init;
     </script>
 </body>
 </html>
