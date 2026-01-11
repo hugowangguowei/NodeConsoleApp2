@@ -10,7 +10,7 @@
         h2 { font-size: 1.1em; color: #4ec9b0; margin-top: 0; border-bottom: 1px solid #333; padding-bottom: 5px; }
         h3 { font-size: 1em; color: #dcdcaa; margin: 10px 0 5px; }
         
-        .container { display: grid; grid-template-columns: 350px 1fr; gap: 20px; height: calc(100vh - 100px); }
+        .container { display: grid; grid-template-columns: 1000px 1fr; gap: 20px; height: calc(100vh - 100px); }
         .panel { background: #252526; padding: 15px; border: 1px solid #3e3e42; border-radius: 4px; overflow-y: auto; }
         
         .control-group { margin-bottom: 20px; border: 1px solid #333; padding: 10px; background: #2d2d30; }
@@ -52,6 +52,82 @@
         .buff-icon { display: inline-block; width: 16px; height: 16px; background: #555; text-align: center; line-height: 16px; font-size: 10px; margin-right: 2px; border-radius: 2px; }
         .buff-debuff { background: #800000; }
         .buff-buff { background: #008000; }
+
+        /* Skill Matrix & Detail Styles */
+        .skill-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(40px, 1fr));
+            gap: 5px;
+            margin-bottom: 15px;
+        }
+        .skill-icon {
+            width: 40px;
+            height: 40px;
+            background: #333;
+            border: 2px solid #555;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            position: relative;
+            background-size: cover;
+            border-radius: 4px;
+            transition: all 0.2s;
+        }
+        .skill-icon.unlearned {
+            filter: grayscale(100%);
+            opacity: 0.4;
+            border-color: #333;
+        }
+        .skill-icon.learned {
+            /* border-color handled by rarity */
+            box-shadow: 0 0 5px rgba(0,0,0,0.5);
+        }
+        .skill-icon.selected {
+            box-shadow: 0 0 8px #fff;
+            transform: scale(1.1);
+            z-index: 2;
+        }
+        .skill-icon:hover {
+            transform: scale(1.1);
+            z-index: 10;
+        }
+        
+        /* Rarity Borders */
+        .rarity-common { border-color: #d4d4d4; }
+        .rarity-rare { border-color: #007acc; } /* Blue */
+        .rarity-epic { border-color: #c586c0; } /* Purple */
+        .rarity-legendary { border-color: #ffd700; } /* Gold */
+
+        /* Detail Tooltip/Panel */
+        .detail-panel {
+            background: #252526;
+            border: 1px solid #444;
+            padding: 10px;
+            margin-top: 10px;
+            display: none;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        }
+        .detail-header { font-weight: bold; font-size: 14px; margin-bottom: 5px; color: #fff; }
+        .detail-meta { font-size: 11px; color: #aaa; margin-bottom: 5px; display: flex; gap: 10px; }
+        .detail-desc { font-size: 12px; color: #d4d4d4; line-height: 1.4; }
+        .detail-tag { display: inline-block; background: #333; padding: 2px 4px; border-radius: 2px; font-size: 10px; color: #9cdcfe; margin-right: 4px; }
+        
+        .card-container { display: flex; gap: 10px; justify-content: center; margin-top: 10px; }
+        .skill-card {
+            background: #333;
+            border: 2px solid #555;
+            border-radius: 6px;
+            padding: 10px;
+            width: 120px;
+            cursor: pointer;
+            transition: transform 0.2s;
+            text-align: center;
+        }
+        .skill-card:hover { transform: translateY(-5px); border-color: #fff; }
+        .skill-card-name { font-weight: bold; margin-bottom: 5px; font-size: 12px; }
+        .skill-card-cost { color: #569cd6; font-size: 11px; }
+
     </style>
 </head>
 <body>
@@ -65,11 +141,35 @@
             <div class="control-group">
                 <h2>1. 技能 (Skill)</h2>
                 <div style="margin-bottom: 10px;">
-                    <button id="btnRandSkill">随机学习技能</button>
+                    <button id="btnRandSkill">模拟升级奖励 (3选1)</button>
                     <button id="btnResetAp">重置 AP</button>
+                    <button id="btnResetTree" style="border-color: #f44747; color: #f44747;">重置技能树</button>
                 </div>
-                <h3>已学技能:</h3>
-                <ul id="skillList"></ul> <!-- Populated dynamically -->
+                
+                <!-- Acquisition Modal Area -->
+                <div id="skillSelectionArea" style="display: none; background: rgba(0,0,0,0.8); position: fixed; top:0; left:0; width:100%; height:100%; z-index: 100; display:flex; align-items:center; justify-content:center;">
+                   <div style="background: #252526; padding: 20px; border: 1px solid #444; border-radius: 8px; width: 500px; text-align: center;">
+                        <div style="margin-bottom:15px; color:#4ec9b0; font-weight:bold; font-size: 16px;">选择一个技能学习</div>
+                        <div id="skillChoices" class="card-container"></div>
+                        <button onclick="document.getElementById('skillSelectionArea').style.display='none'" style="margin-top:20px; width:100px;">取消</button>
+                   </div>
+                </div>
+
+                <h3>技能矩阵 (Skill Matrix):</h3>
+                <div id="skillMatrix" class="skill-grid"></div>
+                
+                <!-- Detail Panel -->
+                <div id="skillDetail" class="detail-panel">
+                    <div id="detailHeader" class="detail-header">Skill Name</div>
+                    <div id="detailMeta" class="detail-meta">
+                        <span>Cost: 2 AP</span>
+                        <span>CD: 0</span>
+                        <span>Target: SINGLE</span>
+                    </div>
+                    <div id="detailTags" style="margin-bottom: 5px;"></div>
+                    <div id="detailDesc" class="detail-desc">Description text...</div>
+                </div>
+
                 <div style="margin-top: 10px; padding-top: 5px; border-top: 1px solid #444;">
                     <label>攻击部位:</label>
                     <select id="targetPart">
@@ -171,9 +271,10 @@
 
         // --- UI Elements ---
         const logPanel = document.getElementById('logPanel');
-        const skillList = document.getElementById('skillList');
+        const skillMatrix = document.getElementById('skillMatrix'); // Changed from skillList
         const inventoryList = document.getElementById('inventoryList');
         const equipmentList = document.getElementById('equipmentList');
+        const detailPanel = document.getElementById('skillDetail');
         
         // --- Initialization ---
         async function initTest() {
@@ -244,7 +345,7 @@
         function updateUI() {
             updatePlayerUI();
             updateEnemyUI();
-            updateSkillList();
+            updateSkillMatrix();
             updateInventory();
         }
 
@@ -294,22 +395,78 @@
             }
         }
 
-        function updateSkillList() {
+        function updateSkillMatrix() {
             const p = Engine.data.playerData;
-            skillList.innerHTML = '';
-            p.skills.forEach(skillId => {
-                const conf = Engine.data.getSkillConfig(skillId);
-                const li = document.createElement('li');
-                li.textContent = `${conf.name} (${conf.cost} AP) - ${conf.type}`;
-                li.style.cursor = 'pointer';
-                if (selectedSkillId === skillId) li.classList.add('selected');
+            const allSkills = Engine.data.gameConfig.skills;
+            skillMatrix.innerHTML = '';
+            
+            Object.values(allSkills).forEach(conf => {
+                const isLearned = p.skills.includes(conf.id);
+                const isSelected = (selectedSkillId === conf.id);
                 
-                li.onclick = () => {
-                    selectedSkillId = skillId;
-                    updateSkillList();
+                const div = document.createElement('div');
+                div.className = `skill-icon ${isLearned ? 'learned' : 'unlearned'}`;
+                
+                // Rarity fallback (Mock logic if not in JSON)
+                const rarity = conf.rarity || (conf.cost >= 4 ? 'epic' : (conf.cost === 3 ? 'rare' : 'common'));
+                div.classList.add(`rarity-${rarity.toLowerCase()}`);
+                
+                if (isSelected) div.classList.add('selected');
+
+                // Icon / Text (using first char as icon for now)
+                div.textContent = conf.name[0];
+                div.title = conf.name;
+
+                div.onclick = () => {
+                    showSkillDetails(conf);
+                    if (isLearned) {
+                        selectedSkillId = conf.id;
+                        updateSkillMatrix(); // Re-render for selection highlight
+                    } else {
+                        log(`Skill [${conf.name}] is not learned yet.`, 'warn');
+                    }
                 };
-                skillList.appendChild(li);
+                
+                skillMatrix.appendChild(div);
             });
+        }
+
+        function showSkillDetails(conf) {
+            detailPanel.style.display = 'block';
+            document.getElementById('detailHeader').textContent = conf.name;
+            document.getElementById('detailMeta').innerHTML = `
+                <span>AP: ${conf.cost}</span>
+                <span>Speed: ${conf.speed || 0}</span>
+                <span>Type: ${conf.type}</span>
+            `;
+            
+            // Tags
+            const tagContainer = document.getElementById('detailTags');
+            tagContainer.innerHTML = '';
+            const typeTag = document.createElement('span');
+            typeTag.className = 'detail-tag';
+            typeTag.textContent = conf.type;
+            tagContainer.appendChild(typeTag);
+            
+            if (conf.targetType) {
+                 const tTag = document.createElement('span');
+                 tTag.className = 'detail-tag';
+                 tTag.textContent = conf.targetType;
+                 tagContainer.appendChild(tTag);
+            }
+
+            // Description + Effects
+            let desc = conf.description || 'No description.';
+            if (conf.applyBuff) {
+                desc += `<br><br><span style="color:#dcdcaa">Buff: ${conf.applyBuff.id} (${conf.applyBuff.duration} turns)</span>`;
+            }
+            if (conf.effects) {
+                conf.effects.forEach(e => {
+                     desc += `<br><span style="color:#ce9178">Effect: ${e.type} ${(e.chance*100).toFixed(0)}%</span>`;
+                });
+            }
+            
+            document.getElementById('detailDesc').innerHTML = desc;
         }
 
         function updateInventory() {
@@ -330,7 +487,7 @@
                 }
                 const item = Engine.data.gameConfig.items[itemId];
                 equipmentList.innerHTML += `<li>
-                    <span style="color:#ce9178">${slot}</span>: ${item ? item.name : itemId}
+                    <span class="stat-label">${slot}:</span> ${item ? item.name : itemId}
                     <button onclick="window.cmdUnequip('${slot}')">卸下</button>
                 </li>`;
             }
@@ -376,19 +533,76 @@
 
         // --- Event Listeners ---
 
+        document.getElementById('btnResetTree').onclick = () => {
+            if (confirm("Reset all learned skills?")) {
+                Engine.data.playerData.skills = [];
+                // Optionally keep basic skill
+                Engine.data.playerData.skills.push('skill_slash');
+                selectedSkillId = null;
+                detailPanel.style.display = 'none';
+                log("Skill Tree Reset.", 'warn');
+                updateUI();
+            }
+        };
+
         document.getElementById('btnRandSkill').onclick = () => {
             const allSkills = Object.keys(Engine.data.gameConfig.skills);
             const p = Engine.data.playerData;
             const learnable = allSkills.filter(s => !p.skills.includes(s));
+            
             if (learnable.length === 0) {
                 log("No more skills to learn!", "warn");
                 return;
             }
-            const rand = learnable[Math.floor(Math.random() * learnable.length)];
-            p.skills.push(rand);
-            log(`Learned new skill: ${rand}`, 'success');
-            updateUI();
+
+            // Shuffle and pick 3 unique skills
+            const choices = [];
+            const temp = [...learnable];
+            for (let i = 0; i < 3 && temp.length > 0; i++) {
+                const idx = Math.floor(Math.random() * temp.length);
+                choices.push(temp.splice(idx, 1)[0]);
+            }
+
+            showSkillSelection(choices);
         };
+
+        function showSkillSelection(skillIds) {
+            const area = document.getElementById('skillSelectionArea');
+            const container = document.getElementById('skillChoices');
+            container.innerHTML = '';
+            
+            skillIds.forEach(sid => {
+                const conf = Engine.data.getSkillConfig(sid);
+                const card = document.createElement('div');
+                card.className = 'skill-card';
+                card.innerHTML = `
+                    <div class="skill-card-name">${conf.name}</div>
+                    <div class="skill-card-cost" style="margin-bottom: 5px;">${conf.cost} AP</div>
+                    <div style="text-align: left;">
+                        <div><strong>类型:</strong> ${conf.type}</div>
+                        <div><strong>描述:</strong> ${conf.description || '无描述'}</div>
+                    </div>
+                `;
+                card.onclick = () => {
+                    learnSkill(sid);
+                    area.style.display = 'none';
+                };
+                container.appendChild(card);
+            });
+            
+            area.style.display = 'block';
+            log(`Generated ${skillIds.length} skill choices.`, 'info');
+        }
+
+        function learnSkill(skillId) {
+             const p = Engine.data.playerData;
+             if (!p.skills.includes(skillId)) {
+                 const conf = Engine.data.getSkillConfig(skillId);
+                 p.skills.push(skillId);
+                 log(`Learned new skill: ${conf.name}`, 'success');
+                 updateUI();
+             }
+        }
 
         document.getElementById('btnResetAp').onclick = () => {
             const p = Engine.data.playerData;
