@@ -54,10 +54,22 @@
         .buff-buff { background: #008000; }
 
         /* Skill Matrix & Detail Styles */
+        .skill-group-container {
+            margin-bottom: 20px;
+        }
+        .skill-group-title {
+            font-size: 12px;
+            color: #888;
+            border-bottom: 1px solid #444;
+            margin-bottom: 8px;
+            padding-bottom: 2px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
         .skill-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(40px, 1fr));
-            gap: 5px;
+            gap: 8px;
             margin-bottom: 15px;
         }
         .skill-icon {
@@ -155,19 +167,25 @@
                    </div>
                 </div>
 
-                <h3>技能矩阵 (Skill Matrix):</h3>
-                <div id="skillMatrix" class="skill-grid"></div>
-                
-                <!-- Detail Panel -->
-                <div id="skillDetail" class="detail-panel">
-                    <div id="detailHeader" class="detail-header">Skill Name</div>
-                    <div id="detailMeta" class="detail-meta">
-                        <span>Cost: 2 AP</span>
-                        <span>CD: 0</span>
-                        <span>Target: SINGLE</span>
+                <div style="display: flex; gap: 15px; align-items: flex-start;">
+                    <div style="flex: 1;">
+                        <h3>技能矩阵 (Skill Matrix):</h3>
+                        <div id="skillMatrix" class="skill-grid"></div>
                     </div>
-                    <div id="detailTags" style="margin-bottom: 5px;"></div>
-                    <div id="detailDesc" class="detail-desc">Description text...</div>
+                    
+                    <!-- Detail Panel (Right Side) -->
+                    <div style="width: 300px; padding-top: 28px;">
+                         <div id="skillDetail" class="detail-panel" style="margin-top: 0;">
+                            <div id="detailHeader" class="detail-header">Skill Name</div>
+                            <div id="detailMeta" class="detail-meta">
+                                <span>Cost: 2 AP</span>
+                                <span>CD: 0</span>
+                                <span>Target: SINGLE</span>
+                            </div>
+                            <div id="detailTags" style="margin-bottom: 5px;"></div>
+                            <div id="detailDesc" class="detail-desc">Description text...</div>
+                        </div>
+                    </div>
                 </div>
 
                 <div style="margin-top: 10px; padding-top: 5px; border-top: 1px solid #444;">
@@ -395,41 +413,118 @@
             }
         }
 
+        // --- Skill Matrix Logic with Grouping ---
+
+        const RARITY_VAL = { "Common": 1, "Uncommon": 2, "Rare": 3, "Epic": 4, "Legendary": 5 };
+        
+        // Define Schools manually mapping to IDs based on Design Doc
+        const SKILL_SCHOOLS = {
+            "Melee: Juggernaut": ["skill_heavy_swing", "skill_shield_bash", "skill_headbutt", "skill_savage_charge", "skill_skull_cracker", "skill_shockwave", "skill_execute", "skill_earthquake", "skill_berserk", "skill_ragnarok"],
+            "Melee: Guardian": ["skill_iron_will", "skill_block", "skill_taunt", "skill_spiked_shell", "skill_regroup", "skill_counter_stance", "skill_futile_struggle", "skill_shield_wall", "skill_immortal_bastion", "skill_aegis"],
+            "Melee: Duelist": ["skill_artery_slice", "skill_double_thrust", "skill_feint", "skill_bloodletting", "skill_blade_dance", "skill_precision_thrust", "skill_bloodthirst", "skill_bloody_harvest", "skill_crimson_finale", "skill_thousand_cuts"],
+            "Ranged: Ranger": ["skill_quick_shot", "skill_quick_step", "skill_distract_shot", "skill_tactical_roll", "skill_wind_arrow", "skill_poison_coating", "skill_adrenaline", "skill_rapid_fire", "skill_afterimage", "skill_time_warp"],
+            "Ranged: Sniper": ["skill_mark_target", "skill_steady_aim", "skill_knee_shot", "skill_crippling_shot", "skill_disarm", "skill_piercing_bolt", "skill_headshot", "skill_ghost_snipe", "skill_eagle_eye", "skill_one_shot"],
+            "Arcane: Elementalist": ["skill_fireball", "skill_lightning_bolt", "skill_oil_slick", "skill_ice_lance", "skill_ring_of_fire", "skill_frost_nova", "skill_overload", "skill_chain_lightning", "skill_blizzard", "skill_meteor_swarm"],
+            "Arcane: Cleric": ["skill_holy_light", "skill_smite", "skill_bless", "skill_shield_of_faith", "skill_pain_suppression", "skill_cleansing_fire", "skill_holy_shock", "skill_guardian_angel", "skill_radiant_revitalize", "skill_divine_shield"]
+        };
+
+        function getSkillSchool(skillId) {
+            for (const [school, list] of Object.entries(SKILL_SCHOOLS)) {
+                if (list.includes(skillId)) return school;
+            }
+            return "Others";
+        }
+
         function updateSkillMatrix() {
             const p = Engine.data.playerData;
             const allSkills = Engine.data.gameConfig.skills;
             skillMatrix.innerHTML = '';
             
+            // 1. Group Skills
+            const grouped = {
+                "Melee: Juggernaut": [], "Melee: Guardian": [], "Melee: Duelist": [],
+                "Ranged: Ranger": [], "Ranged: Sniper": [],
+                "Arcane: Elementalist": [], "Arcane: Cleric": [],
+                "Others": []
+            };
+
             Object.values(allSkills).forEach(conf => {
-                const isLearned = p.skills.includes(conf.id);
-                const isSelected = (selectedSkillId === conf.id);
-                
-                const div = document.createElement('div');
-                div.className = `skill-icon ${isLearned ? 'learned' : 'unlearned'}`;
-                
-                // Rarity fallback (Mock logic if not in JSON)
-                const rarity = conf.rarity || (conf.cost >= 4 ? 'epic' : (conf.cost === 3 ? 'rare' : 'common'));
-                div.classList.add(`rarity-${rarity.toLowerCase()}`);
-                
-                if (isSelected) div.classList.add('selected');
+                const school = getSkillSchool(conf.id);
+                if (grouped[school]) grouped[school].push(conf);
+                else grouped["Others"].push(conf);
+            });
 
-                // Icon / Text (using first char as icon for now)
-                div.textContent = conf.name[0];
-                div.title = conf.name;
+            // 2. Render Groups
+            Object.keys(grouped).forEach(schoolName => {
+                const skills = grouped[schoolName];
+                if (skills.length === 0) return;
 
-                div.onclick = () => {
-                    showSkillDetails(conf);
-                    if (isLearned) {
-                        selectedSkillId = conf.id;
-                        updateSkillMatrix(); // Re-render for selection highlight
-                    } else {
-                        log(`Skill [${conf.name}] is not learned yet.`, 'warn');
-                    }
-                };
+                // Sort by Rarity
+                skills.sort((a, b) => {
+                    const rA = RARITY_VAL[a.rarity] || 0;
+                    const rB = RARITY_VAL[b.rarity] || 0;
+                    return rA - rB;
+                });
+
+                // Container
+                const groupDiv = document.createElement('div');
+                groupDiv.className = 'skill-group-container';
                 
-                skillMatrix.appendChild(div);
+                // Header
+                const title = document.createElement('div');
+                title.className = 'skill-group-title';
+                title.textContent = schoolName;
+                groupDiv.appendChild(title);
+
+                // Grid
+                const grid = document.createElement('div');
+                grid.className = 'skill-grid';
+
+                skills.forEach(conf => {
+                    const isLearned = p.skills.includes(conf.id);
+                    const isSelected = (selectedSkillId === conf.id);
+                    
+                    const div = document.createElement('div');
+                    div.className = `skill-icon ${isLearned ? 'learned' : 'unlearned'}`;
+                    
+                    // Rarity Styling
+                    const rarity = conf.rarity ? conf.rarity.toLowerCase() : 'common';
+                    div.classList.add(`rarity-${rarity}`);
+                    
+                    if (isSelected) div.classList.add('selected');
+
+                    div.textContent = conf.name[0];
+                    div.title = `${conf.name} (${conf.rarity || 'Common'})`;
+
+                    div.onclick = () => {
+                        showSkillDetails(conf);
+                        // Selection Logic
+                        if (isLearned) {
+                            selectedSkillId = conf.id;
+                            updateSkillMatrix(); // Re-render to update selection border
+                        } else {
+                            // Only show detail, don't select for execution
+                        }
+                    };
+                    
+                    grid.appendChild(div);
+                });
+
+                groupDiv.appendChild(grid);
+                skillMatrix.appendChild(groupDiv);
             });
         }
+
+        // --- Detail Tooltip/Panel ---
+        // Modified to show in a fixed position above the matrix for design
+        // detailPanel.style.position = 'absolute';
+        // detailPanel.style.left = '20px';
+        // detailPanel.style.top = '80px';
+        // detailPanel.style.zIndex = '200';
+        detailPanel.style.width = '300px'; // Fixed width
+        detailPanel.style.maxHeight = '400px'; // Add max height
+        detailPanel.style.overflowY = 'auto'; // Scrollable if too tall
+        detailPanel.style.display = 'none'; // Hide by default
 
         function showSkillDetails(conf) {
             detailPanel.style.display = 'block';
