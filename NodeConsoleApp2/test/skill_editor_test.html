@@ -155,10 +155,10 @@
 
         .skill-node {
             position: absolute;
-            width: 80px;
-            height: 80px;
+            width: 72px; /* 90% of 80px */
+            height: 72px;
             background: white;
-            border: 2px solid #333;
+            border: 4px solid #333; /* Thicker border */
             border-radius: 8px;
             display: flex;
             flex-direction: column;
@@ -484,10 +484,10 @@ class SkillEditor {
     drawConnection(sourceNode, targetNode) {
         // Simple Manhattan Routing logic
         // Node Center Coordinates
-        const startX = sourceNode.editorMeta.x + 40; // 40 = half node width
-        const startY = sourceNode.editorMeta.y + 40;
-        const endX = targetNode.editorMeta.x + 40;
-        const endY = targetNode.editorMeta.y + 40;
+        const startX = sourceNode.editorMeta.x + 36; // 36 = half node width (72/2)
+        const startY = sourceNode.editorMeta.y + 36;
+        const endX = targetNode.editorMeta.x + 36;
+        const endY = targetNode.editorMeta.y + 36;
 
         // Determine anchors (Simplest: Right to Left)
         // Ideally should check relative position
@@ -495,16 +495,16 @@ class SkillEditor {
         
         if (endX > startX + this.GRID_SIZE) {
             // Target is to the right
-            x1 = startX + 40; y1 = startY; // Source Right
-            x2 = endX - 40; y2 = endY;     // Target Left
+            x1 = startX + 36; y1 = startY; // Source Right
+            x2 = endX - 36; y2 = endY;     // Target Left
         } else if (endX < startX - this.GRID_SIZE) {
             // Target is to the left
-            x1 = startX - 40; y1 = startY; // Source Left
-            x2 = endX + 40; y2 = endY;     // Target Right
+            x1 = startX - 36; y1 = startY; // Source Left
+            x2 = endX + 36; y2 = endY;     // Target Right
         } else {
             // Same column or close vertical
-            x1 = startX; y1 = startY + 40; // Source Bottom
-            x2 = endX; y2 = endY - 40;     // Target Top
+            x1 = startX; y1 = startY + 36; // Source Bottom
+            x2 = endX; y2 = endY - 36;     // Target Top
         }
 
         // Draw Polyline
@@ -535,7 +535,7 @@ class SkillEditor {
     addSkillNode(skill = {}) {
         // Ensure editorMeta exists and is snapped
         if (!skill.editorMeta) {
-            skill.editorMeta = { x: 10, y: 10 };
+            skill.editorMeta = { x: 14, y: 14 }; // 14 offset for 72px node in 100px grid
         }
         this.snapToGrid(skill.editorMeta);
         this.skills.push(skill);
@@ -548,15 +548,15 @@ class SkillEditor {
 
     snapToGrid(pos) {
         // Grid Size 100.
-        // Node is 80x80.
+        // Node is 72x72.
         // Cell Center is (X*100 + 50, Y*100 + 50).
-        // Node TopLeft to center it: X*100 + 10, Y*100 + 10.
+        // Node TopLeft to center it: X*100 + 14, Y*100 + 14.
         
-        const col = Math.round((pos.x - 10) / this.GRID_SIZE);
-        const row = Math.round((pos.y - 10) / this.GRID_SIZE);
+        const col = Math.round((pos.x - 14) / this.GRID_SIZE);
+        const row = Math.round((pos.y - 14) / this.GRID_SIZE);
         
-        pos.x = col * this.GRID_SIZE + 10;
-        pos.y = row * this.GRID_SIZE + 10;
+        pos.x = col * this.GRID_SIZE + 14;
+        pos.y = row * this.GRID_SIZE + 14;
     }
 
     // --- C. Interaction & Events ---
@@ -857,8 +857,8 @@ class SkillEditor {
                         const col = index % 10;
                         const row = Math.floor(index / 10);
                         skill.editorMeta = { 
-                            x: col * this.GRID_SIZE + 10, 
-                            y: row * this.GRID_SIZE + 10 
+                            x: col * this.GRID_SIZE + 14, 
+                            y: row * this.GRID_SIZE + 14 
                         };
                     } else {
                         // 确保现有坐标对齐网格
@@ -887,8 +887,18 @@ class SkillEditor {
     }
 
     exportJson() {
-        console.log(JSON.stringify(this.skills, null, 2));
-        alert('请查看控制台输出的 JSON');
+        const jsonStr = JSON.stringify(this.skills, null, 2);
+        const blob = new Blob([jsonStr], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'skills_export.json';
+        document.body.appendChild(a);
+        a.click();
+        
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
     }
 
     autoLayout() {
