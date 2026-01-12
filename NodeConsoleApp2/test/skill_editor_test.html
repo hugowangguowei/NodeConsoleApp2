@@ -1,0 +1,904 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>技能编辑器原型</title>
+    <style>
+        :root {
+            --bg-color: #f4f4f4;
+            --panel-bg: #ffffff;
+            --border-color: #ccc;
+            --primary-color: #007bff;
+            --grid-line-color: #e0e0e0;
+            --grid-size: 100px;
+        }
+
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow: hidden;
+            background-color: var(--bg-color);
+        }
+
+        /* Layout Structure */
+        #app {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+
+        /* A. Toolbar */
+        #toolbar {
+            height: 50px;
+            background: var(--panel-bg);
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            padding: 0 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            z-index: 100;
+        }
+        #toolbar button {
+            margin-right: 10px;
+            padding: 6px 12px;
+            cursor: pointer;
+        }
+
+        #main-container {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        /* B. Skill List (Left Sidebar) */
+        #skill-list-panel {
+            width: 250px;
+            background: var(--panel-bg);
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            z-index: 90;
+        }
+        .panel-header {
+            padding: 10px;
+            font-weight: bold;
+            background: #eee;
+            border-bottom: 1px solid #ddd;
+        }
+        #skill-list-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px;
+        }
+        .skill-list-item {
+            padding: 8px;
+            border: 1px solid #ddd;
+            margin-bottom: 5px;
+            border-radius: 4px;
+            cursor: grab;
+            background: white;
+            user-select: none;
+        }
+        .skill-list-item:hover {
+            background-color: #f0f8ff;
+            border-color: #b0d4ff;
+        }
+
+        /* C. Canvas Workspace (Center) */
+        #canvas-wrapper {
+            flex: 1;
+            position: relative;
+            overflow: hidden; /* Canvas pans inside here */
+            background: #fff;
+            cursor: grab;
+        }
+        #canvas-wrapper:active {
+            cursor: grabbing;
+        }
+
+        /* The movable container for Pan/Zoom */
+        #canvas-transform-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 5000px; /* Virtual Size */
+            height: 5000px;
+            transform-origin: 0 0;
+        }
+
+        /* Layer 1: Grid (Background) */
+        #grid-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* Layer 2: Connections (SVG) */
+        #connection-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: visibleStroke; /* Only interact with lines */
+            z-index: 1;
+        }
+        .connection-line {
+            fill: none;
+            stroke: #666;
+            stroke-width: 2;
+            cursor: pointer;
+        }
+        .connection-line:hover {
+            stroke: #ff9900;
+            stroke-width: 4;
+        }
+        .connection-arrow {
+            fill: #666;
+        }
+
+        /* Layer 3: Nodes (DOM) */
+        #node-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none; /* Let clicks pass through empty space */
+            z-index: 2;
+        }
+
+        .skill-node {
+            position: absolute;
+            width: 80px;
+            height: 80px;
+            background: white;
+            border: 2px solid #333;
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            box-shadow: 2px 2px 5px rgba(0,0,0,0.2);
+            pointer-events: auto; /* Enable interaction on nodes */
+            cursor: move;
+            transition: box-shadow 0.2s, transform 0.1s;
+        }
+        .skill-node.selected {
+            border-color: #ff9900;
+            box-shadow: 0 0 0 4px rgba(255, 153, 0, 0.3);
+            z-index: 10;
+        }
+        /* Rarity Borders */
+        .rarity-common { border-color: #9e9e9e; }
+        .rarity-uncommon { border-color: #4caf50; }
+        .rarity-rare { border-color: #2196f3; }
+        .rarity-epic { border-color: #9c27b0; }
+        .rarity-legendary { border-color: #ffc107; }
+
+        /* Anchors */
+        .node-anchor {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background: #fff;
+            border: 2px solid #555;
+            border-radius: 50%;
+            z-index: 11;
+            opacity: 0; 
+            transition: opacity 0.2s;
+            cursor: crosshair;
+        }
+        .skill-node:hover .node-anchor { opacity: 1; }
+        
+        .anchor-top { top: -6px; left: 50%; transform: translateX(-50%); }
+        .anchor-bottom { bottom: -6px; left: 50%; transform: translateX(-50%); }
+        .anchor-left { left: -6px; top: 50%; transform: translateY(-50%); }
+        .anchor-right { right: -6px; top: 50%; transform: translateY(-50%); }
+
+        /* D. Properties Panel (Right Sidebar) */
+        #properties-panel {
+            width: 300px;
+            background: var(--panel-bg);
+            border-left: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            z-index: 90;
+        }
+        .prop-group {
+            padding: 15px;
+            border-bottom: 1px solid #eee;
+        }
+        .prop-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            font-size: 12px;
+            color: #555;
+        }
+        .prop-group input, 
+        .prop-group select,
+        .prop-group textarea {
+            width: 100%;
+            padding: 6px;
+            box-sizing: border-box;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        /* Utility */
+        .debug-info {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            background: rgba(0,0,0,0.5);
+            color: white;
+            padding: 5px 10px;
+            font-size: 10px;
+            pointer-events: none;
+        }
+
+    </style>
+</head>
+<body>
+
+<div id="app">
+    <!-- A. Toolbar -->
+    <div id="toolbar">
+        <button onclick="document.getElementById('file-input').click()">导入 JSON</button>
+        <input type="file" id="file-input" accept=".json" style="display: none;" onchange="editor.importJson(this)">
+        <button onclick="editor.createNewSkill()">新建技能 (+)</button>
+        <button onclick="editor.exportJson()">导出 JSON</button>
+        <button onclick="editor.clearCanvas()">清空画布</button>
+        <span style="flex:1"></span>
+        <button onclick="editor.autoLayout()">自动布局</button>
+    </div>
+
+    <div id="main-container">
+        <!-- B. Skill List -->
+        <div id="skill-list-panel">
+            <div class="panel-header">技能库</div>
+            <div id="skill-list-content">
+                <!-- Library items will be injected here -->
+            </div>
+        </div>
+
+        <!-- C. Canvas Workspace -->
+        <div id="canvas-wrapper">
+            <div id="canvas-transform-layer">
+                <!-- Layer 1: Grid -->
+                <canvas id="grid-layer" width="5000" height="5000"></canvas>
+                <!-- Layer 2: Connections -->
+                <svg id="connection-layer">
+                    <defs>
+                        <marker id="arrowhead" markerWidth="10" markerHeight="7" 
+                        refX="9" refY="3.5" orient="auto">
+                          <polygon points="0 0, 10 3.5, 0 7" fill="#666" />
+                        </marker>
+                    </defs>
+                    <!-- Lines will be injected here -->
+                </svg>
+                <!-- Layer 3: Nodes -->
+                <div id="node-layer">
+                    <!-- Nodes will be injected here -->
+                </div>
+            </div>
+            <div class="debug-info">平移: 拖拽空白处 | 缩放: 滚轮</div>
+        </div>
+
+        <!-- D. Properties Panel -->
+        <div id="properties-panel">
+            <div class="panel-header">属性面板</div>
+            <div id="prop-content">
+                <div class="prop-group">
+                    <label>ID</label>
+                    <input type="text" id="prop-id" readonly>
+                </div>
+                <div class="prop-group">
+                    <label>技能名称</label>
+                    <input type="text" id="prop-name">
+                </div>
+                <div class="prop-group">
+                    <label>稀有度</label>
+                    <select id="prop-rarity">
+                        <option value="Common">普通 (Common)</option>
+                        <option value="Uncommon">稀有 (Uncommon)</option>
+                        <option value="Rare">卓越 (Rare)</option>
+                        <option value="Epic">史诗 (Epic)</option>
+                        <option value="Legendary">传说 (Legendary)</option>
+                    </select>
+                </div>
+                <div class="prop-group">
+                    <label>AP 消耗</label>
+                    <input type="number" id="prop-cost">
+                </div>
+                <div class="prop-group">
+                    <label>描述</label>
+                    <textarea id="prop-desc" rows="4"></textarea>
+                </div>
+                <div class="prop-group">
+                    <button onclick="editor.saveCurrentNode()">更新节点</button>
+                    <button onclick="editor.deleteCurrentNode()" style="background:#ff4444; color:white; margin-top:5px;">删除节点</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+
+/**
+ * Skill Editor Logic
+ * Implements Layered Rendering & Grid System
+ */
+class SkillEditor {
+    constructor() {
+        // Constants
+        this.GRID_SIZE = 100;
+        this.CANVAS_WIDTH = 5000;
+        this.CANVAS_HEIGHT = 5000;
+
+        // State
+        this.skills = []; // Array of skill objects
+        this.selectedNodeId = null;
+        this.isDragging = false;
+        this.dragOffset = { x: 0, y: 0 };
+        this.draggedNodeId = null;
+        
+        // Panning State
+        this.pan = { x: 0, y: 0 };
+        this.zoom = 1;
+        this.isPanning = false;
+        this.lastMousePos = { x: 0, y: 0 };
+        
+        // Connection State
+        this.isConnecting = false;
+        this.connectionStartId = null;
+        this.tempLine = null;
+
+        // DOM Elements
+        this.elTransformLayer = document.getElementById('canvas-transform-layer');
+        this.elGridCanvas = document.getElementById('grid-layer');
+        this.elNodeLayer = document.getElementById('node-layer');
+        this.elSvgLayer = document.getElementById('connection-layer');
+        this.elPropId = document.getElementById('prop-id');
+        this.elPropName = document.getElementById('prop-name');
+        this.elPropRarity = document.getElementById('prop-rarity');
+        this.elPropCost = document.getElementById('prop-cost');
+        this.elPropDesc = document.getElementById('prop-desc');
+
+        // Initialize
+        this.initGrid();
+        this.attachEvents();
+        
+        // Test Data
+        this.addSkillNode({ 
+            id: 'skill_slash', name: '斩击', rarity: 'Common', cost: 2, 
+            editorMeta: { x: 100, y: 100 } 
+        });
+        this.addSkillNode({ 
+            id: 'skill_double_slash', name: '二连斩', rarity: 'Uncommon', cost: 3, 
+            preRequisite: 'skill_slash',
+            editorMeta: { x: 300, y: 100 } 
+        });
+    }
+
+    // --- A. Rendering ---
+
+    initGrid() {
+        const ctx = this.elGridCanvas.getContext('2d');
+        ctx.strokeStyle = '#e0e0e0';
+        ctx.lineWidth = 1;
+
+        // Draw Vertical Lines
+        for (let x = 0; x <= this.CANVAS_WIDTH; x += this.GRID_SIZE) {
+            ctx.beginPath();
+            ctx.moveTo(x, 0);
+            ctx.lineTo(x, this.CANVAS_HEIGHT);
+            ctx.stroke();
+        }
+
+        // Draw Horizontal Lines
+        for (let y = 0; y <= this.CANVAS_HEIGHT; y += this.GRID_SIZE) {
+            ctx.beginPath();
+            ctx.moveTo(0, y);
+            ctx.lineTo(this.CANVAS_WIDTH, y);
+            ctx.stroke();
+        }
+    }
+
+    renderNodes() {
+        this.elNodeLayer.innerHTML = '';
+        this.skills.forEach(skill => {
+            const el = document.createElement('div');
+            el.className = `skill-node rarity-${skill.rarity ? skill.rarity.toLowerCase() : 'common'}`;
+            if (this.selectedNodeId === skill.id) el.classList.add('selected');
+            
+            // Initial Position (Snap to Grid Center)
+            // Use editorMeta if available, otherwise default
+            const x = skill.editorMeta ? skill.editorMeta.x : 0;
+            const y = skill.editorMeta ? skill.editorMeta.y : 0;
+            
+            // Center the 80x80 node in the 100x100 grid cell
+            // Grid Center for (Col C, Row R) is: (C*100 + 50, R*100 + 50)
+            // Node TopLeft to center: (X - 40, Y - 40)
+            
+            // Here we assume editorMeta stores the TOP-LEFT coordinate of the NODE
+            el.style.left = `${x}px`;
+            el.style.top = `${y}px`;
+            
+            el.dataset.id = skill.id;
+            el.innerHTML = `
+                <div>${skill.name}</div>
+                <div style="font-size:10px; color:#666">AP: ${skill.cost}</div>
+                <!-- Anchors -->
+                <div class="node-anchor anchor-top" data-dir="top"></div>
+                <div class="node-anchor anchor-right" data-dir="right"></div>
+                <div class="node-anchor anchor-bottom" data-dir="bottom"></div>
+                <div class="node-anchor anchor-left" data-dir="left"></div>
+            `;
+
+            // Event for selecting/dragging
+            el.addEventListener('mousedown', (e) => this.onNodeMouseDown(e, skill));
+
+            this.elNodeLayer.appendChild(el);
+        });
+
+        this.renderConnections();
+    }
+
+    renderConnections() {
+        // Clear existing lines (except defs)
+        const defs = this.elSvgLayer.querySelector('defs').outerHTML;
+        this.elSvgLayer.innerHTML = defs; 
+        
+        // Add Temp Line Group (for dragging)
+        this.elTempLineGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+        this.elSvgLayer.appendChild(this.elTempLineGroup);
+
+        this.skills.forEach(skill => {
+            if (skill.preRequisite) {
+                const target = this.getSkillById(skill.preRequisite);
+                if (target) {
+                    this.drawConnection(target, skill);
+                }
+            }
+        });
+    }
+
+    // 辅助：获取鼠标在 Layer 中的局部坐标
+    getLayerPos(clientX, clientY) {
+        const rect = document.getElementById('canvas-wrapper').getBoundingClientRect();
+        return {
+            x: (clientX - rect.left - this.pan.x) / this.zoom,
+            y: (clientY - rect.top - this.pan.y) / this.zoom
+        };
+    }
+
+    drawConnection(sourceNode, targetNode) {
+        // Simple Manhattan Routing logic
+        // Node Center Coordinates
+        const startX = sourceNode.editorMeta.x + 40; // 40 = half node width
+        const startY = sourceNode.editorMeta.y + 40;
+        const endX = targetNode.editorMeta.x + 40;
+        const endY = targetNode.editorMeta.y + 40;
+
+        // Determine anchors (Simplest: Right to Left)
+        // Ideally should check relative position
+        let x1, y1, x2, y2;
+        
+        if (endX > startX + this.GRID_SIZE) {
+            // Target is to the right
+            x1 = startX + 40; y1 = startY; // Source Right
+            x2 = endX - 40; y2 = endY;     // Target Left
+        } else if (endX < startX - this.GRID_SIZE) {
+            // Target is to the left
+            x1 = startX - 40; y1 = startY; // Source Left
+            x2 = endX + 40; y2 = endY;     // Target Right
+        } else {
+            // Same column or close vertical
+            x1 = startX; y1 = startY + 40; // Source Bottom
+            x2 = endX; y2 = endY - 40;     // Target Top
+        }
+
+        // Draw Polyline
+        // Start -> MidX -> MidX,TargetY -> Target
+        const midX = (x1 + x2) / 2;
+        
+        let pathStr = '';
+        // Only drawing simple horizontal/vertical elbow for now
+        // Advanced Manhattan routing needs grid collision detection
+        
+        if (Math.abs(x2 - x1) > Math.abs(y2 - y1)) {
+            // Horizontal dominance
+             pathStr = `${x1},${y1} ${midX},${y1} ${midX},${y2} ${x2},${y2}`;
+        } else {
+             pathStr = `${x1},${y1} ${x1},${(y1+y2)/2} ${x2},${(y1+y2)/2} ${x2},${y2}`;
+        }
+
+        const polyline = document.createElementNS('http://www.w3.org/2000/svg', 'polyline');
+        polyline.setAttribute('points', pathStr);
+        polyline.setAttribute('class', 'connection-line');
+        polyline.setAttribute('marker-end', 'url(#arrowhead)');
+        
+        this.elSvgLayer.appendChild(polyline);
+    }
+
+    // --- B. Data Management ---
+
+    addSkillNode(skill = {}) {
+        // Ensure editorMeta exists and is snapped
+        if (!skill.editorMeta) {
+            skill.editorMeta = { x: 10, y: 10 };
+        }
+        this.snapToGrid(skill.editorMeta);
+        this.skills.push(skill);
+        this.renderNodes();
+    }
+
+    getSkillById(id) {
+        return this.skills.find(s => s.id === id);
+    }
+
+    snapToGrid(pos) {
+        // Grid Size 100.
+        // Node is 80x80.
+        // Cell Center is (X*100 + 50, Y*100 + 50).
+        // Node TopLeft to center it: X*100 + 10, Y*100 + 10.
+        
+        const col = Math.round((pos.x - 10) / this.GRID_SIZE);
+        const row = Math.round((pos.y - 10) / this.GRID_SIZE);
+        
+        pos.x = col * this.GRID_SIZE + 10;
+        pos.y = row * this.GRID_SIZE + 10;
+    }
+
+    // --- C. Interaction & Events ---
+
+    attachEvents() {
+        const wrapper = document.getElementById('canvas-wrapper');
+        
+        // Panning (Right Click or Space+Drag, logic simplified to generic drag on background)
+        wrapper.addEventListener('mousedown', (e) => {
+            if (e.target === wrapper || e.target.id === 'connection-layer' || e.target.id === 'node-layer') {
+                this.isPanning = true;
+                this.lastMousePos = { x: e.clientX, y: e.clientY };
+                wrapper.style.cursor = 'grabbing';
+            }
+        });
+
+        window.addEventListener('mousemove', (e) => {
+            // Drag Connection
+            if (this.isConnecting) {
+                this.updateConnectionDrag(e);
+            }
+            // Drag Node
+            else if (this.isDragging && this.draggedNodeId) {
+                const node = this.getSkillById(this.draggedNodeId);
+                if (node) {
+                    // Raw position updates for smooth drag
+                    // We will snap on Release
+                    // Convert screen delta to canvas zoom space
+                    const dx = (e.clientX - this.lastMousePos.x) / this.zoom;
+                    const dy = (e.clientY - this.lastMousePos.y) / this.zoom;
+                    
+                    node.editorMeta.x += dx;
+                    node.editorMeta.y += dy;
+                    
+                    this.lastMousePos = { x: e.clientX, y: e.clientY };
+                    this.renderNodes(); // Re-render (inefficient but works for prototype)
+                }
+            } 
+            // Pan Canvas
+            else if (this.isPanning) {
+                const dx = e.clientX - this.lastMousePos.x;
+                const dy = e.clientY - this.lastMousePos.y;
+                this.pan.x += dx;
+                this.pan.y += dy;
+                this.lastMousePos = { x: e.clientX, y: e.clientY };
+                this.updateTransform();
+            }
+        });
+
+        window.addEventListener('mouseup', (e) => {
+            if (this.isConnecting) {
+                this.endConnectionDrag(e);
+            }
+
+            if (this.isDragging) {
+                // Snap on Drop
+                const node = this.getSkillById(this.draggedNodeId);
+                if (node) {
+                    this.snapToGrid(node.editorMeta);
+                    this.renderNodes();
+                }
+                this.isDragging = false;
+                this.draggedNodeId = null;
+            }
+            if (this.isPanning) {
+                this.isPanning = false;
+                wrapper.style.cursor = 'grab';
+            }
+        });
+
+        // Zooming
+        wrapper.addEventListener('wheel', (e) => {
+            e.preventDefault();
+            const scaleAmount = 0.1;
+            if (e.deltaY < 0) {
+                this.zoom += scaleAmount;
+            } else {
+                this.zoom -= scaleAmount;
+            }
+            if (this.zoom < 0.2) this.zoom = 0.2;
+            if (this.zoom > 3) this.zoom = 3;
+            this.updateTransform();
+        });
+
+        // Property Inputs
+        ['id', 'name', 'cost', 'desc'].forEach(field => {
+            const el = document.getElementById('prop-' + field);
+            /* // Auto-save logic if needed
+            el.addEventListener('change', () => this.saveCurrentNode());
+            */
+        });
+        document.getElementById('prop-rarity').addEventListener('change', () => this.saveCurrentNode());
+    }
+
+    updateTransform() {
+        this.elTransformLayer.style.transform = `translate(${this.pan.x}px, ${this.pan.y}px) scale(${this.zoom})`;
+    }
+
+    onNodeMouseDown(e, skill) {
+        e.stopPropagation(); // Stop panning
+        // Select logic
+        this.selectedNodeId = skill.id;
+        this.loadProperties(skill);
+        this.renderNodes(); // Update selection visual
+
+        // Drag logic logic
+        if (e.target.classList.contains('node-anchor')) {
+            // Start connection dragging
+            this.startConnectionDrag(skill.id, e);
+        } else {
+            // Start node Move
+            this.isDragging = true;
+            this.draggedNodeId = skill.id;
+            this.lastMousePos = { x: e.clientX, y: e.clientY };
+        }
+    }
+
+    // --- Connection Interaction ---
+
+    startConnectionDrag(nodeId, e) {
+        this.isConnecting = true;
+        this.connectionStartId = nodeId;
+        
+        // 创建临时虚线
+        this.tempLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        this.tempLine.setAttribute('stroke', '#ff9900');
+        this.tempLine.setAttribute('stroke-width', '2');
+        this.tempLine.setAttribute('stroke-dasharray', '5,5');
+        this.tempLine.setAttribute('marker-end', 'url(#arrowhead)');
+        
+        // 计算起点（使用 Anchor 的中心，或者简化使用节点中心）
+        // 这里简化为：从实际点击的位置开始
+        const startPos = this.getLayerPos(e.clientX, e.clientY);
+        this.tempLine.setAttribute('x1', startPos.x);
+        this.tempLine.setAttribute('y1', startPos.y);
+        this.tempLine.setAttribute('x2', startPos.x);
+        this.tempLine.setAttribute('y2', startPos.y);
+
+        if (this.elTempLineGroup) {
+            this.elTempLineGroup.appendChild(this.tempLine);
+        }
+    }
+
+    updateConnectionDrag(e) {
+        if (!this.tempLine) return;
+        const currPos = this.getLayerPos(e.clientX, e.clientY);
+        this.tempLine.setAttribute('x2', currPos.x);
+        this.tempLine.setAttribute('y2', currPos.y);
+    }
+
+    endConnectionDrag(e) {
+        this.isConnecting = false;
+        
+        // 清除临时线
+        if (this.tempLine) {
+            this.tempLine.remove();
+            this.tempLine = null;
+        }
+
+        // 检测由于鼠标释放而在下方的元素
+        // 注意：由于 SVG 层遮挡，直接 e.target 可能是 SVG。
+        // 我们利用 document.elementFromPoint 或检查 e.target 的父级
+        let targetEl = e.target;
+        
+        // 向上查找 .skill-node
+        while (targetEl && !targetEl.classList?.contains('skill-node') && targetEl !== document.body) {
+            targetEl = targetEl.parentElement;
+        }
+
+        if (targetEl && targetEl.classList.contains('skill-node')) {
+            const targetId = targetEl.dataset.id;
+            
+            // 验证合法性
+            if (targetId && targetId !== this.connectionStartId) {
+                this.createConnection(this.connectionStartId, targetId);
+            }
+        }
+        
+        this.connectionStartId = null;
+    }
+
+    createConnection(sourceId, targetId) {
+        // 逻辑：Source 是 Target 的前置 (Source -> Target)
+        // 数据模型中：target.preRequisite = sourceId
+        
+        const targetSkill = this.getSkillById(targetId);
+        if (!targetSkill) return;
+
+        // 检查循环依赖 (简单检查：直接依赖)
+        // 复杂检查可以使用 BFS/DFS，这里暂时跳过
+        if (targetSkill.preRequisite === sourceId) {
+            console.log('连接已存在');
+            return;
+        }
+
+        // 更新数据
+        targetSkill.preRequisite = sourceId;
+        console.log(`创建连接: ${sourceId} -> ${targetId}`);
+        
+        this.renderNodes();
+    }
+
+    // --- D. Properties Panel Logic ---
+
+    loadProperties(skill) {
+        this.elPropId.value = skill.id;
+        this.elPropName.value = skill.name;
+        // this.elPropRarity.value = skill.rarity; // Set select to value
+        // Match approximate logic for select box
+        const options = this.elPropRarity.options;
+        for (let i = 0; i < options.length; i++) {
+            if (options[i].value === skill.rarity) {
+                this.elPropRarity.selectedIndex = i;
+                break;
+            }
+        }
+        this.elPropCost.value = skill.cost;
+        this.elPropDesc.value = skill.description || '';
+    }
+
+    saveCurrentNode() {
+        if (!this.selectedNodeId) return;
+        const skill = this.getSkillById(this.selectedNodeId);
+        if (skill) {
+            skill.name = this.elPropName.value;
+            skill.rarity = this.elPropRarity.value;
+            skill.cost = parseInt(this.elPropCost.value);
+            skill.description = this.elPropDesc.value;
+            this.renderNodes();
+        }
+    }
+
+    deleteCurrentNode() {
+        if (!this.selectedNodeId) return;
+        if (confirm('确认删除技能 ' + this.selectedNodeId + '?')) {
+            this.skills = this.skills.filter(s => s.id !== this.selectedNodeId);
+            // Also remove connections
+            this.skills.forEach(s => {
+                if (s.preRequisite === this.selectedNodeId) s.preRequisite = null;
+            });
+            this.selectedNodeId = null;
+            this.renderNodes();
+        }
+    }
+
+    // --- Buttons ---
+
+    createNewSkill() {
+        const newId = 'skill_' + Date.now();
+        // Place in center of view (approx)
+        const vX = (-this.pan.x + 200) / this.zoom;
+        const vY = (-this.pan.y + 200) / this.zoom;
+        
+        this.addSkillNode({
+            id: newId,
+            name: '新技能',
+            rarity: 'Common',
+            cost: 1,
+            editorMeta: { x: vX, y: vY }
+        });
+    }
+
+    clearCanvas() {
+        if(confirm('确认清空所有内容？')) {
+            this.skills = [];
+            this.renderNodes();
+        }
+    }
+    
+    importJson(input) {
+        const file = input.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            try {
+                const content = e.target.result;
+                let data = JSON.parse(content);
+                let newSkills = [];
+
+                if (Array.isArray(data)) {
+                    newSkills = data;
+                } else if (typeof data === 'object' && data !== null) {
+                    // 支持 Map 格式 (引擎格式) 转换为数组
+                    Object.keys(data).forEach(key => {
+                        const skill = data[key];
+                        if (!skill.id) skill.id = key;
+                        newSkills.push(skill);
+                    });
+                } else {
+                    throw new Error('未知的 JSON 数据格式');
+                }
+
+                // 数据补全与对齐
+                newSkills.forEach((skill, index) => {
+                    if (!skill.editorMeta) {
+                        // 如果缺失坐标，按照网格顺序默认排列 (每行10个)
+                        const col = index % 10;
+                        const row = Math.floor(index / 10);
+                        skill.editorMeta = { 
+                            x: col * this.GRID_SIZE + 10, 
+                            y: row * this.GRID_SIZE + 10 
+                        };
+                    } else {
+                        // 确保现有坐标对齐网格
+                        this.snapToGrid(skill.editorMeta);
+                    }
+                });
+
+                if (confirm(`解析成功，共找到 ${newSkills.length} 个技能。\n是否覆盖当前画布？`)) {
+                    this.skills = newSkills;
+                    this.selectedNodeId = null;
+                    this.renderNodes();
+                    // 重置视图位置
+                    this.pan = { x: 0, y: 0 };
+                    this.zoom = 1;
+                    this.updateTransform();
+                }
+
+            } catch (err) {
+                console.error(err);
+                alert('导入失败: ' + err.message);
+            }
+            // 清空input，允许重复导入同一文件
+            input.value = '';
+        };
+        reader.readAsText(file);
+    }
+
+    exportJson() {
+        console.log(JSON.stringify(this.skills, null, 2));
+        alert('请查看控制台输出的 JSON');
+    }
+
+    autoLayout() {
+        alert('自动布局功能尚未实现。');
+    }
+}
+
+// Start App
+const editor = new SkillEditor();
+
+</script>
+</body>
+</html>

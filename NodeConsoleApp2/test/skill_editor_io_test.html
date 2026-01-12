@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Skill Editor I/O Test</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 20px; background: #f0f0f0; }
+        .container { max-width: 1000px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        h1, h2 { color: #333; }
+        .panel { margin-bottom: 20px; border: 1px solid #ddd; padding: 15px; border-radius: 4px; }
+        textarea { width: 100%; height: 200px; font-family: monospace; font-size: 12px; }
+        button { padding: 8px 16px; cursor: pointer; background: #007bff; color: white; border: none; border-radius: 4px; margin-right: 10px; }
+        button:hover { background: #0056b3; }
+        .controls { margin-bottom: 10px; }
+        #status { margin-top: 10px; font-weight: bold; color: green; }
+        .skill-list { max-height: 300px; overflow-y: auto; border: 1px solid #ccc; padding: 10px; background: #fafafa; }
+        .skill-item { padding: 5px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; }
+        .skill-item:last-child { border-bottom: none; }
+        .skill-id { font-weight: bold; width: 200px; }
+        .skill-name { width: 150px; }
+        .skill-type { color: #666; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Skill Editor I/O Test Module</h1>
+    <p>Tests loading JSON (Map or Array format) and exporting to JSON.</p>
+
+    <!-- Import Section -->
+    <div class="panel">
+        <h2>1. Import Data</h2>
+        <div class="controls">
+            <button onclick="loadFromUrl()">Load from ../assets/data/skills.json</button>
+            <input type="file" id="fileInput" accept=".json" onchange="loadFromFile(this)">
+        </div>
+        <p>Or paste JSON here:</p>
+        <textarea id="inputJson" placeholder="Paste skills.json content here..."></textarea>
+        <div style="margin-top:10px;">
+            <button onclick="parseInput()">Parse JSON</button>
+            <button onclick="clearData()">Clear</button>
+        </div>
+    </div>
+
+    <!-- View Section -->
+    <div class="panel">
+        <h2>2. Loaded Skills (<span id="count">0</span>)</h2>
+        <div id="skillList" class="skill-list">
+            <!-- Items will be injected here -->
+        </div>
+        <div id="status"></div>
+    </div>
+
+    <!-- Export Section -->
+    <div class="panel">
+        <h2>3. Export Data</h2>
+        <div class="controls">
+            <label>
+                <input type="checkbox" id="chkExportAsMap" checked> Export as Map (Legacy Format)
+            </label>
+        </div>
+        <button onclick="exportData()">Generate JSON</button>
+        <button onclick="downloadJson()">Download File</button>
+        <p>Output:</p>
+        <textarea id="outputJson" readonly></textarea>
+    </div>
+</div>
+
+<script>
+    // In-memory storage for skills (Array of objects)
+    let loadedSkills = [];
+
+    // --- Import Logic ---
+
+    async function loadFromUrl() {
+        showStatus('Loading from URL...');
+        try {
+            const response = await fetch('../assets/data/skills.json');
+            if (!response.ok) throw new Error('Network response was not ok');
+            const data = await response.json();
+            document.getElementById('inputJson').value = JSON.stringify(data, null, 2);
+            processData(data);
+            showStatus('Loaded successfully from URL.');
+        } catch (error) {
+            console.error(error);
+            showStatus('Error loading from URL: ' + error.message, true);
+        }
+    }
+
+    function loadFromFile(input) {
+        if (input.files.length === 0) return;
+        const file = input.files[0];
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                const text = e.target.result;
+                document.getElementById('inputJson').value = text;
+                const data = JSON.parse(text);
+                processData(data);
+                showStatus('Loaded file: ' + file.name);
+            } catch (err) {
+                showStatus('Error parsing file: ' + err.message, true);
+            }
+        };
+        reader.readAsText(file);
+    }
+
+    function parseInput() {
+        try {
+            const text = document.getElementById('inputJson').value;
+            if (!text.trim()) {
+                showStatus('Input is empty.', true);
+                return;
+            }
+            const data = JSON.parse(text);
+            processData(data);
+            showStatus('Parsed input JSON successfully.');
+        } catch (err) {
+            showStatus('Error parsing JSON text: ' + err.message, true);
+        }
+    }
+
+    function processData(data) {
+        loadedSkills = [];
+        
+        if (Array.isArray(data)) {
+            // It's already an array
+            loadedSkills = data;
+            console.log('Detected Array format.');
+        } else if (typeof data === 'object' && data !== null) {
+            // It's a Map (Object)
+            console.log('Detected Map format. Converting to Array...');
+            for (const key in data) {
+                if (data.hasOwnProperty(key)) {
+                    // Start: Ensure ID exists in the object
+                    const skill = data[key];
+                    if (!skill.id) skill.id = key;
+                    loadedSkills.push(skill);
+                }
+            }
+        } else {
+            showStatus('Unknown data format.', true);
+            return;
+        }
+
+        renderList();
+    }
+
+    function clearData() {
+        loadedSkills = [];
+        document.getElementById('inputJson').value = '';
+        document.getElementById('outputJson').value = '';
+        renderList();
+        showStatus('Cleared.');
+    }
+
+    // --- UI Rendering ---
+
+    function renderList() {
+        const list = document.getElementById('skillList');
+        const countSpan = document.getElementById('count');
+        list.innerHTML = '';
+        countSpan.innerText = loadedSkills.length;
+
+        loadedSkills.forEach(skill => {
+            const div = document.createElement('div');
+            div.className = 'skill-item';
+            div.innerHTML = `
+                <span class="skill-id">${skill.id || 'NO_ID'}</span>
+                <span class="skill-name">${skill.name || 'Unnamed'}</span>
+                <span class="skill-type">${skill.school || (skill.type || 'Unknown')}</span>
+            `;
+            list.appendChild(div);
+        });
+    }
+
+    function showStatus(msg, isError = false) {
+        const el = document.getElementById('status');
+        el.innerText = msg;
+        el.style.color = isError ? 'red' : 'green';
+    }
+
+    // --- Export Logic ---
+
+    function exportData() {
+        const exportAsMap = document.getElementById('chkExportAsMap').checked;
+        let output;
+
+        if (exportAsMap) {
+            output = {};
+            loadedSkills.forEach(skill => {
+                if (skill.id) {
+                    output[skill.id] = skill;
+                }
+            });
+        } else {
+            output = loadedSkills;
+        }
+
+        const jsonStr = JSON.stringify(output, null, 4); // 4 spaces indent
+        document.getElementById('outputJson').value = jsonStr;
+        showStatus('Generated JSON.');
+        return jsonStr;
+    }
+
+    function downloadJson() {
+        const jsonStr = exportData();
+        const blob = new Blob([jsonStr], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'skills_export.json';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }
+</script>
+
+</body>
+</html>
