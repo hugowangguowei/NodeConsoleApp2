@@ -295,3 +295,51 @@
 
 #### 4. 结论 (Conclusion)
 该方案 **技术上完全可行**，且能显著提升游戏的 RPG 养成深度。建议优先实施 **数据层改造** 和 **基础 UI (简化版树状图)**。
+
+## 6. 技能-Buff 追溯表 (Traceability)
+
+为了确保技能系统与 Buff 系统的紧密集成，下表列出了技能与其触发/依赖的 Buff 的对应关系。请参考 `buff_design.md` 获取 Buff 的详细定义。
+
+| 技能名称 (Skill Name) | 关联 Buff ID | 说明 |
+| :--- | :--- | :--- |
+| **Artery Slice (血刃切割)** | `buff_bleed` | 施加流血 |
+| **Thousand Cuts (千刀风暴)** | `buff_bleed` | 施加流血 |
+| **Bloody Harvest (血腥收割)** | `buff_bleed` | 依赖流血结算伤害 |
+| **Crimson Finale (猩红终结)** | `buff_bleed` | 移除流血造成伤害 |
+| **Fireball (火球术)** | `buff_burn` | 施加燃烧 |
+| **Oil Slick (燃烧投掷)** | `buff_burn` | 延长燃烧 |
+| **Poison Coating (毒液涂层)** | `buff_poison_coat`, `buff_poison` | 自身获得涂血Buff，后续攻击施加中毒 |
+| **Shield Bash (盾牌猛击)** | `buff_stun` | 施加眩晕 |
+| **Headbutt (蛮牛头槌)** | `buff_stun` | 施加眩晕 |
+| **Earthquake (地震波)** | `buff_stun` | 概率施加眩晕 |
+| **Ice Lance (冰锥术)** | `buff_freeze` | 概率施加冻结 |
+| **Blizzard (暴风雪)** | `buff_freeze` | 概率施加冻结 |
+| **Shockwave (震荡波)** | `buff_slow` | 施加减速 |
+| **Knee Shot (膝盖射击)** | `buff_slow` | 施加减速 |
+| **Frost Nova (冰霜新星)** | `buff_slow` | 施加减速 |
+| **Taunt (嘲讽)** | `buff_weakness` | 降低目标伤害 (Weakness) |
+| **Disarm (远程缴械)** | `buff_weakness` | 降低目标伤害 |
+| **Mark Target (标记目标)** | `buff_vulnerable` | 增加目标受到的伤害 |
+| **Crippling Shot (致残射击)** | `buff_silence_limb` | 沉默特定部位 |
+| **Berserk (狂暴姿态)** | `buff_berserk` | 自身狂暴 |
+| **Steady Aim (稳固瞄准)** | `buff_focus` | 自身专注 |
+| **Overload (魔力过载)** | `buff_magic_surge` | 自身魔力涌动 |
+| **Eagle Eye (鹰眼)** | `buff_eagle_eye` | 自身被动Buff |
+| **Feint (佯攻)** | `buff_armor_pen` | 自身Next Attack穿透 |
+| **Bless (祝福)** | `buff_bless` | 自身属性提升 |
+| **Iron Will (钢铁意志)** | `buff_iron_will` | 自身防御提升 |
+| **Block (格挡)** | `buff_block` | 自身减伤 |
+| **Pain Suppression (痛苦压制)** | `buff_pain_sup` | 自身减伤 |
+| **Tactical Roll (战术翻滚)** | `buff_evasion`, `buff_ap_regen` | 自身闪避提升，回复AP |
+| **Afterimage (残影)** | `buff_evasion` | 自身高闪避 |
+| **Guardian Angel (天使护佑)** | `buff_immortality_hp` | 锁血 |
+| **Immortal Bastion (不朽堡垒)** | `buff_immortality_armor` | 锁护甲 |
+| **Shield of Faith (信仰之盾)** | `buff_shield` | 护盾 |
+| **Radiant Revitalize (光愿复苏)** | `buff_revive` | 复活 |
+| **Shield Wall (盾墙)** | `buff_shield_wall` | 共享护甲/AP增加 |
+| **Spiked Shell (荆棘甲壳)** | `buff_thorns` | 反伤 |
+| **Counter Stance (反击姿态)** | `buff_counter` | 闪避反击 |
+| **Bloodthirst (嗜血欲望)** | `buff_lifesteal` | 自身吸血 |
+| **Holy Shock (神圣震击)** | `buff_lifesteal` | 造成伤害并治疗 (吸血机制) |
+| **Adrenaline (肾上腺素)** | `buff_ap_regen` | 恢复 AP |
+| **Aegis (圣盾反击)** | `buff_damage_absorb` | 吸收伤害转治疗 |

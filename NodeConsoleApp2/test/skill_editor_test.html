@@ -358,6 +358,7 @@ class SkillEditor {
         this.lastMousePos = { x: 0, y: 0 };
         
         // Connection State
+        this.selectedConnection = null; // Store { source: id, target: id }
         this.isConnecting = false;
         this.connectionStartId = null;
         this.tempLine = null;
@@ -463,12 +464,23 @@ class SkillEditor {
         this.elSvgLayer.appendChild(this.elTempLineGroup);
 
         this.skills.forEach(skill => {
-            if (skill.preRequisite) {
-                const target = this.getSkillById(skill.preRequisite);
+            // Support multiple prerequisites (preRequisites: [])
+            // Also backward compatibility for single preRequisite
+            let parents = [];
+            
+            if (skill.preRequisites && Array.isArray(skill.preRequisites)) {
+                parents = skill.preRequisites;
+            } else if (skill.preRequisite) {
+                // Should migrate? Just read for now
+                parents = [skill.preRequisite];
+            }
+
+            parents.forEach(parentId => {
+                const target = this.getSkillById(parentId);
                 if (target) {
                     this.drawConnection(target, skill);
                 }
-            }
+            });
         });
     }
 
@@ -527,6 +539,23 @@ class SkillEditor {
         polyline.setAttribute('class', 'connection-line');
         polyline.setAttribute('marker-end', 'url(#arrowhead)');
         
+        // Check if selected
+        if (this.selectedConnection && 
+            this.selectedConnection.source === sourceNode.id && 
+            this.selectedConnection.target === targetNode.id) {
+            polyline.setAttribute('stroke', '#ff0000'); // Red for selected
+            polyline.setAttribute('stroke-width', '4');
+        }
+
+        // Add Click Event to Select
+        polyline.addEventListener('click', (e) => {
+            e.stopPropagation();
+            this.selectedConnection = { source: sourceNode.id, target: targetNode.id };
+            this.selectedNodeId = null; // Deselect node if line selected
+            this.renderNodes(); // Re-render to show highlight
+            this.renderConnections();
+        });
+
         this.elSvgLayer.appendChild(polyline);
     }
 
@@ -568,6 +597,11 @@ class SkillEditor {
         wrapper.addEventListener('mousedown', (e) => {
             if (e.target === wrapper || e.target.id === 'connection-layer' || e.target.id === 'node-layer') {
                 this.isPanning = true;
+                this.selectedConnection = null; // Click background to deselect line
+                this.selectedNodeId = null;
+                this.renderNodes();
+                this.renderConnections();
+
                 this.lastMousePos = { x: e.clientX, y: e.clientY };
                 wrapper.style.cursor = 'grabbing';
             }
@@ -649,6 +683,17 @@ class SkillEditor {
             */
         });
         document.getElementById('prop-rarity').addEventListener('change', () => this.saveCurrentNode());
+
+        // Global Key Events for Deletion
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'Delete' || e.key === 'Backspace') {
+                if (this.selectedConnection) {
+                    this.deleteSelectedConnection();
+                } else if (this.selectedNodeId) {
+                    this.deleteCurrentNode();
+                }
+            }
+        });
     }
 
     updateTransform() {
@@ -659,8 +704,10 @@ class SkillEditor {
         e.stopPropagation(); // Stop panning
         // Select logic
         this.selectedNodeId = skill.id;
+        this.selectedConnection = null; // Deselect connection
         this.loadProperties(skill);
         this.renderNodes(); // Update selection visual
+        this.renderConnections(); // Update connection visual
 
         // Drag logic logic
         if (e.target.classList.contains('node-anchor')) {
@@ -740,20 +787,29 @@ class SkillEditor {
 
     createConnection(sourceId, targetId) {
         // 逻辑：Source 是 Target 的前置 (Source -> Target)
-        // 数据模型中：target.preRequisite = sourceId
+        // 数据模型中：target.preRequisites = [sourceId, ...]
         
         const targetSkill = this.getSkillById(targetId);
         if (!targetSkill) return;
 
-        // 检查循环依赖 (简单检查：直接依赖)
-        // 复杂检查可以使用 BFS/DFS，这里暂时跳过
-        if (targetSkill.preRequisite === sourceId) {
+        // Ensure array exists
+        if (!targetSkill.preRequisites) {
+            targetSkill.preRequisites = [];
+            // Migrate old field if exists
+            if (targetSkill.preRequisite) {
+                targetSkill.preRequisites.push(targetSkill.preRequisite);
+                delete targetSkill.preRequisite;
+            }
+        }
+
+        // 检查重复
+        if (targetSkill.preRequisites.includes(sourceId)) {
             console.log('连接已存在');
             return;
         }
 
         // 更新数据
-        targetSkill.preRequisite = sourceId;
+        targetSkill.preRequisites.push(sourceId);
         console.log(`创建连接: ${sourceId} -> ${targetId}`);
         
         this.renderNodes();
@@ -795,11 +851,36 @@ class SkillEditor {
             this.skills = this.skills.filter(s => s.id !== this.selectedNodeId);
             // Also remove connections
             this.skills.forEach(s => {
+                if (s.preRequisites) {
+                    s.preRequisites = s.preRequisites.filter(pid => pid !== this.selectedNodeId);
+                }
                 if (s.preRequisite === this.selectedNodeId) s.preRequisite = null;
             });
             this.selectedNodeId = null;
             this.renderNodes();
         }
+    }
+
+    deleteSelectedConnection() {
+        if (!this.selectedConnection) return;
+        
+        const { source, target } = this.selectedConnection;
+        const targetSkill = this.getSkillById(target);
+        
+        if (targetSkill) {
+            // Try array removal
+            if (targetSkill.preRequisites) {
+                targetSkill.preRequisites = targetSkill.preRequisites.filter(pid => pid !== source);
+            }
+            // Try legacy field removal
+            if (targetSkill.preRequisite === source) {
+                targetSkill.preRequisite = null;
+            }
+            console.log(`已删除连接: ${source} -> ${target}`);
+        }
+        
+        this.selectedConnection = null;
+        this.renderConnections();
     }
 
     // --- Buttons ---
@@ -852,6 +933,15 @@ class SkillEditor {
 
                 // 数据补全与对齐
                 newSkills.forEach((skill, index) => {
+                    // Normalize preRequisites
+                    if (skill.preRequisite && !skill.preRequisites) {
+                        skill.preRequisites = [skill.preRequisite];
+                        delete skill.preRequisite;
+                    }
+                    if (!skill.preRequisites) {
+                        skill.preRequisites = [];
+                    }
+
                     if (!skill.editorMeta) {
                         // 如果缺失坐标，按照网格顺序默认排列 (每行10个)
                         const col = index % 10;

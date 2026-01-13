@@ -113,5 +113,23 @@
     *   每个装备需有对应的图标（Icon ID）。
     *   装备的 Buff 效果需要在通过 UI 的 Tooltip 清晰展示给玩家，特别是触发类的复杂效果。
 4.  **数据结构**:
-    *   装备数据结构应包含 `buffs` 数组，直接映射到 Buff 系统，避免在装备类中写死逻辑代码。
+        *   装备数据结构应包含 `buffs` 数组，直接映射到 Buff 系统，避免在装备类中写死逻辑代码。
+
+    ## 6. 装备-Buff 追溯表 (Traceability)
+
+    下表列出了装备与其提供的 Buff/Passive 效果的对应关系。
+
+    | 装备ID | 装备名称 | 关联 Buff ID | 说明 |
+    | :--- | :--- | :--- | :--- |
+    | `wp_vampire_fang` | 吸血鬼之牙 | `buff_lifesteal` | 攻击吸血 (Passive) |
+    | `acc_amulet_focus` | 专注护符 | `buff_ap_regen` | 回合未行动回复 AP |
+    | `acc_pendant_phoenix` | 不死鸟项链 | `buff_revive`, `passive_phoenix` | 死亡复活 (一次性) |
+    | `wp_knight_sword` | 骑士长剑 | `passive_knight` | 增加伤害 |
+    | `body_chainmail` | 重装锁甲 | `passive_heavy_armor` | 增加护甲，降低速度 |
+    | `helm_gladiator` | 角斗士头盔 | `passive_gladiator`, `debuff_weak` | 战斗开始时降低自身攻击 |
+    | `body_dragon_scale` | 龙鳞甲 | `passive_dragon` | 降低受到的伤害 |
+    | `acc_boots_speed` | 赫尔墨斯之靴 | `passive_speed_boost` | 增加速度 |
+    | `wp_thunder_hammer` | 雷神之锤 | `passive_thunder_strike` | 攻击附带额外雷电伤害 |
+    | `wp_cursed_blade` | 诅咒魔剑 | `passive_cursed_self_dmg` | 攻击力极高，但每回合自伤 |
+
 

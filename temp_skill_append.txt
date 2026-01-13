@@ -1,0 +1,42 @@
+
+
+## 6. Buff 引用表 (Buff Reference Table)
+
+为了确保技能效果的实现与 Buff 系统一致，以下列出了技能与 Buff 的对应关系。
+
+| 技能名称 | 对应 Buff ID | 说明 |
+| :--- | :--- | :--- |
+| **盾牌猛击 (Shield Bash)** | `buff_stun` | 概率施加 |
+| **蛮牛头槌 (Headbutt)** | `buff_stun` | 概率施加 |
+| **震荡波 (Shockwave)** | `buff_slow` | 减速效果 |
+| **狂暴姿态 (Berserk)** | `buff_berserk` | - |
+| **挑衅 (Taunt)** | `buff_weakness` | 降低目标伤害 (类似于虚弱) |
+| **尖刺防御 (Spiked Shell)** | `buff_thorns` | - |
+| **反击姿态 (Counter Stance)** | `buff_counter` | - |
+| **无谓挣扎 (Futile Struggle)** | `buff_weakness` | AP减少效果可视为特殊 Debuff |
+| **盾墙 (Shield Wall)** | `buff_shield_wall` | - |
+| **不朽壁垒 (Immortal Bastion)** | `buff_immortality_armor` | - |
+| **绝对防御 (Aegis)** | `buff_damage_absorb` | - |
+| **血管切割 (Artery Slice)** | `buff_bleed` | - |
+| **佯攻 (Feint)** | `buff_armor_pen` | - |
+| **鲜血渴望 (Bloodthirst)** | `buff_lifesteal` |  |
+| **千刃风暴 (Thousand Cuts)** | `buff_bleed` | 多层施加 |
+| **牵制射击 (Distract Shot)** | - | AP 减少作为即时效果处理 |
+| **战术翻滚 (Tactical Roll)** | `buff_evasion` | - |
+| **毒液涂层 (Poison Coating)** | `buff_poison_coat` | 自身获得此 Buff，攻击时施加 `buff_poison` |
+| **残影 (Afterimage)** | `buff_evasion` | 增强版闪避 |
+| **弱点标记 (Mark Target)** | `buff_vulnerable` | - |
+| **稳固瞄准 (Steady Aim)** | `buff_focus` | - |
+| **膝盖射击 (Knee Shot)** | `buff_slow` | - |
+| **致残射击 (Crippling Shot)** | `buff_silence_limb` | - |
+| **远程拆解 (Disarm)** | `buff_weakness` | 降低攻击力 |
+| **鹰眼 (Eagle Eye)** | `buff_eagle_eye` | - |
+| **火球术 (Fireball)** | `buff_burn` | - |
+| **燃油投掷 (Oil Slick)** | `debuff_oil` | (需在 Buff 列表补充 `debuff_oil`) |
+| **冰锥术 (Ice Lance)** | `buff_freeze` | - |
+| **冰霜新星 (Frost Nova)** | `debuff_frost_nova` | (需在 Buff 列表补充) |
+| **暴风雪 (Blizzard)** | `buff_freeze` | - |
+| **祝福 (Bless)** | `buff_bless` | - |
+| **信仰之盾 (Shield of Faith)** | `buff_shield` | - |
+| **痛苦压制 (Pain Suppression)** | `buff_pain_sup` | - |
+| **天使守护 (Guardian Angel)** | `buff_immortality_hp` | - |
