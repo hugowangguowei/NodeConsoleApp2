@@ -1,0 +1,651 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Buff Editor - NodeConsoleApp2</title>
+    <!-- Vue.js CDN -->
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <style>
+        :root {
+            --primary-color: #3498db;
+            --secondary-color: #2c3e50;
+            --danger-color: #e74c3c;
+            --success-color: #2ecc71;
+            --light-bg: #f5f6fa;
+            --border-color: #dcdde1;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: var(--light-bg);
+            color: var(--secondary-color);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Utility Classes */
+        .btn {
+            padding: 8px 12px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.2s;
+        }
+        .btn-primary { background: var(--primary-color); color: white; }
+        .btn-success { background: var(--success-color); color: white; }
+        .btn-danger { background: var(--danger-color); color: white; }
+        .btn-sm { padding: 4px 8px; font-size: 12px; }
+        .btn:hover { opacity: 0.9; }
+
+        .form-group { margin-bottom: 12px; }
+        .form-label { display: block; margin-bottom: 4px; font-weight: 600; font-size: 12px; }
+        .form-input, .form-select, .form-textarea {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        .form-textarea { resize: vertical; min-height: 60px; }
+        .row { display: flex; gap: 10px; }
+        .col { flex: 1; }
+
+        /* Layout */
+        #app {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        header {
+            background: var(--secondary-color);
+            color: white;
+            padding: 10px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .main-container {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        /* Sidebar */
+        aside {
+            width: 250px;
+            background: white;
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .search-box { padding: 10px; border-bottom: 1px solid var(--border-color); }
+        .buff-list { flex: 1; overflow-y: auto; list-style: none; padding: 0; margin: 0; }
+        .buff-item {
+            padding: 10px 15px;
+            cursor: pointer;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .buff-item:hover { background-color: #f0f0f0; }
+        .buff-item.active { background-color: #e3f2fd; border-left: 4px solid var(--primary-color); }
+        .buff-item .delete-btn { visibility: hidden; color: var(--danger-color); }
+        .buff-item:hover .delete-btn { visibility: visible; }
+
+        /* Editor Area */
+        main {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            position: relative;
+        }
+
+        .editor-section {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            margin-bottom: 20px;
+        }
+
+        .section-title {
+            margin-top: 0;
+            margin-bottom: 15px;
+            font-size: 16px;
+            color: var(--secondary-color);
+            border-bottom: 2px solid #f0f0f0;
+            padding-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* Dynamic Lists */
+        .list-item {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            margin-bottom: 8px;
+            padding: 8px;
+            background: #fafafa;
+            border-radius: 4px;
+        }
+
+        /* Effects Accordion */
+        .effect-card {
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            margin-bottom: 10px;
+            overflow: hidden;
+        }
+        .effect-header {
+            background: #f8f9fa;
+            padding: 10px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            font-weight: 600;
+        }
+        .effect-body {
+            padding: 15px;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .params-container {
+            margin-top: 10px;
+            padding: 10px;
+            background: #fff3cd;
+            border-radius: 4px;
+        }
+        .params-title { font-size: 12px; font-weight: bold; margin-bottom: 5px; color: #856404; }
+        .param-row { display: flex; gap: 5px; margin-bottom: 5px; }
+
+        /* JSON Textarea overlay for copy/paste */
+        .json-modal {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .modal-content {
+            background: white;
+            padding: 20px;
+            width: 600px;
+            height: 400px;
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+        }
+        .modal-textarea { flex: 1; margin-bottom: 10px; font-family: monospace; }
+        
+        [v-cloak] { display: none; }
+    </style>
+</head>
+<body>
+
+<div id="app" v-cloak>
+    <header>
+        <div style="font-weight: bold; font-size: 1.2em;">Buff Editor v1.0</div>
+        <div>
+            <input type="file" ref="fileInput" @change="handleFileUpload" style="display: none;">
+            <button class="btn btn-primary" @click="$refs.fileInput.click()">Import .json</button>
+            <button class="btn btn-success" @click="exportJSON">Export .json</button>
+        </div>
+    </header>
+
+    <div class="main-container">
+        <!-- Sidebar -->
+        <aside>
+            <div class="search-box">
+                <input type="text" v-model="searchQuery" class="form-input" placeholder="Search buffs...">
+            </div>
+            <div style="padding: 10px;">
+                <button class="btn btn-primary" style="width: 100%;" @click="createNewBuff">+ New Buff</button>
+            </div>
+            <ul class="buff-list">
+                <li v-for="(buff, index) in filteredBuffs" 
+                    :key="buff.id"
+                    class="buff-item" 
+                    :class="{ active: currentBuffId === buff.id }"
+                    @click="selectBuff(buff.id)">
+                    <span>{{ buff.name || buff.id }}</span>
+                    <span class="delete-btn" @click.stop="deleteBuff(buff.id)" title="Delete">&times;</span>
+                </li>
+            </ul>
+        </aside>
+
+        <!-- Main Editor -->
+        <main v-if="currentBuff">
+            <div class="editor-section">
+                <div class="section-title">Basic Info (基础信息)</div>
+                <div class="row">
+                    <div class="col">
+                        <div class="form-group">
+                            <label class="form-label">ID (唯一标识)</label>
+                            <input type="text" v-model="currentBuff.id" class="form-input">
+                        </div>
+                    </div>
+                    <div class="col">
+                        <div class="form-group">
+                            <label class="form-label">Type (类型)</label>
+                            <select v-model="currentBuff.type" class="form-select">
+                                <option value="buff">Buff (增益)</option>
+                                <option value="debuff">Debuff (减益)</option>
+                                <option value="hidden">Hidden (隐藏)</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Name (名称)</label>
+                    <input type="text" v-model="currentBuff.name" class="form-input">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Description (描述)</label>
+                    <textarea v-model="currentBuff.description" class="form-textarea"></textarea>
+                </div>
+                <div class="row">
+                    <div class="col">
+                        <div class="form-group">
+                            <label class="form-label">Icon ID</label>
+                            <input type="text" v-model="currentBuff.icon" class="form-input">
+                        </div>
+                    </div>
+                    <div class="col">
+                        <div class="form-group">
+                            <label class="form-label">Tags (tag1,tag2)</label>
+                            <!-- Simple string implementation for tags for now, processed on save if needed or handle as array -->
+                            <input type="text" v-model="currentBuffTagsString" class="form-input" placeholder="e.g. physical, dot">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="editor-section">
+                <div class="section-title">Lifecycle (生命周期)</div>
+                <div class="row">
+                    <div class="col">
+                        <div class="form-group">
+                            <label class="form-label">Duration (-1为永久)</label>
+                            <input type="number" v-model.number="currentBuff.lifecycle.duration" class="form-input">
+                        </div>
+                    </div>
+                    <div class="col">
+                        <div class="form-group">
+                            <label class="form-label">Max Stacks (最大层数)</label>
+                            <input type="number" v-model.number="currentBuff.lifecycle.maxStacks" class="form-input">
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col">
+                        <div class="form-group">
+                            <label class="form-label">Stack Strategy (叠加策略)</label>
+                            <select v-model="currentBuff.lifecycle.stackStrategy" class="form-select">
+                                <option value="refresh">Refresh (刷新时间)</option>
+                                <option value="independent">Independent (独立计算)</option>
+                                <option value="extend">Extend (延长)</option>
+                                <option value="replace">Replace (替换)</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col" style="display: flex; align-items: center;">
+                        <div class="form-group">
+                            <label style="cursor: pointer;">
+                                <input type="checkbox" v-model="currentBuff.lifecycle.removeOnBattleEnd"> 移除:  战斗结束时
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="editor-section">
+                <div class="section-title">
+                    <span>Stat Modifiers (属性修正)</span>
+                    <button class="btn btn-sm btn-primary" @click="addStatModifier">+ Add</button>
+                </div>
+                <div v-if="!currentBuff.statModifiers || Object.keys(currentBuff.statModifiers).length === 0" style="color: #999; font-style: italic;">
+                    No modifiers.
+                </div>
+                <div v-for="(mod, key) in currentBuff.statModifiers" :key="key" class="list-item">
+                    <input type="text" :value="key" @change="e => updateStatKey(key, e.target.value)" class="form-input" style="width: 150px;" placeholder="Stat Name (e.g. atk)">
+                    <input type="number" v-model.number="mod.value" class="form-input" style="width: 100px;" placeholder="Value">
+                    <select v-model="mod.type" class="form-select" style="width: 100px;">
+                        <option value="flat">Flat</option>
+                        <option value="percent">%</option>
+                    </select>
+                    <button class="btn btn-sm btn-danger" @click="removeStatModifier(key)">&times;</button>
+                </div>
+            </div>
+
+            <div class="editor-section">
+                <div class="section-title">
+                    <span>Effects & Triggers (动态效果)</span>
+                    <button class="btn btn-sm btn-primary" @click="addEffect">+ Add Effect</button>
+                </div>
+                <div v-if="!currentBuff.effects || currentBuff.effects.length === 0" style="color: #999; font-style: italic;">
+                    No effects.
+                </div>
+                <div v-for="(effect, index) in currentBuff.effects" :key="index" class="effect-card">
+                    <div class="effect-header" @click="toggleEffectExpand(index)">
+                        <span>
+                            <span style="color: var(--primary-color);">[{{ effect.trigger }}]</span> 
+                            {{ effect.action }} -> {{ effect.target }}
+                        </span>
+                        <span>{{ isEffectExpanded(index) ? '▼' : '▶' }}</span>
+                    </div>
+                    <div class="effect-body" v-show="isEffectExpanded(index)">
+                        <div class="row">
+                            <div class="col">
+                                <div class="form-group">
+                                    <label class="form-label">Trigger</label>
+                                    <select v-model="effect.trigger" class="form-select">
+                                        <option value="onTurnStart">onTurnStart</option>
+                                        <option value="onTurnEnd">onTurnEnd</option>
+                                        <option value="onAttackPre">onAttackPre</option>
+                                        <option value="onAttackPost">onAttackPost</option>
+                                        <option value="onTakeDamage">onTakeDamage</option>
+                                        <option value="onDefendPre">onDefendPre</option>
+                                        <option value="onDefendPost">onDefendPost</option>
+                                        <option value="onDeath">onDeath</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col">
+                                <div class="form-group">
+                                    <label class="form-label">Action</label>
+                                    <input type="text" v-model="effect.action" class="form-input" placeholder="e.g. HEAL, DAMAGE">
+                                </div>
+                            </div>
+                            <div class="col">
+                                <div class="form-group">
+                                    <label class="form-label">Target</label>
+                                    <select v-model="effect.target" class="form-select">
+                                        <option value="self">Self (Holding Buff)</option>
+                                        <option value="attacker">Attacker (Source)</option>
+                                        <option value="target">Target (Enemy)</option>
+                                        <option value="context.source">Context Source</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="params-container">
+                            <div class="params-title">
+                                Params (Parameters for Action)
+                                <button class="btn btn-sm btn-primary" style="padding: 0 4px; margin-left: 5px;" @click="addParam(effect)">+</button>
+                            </div>
+                             <!-- Params as Key-Value Pairs -->
+                            <div v-for="(val, pKey) in effect.params" :key="pKey" class="param-row">
+                                <input type="text" :value="pKey" @change="e => updateParamKey(effect, pKey, e.target.value)" class="form-input" style="flex: 1;" placeholder="Key (e.g. value)">
+                                <input type="text" v-model="effect.params[pKey]" class="form-input" style="flex: 2;" placeholder="Value (e.g. {context.damage}*0.2)">
+                                <button class="btn btn-sm btn-danger" @click="removeParam(effect, pKey)">&times;</button>
+                            </div>
+                            <div v-if="!effect.params || Object.keys(effect.params).length === 0" style="font-size: 11px; color: #666;">
+                                No params. Click + to add 'value'.
+                            </div>
+                        </div>
+
+                        <div style="text-align: right; margin-top: 10px;">
+                            <button class="btn btn-sm btn-danger" @click="removeEffect(index)">Remove Effect</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div style="height: 50px;"></div> <!-- Spacer -->
+        </main>
+        
+        <div v-else style="flex: 1; display: flex; justify-content: center; align-items: center; color: #999;">
+            Select a buff to edit or create a new one.
+        </div>
+    </div>
+</div>
+
+<script>
+    const { createApp } = Vue;
+
+    const DEFAULT_BUFF = {
+        id: "",
+        name: "New Buff",
+        description: "",
+        icon: "",
+        type: "buff",
+        tags: [],
+        lifecycle: {
+            duration: 3,
+            maxStacks: 1,
+            stackStrategy: "refresh",
+            removeOnBattleEnd: true
+        },
+        effects: [],
+        statModifiers: {}
+    };
+
+    createApp({
+        data() {
+            return {
+                buffs: [],
+                currentBuffId: null,
+                searchQuery: "",
+                expandedEffects: {} // index -> boolean
+            }
+        },
+        computed: {
+            currentBuff() {
+                return this.buffs.find(b => b.id === this.currentBuffId) || null;
+            },
+            filteredBuffs() {
+                if (!this.searchQuery) return this.buffs;
+                const lower = this.searchQuery.toLowerCase();
+                return this.buffs.filter(b => 
+                    b.id.toLowerCase().includes(lower) || 
+                    (b.name && b.name.toLowerCase().includes(lower))
+                );
+            },
+            // Helper for Tags as String
+            currentBuffTagsString: {
+                get() {
+                    return this.currentBuff && this.currentBuff.tags ? this.currentBuff.tags.join(', ') : '';
+                },
+                set(newValue) {
+                    if (this.currentBuff) {
+                        this.currentBuff.tags = newValue.split(',').map(t => t.trim()).filter(t => t);
+                    }
+                }
+            }
+        },
+        methods: {
+            // Helper to deep clone
+            clone(obj) {
+                return JSON.parse(JSON.stringify(obj));
+            },
+            createNewBuff() {
+                const newBuff = this.clone(DEFAULT_BUFF);
+                newBuff.id = "new_buff_" + Date.now();
+                this.buffs.push(newBuff);
+                this.selectBuff(newBuff.id);
+            },
+            selectBuff(id) {
+                this.currentBuffId = id;
+                this.expandedEffects = {}; // Reset accordions
+            },
+            deleteBuff(id) {
+                if(!confirm("Are you sure you want to delete " + id + "?")) return;
+                const idx = this.buffs.findIndex(b => b.id === id);
+                if (idx !== -1) {
+                    this.buffs.splice(idx, 1);
+                    if (this.currentBuffId === id) {
+                        this.currentBuffId = null;
+                    }
+                }
+            },
+            // Stat Modifiers
+            addStatModifier() {
+                if (!this.currentBuff.statModifiers) this.currentBuff.statModifiers = {};
+                // Find a unique key
+                let key = "new_stat";
+                let counter = 1;
+                while(this.currentBuff.statModifiers[key]) {
+                    key = "new_stat_" + counter++;
+                }
+                this.currentBuff.statModifiers[key] = { value: 0, type: "flat" };
+            },
+            removeStatModifier(key) {
+                delete this.currentBuff.statModifiers[key];
+            },
+            updateStatKey(oldKey, newKey) {
+                if (oldKey === newKey || !newKey) return;
+                if (this.currentBuff.statModifiers[newKey]) {
+                    alert("Key already exists!");
+                    return; // simple conflict check
+                }
+                const val = this.currentBuff.statModifiers[oldKey];
+                delete this.currentBuff.statModifiers[oldKey];
+                this.currentBuff.statModifiers[newKey] = val;
+            },
+            
+            // Effects
+            addEffect() {
+                if (!this.currentBuff.effects) this.currentBuff.effects = [];
+                this.currentBuff.effects.push({
+                    trigger: "onTurnStart",
+                    action: "MODIFY_STAT",
+                    target: "self",
+                    params: {}
+                });
+                // Auto expand new effect
+                this.expandedEffects[this.currentBuff.effects.length - 1] = true;
+            },
+            removeEffect(index) {
+                this.currentBuff.effects.splice(index, 1);
+                delete this.expandedEffects[index];
+            },
+            toggleEffectExpand(index) {
+                this.expandedEffects[index] = !this.expandedEffects[index];
+            },
+            isEffectExpanded(index) {
+                return !!this.expandedEffects[index];
+            },
+
+            // Params
+            addParam(effect) {
+                if (!effect.params) effect.params = {};
+                let key = "value";
+                let counter = 1;
+                while(effect.params[key] !== undefined) {
+                    key = "param_" + counter++;
+                }
+                effect.params[key] = "";
+            },
+            removeParam(effect, key) {
+                delete effect.params[key];
+            },
+            updateParamKey(effect, oldKey, newKey) {
+                if (oldKey === newKey || !newKey) return;
+                if (effect.params[newKey] !== undefined) {
+                    alert("Param key exists!");
+                    return;
+                }
+                const val = effect.params[oldKey];
+                delete effect.params[oldKey];
+                effect.params[newKey] = val;
+            },
+
+            // File I/O
+            handleFileUpload(event) {
+                const file = event.target.files[0];
+                if (!file) return;
+                
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    try {
+                        const json = JSON.parse(e.target.result);
+                        let importedBuffs = [];
+
+                        if (Array.isArray(json)) {
+                            importedBuffs = json;
+                        } else if (typeof json === 'object') {
+                            if (json.id && typeof json.id === 'string') {
+                                importedBuffs = [json];
+                            } else {
+                                importedBuffs = Object.values(json);
+                            }
+                        }
+
+                        // Migration: Fix flat structure to nested lifecycle structure
+                        importedBuffs.forEach(buff => {
+                            if (!buff.lifecycle) {
+                                buff.lifecycle = {
+                                    duration: buff.duration !== undefined ? buff.duration : 3,
+                                    maxStacks: buff.maxStacks !== undefined ? buff.maxStacks : 1,
+                                    stackStrategy: buff.stackStrategy || "refresh",
+                                    removeOnBattleEnd: buff.removeOnBattleEnd !== undefined ? buff.removeOnBattleEnd : true
+                                };
+                                // Clean up old properties if desired, or keep them for backward compat
+                                // deleting them ensures the editor state is clean
+                                delete buff.duration;
+                                delete buff.maxStacks;
+                                delete buff.stackStrategy;
+                                delete buff.removeOnBattleEnd;
+                            }
+                        });
+
+                        this.buffs = importedBuffs;
+                        alert("Imported " + this.buffs.length + " buffs.");
+                        if(this.buffs.length > 0) this.selectBuff(this.buffs[0].id);
+                    } catch (err) {
+                        alert("Error parsing JSON: " + err.message);
+                    }
+                };
+                reader.readAsText(file);
+                // Reset input
+                event.target.value = ''; 
+            },
+            exportJSON() {
+                if (this.buffs.length === 0) {
+                    alert("No buffs to export.");
+                    return;
+                }
+                
+                // Convert Array back to Dictionary (Map) format to match project structure
+                const exportData = {};
+                this.buffs.forEach(buff => {
+                    if (buff.id) {
+                        exportData[buff.id] = buff;
+                    }
+                });
+
+                const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(exportData, null, 2));
+                const downloadAnchorNode = document.createElement('a');
+                downloadAnchorNode.setAttribute("href", dataStr);
+                downloadAnchorNode.setAttribute("download", "buffs.json");
+                document.body.appendChild(downloadAnchorNode);
+                downloadAnchorNode.click();
+                downloadAnchorNode.remove();
+            }
+        },
+        mounted() {
+            // Add a sample buff initially for testing UI
+            this.createNewBuff();
+            // Try to set type of sample buff
+            this.buffs[0].id = "sample_buff";
+            this.buffs[0].name = "Sample Buff";
+        }
+    }).mount('#app');
+</script>
+
+</body>
+</html>

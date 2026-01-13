@@ -1,7 +1,7 @@
 {
     "buff_poison": {
         "id": "buff_poison",
-        "name": "中毒",
+        "name": "涓瘨",
         "type": "DEBUFF",
         "tags": ["poison", "dot"],
         "duration": 3,
@@ -12,7 +12,7 @@
     },
     "buff_stun": {
         "id": "buff_stun",
-        "name": "眩晕",
+        "name": "鐪╂檿",
         "type": "DEBUFF",
         "tags": ["control"],
         "duration": 1,
@@ -23,7 +23,7 @@
     },
     "buff_strength": {
         "id": "buff_strength",
-        "name": "力量增强",
+        "name": "鏀诲嚮澧炲己",
         "type": "BUFF",
         "tags": ["stat_up"],
         "duration": 3,
@@ -34,7 +34,7 @@
     },
     "buff_shield": {
         "id": "buff_shield",
-        "name": "护盾",
+        "name": "鎶ょ浘",
         "type": "BUFF",
         "tags": ["defense"],
         "duration": 2,
@@ -45,7 +45,7 @@
     },
     "buff_bleed": {
         "id": "buff_bleed",
-        "name": "流血",
+        "name": "娴佽",
         "type": "DEBUFF",
         "tags": ["physical", "dot"],
         "duration": 3,
@@ -56,7 +56,7 @@
     },
     "buff_burn": {
         "id": "buff_burn",
-        "name": "燃烧",
+        "name": "鐕冪儳",
         "type": "DEBUFF",
         "tags": ["fire", "dot"],
         "duration": 3,
@@ -67,7 +67,7 @@
     },
     "buff_freeze": {
         "id": "buff_freeze",
-        "name": "冰冻",
+        "name": "鍐板喕",
         "type": "DEBUFF",
         "tags": ["ice", "control"],
         "duration": 1,
@@ -78,7 +78,7 @@
     },
     "buff_invulnerable": {
         "id": "buff_invulnerable",
-        "name": "无敌",
+        "name": "鏃犳晫",
         "type": "BUFF",
         "tags": ["divine"],
         "duration": 1,
