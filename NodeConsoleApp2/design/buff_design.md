@@ -288,6 +288,43 @@ EventBus.emit("onAttackPost", attacker, defender, contextData);
 在 `ActionLibrary` 的 `HEAL` 函数中，解析器会将 `{context.damageDealt}` 替换为 `50`，然后执行 `50 * 0.2 = 10` 的治疗。
 这样，**吸血比例 (0.2)** 甚至 **计算公式** 都完全由 JSON 决定，改动时无需重新编译代码。
 
+### 8.3.2 案例分析：配置“破甲意图” (Example: Configuring Armor Penetration)
+
+目标是实现 **“下次攻击无视目标 30% 护甲，生效一次后消失”**。这是一个典型的 **耗散型 (Consumable) Buff**，需要组合两个 Effect 来实现。
+
+**1. JSON 配置**:
+```json
+{
+  "id": "buff_armor_pen",
+  "effects": [
+    {
+      // 步骤 A: 临时削弱目标护甲 (仅本次计算有效)
+      "trigger": "onAttackPre",
+      "action": "MODIFY_STAT_TEMP", // 这是一个假设的原子操作，修改本次计算上下文中的属性
+      "target": "target",           // 作用于防御者
+      "params": {
+        "stat": "def",
+        "value": "-0.3",            // 减少 30%
+        "type": "percent_current"   // 基于当前值乘算
+      }
+    },
+    {
+      // 步骤 B: 攻击后自我移除
+      "trigger": "onAttackPost",
+      "action": "REMOVE_SELF",      // 这是一个假设的原子操作，移除Buff自身
+      "target": "self"
+    }
+  ]
+}
+```
+
+**2. 逻辑流 (Logic Flow)**:
+1.  **前置钩子 (`onAttackPre`)**: 战斗系统在计算伤害公式 `Step 1: RawDmg = Atk - Def` 之前，触发此事件。
+2.  **执行修正**: `ActionLibrary.MODIFY_STAT_TEMP` 介入，读取目标的 `def` (例如 100)，将其在**本次计算上下文**中临时标记为 `70` (100 * (1-0.3))。注意这不会永久修改敌人的面板属性，只影响当次伤害公式。
+3.  **计算伤害**: 战斗系统使用修正后的 `70` 进行伤害计算。
+4.  **后置钩子 (`onAttackPost`)**: 伤害结算完毕。
+5.  **自我消耗**: 触发 `REMOVE_SELF`，Buff 从列表中移除，确保效果只生效一次。
+
 ### 8.4 低耦合优势 (Decoupling Benefits)
 
 *   **无需修改战斗代码**: 新增一个"攻击时吸血"的 Buff，只需要在 JSON 里配置 `trigger: onAttackPost`, `action: HEAL`, `target: self`。不需要去改动 CombatSystem 的攻击函数。

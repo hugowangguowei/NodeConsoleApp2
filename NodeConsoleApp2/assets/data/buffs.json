@@ -1,90 +1,896 @@
 {
     "buff_poison": {
         "id": "buff_poison",
-        "name": "涓瘨",
-        "type": "DEBUFF",
-        "tags": ["poison", "dot"],
-        "duration": 3,
-        "maxStacks": 5,
+        "name": "中毒",
+        "type": "debuff",
+        "tags": [
+            "poison",
+            "dot"
+        ],
+        "lifecycle": {
+            "duration": 3,
+            "maxStacks": 5,
+            "stackStrategy": "refresh",
+            "removeOnBattleEnd": true
+        },
         "effects": [
-            { "trigger": "ON_TURN_START", "action": "DAMAGE", "value": 5, "valueType": "FLAT" }
+            {
+                "trigger": "onTurnEnd",
+                "action": "damage",
+                "value": "maxHp * 0.05",
+                "valueType": "formula",
+                "target": "self"
+            }
         ]
     },
     "buff_stun": {
         "id": "buff_stun",
-        "name": "鐪╂檿",
-        "type": "DEBUFF",
-        "tags": ["control"],
-        "duration": 1,
-        "maxStacks": 1,
+        "name": "眩晕",
+        "type": "debuff",
+        "tags": [
+            "control"
+        ],
+        "lifecycle": {
+            "duration": 1,
+            "maxStacks": 1,
+            "stackStrategy": "replace",
+            "removeOnBattleEnd": true
+        },
         "effects": [
-            { "trigger": "ON_TURN_START", "action": "SKIP_TURN" }
+            {
+                "trigger": "onTurnStart",
+                "action": "skipTurn",
+                "target": "self"
+            }
         ]
     },
     "buff_strength": {
         "id": "buff_strength",
-        "name": "鏀诲嚮澧炲己",
-        "type": "BUFF",
-        "tags": ["stat_up"],
-        "duration": 3,
-        "maxStacks": 3,
-        "effects": [
-            { "type": "STAT_MOD", "stat": "attack", "value": 5, "mode": "ADD" }
-        ]
+        "name": "攻击增强",
+        "type": "buff",
+        "tags": [
+            "stat_up"
+        ],
+        "lifecycle": {
+            "duration": 3,
+            "maxStacks": 3,
+            "stackStrategy": "refresh",
+            "removeOnBattleEnd": true
+        },
+        "statModifiers": {
+            "atk": {
+                "value": 5,
+                "type": "flat"
+            }
+        }
     },
     "buff_shield": {
         "id": "buff_shield",
-        "name": "鎶ょ浘",
-        "type": "BUFF",
-        "tags": ["defense"],
-        "duration": 2,
-        "maxStacks": 1,
+        "name": "护盾",
+        "type": "buff",
+        "tags": [
+            "defense"
+        ],
+        "lifecycle": {
+            "duration": 2,
+            "maxStacks": 1,
+            "stackStrategy": "replace",
+            "removeOnBattleEnd": true
+        },
         "effects": [
-            { "trigger": "ON_TAKE_DAMAGE", "action": "ABSORB_DAMAGE", "value": 20 }
+            {
+                "trigger": "onTakeDamage",
+                "action": "absorbDamage",
+                "value": 20,
+                "target": "self"
+            }
         ]
     },
     "buff_bleed": {
         "id": "buff_bleed",
-        "name": "娴佽",
-        "type": "DEBUFF",
-        "tags": ["physical", "dot"],
-        "duration": 3,
-        "maxStacks": 5,
+        "name": "流血",
+        "type": "debuff",
+        "tags": [
+            "physical",
+            "dot"
+        ],
+        "lifecycle": {
+            "duration": 3,
+            "maxStacks": 5,
+            "stackStrategy": "refresh",
+            "removeOnBattleEnd": true
+        },
         "effects": [
-             { "trigger": "ON_TURN_END", "action": "DAMAGE", "value": 5, "valueType": "FLAT" }
+            {
+                "trigger": "onTurnStart",
+                "action": "damage",
+                "value": 5,
+                "valueType": "flat",
+                "target": "self"
+            }
         ]
     },
     "buff_burn": {
         "id": "buff_burn",
-        "name": "鐕冪儳",
-        "type": "DEBUFF",
-        "tags": ["fire", "dot"],
-        "duration": 3,
-        "maxStacks": 3,
+        "name": "燃烧",
+        "type": "debuff",
+        "tags": [
+            "fire",
+            "dot"
+        ],
+        "lifecycle": {
+            "duration": 3,
+            "maxStacks": 3,
+            "stackStrategy": "refresh",
+            "removeOnBattleEnd": true
+        },
         "effects": [
-             { "trigger": "ON_TURN_START", "action": "DAMAGE", "value": 10, "valueType": "FLAT" }
+            {
+                "trigger": "onTurnStart",
+                "action": "damage",
+                "value": 10,
+                "valueType": "flat",
+                "target": "self"
+            }
         ]
     },
     "buff_freeze": {
         "id": "buff_freeze",
-        "name": "鍐板喕",
-        "type": "DEBUFF",
-        "tags": ["ice", "control"],
-        "duration": 1,
-        "maxStacks": 1,
+        "name": "冻结",
+        "type": "debuff",
+        "tags": [
+            "ice",
+            "control"
+        ],
+        "lifecycle": {
+            "duration": 1,
+            "maxStacks": 1,
+            "stackStrategy": "replace",
+            "removeOnBattleEnd": true
+        },
         "effects": [
-             { "trigger": "ON_TURN_START", "action": "REDUCE_AP", "value": 2 }
+            {
+                "trigger": "onTurnStart",
+                "action": "skipTurn",
+                "target": "self"
+            }
+        ],
+        "statModifiers": {
+            "def": {
+                "value": 5,
+                "type": "flat"
+            }
+        }
+    },
+    "buff_slow": {
+        "id": "buff_slow",
+        "name": "减速",
+        "type": "debuff",
+        "tags": [
+            "control",
+            "speed_down"
+        ],
+        "lifecycle": {
+            "duration": 2,
+            "maxStacks": 3,
+            "stackStrategy": "refresh",
+            "removeOnBattleEnd": true
+        },
+        "statModifiers": {
+            "speed": {
+                "value": -5,
+                "type": "flat"
+            }
+        }
+    },
+    "debuff_weak": {
+        "id": "debuff_weak",
+        "name": "虚弱",
+        "type": "debuff",
+        "tags": [
+            "weakness"
+        ],
+        "lifecycle": {
+            "duration": 2,
+            "maxStacks": 1,
+            "stackStrategy": "refresh",
+            "removeOnBattleEnd": true
+        },
+        "statModifiers": {
+            "damageDealtMult": {
+                "value": -0.2,
+                "type": "percent"
+            }
+        }
+    },
+    "buff_weakness": {
+        "id": "buff_weakness",
+        "name": "虚弱 (弱点)",
+        "type": "debuff",
+        "tags": [
+            "weakness"
+        ],
+        "lifecycle": {
+            "duration": 3,
+            "maxStacks": 1,
+            "stackStrategy": "refresh",
+            "removeOnBattleEnd": true
+        },
+        "statModifiers": {
+            "damageDealtMult": {
+                "value": -0.15,
+                "type": "percent"
+            }
+        }
+    },
+    "buff_vulnerable": {
+        "id": "buff_vulnerable",
+        "name": "易伤",
+        "type": "debuff",
+        "tags": [
+            "vulnerable"
+        ],
+        "lifecycle": {
+            "duration": 2,
+            "maxStacks": 3,
+            "stackStrategy": "refresh",
+            "removeOnBattleEnd": true
+        },
+        "statModifiers": {
+            "damageTakenMult": {
+                "value": 0.2,
+                "type": "percent"
+            }
+        }
+    },
+    "buff_silence_limb": {
+        "id": "buff_silence_limb",
+        "name": "致残",
+        "type": "debuff",
+        "tags": [
+            "disable"
+        ],
+        "lifecycle": {
+            "duration": 2,
+            "maxStacks": 1,
+            "stackStrategy": "refresh",
+            "removeOnBattleEnd": true
+        },
+        "description": "禁止使用特定部位的技能"
+    },
+    "buff_berserk": {
+        "id": "buff_berserk",
+        "name": "狂暴",
+        "type": "buff",
+        "tags": [
+            "offensive",
+            "mental"
+        ],
+        "lifecycle": {
+            "duration": 3,
+            "maxStacks": 1,
+            "stackStrategy": "refresh",
+            "removeOnBattleEnd": true
+        },
+        "statModifiers": {
+            "atk": {
+                "value": 0.5,
+                "type": "percent"
+            },
+            "hitRate": {
+                "value": -0.2,
+                "type": "flat"
+            }
+        }
+    },
+    "buff_focus": {
+        "id": "buff_focus",
+        "name": "专注",
+        "type": "buff",
+        "tags": [
+            "offensive",
+            "mental"
+        ],
+        "lifecycle": {
+            "duration": 2,
+            "maxStacks": 1,
+            "stackStrategy": "refresh",
+            "removeOnBattleEnd": true
+        },
+        "statModifiers": {
+            "critRate": {
+                "value": 0.2,
+                "type": "flat"
+            },
+            "hitRate": {
+                "value": 0.1,
+                "type": "flat"
+            }
+        }
+    },
+    "buff_magic_surge": {
+        "id": "buff_magic_surge",
+        "name": "魔力过载",
+        "type": "buff",
+        "tags": [
+            "magic"
+        ],
+        "lifecycle": {
+            "duration": 1,
+            "maxStacks": 1,
+            "stackStrategy": "refresh",
+            "removeOnBattleEnd": true
+        },
+        "statModifiers": {
+            "magicDmg": {
+                "value": 0.5,
+                "type": "percent"
+            }
+        }
+    },
+    "buff_poison_coat": {
+        "id": "buff_poison_coat",
+        "name": "毒素涂层",
+        "type": "buff",
+        "tags": [
+            "offensive"
+        ],
+        "lifecycle": {
+            "duration": 3,
+            "maxStacks": 1,
+            "stackStrategy": "refresh",
+            "removeOnBattleEnd": true
+        },
+        "effects": [
+            {
+                "trigger": "onAttackPost",
+                "action": "applyBuff",
+                "value": "buff_poison",
+                "target": "target"
+            }
         ]
     },
-    "buff_invulnerable": {
-        "id": "buff_invulnerable",
-        "name": "鏃犳晫",
-        "type": "BUFF",
-        "tags": ["divine"],
-        "duration": 1,
-        "maxStacks": 1,
+    "buff_eagle_eye": {
+        "id": "buff_eagle_eye",
+        "name": "鹰眼",
+        "type": "buff",
+        "tags": [
+            "offensive",
+            "tech"
+        ],
+        "lifecycle": {
+            "duration": 3,
+            "maxStacks": 1,
+            "stackStrategy": "refresh",
+            "removeOnBattleEnd": true
+        },
+        "description": "减少距离惩罚(引擎逻辑)"
+    },
+    "buff_armor_pen": {
+        "id": "buff_armor_pen",
+        "name": "破甲意图",
+        "type": "buff",
+        "tags": [
+            "offensive"
+        ],
+        "lifecycle": {
+            "duration": 1,
+            "maxStacks": 1,
+            "stackStrategy": "refresh",
+            "removeOnBattleEnd": true
+        },
+        "description": "下次攻击无视部分护甲",
         "effects": [
-             { "trigger": "ON_TAKE_DAMAGE", "action": "NULLIFY_DAMAGE" }
+            {
+                "trigger": "onAttackPre",
+                "action": "MODIFY_STAT_TEMP",
+                "target": "target",
+                "params": {
+                    "stat": "def",
+                    "value": "-0.3",
+                    "type": "percent_current"
+                }
+            },
+            {
+                "trigger": "onAttackPost",
+                "action": "REMOVE_SELF",
+                "target": "self"
+            }
+        ]
+    },
+    "buff_bless": {
+        "id": "buff_bless",
+        "name": "祝福",
+        "type": "buff",
+        "tags": [
+            "divine"
+        ],
+        "lifecycle": {
+            "duration": 3,
+            "maxStacks": 1,
+            "stackStrategy": "refresh",
+            "removeOnBattleEnd": true
+        },
+        "statModifiers": {
+            "hitRate": {
+                "value": 0.2,
+                "type": "flat"
+            },
+            "dodgeRate": {
+                "value": 0.1,
+                "type": "flat"
+            }
+        }
+    },
+    "buff_iron_will": {
+        "id": "buff_iron_will",
+        "name": "钢铁意志",
+        "type": "buff",
+        "tags": [
+            "defense"
+        ],
+        "lifecycle": {
+            "duration": 3,
+            "maxStacks": 3,
+            "stackStrategy": "stack",
+            "removeOnBattleEnd": true
+        },
+        "statModifiers": {
+            "def": {
+                "value": 5,
+                "type": "flat"
+            }
+        }
+    },
+    "buff_block": {
+        "id": "buff_block",
+        "name": "格挡",
+        "type": "buff",
+        "tags": [
+            "defense"
+        ],
+        "lifecycle": {
+            "duration": 1,
+            "maxStacks": 1,
+            "stackStrategy": "refresh",
+            "removeOnBattleEnd": true
+        },
+        "effects": [
+            {
+                "trigger": "onTakeDamagePre",
+                "action": "modifyDamageTaken",
+                "value": 0.5,
+                "valueType": "mult",
+                "target": "self"
+            }
+        ]
+    },
+    "buff_pain_sup": {
+        "id": "buff_pain_sup",
+        "name": "痛苦压制",
+        "type": "buff",
+        "tags": [
+            "defense",
+            "divine"
+        ],
+        "lifecycle": {
+            "duration": 2,
+            "maxStacks": 1,
+            "stackStrategy": "refresh",
+            "removeOnBattleEnd": true
+        },
+        "statModifiers": {
+            "damageTakenMult": {
+                "value": -0.3,
+                "type": "percent"
+            }
+        }
+    },
+    "buff_evasion": {
+        "id": "buff_evasion",
+        "name": "残影",
+        "type": "buff",
+        "tags": [
+            "defense",
+            "speed"
+        ],
+        "lifecycle": {
+            "duration": 1,
+            "maxStacks": 1,
+            "stackStrategy": "refresh",
+            "removeOnBattleEnd": true
+        },
+        "statModifiers": {
+            "dodgeRate": {
+                "value": 0.6,
+                "type": "flat"
+            }
+        }
+    },
+    "buff_immortality_hp": {
+        "id": "buff_immortality_hp",
+        "name": "天使守护",
+        "type": "buff",
+        "tags": [
+            "divine"
+        ],
+        "lifecycle": {
+            "duration": 2,
+            "maxStacks": 1,
+            "stackStrategy": "refresh",
+            "removeOnBattleEnd": true
+        },
+        "description": "HP无法降至1以下"
+    },
+    "buff_immortality_armor": {
+        "id": "buff_immortality_armor",
+        "name": "不朽壁垒",
+        "type": "buff",
+        "tags": [
+            "defense"
+        ],
+        "lifecycle": {
+            "duration": 2,
+            "maxStacks": 1,
+            "stackStrategy": "refresh",
+            "removeOnBattleEnd": true
+        },
+        "description": "护甲无法被破坏"
+    },
+    "buff_revive": {
+        "id": "buff_revive",
+        "name": "光辉复苏",
+        "type": "buff",
+        "tags": [
+            "divine",
+            "hidden"
+        ],
+        "lifecycle": {
+            "duration": 5,
+            "maxStacks": 1,
+            "stackStrategy": "refresh",
+            "removeOnBattleEnd": true
+        },
+        "effects": [
+            {
+                "trigger": "onDeath",
+                "action": "revive",
+                "value": 0.5,
+                "valueType": "percent",
+                "target": "self"
+            }
+        ]
+    },
+    "buff_shield_wall": {
+        "id": "buff_shield_wall",
+        "name": "盾墙",
+        "type": "buff",
+        "tags": [
+            "defense",
+            "team"
+        ],
+        "lifecycle": {
+            "duration": 2,
+            "maxStacks": 1,
+            "stackStrategy": "refresh",
+            "removeOnBattleEnd": true
+        },
+        "statModifiers": {
+            "maxAp": {
+                "value": 3,
+                "type": "flat"
+            }
+        },
+        "description": "护甲共享逻辑由引擎处理"
+    },
+    "buff_thorns": {
+        "id": "buff_thorns",
+        "name": "荆棘",
+        "type": "buff",
+        "tags": [
+            "defense",
+            "reflect"
+        ],
+        "lifecycle": {
+            "duration": 3,
+            "maxStacks": 1,
+            "stackStrategy": "refresh",
+            "removeOnBattleEnd": true
+        },
+        "effects": [
+            {
+                "trigger": "onDefendPost",
+                "action": "damage",
+                "value": "damageTaken * 0.3",
+                "valueType": "formula",
+                "target": "attacker"
+            }
+        ]
+    },
+    "buff_counter": {
+        "id": "buff_counter",
+        "name": "反击姿态",
+        "type": "buff",
+        "tags": [
+            "offensive",
+            "defense"
+        ],
+        "lifecycle": {
+            "duration": 1,
+            "maxStacks": 1,
+            "stackStrategy": "refresh",
+            "removeOnBattleEnd": true
+        },
+        "statModifiers": {
+            "dodgeRate": {
+                "value": 1.0,
+                "type": "flat"
+            }
+        },
+        "effects": [
+            {
+                "trigger": "onDefendPost",
+                "action": "attack",
+                "target": "attacker"
+            }
+        ]
+    },
+    "buff_lifesteal": {
+        "id": "buff_lifesteal",
+        "name": "吸血",
+        "type": "buff",
+        "tags": [
+            "offensive",
+            "vampire"
+        ],
+        "lifecycle": {
+            "duration": -1,
+            "maxStacks": 1,
+            "stackStrategy": "refresh",
+            "removeOnBattleEnd": true
+        },
+        "effects": [
+            {
+                "trigger": "onAttackPost",
+                "action": "heal",
+                "value": "damageDealt * 0.2",
+                "valueType": "formula",
+                "target": "self"
+            }
+        ]
+    },
+    "buff_ap_regen": {
+        "id": "buff_ap_regen",
+        "name": "战术恢复",
+        "type": "buff",
+        "tags": [
+            "utility"
+        ],
+        "lifecycle": {
+            "duration": 3,
+            "maxStacks": 1,
+            "stackStrategy": "refresh",
+            "removeOnBattleEnd": true
+        },
+        "effects": [
+            {
+                "trigger": "onTurnStart",
+                "action": "modifyAP",
+                "value": 1,
+                "target": "self"
+            }
+        ]
+    },
+    "buff_damage_absorb": {
+        "id": "buff_damage_absorb",
+        "name": "圣盾",
+        "type": "buff",
+        "tags": [
+            "defense",
+            "divine"
+        ],
+        "lifecycle": {
+            "duration": 1,
+            "maxStacks": 1,
+            "stackStrategy": "refresh",
+            "removeOnBattleEnd": true
+        },
+        "effects": [
+            {
+                "trigger": "onTakeDamagePre",
+                "action": "absorbToHeal",
+                "target": "self"
+            }
+        ]
+    },
+    "passive_heavy_armor": {
+        "id": "passive_heavy_armor",
+        "name": "重甲负重",
+        "type": "hidden",
+        "tags": [
+            "equipment"
+        ],
+        "lifecycle": {
+            "duration": -1,
+            "maxStacks": 1,
+            "stackStrategy": "refresh",
+            "removeOnBattleEnd": true
+        },
+        "statModifiers": {
+            "speed": {
+                "value": -5,
+                "type": "flat"
+            }
+        }
+    },
+    "passive_vampire": {
+        "id": "passive_vampire",
+        "name": "吸血 (装备)",
+        "type": "hidden",
+        "tags": [
+            "equipment"
+        ],
+        "lifecycle": {
+            "duration": -1,
+            "maxStacks": 1,
+            "stackStrategy": "refresh",
+            "removeOnBattleEnd": true
+        },
+        "effects": [
+            {
+                "trigger": "onAttackPost",
+                "action": "heal",
+                "value": "damageDealt * 0.2",
+                "valueType": "formula",
+                "target": "self"
+            }
+        ]
+    },
+    "passive_knight": {
+        "id": "passive_knight",
+        "name": "骑士精神",
+        "type": "hidden",
+        "tags": [
+            "equipment"
+        ],
+        "lifecycle": {
+            "duration": -1,
+            "maxStacks": 1,
+            "stackStrategy": "refresh",
+            "removeOnBattleEnd": true
+        },
+        "statModifiers": {
+            "dmg": {
+                "value": 5,
+                "type": "flat"
+            }
+        }
+    },
+    "passive_gladiator": {
+        "id": "passive_gladiator",
+        "name": "角斗士风采",
+        "type": "hidden",
+        "tags": [
+            "equipment"
+        ],
+        "lifecycle": {
+            "duration": -1,
+            "maxStacks": 1,
+            "stackStrategy": "refresh",
+            "removeOnBattleEnd": true
+        },
+        "description": "降低攻击者伤害光环(TBD)"
+    },
+    "passive_dragon": {
+        "id": "passive_dragon",
+        "name": "龙鳞",
+        "type": "hidden",
+        "tags": [
+            "equipment"
+        ],
+        "lifecycle": {
+            "duration": -1,
+            "maxStacks": 1,
+            "stackStrategy": "refresh",
+            "removeOnBattleEnd": true
+        },
+        "statModifiers": {
+            "damageTakenMult": {
+                "value": -0.1,
+                "type": "percent"
+            }
+        }
+    },
+    "passive_phoenix": {
+        "id": "passive_phoenix",
+        "name": "凤凰涅槃",
+        "type": "hidden",
+        "tags": [
+            "equipment"
+        ],
+        "lifecycle": {
+            "duration": -1,
+            "maxStacks": 1,
+            "stackStrategy": "refresh",
+            "removeOnBattleEnd": true
+        },
+        "effects": [
+            {
+                "trigger": "onDeath",
+                "action": "revive",
+                "value": 0.5,
+                "valueType": "percent",
+                "target": "self",
+                "limit": 1
+            }
+        ]
+    },
+    "passive_speed_boost": {
+        "id": "passive_speed_boost",
+        "name": "极速",
+        "type": "hidden",
+        "tags": [
+            "equipment"
+        ],
+        "lifecycle": {
+            "duration": -1,
+            "maxStacks": 1,
+            "stackStrategy": "refresh",
+            "removeOnBattleEnd": true
+        },
+        "statModifiers": {
+            "speed": {
+                "value": 10,
+                "type": "flat"
+            }
+        }
+    },
+    "passive_thunder_strike": {
+        "id": "passive_thunder_strike",
+        "name": "雷霆打击",
+        "type": "hidden",
+        "tags": [
+            "equipment"
+        ],
+        "lifecycle": {
+            "duration": -1,
+            "maxStacks": 1,
+            "stackStrategy": "refresh",
+            "removeOnBattleEnd": true
+        },
+        "effects": [
+            {
+                "trigger": "onAttackPost",
+                "action": "damage",
+                "value": 5,
+                "valueType": "flat",
+                "target": "target",
+                "damageType": "thunder"
+            }
+        ]
+    },
+    "passive_cursed_self_dmg": {
+        "id": "passive_cursed_self_dmg",
+        "name": "诅咒",
+        "type": "hidden",
+        "tags": [
+            "equipment",
+            "curse"
+        ],
+        "lifecycle": {
+            "duration": -1,
+            "maxStacks": 1,
+            "stackStrategy": "refresh",
+            "removeOnBattleEnd": true
+        },
+        "effects": [
+            {
+                "trigger": "onTurnEnd",
+                "action": "damage",
+                "value": 5,
+                "valueType": "flat",
+                "target": "self"
+            }
         ]
     }
 }
