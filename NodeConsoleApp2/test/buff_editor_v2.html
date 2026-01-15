@@ -77,9 +77,10 @@
             overflow: hidden;
         }
 
-        /* Sidebar */
+        /* Sidebar (Left) - 20% */
         aside {
-            width: 250px;
+            width: 20%;
+            min-width: 200px;
             background: white;
             border-right: 1px solid var(--border-color);
             display: flex;
@@ -101,13 +102,59 @@
         .buff-item .delete-btn { visibility: hidden; color: var(--danger-color); }
         .buff-item:hover .delete-btn { visibility: visible; }
 
-        /* Editor Area */
+        /* Editor Area (Middle) - 50% */
         main {
-            flex: 1;
+            width: 50%;
             padding: 20px;
             overflow-y: auto;
             position: relative;
+            border-right: 1px solid var(--border-color);
+            background: white;
         }
+
+        /* Simulation Panel (Right) - 30% */
+        .simulation-panel {
+            width: 30%;
+            min-width: 250px;
+            background: #f8f9fa;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+        }
+
+        .sim-section {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            margin-bottom: 15px;
+        }
+
+        .sim-title {
+            font-size: 14px; 
+            font-weight: bold; 
+            margin-bottom: 10px; 
+            color: var(--secondary-color);
+            border-bottom: 1px solid #eee;
+            padding-bottom: 5px;
+        }
+
+        .log-container {
+            flex: 1;
+            background: #2c3e50;
+            color: #ecf0f1;
+            font-family: monospace;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-y: auto;
+            font-size: 12px;
+            max-height: 300px;
+        }
+        .log-entry { margin-bottom: 4px; border-bottom: 1px solid #34495e; padding-bottom: 2px; }
+        .log-entry.error { color: #e74c3c; }
+        .log-entry.info { color: #3498db; }
+        .log-entry.success { color: #2ecc71; }
 
         .editor-section {
             background: white;
@@ -405,12 +452,75 @@
                 </div>
             </div>
 
-            <div style="height: 50px;"></div> <!-- Spacer -->
-        </main>
-        
-        <div v-else style="flex: 1; display: flex; justify-content: center; align-items: center; color: #999;">
-            Select a buff to edit or create a new one.
-        </div>
+                <div style="height: 50px;"></div> <!-- Spacer -->
+            </main>
+
+            <div v-else style="width: 50%; display: flex; justify-content: center; align-items: center; color: #999; border-right: 1px solid var(--border-color); background: white;">
+                Select a buff to edit or create a new one.
+            </div>
+
+            <!-- Simulation Panel -->
+            <div class="simulation-panel">
+                <div class="sim-section">
+                    <div class="sim-title">Target Configuration</div>
+                    <div class="form-group">
+                        <label class="form-label">Simulation Object</label>
+                        <select v-model="selectedEnemyId" @change="initializeSimulation" class="form-select">
+                            <option value="player">Player (Generic)</option>
+                            <option v-for="(enemy, id) in mockEnemies" :value="id" :key="id">
+                                {{ enemy.name }} ({{ id }})
+                            </option>
+                        </select>
+                    </div>
+                     <div class="form-group" v-if="simulatedTarget && simulatedTarget.bodyParts">
+                        <label class="form-label">Body Part</label>
+                        <select v-model="selectedPart" class="form-select">
+                            <option v-for="(partData, partName) in simulatedTarget.bodyParts" :value="partName" :key="partName">
+                               {{ partName }} (Current: {{partData.current}})
+                            </option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="sim-section" v-if="simulatedTarget">
+                    <div class="sim-title">State Inspector</div>
+                    <div style="font-size: 13px; line-height: 1.6;">
+                        <div><strong>HP:</strong> {{ simulatedTarget.stats.hp }} / {{ simulatedTarget.stats.maxHp }}</div>
+                        <div><strong>AP:</strong> {{ simulatedTarget.stats.ap }}</div>
+                         <div v-if="selectedPart && simulatedTarget.bodyParts[selectedPart]">
+                            <strong>Armor ({{selectedPart}}):</strong> 
+                            <span :style="{color: simulatedTarget.bodyParts[selectedPart].current <= 0 ? 'red' : 'green'}">
+                                {{ simulatedTarget.bodyParts[selectedPart].current }} / {{ simulatedTarget.bodyParts[selectedPart].max }}
+                            </span>
+                        </div>
+                    </div>
+                     <div style="margin-top: 10px;">
+                        <div style="font-weight: bold; font-size: 12px; margin-bottom: 5px;">Active Buffs:</div>
+                        <div v-if="simulatedTarget.buffs.length === 0" style="color: #999; font-size: 12px;">None</div>
+                        <div v-for="(b, i) in simulatedTarget.buffs" :key="i" style="background: #e1f5fe; padding: 4px; margin-bottom: 4px; border-radius: 4px; font-size: 12px;">
+                            {{ b.id }} ({{ b.duration >= 0 ? b.duration + ' turns' : 'Passive' }})
+                        </div>
+                    </div>
+                </div>
+
+                <div class="sim-section" v-if="simulatedTarget">
+                    <div class="sim-title">Control</div>
+                    <div style="display: flex; gap: 5px; flex-wrap: wrap;">
+                        <button class="btn btn-primary btn-sm" @click="applyCurrentBuff" :disabled="!currentBuff">Apply Current</button>
+                        <button class="btn btn-success btn-sm" @click="simulateTurnStart">Start Turn</button>
+                        <button class="btn btn-secondary btn-sm" @click="simulateTurnEnd">End Turn</button>
+                        <button class="btn btn-danger btn-sm" @click="simulateTakeDamage">Take 10 Dmg</button>
+                         <button class="btn btn-sm" @click="resetSimulation">Reset</button>
+                    </div>
+                </div>
+
+                <div class="log-container" ref="logContainer">
+                    <div v-if="logs.length === 0" style="color: #7f8c8d; font-style: italic;">Simulation logs...</div>
+                    <div v-for="(log, i) in logs" :key="i" class="log-entry" :class="log.type">
+                        <span style="opacity: 0.7;">[{{ log.time }}]</span> {{ log.msg }}
+                    </div>
+                </div>
+            </div>
     </div>
 </div>
 
@@ -434,13 +544,54 @@
         statModifiers: {}
     };
 
+    const MOCK_PLAYER = {
+       id: "player",
+       name: "Player",
+       stats: { hp: 100, maxHp: 100, speed: 10, ap: 3 },
+       bodyParts: { "chest": { current: 20, max: 20, weakness: 1.0 }, "head": { current: 10, max: 10, weakness: 1.5 } }
+    };
+
+    const MOCK_ENEMIES = {
+      "goblin_scout": {
+        "id": "goblin_scout",
+        "name": "哥布林斥候",
+        "stats": { "hp": 50, "maxHp": 50, "speed": 12, "ap": 3 },
+        "bodyParts": {
+          "head": { "current": 0, "max": 0, "weakness": 1.5 },
+          "chest": { "current": 5, "max": 5, "weakness": 1.0 },
+          "left_arm": { "current": 0, "max": 0, "weakness": 1.0 },
+          "right_arm": { "current": 0, "max": 0, "weakness": 1.0 },
+          "left_leg": { "current": 0, "max": 0, "weakness": 1.0 },
+          "right_leg": { "current": 0, "max": 0, "weakness": 1.0 }
+        }
+      },
+      "orc_warrior": {
+        "id": "orc_warrior",
+        "name": "兽人战士",
+        "stats": { "hp": 120, "maxHp": 120, "speed": 8, "ap": 4 },
+        "bodyParts": {
+          "head": { "current": 10, "max": 10, "weakness": 1.2 },
+          "chest": { "current": 20, "max": 20, "weakness": 0.8 },
+          "left_arm": { "current": 5, "max": 5, "weakness": 1.0 },
+          "right_arm": { "current": 5, "max": 5, "weakness": 1.0 }
+        }
+      }
+    };
+
     createApp({
         data() {
             return {
                 buffs: [],
                 currentBuffId: null,
                 searchQuery: "",
-                expandedEffects: {} // index -> boolean
+                expandedEffects: {}, // index -> boolean
+
+                // Simulation State
+                selectedEnemyId: "player",
+                mockEnemies: MOCK_ENEMIES,
+                selectedPart: null,
+                simulatedTarget: null,
+                logs: []
             }
         },
         computed: {
@@ -634,16 +785,180 @@
                 downloadAnchorNode.setAttribute("download", "buffs.json");
                 document.body.appendChild(downloadAnchorNode);
                 downloadAnchorNode.click();
-                downloadAnchorNode.remove();
-            }
-        },
-        mounted() {
+                        downloadAnchorNode.remove();
+                    },
+
+                    // ================= SIMULATION LOGIC =================
+
+                    log(msg, type='info') {
+                        const time = new Date().toLocaleTimeString();
+                        this.logs.unshift({ time, msg, type });
+                    },
+
+                    initializeSimulation() {
+                        this.logs = [];
+                        this.log("Initializing simulation target...", 'info');
+
+                        let sourceData = null;
+                        if (this.selectedEnemyId === 'player') {
+                            sourceData = MOCK_PLAYER;
+                        } else if (this.mockEnemies[this.selectedEnemyId]) {
+                            sourceData = this.mockEnemies[this.selectedEnemyId];
+                        }
+
+                        if (sourceData) {
+                            this.simulatedTarget = this.clone(sourceData);
+                            this.simulatedTarget.buffs = []; // Init buff runtime container
+                            this.log(`Loaded target: ${sourceData.name || sourceData.id}`, 'success');
+
+                            // Auto select first part
+                            const parts = Object.keys(this.simulatedTarget.bodyParts || {});
+                            if (parts.length > 0) this.selectedPart = parts[0];
+                        } else {
+                            this.simulatedTarget = null;
+                        }
+                    },
+
+                    applyCurrentBuff() {
+                        if (!this.currentBuff || !this.simulatedTarget) return;
+
+                        // Clone buff structure to runtime buff
+                        const runtimeBuff = this.clone(this.currentBuff);
+
+                        // Ensure duration is simple integer for sim
+                        if (!runtimeBuff.duration && runtimeBuff.lifecycle) {
+                             runtimeBuff.duration = runtimeBuff.lifecycle.duration;
+                        }
+
+                        this.simulatedTarget.buffs.push(runtimeBuff);
+                        this.log(`Applied buff: ${runtimeBuff.id} (${runtimeBuff.name})`, 'success');
+
+                        this.triggerBuffEffects(runtimeBuff, 'onApply');
+                    },
+
+                    resetSimulation() {
+                        this.initializeSimulation();
+                        this.log("Simulation reset.", 'info');
+                    },
+
+                    simulateTurnStart() {
+                        if (!this.simulatedTarget) return;
+                        this.log("--- Turn Start ---", 'info');
+
+                        // Process buffs
+                        const buffsToRemove = [];
+                        this.simulatedTarget.buffs.forEach((buff, index) => {
+                            // Trigger onTurnStart
+                            this.triggerBuffEffects(buff, 'onTurnStart');
+
+                            // Tick duration
+                            if (buff.duration > 0) {
+                                buff.duration--;
+                                this.log(`Buff ${buff.id} duration ticked. Remaining: ${buff.duration}`);
+                            }
+                            if (buff.duration === 0) {
+                                buffsToRemove.push(index);
+                            }
+                        });
+
+                        // Remove expired
+                        for (let i = buffsToRemove.length - 1; i >= 0; i--) {
+                            const idx = buffsToRemove[i];
+                            this.log(`Buff ${this.simulatedTarget.buffs[idx].id} expired.`, 'info');
+                            this.simulatedTarget.buffs.splice(idx, 1);
+                        }
+                    },
+
+                    simulateTurnEnd() {
+                         if (!this.simulatedTarget) return;
+                         this.log("--- Turn End ---", 'info');
+                         this.simulatedTarget.buffs.forEach(buff => {
+                            this.triggerBuffEffects(buff, 'onTurnEnd');
+                         });
+                    },
+
+                    simulateTakeDamage() {
+                        if (!this.simulatedTarget) return;
+
+                        this.log("Taking 10 Damage...", 'info');
+
+                        // Trigger onTakeDamage (Pre)
+                        this.simulatedTarget.buffs.forEach(buff => {
+                            this.triggerBuffEffects(buff, 'onTakeDamage');
+                         });
+
+                        // Simple Armor Logic
+                        let damage = 10;
+                        if (this.selectedPart && this.simulatedTarget.bodyParts[this.selectedPart]) {
+                            const part = this.simulatedTarget.bodyParts[this.selectedPart];
+                            if (part.current > 0) {
+                                const armorDmg = Math.min(part.current, damage);
+                                part.current -= armorDmg;
+                                damage -= armorDmg; 
+                                this.log(`Armor (${this.selectedPart}) absorbed ${armorDmg}. Remaining: ${part.current}`);
+                            }
+                        }
+
+                        if (damage > 0) {
+                            this.simulatedTarget.stats.hp = Math.max(0, this.simulatedTarget.stats.hp - damage);
+                            this.log(`Took ${damage} HP damage. Current HP: ${this.simulatedTarget.stats.hp}`, 'error');
+                        } else {
+                            this.log("Damage fully absorbed.", 'success');
+                        }
+                    },
+
+                    triggerBuffEffects(buff, triggerName) {
+                        if (!buff.effects) return;
+                        buff.effects.forEach(effect => {
+                            if (effect.trigger === triggerName) {
+                                this.executeAction(effect, buff);
+                            }
+                        });
+                    },
+
+                    executeAction(effect, buff) {
+                        this.log(`[TRIGGER] ${buff.id} matched ${effect.trigger}`, 'info');
+
+                        // Very basic Interpreter
+                        let val = 0;
+                        if (effect.params && effect.params.value) {
+                            val = parseFloat(effect.params.value);
+                            if (isNaN(val)) val = 0;
+                        }
+
+                        if (effect.action === "HEAL") {
+                            if (val > 0) {
+                                this.simulatedTarget.stats.hp = Math.min(this.simulatedTarget.stats.maxHp, this.simulatedTarget.stats.hp + val);
+                                this.log(`>> Action HEAL: +${val} HP.`, 'success');
+                            }
+                        } else if (effect.action === "DAMAGE") {
+                             if (val > 0) {
+                                this.simulatedTarget.stats.hp = Math.max(0, this.simulatedTarget.stats.hp - val);
+                                this.log(`>> Action DAMAGE: -${val} HP.`, 'error');
+                            }
+                        } else {
+                            this.log(`>> Action ${effect.action} executed (Placeholder).`, 'info');
+                        }
+                    }
+                },
+                mounted() {
             // Add a sample buff initially for testing UI
             this.createNewBuff();
             // Try to set type of sample buff
             this.buffs[0].id = "sample_buff";
-            this.buffs[0].name = "Sample Buff";
-        }
+                this.buffs[0].name = "Sample Buff";
+
+                // Add a simple effect to test simulation
+                this.buffs[0].effects.push({
+                    trigger: "onTurnStart",
+                    action: "HEAL",
+                    target: "self",
+                    params: { value: "5" }
+                });
+                this.expandedEffects[0] = true;
+
+                this.initializeSimulation();
+            }
     }).mount('#app');
 </script>
 

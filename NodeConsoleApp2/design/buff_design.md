@@ -325,9 +325,149 @@ EventBus.emit("onAttackPost", attacker, defender, contextData);
 4.  **后置钩子 (`onAttackPost`)**: 伤害结算完毕。
 5.  **自我消耗**: 触发 `REMOVE_SELF`，Buff 从列表中移除，确保效果只生效一次。
 
-### 8.4 低耦合优势 (Decoupling Benefits)
+### 8.4 参数体系深度解析 (Deep Dive into Parameters)
+
+针对 `params` 中的核心字段 `stat`, `value`, `type`，本设计明确了哪些是**可直接扩展的**（无需改代码），哪些是**枚举类型**（需引擎支持）。
+
+#### 8.4.1 stat (属性键名) - 可扩展 (Extensible)
+*   **定义**: 目标对象上需要被修改的属性名称（如 `atk`, `def`, `speed`）。
+*   **类型**: **开放字符串 (Open String)**。
+*   **扩展策略**:
+    *   这是一个**非枚举**字段。只要 `Character` 或 `BattleStats` 数据结构中存在该属性，JSON 配置即可引用。
+    *   **举例**: 如果游戏后期新增了属性 `luck` (幸运)，程序员只需在角色数据结构中添加 `luck` 字段，策划即可在 Buff 中配置 `"stat": "luck"`，无需修改 `BuffSystem` 代码。
+*   **引擎实现**:
+    *   **禁止**: 使用硬编码判断 (e.g., `if (stat === 'atk') ...`).
+    *   **推荐**: 使用动态属性访问 (Reflection-like access)。
+    ```javascript
+    // 引擎代码示例
+    function applyModifier(target, statKey, value) {
+        if (target.stats.hasOwnProperty(statKey)) {
+             target.stats[statKey] += value;
+        } else {
+             console.warn(`Stat ${statKey} not found on target.`);
+        }
+    }
+    ```
+
+#### 8.4.2 type (计算策略) - 枚举值 (Enumeration)
+*   **定义**: 数值作用于属性的数学算法。
+*   **类型**: **闭合枚举 (Closed Enum)**。
+*   **扩展策略**:
+    *   这是一个**枚举**字段。新增类型意味着需要编写新的底层数学逻辑，**必须修改引擎代码**。
+*   **标准枚举值**:
+    1.  `flat`: **固定值修正**。公式: `Result = Base + Value`。 (例如: 攻击力 +10)
+    2.  `percent_base`: **基础百分比**。公式: `Result = Base * (1 + Value)`。 (例如: 攻击力 +10%)
+    3.  `percent_current`: **当前值百分比**。公式: `Result = Current * (1 + Value)`。 (例如: 减少当前 50% 的生命值)
+    4.  `overwrite`: **覆盖**。公式: `Result = Value`。 (例如: 强制设置行动力为 0)
+*   **引擎实现**:
+    *   推荐使用策略模式 (Strategy Pattern) 维护这些算法，便于集中管理。
+
+#### 8.4.3 value (数值载荷) - 高度动态 (Dynamic)
+*   **定义**: 实际作用的数值大小。
+*   **类型**: **多态 (Number | String Expression)**。
+*   **扩展策略**:
+    *   通过支持解析字符串公式，实现无限的扩展能力。
+*   **数据形式**:
+    *   **Number**: 静态常量 (e.g., `100`, `0.5`).
+    *   **String**: 动态公式 (e.g., `"{source.atk} * 0.5 + 10"`).
+*   **引擎实现**:
+    *   利用 `Context` 上下文对象，解析字符串中的占位符（如 `{source.atk}`），替换为实际运行时数值后计算。
+
+### 8.5 低耦合优势 (Decoupling Benefits)
 
 *   **无需修改战斗代码**: 新增一个"攻击时吸血"的 Buff，只需要在 JSON 里配置 `trigger: onAttackPost`, `action: HEAL`, `target: self`。不需要去改动 CombatSystem 的攻击函数。
 *   **统一入口**: 所有修改属性、造成伤害的来源都被统一管理，方便通过 `console.log` 追踪战斗日志。
 *   **易于扩展**: 如果需要新机制（例如“偷取金币”），只需在 `ActionLibrary` 注册 `STEAL_GOLD` 函数，无需改动整个架构。
+
+## 9. 核心引擎集成与问题分析 (Core Integration & Analysis)
+
+针对易伤 (Vulnerable) 和 破甲 (Armor Pen) 等高级机制在简易模拟器中失效的问题，本章节明确了核心引擎必须具备的架构模块。
+
+### 9.1 测试失效原因深度解析 (Root Cause Analysis)
+
+在 `buff_editor_v2.html` 的模拟测试中，发现部分技能效果未生效，其根源在于**模拟代码过于线性**，缺乏“中间件”机制：
+
+1.  **易伤失效 (Vulnerable Failure)**:
+    *   **现象**: 伤害数值未增加。
+    *   **原因**: 易伤通常通过 `statModifiers: { damageTakenMult: 0.2 }` (受伤增加20%) 实现。模拟代码直接执行 `hp -= damage`，完全忽略了对 `damageTakenMult` 属性的检查和乘算。
+    *   **缺失**: 缺少一个**统一属性计算层 (Stat Calculator)** 来聚合所有 Buff 的被动属性修正。
+
+2.  **破甲失效 (Armor Pen Failure)**:
+    *   **现象**: 护甲减免数值未变。
+    *   **原因**: 破甲依赖 `onAttackPre` 时机触发，目的是在“伤害计算公式执行前”临时修改参数。模拟代码中，事件触发 (`onAttackPre`) 和 伤害计算 (`damage - armor`) 是分离的，事件触发仅仅打印了日志，并没有将修改后的参数传递给伤害计算步骤。
+    *   **缺失**: 缺少**可变上下文 (Mutable Context)** 的传递机制。
+
+### 9.2 内核模块需求 (Module Requirements)
+
+为了解决上述问题，Core Engine 必须包含以下两个核心子模块（或功能集）：
+
+#### A. BuffSystem (逻辑处理器)
+这是一个常驻的单例系统，负责：
+1.  **生命周期管理**: 回合开始/结束时更新所有实体的 Buff (Tick)。
+2.  **事件响应**: 监听 `EventBus`，根据 Buff 配置的 Triggers 执行 Actions。
+
+#### B. StatCalculator (动态属性层)
+这是一个静态工具类或服务，负责取代简单的 `obj.stats.atk` 访问方式。
+*   **职责**: `getEffectiveStat(entity, statName)`
+*   **逻辑**: Base Value + Equipment Modifiers + **Buff Modifiers (Iterate & Sum)**.
+
+### 9.3 战斗流程集成方案 (Pipeline Integration Scheme)
+
+要实现破甲和动态伤害，战斗流程必须改造为**管道模式 (Pipeline Pattern)**。
+
+```javascript
+// 伪代码：战斗行为执行流
+async function executeCombatAction(attacker, target, actionData) {
+
+    // 1. 创建作战上下文 (Combat Context)
+    // 这个对象将在整个流程中传递，并允许被 Buff 修改
+    const context = {
+        attacker: attacker,
+        target: target,
+        rawDamage: actionData.baseDamage,
+        armorPenetration: 0,      // 破甲 (初值0)
+        damageMultiplier: 1.0,    // 伤害乘区 (初值1.0)
+        resultLog: []
+    };
+
+    // 2. 触发阶段: 攻击前 (Attack Pre)
+    // BuffSystem 监听到此事件，若 attacker 有“破甲意图”Buff：
+    // -> 触发 ACTION: "MODIFY_CONTEXT" -> context.armorPenetration = 0.3
+    await EventBus.emit('BATTLE_ATTACK_PRE', context);
+
+    // 3. 计算阶段: 动态属性获取
+    // 获取目标防御力 (这里会计算目标的 被动Buff 修正，如“钢铁意志”)
+    let targetDef = StatCalculator.get(target, 'def'); 
+
+    // 应用上下文中的破甲修正
+    let effectiveDef = targetDef * (1 - context.armorPenetration);
+
+    // 4. 计算阶段: 基础伤害
+    let finalDamage = Math.max(1, context.rawDamage - effectiveDef);
+
+    // 5. 触发阶段: 受击前 (Take Damage Pre / Defense Pre)
+    // BuffSystem 监听到此事件，若 target 有“易伤”Buff：
+    // -> Buff属性中自带 statModifiers.damageTakenMult
+    // 或者是动态触发的效果
+    let takenMult = StatCalculator.get(target, 'damageTakenMult') || 1.0; 
+    finalDamage *= takenMult;
+
+    // 6. 结算应用
+    target.stats.hp -= finalDamage;
+
+    // 7. 触发阶段: 攻击后 (Attack Post)
+    // 处理吸血等逻辑
+    await EventBus.emit('BATTLE_ATTACK_POST', context);
+}
+```
+
+### 9.4 结论 (Conclusion)
+
+是的，需要在内核引擎中增加独立的 **BuffSystem** 模块。单纯在 `CoreEngine.js` 中写死逻辑无法满足需求。
+
+*   **下一步计划**:
+    1.  创建 `script/engine/BuffSystem.js`。
+    2.  创建 `script/engine/StatCalculator.js`。
+    3.  在 `CoreEngine` 初始化时启动 BuffSystem。
+    4.  重构战斗逻辑，使用上述 Context Pipeline 模式。
 

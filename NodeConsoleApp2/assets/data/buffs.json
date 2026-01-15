@@ -1,7 +1,7 @@
 {
     "buff_poison": {
         "id": "buff_poison",
-        "name": "ÖĞ¶¾",
+        "name": "ä¸­æ¯’",
         "type": "debuff",
         "tags": [
             "poison",
@@ -25,7 +25,7 @@
     },
     "buff_stun": {
         "id": "buff_stun",
-        "name": "Ñ£ÔÎ",
+        "name": "æ™•çœ©",
         "type": "debuff",
         "tags": [
             "control"
@@ -46,7 +46,7 @@
     },
     "buff_strength": {
         "id": "buff_strength",
-        "name": "¹¥»÷ÔöÇ¿",
+        "name": "åŠ›é‡å¢å¼º",
         "type": "buff",
         "tags": [
             "stat_up"
@@ -66,7 +66,7 @@
     },
     "buff_shield": {
         "id": "buff_shield",
-        "name": "»¤¶Ü",
+        "name": "æŠ¤ç›¾",
         "type": "buff",
         "tags": [
             "defense"
@@ -88,7 +88,7 @@
     },
     "buff_bleed": {
         "id": "buff_bleed",
-        "name": "Á÷Ñª",
+        "name": "æµè¡€",
         "type": "debuff",
         "tags": [
             "physical",
@@ -112,7 +112,7 @@
     },
     "buff_burn": {
         "id": "buff_burn",
-        "name": "È¼ÉÕ",
+        "name": "ç‡ƒçƒ§",
         "type": "debuff",
         "tags": [
             "fire",
@@ -136,7 +136,7 @@
     },
     "buff_freeze": {
         "id": "buff_freeze",
-        "name": "¶³½á",
+        "name": "å†»ç»“",
         "type": "debuff",
         "tags": [
             "ice",
@@ -164,7 +164,7 @@
     },
     "buff_slow": {
         "id": "buff_slow",
-        "name": "¼õËÙ",
+        "name": "å‡é€Ÿ",
         "type": "debuff",
         "tags": [
             "control",
@@ -185,7 +185,7 @@
     },
     "debuff_weak": {
         "id": "debuff_weak",
-        "name": "ĞéÈõ",
+        "name": "è™šå¼±",
         "type": "debuff",
         "tags": [
             "weakness"
@@ -205,7 +205,7 @@
     },
     "buff_weakness": {
         "id": "buff_weakness",
-        "name": "ĞéÈõ (Èõµã)",
+        "name": "å¼±ç‚¹æš´éœ²",
         "type": "debuff",
         "tags": [
             "weakness"
@@ -225,7 +225,7 @@
     },
     "buff_vulnerable": {
         "id": "buff_vulnerable",
-        "name": "Ò×ÉË",
+        "name": "æ˜“ä¼¤",
         "type": "debuff",
         "tags": [
             "vulnerable"
@@ -245,7 +245,7 @@
     },
     "buff_silence_limb": {
         "id": "buff_silence_limb",
-        "name": "ÖÂ²Ğ",
+        "name": "éƒ¨ä½å°å°",
         "type": "debuff",
         "tags": [
             "disable"
@@ -256,11 +256,11 @@
             "stackStrategy": "refresh",
             "removeOnBattleEnd": true
         },
-        "description": "½ûÖ¹Ê¹ÓÃÌØ¶¨²¿Î»µÄ¼¼ÄÜ"
+        "description": "ç¦æ­¢ä½¿ç”¨ç‰¹å®šéƒ¨ä½çš„æŠ€èƒ½"
     },
     "buff_berserk": {
         "id": "buff_berserk",
-        "name": "¿ñ±©",
+        "name": "ç‹‚æš´",
         "type": "buff",
         "tags": [
             "offensive",
@@ -285,7 +285,7 @@
     },
     "buff_focus": {
         "id": "buff_focus",
-        "name": "×¨×¢",
+        "name": "ä¸“æ³¨",
         "type": "buff",
         "tags": [
             "offensive",
@@ -310,7 +310,7 @@
     },
     "buff_magic_surge": {
         "id": "buff_magic_surge",
-        "name": "Ä§Á¦¹ıÔØ",
+        "name": "é­”åŠ›æ¶ŒåŠ¨",
         "type": "buff",
         "tags": [
             "magic"
@@ -330,7 +330,7 @@
     },
     "buff_poison_coat": {
         "id": "buff_poison_coat",
-        "name": "¶¾ËØÍ¿²ã",
+        "name": "å‰§æ¯’æ¶‚å±‚",
         "type": "buff",
         "tags": [
             "offensive"
@@ -352,7 +352,7 @@
     },
     "buff_eagle_eye": {
         "id": "buff_eagle_eye",
-        "name": "Ó¥ÑÛ",
+        "name": "é¹°çœ¼",
         "type": "buff",
         "tags": [
             "offensive",
@@ -364,11 +364,11 @@
             "stackStrategy": "refresh",
             "removeOnBattleEnd": true
         },
-        "description": "¼õÉÙ¾àÀë³Í·£(ÒıÇæÂß¼­)"
+        "description": "å¿…å®šå‘½ä¸­(å¿½ç•¥é—ªé¿)"
     },
     "buff_armor_pen": {
         "id": "buff_armor_pen",
-        "name": "ÆÆ¼×ÒâÍ¼",
+        "name": "ç ´ç”²",
         "type": "buff",
         "tags": [
             "offensive"
@@ -379,7 +379,7 @@
             "stackStrategy": "refresh",
             "removeOnBattleEnd": true
         },
-        "description": "ÏÂ´Î¹¥»÷ÎŞÊÓ²¿·Ö»¤¼×",
+        "description": "ä¸‹ä¸€æ¬¡æ”»å‡»æ— è§†éƒ¨åˆ†æŠ¤ç”²",
         "effects": [
             {
                 "trigger": "onAttackPre",
@@ -400,7 +400,7 @@
     },
     "buff_bless": {
         "id": "buff_bless",
-        "name": "×£¸£",
+        "name": "ç¥ç¦",
         "type": "buff",
         "tags": [
             "divine"
@@ -424,7 +424,7 @@
     },
     "buff_iron_will": {
         "id": "buff_iron_will",
-        "name": "¸ÖÌúÒâÖ¾",
+        "name": "é’¢é“æ„å¿—",
         "type": "buff",
         "tags": [
             "defense"
@@ -444,7 +444,7 @@
     },
     "buff_block": {
         "id": "buff_block",
-        "name": "¸ñµ²",
+        "name": "æ ¼æŒ¡",
         "type": "buff",
         "tags": [
             "defense"
@@ -467,7 +467,7 @@
     },
     "buff_pain_sup": {
         "id": "buff_pain_sup",
-        "name": "Í´¿àÑ¹ÖÆ",
+        "name": "ç—›è‹¦å‹åˆ¶",
         "type": "buff",
         "tags": [
             "defense",
@@ -488,7 +488,7 @@
     },
     "buff_evasion": {
         "id": "buff_evasion",
-        "name": "²ĞÓ°",
+        "name": "æ®‹å½±",
         "type": "buff",
         "tags": [
             "defense",
@@ -509,7 +509,7 @@
     },
     "buff_immortality_hp": {
         "id": "buff_immortality_hp",
-        "name": "ÌìÊ¹ÊØ»¤",
+        "name": "å¤©ä½¿å®ˆæŠ¤",
         "type": "buff",
         "tags": [
             "divine"
@@ -520,11 +520,11 @@
             "stackStrategy": "refresh",
             "removeOnBattleEnd": true
         },
-        "description": "HPÎŞ·¨½µÖÁ1ÒÔÏÂ"
+        "description": "HPæ— æ³•ä½äº1ç‚¹"
     },
     "buff_immortality_armor": {
         "id": "buff_immortality_armor",
-        "name": "²»Ğà±ÚÀİ",
+        "name": "ç»å¯¹é˜²å¾¡",
         "type": "buff",
         "tags": [
             "defense"
@@ -535,11 +535,11 @@
             "stackStrategy": "refresh",
             "removeOnBattleEnd": true
         },
-        "description": "»¤¼×ÎŞ·¨±»ÆÆ»µ"
+        "description": "æŠ¤ç”²æ— æ³•è¢«ç ´å"
     },
     "buff_revive": {
         "id": "buff_revive",
-        "name": "¹â»Ô¸´ËÕ",
+        "name": "ç¥æ„¿å¤è‹",
         "type": "buff",
         "tags": [
             "divine",
@@ -563,7 +563,7 @@
     },
     "buff_shield_wall": {
         "id": "buff_shield_wall",
-        "name": "¶ÜÇ½",
+        "name": "ç›¾å¢™",
         "type": "buff",
         "tags": [
             "defense",
@@ -581,11 +581,11 @@
                 "type": "flat"
             }
         },
-        "description": "»¤¼×¹²ÏíÂß¼­ÓÉÒıÇæ´¦Àí"
+        "description": "å¤§å¹…å¢åŠ æœ€å¤§è¡ŒåŠ¨ç‚¹æ•°"
     },
     "buff_thorns": {
         "id": "buff_thorns",
-        "name": "¾£¼¬",
+        "name": "è†æ£˜",
         "type": "buff",
         "tags": [
             "defense",
@@ -609,7 +609,7 @@
     },
     "buff_counter": {
         "id": "buff_counter",
-        "name": "·´»÷×ËÌ¬",
+        "name": "åå‡»å§¿æ€",
         "type": "buff",
         "tags": [
             "offensive",
@@ -637,7 +637,7 @@
     },
     "buff_lifesteal": {
         "id": "buff_lifesteal",
-        "name": "ÎüÑª",
+        "name": "å¸è¡€",
         "type": "buff",
         "tags": [
             "offensive",
@@ -661,7 +661,7 @@
     },
     "buff_ap_regen": {
         "id": "buff_ap_regen",
-        "name": "Õ½Êõ»Ö¸´",
+        "name": "æˆ˜æ–—æ¢å¤",
         "type": "buff",
         "tags": [
             "utility"
@@ -683,7 +683,7 @@
     },
     "buff_damage_absorb": {
         "id": "buff_damage_absorb",
-        "name": "Ê¥¶Ü",
+        "name": "åœ£ç›¾",
         "type": "buff",
         "tags": [
             "defense",
@@ -705,7 +705,7 @@
     },
     "passive_heavy_armor": {
         "id": "passive_heavy_armor",
-        "name": "ÖØ¼×¸ºÖØ",
+        "name": "é‡ç”²è´Ÿé‡",
         "type": "hidden",
         "tags": [
             "equipment"
@@ -725,7 +725,7 @@
     },
     "passive_vampire": {
         "id": "passive_vampire",
-        "name": "ÎüÑª (×°±¸)",
+        "name": "å¸è¡€ (è£…å¤‡)",
         "type": "hidden",
         "tags": [
             "equipment"
@@ -748,7 +748,7 @@
     },
     "passive_knight": {
         "id": "passive_knight",
-        "name": "ÆïÊ¿¾«Éñ",
+        "name": "éª‘å£«ç²¾ç¥",
         "type": "hidden",
         "tags": [
             "equipment"
@@ -768,7 +768,7 @@
     },
     "passive_gladiator": {
         "id": "passive_gladiator",
-        "name": "½Ç¶·Ê¿·ç²É",
+        "name": "è§’æ–—å£«ä¹‹å¿ƒ",
         "type": "hidden",
         "tags": [
             "equipment"
@@ -779,11 +779,11 @@
             "stackStrategy": "refresh",
             "removeOnBattleEnd": true
         },
-        "description": "½µµÍ¹¥»÷ÕßÉËº¦¹â»·(TBD)"
+        "description": "å—åˆ°æ”»å‡»ååå‡»(TBD)"
     },
     "passive_dragon": {
         "id": "passive_dragon",
-        "name": "ÁúÁÛ",
+        "name": "é¾™é³",
         "type": "hidden",
         "tags": [
             "equipment"
@@ -803,7 +803,7 @@
     },
     "passive_phoenix": {
         "id": "passive_phoenix",
-        "name": "·ï»ËÄù˜„",
+        "name": "å‡¤å‡°æ¶…æ§ƒ",
         "type": "hidden",
         "tags": [
             "equipment"
@@ -827,7 +827,7 @@
     },
     "passive_speed_boost": {
         "id": "passive_speed_boost",
-        "name": "¼«ËÙ",
+        "name": "æé€Ÿ",
         "type": "hidden",
         "tags": [
             "equipment"
@@ -847,7 +847,7 @@
     },
     "passive_thunder_strike": {
         "id": "passive_thunder_strike",
-        "name": "À×öª´ò»÷",
+        "name": "é›·å‡»",
         "type": "hidden",
         "tags": [
             "equipment"
@@ -871,7 +871,7 @@
     },
     "passive_cursed_self_dmg": {
         "id": "passive_cursed_self_dmg",
-        "name": "×çÖä",
+        "name": "è¯…å’’",
         "type": "hidden",
         "tags": [
             "equipment",
