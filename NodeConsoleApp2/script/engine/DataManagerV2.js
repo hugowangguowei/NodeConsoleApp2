@@ -149,16 +149,17 @@ class DataManager {
                 return await response.json();
             };
 
-            const [skills, items, enemies, levels, player] = await Promise.all([
+            const [skills, items, enemies, levels, player, buffs] = await Promise.all([
                 fetchConfig('skills.json'),
                 fetchConfig('items.json'),
                 fetchConfig('enemies.json'),
                 fetchConfig('levels.json'),
-                fetchConfig('player.json')
+                fetchConfig('player.json'),
+                fetchConfig('buffs.json')
             ]);
-            
+
             // Validate basic structure
-            if (!skills || !items || !enemies || !levels || !player) {
+            if (!skills || !items || !enemies || !levels || !player || !buffs) {
                  throw new Error("One or more config files are empty or invalid.");
             }
 
@@ -167,7 +168,8 @@ class DataManager {
                 items,
                 enemies,
                 levels,
-                player
+                player,
+                buffs
             };
             
             console.log("? [DataManager] Configs successfully loaded from JSON files.", this.gameConfig);
