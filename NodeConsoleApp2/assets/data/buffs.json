@@ -2,7 +2,6 @@
     "buff_poison": {
         "id": "buff_poison",
         "name": "中毒",
-        "description": "每回合受到最大HP百分比伤害",
         "type": "debuff",
         "tags": [
             "poison",
@@ -27,7 +26,6 @@
     "buff_stun": {
         "id": "buff_stun",
         "name": "晕眩",
-        "description": "无法行动",
         "type": "debuff",
         "tags": [
             "control"
@@ -49,7 +47,6 @@
     "buff_strength": {
         "id": "buff_strength",
         "name": "力量增强",
-        "description": "攻击力提升",
         "type": "buff",
         "tags": [
             "stat_up"
@@ -70,7 +67,6 @@
     "buff_shield": {
         "id": "buff_shield",
         "name": "护盾",
-        "description": "抵挡伤害",
         "type": "buff",
         "tags": [
             "defense"
@@ -93,7 +89,6 @@
     "buff_bleed": {
         "id": "buff_bleed",
         "name": "流血",
-        "description": "每回合受到流血伤害",
         "type": "debuff",
         "tags": [
             "physical",
@@ -118,7 +113,6 @@
     "buff_burn": {
         "id": "buff_burn",
         "name": "燃烧",
-        "description": "每回合受到火焰伤害",
         "type": "debuff",
         "tags": [
             "fire",
@@ -143,7 +137,6 @@
     "buff_freeze": {
         "id": "buff_freeze",
         "name": "冻结",
-        "description": "无法行动，防御力提升",
         "type": "debuff",
         "tags": [
             "ice",
@@ -172,7 +165,6 @@
     "buff_slow": {
         "id": "buff_slow",
         "name": "减速",
-        "description": "速度降低",
         "type": "debuff",
         "tags": [
             "control",
@@ -194,7 +186,6 @@
     "debuff_weak": {
         "id": "debuff_weak",
         "name": "虚弱",
-        "description": "造成的伤害降低",
         "type": "debuff",
         "tags": [
             "weakness"
@@ -215,7 +206,6 @@
     "buff_weakness": {
         "id": "buff_weakness",
         "name": "弱点暴露",
-        "description": "造成的伤害微量降低",
         "type": "debuff",
         "tags": [
             "weakness"
@@ -236,7 +226,6 @@
     "buff_vulnerable": {
         "id": "buff_vulnerable",
         "name": "易伤",
-        "description": "受到的伤害增加",
         "type": "debuff",
         "tags": [
             "vulnerable"
@@ -272,7 +261,6 @@
     "buff_berserk": {
         "id": "buff_berserk",
         "name": "狂暴",
-        "description": "攻击大幅提升，命中降低",
         "type": "buff",
         "tags": [
             "offensive",
@@ -298,7 +286,6 @@
     "buff_focus": {
         "id": "buff_focus",
         "name": "专注",
-        "description": "暴击率与命中率提升",
         "type": "buff",
         "tags": [
             "offensive",
@@ -324,7 +311,6 @@
     "buff_magic_surge": {
         "id": "buff_magic_surge",
         "name": "魔力涌动",
-        "description": "下回合魔力伤害提升",
         "type": "buff",
         "tags": [
             "magic"
@@ -345,7 +331,6 @@
     "buff_poison_coat": {
         "id": "buff_poison_coat",
         "name": "剧毒涂层",
-        "description": "攻击时施加中毒效果",
         "type": "buff",
         "tags": [
             "offensive"
@@ -416,7 +401,6 @@
     "buff_bless": {
         "id": "buff_bless",
         "name": "祝福",
-        "description": "命中率与闪避率提升",
         "type": "buff",
         "tags": [
             "divine"
@@ -441,7 +425,6 @@
     "buff_iron_will": {
         "id": "buff_iron_will",
         "name": "钢铁意志",
-        "description": "防御力提升",
         "type": "buff",
         "tags": [
             "defense"
@@ -462,7 +445,6 @@
     "buff_block": {
         "id": "buff_block",
         "name": "格挡",
-        "description": "下次受到的伤害减半",
         "type": "buff",
         "tags": [
             "defense"
@@ -486,7 +468,6 @@
     "buff_pain_sup": {
         "id": "buff_pain_sup",
         "name": "痛苦压制",
-        "description": "受到的伤害减少",
         "type": "buff",
         "tags": [
             "defense",
@@ -508,7 +489,6 @@
     "buff_evasion": {
         "id": "buff_evasion",
         "name": "残影",
-        "description": "闪避率大幅提升",
         "type": "buff",
         "tags": [
             "defense",
@@ -560,7 +540,6 @@
     "buff_revive": {
         "id": "buff_revive",
         "name": "神愿复苏",
-        "description": "死亡时复活",
         "type": "buff",
         "tags": [
             "divine",
@@ -607,7 +586,6 @@
     "buff_thorns": {
         "id": "buff_thorns",
         "name": "荆棘",
-        "description": "受到攻击时反弹伤害",
         "type": "buff",
         "tags": [
             "defense",
@@ -632,7 +610,6 @@
     "buff_counter": {
         "id": "buff_counter",
         "name": "反击姿态",
-        "description": "闪避并反击必中",
         "type": "buff",
         "tags": [
             "offensive",
@@ -661,7 +638,6 @@
     "buff_lifesteal": {
         "id": "buff_lifesteal",
         "name": "吸血",
-        "description": "攻击造成伤害回复HP",
         "type": "buff",
         "tags": [
             "offensive",
@@ -686,7 +662,6 @@
     "buff_ap_regen": {
         "id": "buff_ap_regen",
         "name": "战斗恢复",
-        "description": "回合开始时恢复行动点",
         "type": "buff",
         "tags": [
             "utility"
@@ -709,7 +684,6 @@
     "buff_damage_absorb": {
         "id": "buff_damage_absorb",
         "name": "圣盾",
-        "description": "受到的伤害转化为治疗",
         "type": "buff",
         "tags": [
             "defense",
@@ -732,7 +706,6 @@
     "passive_heavy_armor": {
         "id": "passive_heavy_armor",
         "name": "重甲负重",
-        "description": "速度降低",
         "type": "hidden",
         "tags": [
             "equipment"
@@ -753,7 +726,6 @@
     "passive_vampire": {
         "id": "passive_vampire",
         "name": "吸血 (装备)",
-        "description": "攻击吸血",
         "type": "hidden",
         "tags": [
             "equipment"
@@ -777,7 +749,6 @@
     "passive_knight": {
         "id": "passive_knight",
         "name": "骑士精神",
-        "description": "造成伤害提升",
         "type": "hidden",
         "tags": [
             "equipment"
@@ -813,7 +784,6 @@
     "passive_dragon": {
         "id": "passive_dragon",
         "name": "龙鳞",
-        "description": "受到的伤害降低",
         "type": "hidden",
         "tags": [
             "equipment"
@@ -834,7 +804,6 @@
     "passive_phoenix": {
         "id": "passive_phoenix",
         "name": "凤凰涅槃",
-        "description": "死亡时复活",
         "type": "hidden",
         "tags": [
             "equipment"
@@ -859,7 +828,6 @@
     "passive_speed_boost": {
         "id": "passive_speed_boost",
         "name": "极速",
-        "description": "速度提升",
         "type": "hidden",
         "tags": [
             "equipment"
@@ -880,7 +848,6 @@
     "passive_thunder_strike": {
         "id": "passive_thunder_strike",
         "name": "雷击",
-        "description": "攻击附加雷电伤害",
         "type": "hidden",
         "tags": [
             "equipment"
@@ -905,7 +872,6 @@
     "passive_cursed_self_dmg": {
         "id": "passive_cursed_self_dmg",
         "name": "诅咒",
-        "description": "回合结束受到伤害",
         "type": "hidden",
         "tags": [
             "equipment",

@@ -54,7 +54,7 @@
 
 ### 3.1 布局结构
 
-建议比例: `20% : 45% : 35%`
+建议比例: `20% : 40% : 40%`
 
 ```text
 +-----------------------------------------------------------------------------------+
@@ -62,29 +62,26 @@
 +----------------------+--------------------------------------+---------------------+
 |  [Column 1: List]    |  [Column 2: Editor]                  | [Column 3: Sim]     |
 |                      |                                      |                     |
-|  [Search Box]        |  +--- Basic Info ----------------+   | +--- 1. Player -----+|
-|                      |  | ID: [________]  Type: [v]     |   | | HP: 100/100      ||
-|  [Buff List]         |  | Name: [_______] Tags: [x][x]  |   | | AP: 3/3          ||
-|  - buff_bleed_01     |  +-------------------------------+   | | Buffs: [x]       ||
-|  - buff_stun         |                                      | +------------------+|
-|  - passive_armor     |  +--- Lifecycle -----------------+   |                     |
-|  [+ New Buff]        |  | Duration: [3]  Strategy: [v]  |   | +--- 2. Enemy -----+|
-|                      |  +-------------------------------+   | | Sel: [Goblin v]  ||
-|                      |                                      | | HP: 50/50        ||
-|                      |  +--- Stat Modifiers (-/+) ------+   | | Buffs: []        ||
-|                      |  | [atk]  [10] [%]  [x]          |   | +------------------+|
-|                      |  +-------------------------------+   |                     |
-|                      |                                      | +--- 3. Control ---+|
-|                      |  +--- Effects (Triggers) (-/+) --+   | | [Start] [End]    ||
-|                      |  | [v] onAttackPost              |   | | [Apply Buff->P]  ||
-|                      |  |     Action: [HEAL]            |   | | [Apply Buff->E]  ||
-|                      |  |     Target: [self]            |   | | [Dmg -> P]       ||
-|                      |  +-------------------------------+   | | [Dmg -> E]       ||
-|                      |                                      | +------------------+|
-|                      |                                      |                     |
-|                      |                                      | +--- 4. Logs ------+|
+|  [Search Box]        |  +--- Basic Info ----------------+   | +--- Target -------+|
+|                      |  | ID: [________]  Type: [v]     |   | | Enemy: [Orc v]   ||
+|  [Buff List]         |  | Name: [_______] Tags: [x][x]  |   | | Part: [Chest v]  ||
+|  - buff_bleed_01     |  +-------------------------------+   | +------------------+|
+|  - buff_stun         |                                      |                     |
+|  - passive_armor     |  +--- Lifecycle -----------------+   | +--- Inspector ----+|
+|  [+ New Buff]        |  | Duration: [3]  Strategy: [v]  |   | | HP: 100/100      ||
+|                      |  +-------------------------------+   | | Armor: 50        ||
+|                      |                                      | | Buffs: [x] [x]   ||
+|                      |  +--- Stat Modifiers (-/+) ------+   | +------------------+|
+|                      |  | [atk]  [10] [%]  [x]          |   |                     |
+|                      |  +-------------------------------+   | +--- Control ------+|
+|                      |                                      | | [Start Turn]     ||
+|                      |  +--- Effects (Triggers) (-/+) --+   | | [Apply Buff]     ||
+|                      |  | [v] onAttackPost              |   | | [Take Dmg]       ||
+|                      |  |     Action: [HEAL]            |   | +------------------+|
+|                      |  |     Target: [self]            |   |                     |
+|                      |  +-------------------------------+   | +--- Logs ---------+|
 |                      |                                      | | > Turn 1 start   ||
-|                      |                                      | | > HP -5          ||
+|                      |                                      | | > Bleed: -5      ||
 |                      |                                      | +------------------+|
 +----------------------+--------------------------------------+---------------------+
 ```
@@ -94,56 +91,9 @@
 1.  **新建**: 点击 "+ New Buff"，中间表单清空，自动生成一个默认模板。
 2.  **保存**: 修改表单时实时更新内存对象。
 3.  **模拟器联动**:
-    *   右侧面板同时显示 Player 和 Selected Enemy 的状态。
-    *   点击 "Apply Buff -> Player/Enemy" 按钮时，将当前编辑的 Buff 数据（内存版）应用到对应的模拟对象上。
-
-## 3.3 模拟调试区详情 (Simulation & Debug Details)
-
-模拟调试区位于界面右侧，用于实时验证 Buff 的逻辑。该区域分为上下排列的四个模块，分别管理玩家、敌人、模拟控制和日志反馈。
-
-### 3.3.1 Part 1: Player 数据 (Player Data)
-*   **功能**: 展示玩家角色的当前状态，作为模拟环境中的主要交互对象之一。
-*   **数据来源**: 自动加载 `assets/data/player.json` 作为玩家模板。
-*   **展示内容**:
-    *   **基础属性**: HP (当前/最大), AP (行动力)。
-    *   **状态列表**: 当前身上的 Buff/Debuff 图标及剩余回合。
-    *   **护甲状态**: 各部位 (Head, Chest 等) 的当前护甲值。
-
-### 3.3.2 Part 2: Enemies 数据 (Enemies Data)
-*   **功能**: 提供敌方角色的选择与状态查看，用于测试针对敌人的 Buff 或来自敌人的攻击。
-*   **数据来源**: 自动读取 `assets/data/enemies.json` 获取敌人列表。
-*   **交互控件**:
-    *   **敌人选择器 (Select)**: 下拉选择要模拟的敌人类型 (如 "Goblin Warrior", "Orc Shaman")。切换敌人会重置敌人状态。
-*   **展示内容**:
-    *   **基础属性**: HP, Speed 等。
-    *   **状态列表**: 敌人身上的 Buff/Debuff。
-    *   **部位护甲**: 显示选中敌人的具体部位护甲信息。
-
-### 3.3.3 Part 3: 操作按钮 (Control Buttons)
-提供对模拟环境的干预能力，核心操作分为“回合控制”与“战斗模拟”。
-
-*   **回合控制 (Round Control)**:
-    *   `[Start Turn]`: 触发 **回合开始** 事件 (`onTurnStart`)。用于测试 DoT (流血/中毒) 或自动回血等效果。
-    *   `[End Turn]`: 触发 **回合结束** 事件 (`onTurnEnd`)。用于测试 Buff 持续时间递减与过期移除逻辑。
-
-*   **Buff 操作 (Buff Ops)**:
-    *   `[Apply Buff -> Player]`: 将**当前编辑器中正在编辑的 Buff** 实例化并应用到 **Player** 身上。
-    *   `[Apply Buff -> Enemy]`: 将**当前编辑器中正在编辑的 Buff** 实例化并应用到 **Selected Enemy** 身上。
-
-*   **伤害/治疗模拟 (Action Sim)**:
-    *   `[Deal Dmg -> Player]`: 模拟 Player 受到一次标准伤害 (如 10点)，触发 `onTakeDamage` 等防御侧 Trigger。
-    *   `[Deal Dmg -> Enemy]`: 模拟 Player 对 Enemy 造成一次标准伤害，触发 `onAttackPost` (攻击侧) 和 Enemy 的受击逻辑。
-    *   `[Cast Skill Mock]`: (可选) 模拟释放一个通用技能，用于测试复杂的 Trigger 链。
-
-### 3.3.4 Part 4: 日志区域 (Log Area)
-*   **功能**: 实时显示模拟过程中的事件流与数值变化，辅助排查逻辑错误。
-*   **内容格式**:
-    *   `[Turn]` Turn 1 Start / End
-    *   `[Apply]` Applied [BuffName] to [Target]
-    *   `[Trigger]` [BuffName] triggered on [Event]
-    *   `[Effect]` Dealt 10 dmg to Player. Player HP: 100 -> 90
-    *   **错误高亮**: 如果 Buff 脚本执行出错，显示红色错误信息。
-*   **工具**: 提供 `[Clear]` 按钮清空日志。
+    *   右侧面板始终显示当前选中的“模拟目标”状态。
+    *   点击 "Apply Buff" 按钮时，将中间列当前编辑的 Buff 数据（内存版）应用到右侧的模拟对象上。
+    *   右侧的操作（如 Start Turn）会触发事件，如果当前 Buff 有对应的 Trigger，会执行并在 Log 中显示结果。
 
 ## 4. 技术实现方案 (Technical Implementation)
 
@@ -165,10 +115,56 @@ let buffList = [
 *   使用 `FileReader.readAsText()` 解析内容。
 *   使用 `URL.createObjectURL(new Blob(...))` 生成下载链接。
 
-## 5. 待办事项 (To-Do List)
+## 5. 模拟与调试 (Simulation & Debugging)
+
+编辑器不应仅是静态数据的输入工具，更应充当逻辑验证的沙盒。
+
+### 5.1 目标对象配置 (Target Context)
+
+为了测试 Buff 在不同实体上的表现，需提供模拟对象的配置功能。
+
+*   **数据源**:
+    *   **Player Template**: 默认加载 `player.json` 作为标准测试对象。
+    *   **Enemy Catalog**: 自动读取 `assets/data/enemies.json`，在 UI 上渲染为下拉选择框 (e.g., "选择模拟对象: [ 哥布林斥候 (Lv.3) v ]")。
+*   **部位选择 (Body Parts)**:
+    *   若 Buff 是特定部位生效（如护甲 Buff），UI 需提供身体部位选择器 (Head, Chest, Left Arm, etc.)，该选择器应根据选定 Enemy 的 `bodyParts` 结构动态生成。
+*   **状态快照 (State Inspector)**:
+    *   在界面右侧或底部提供“目标状态监视区”，实时展示当前对象的 HP, AP, Attributes, 以及所有部位的护甲值。
+    *   **应用测试**: 点击 [Apply Buff] 按钮，将当前编辑器中的 Buff 临时注入到模拟对象的 `BuffManager` 中。
+
+### 5.2 模拟状态机 (Simulation FSM)
+
+通过模拟游戏核心流程的关键节点，验证 Buff 的 `trigger` 是否正确工作。
+
+*   **回合控制器 (Turn Control)**:
+    *   `[Start Turn]`: 触发 `onTurnStart`。检查 DoT (持续伤害) 和 HoT (持续治疗) 是否生效，持续时间 (Duration) 是否递减。
+    *   `[End Turn]`: 触发 `onTurnEnd`。检查 Buff 是否过期移除。
+*   **战斗事件模拟 (Event Simulator)**:
+    *   **模拟受到攻击 (Incoming Hit)**:
+        *   输入: 伤害值 (Damage), 攻击部位 (Target Part), 伤害类型 (Physics/Magic)。
+        *   流程: `onAttackPre` (防御侧) -> 计算护甲减免 -> `onTakeDamage` -> `onDefendPost` -> 更新 HP/Armor 显示。
+    *   **模拟发起攻击 (Outgoing Attack)**:
+        *   输入: 目标类型, 技能标签 (Tag)。
+        *   流程: `onAttackPre` (攻击侧) -> 计算加成 -> `onAttackPost` (如吸血)。
+    *   **模拟死亡 (Death)**:
+        *   手动将 HP 设为 0，触发 `onDeath` (测试复活类 Buff)。
+
+### 5.3 反馈与日志 (Feedback & Logs)
+
+*   **可视化反馈**: 当模拟事件触发导致属性变更时，状态监视区应有闪烁或漂浮文字动画 (e.g., HP -5)。
+*   **控制台日志 (Console)**:
+    *   显示详细的执行流:
+        > `[Simulate]` Turn 1 Start
+        > `[Trigger]` buff_bleed_01 matched event "onTurnStart"
+        > `[Action]` Execute "DAMAGE": 5 (Source: Self)
+        > `[Result]` Target HP: 50 -> 45
+    *   **报错提示**: 如果 JSON 配置的公式无法解析 (e.g., 变量名拼写错误)，应在日志中高亮报错。
+
+## 6. 待办事项 (To-Do List)
 
 1.  搭建 `test/buff_editor.html` 基本骨架。
 2.  实现 JSON 文件加载与导出功能。
-3.  实现 `BuffRegistry` 和 `BuffManager` 的模拟运行环境。
-4.  集成 `player.json` 和 `enemies.json` 的加载逻辑。
-5.  实现 UI 上 4 个部分的联动逻辑 (Player, Enemy, Control, Logs)。
+3.  实现基础属性和生命周期的表单绑定。
+4.  实现 `statModifiers` 的动态增删组件。
+5.  实现 `effects` 及其内部 `params` 的嵌套动态增删组件。
+6.  增加简单的输入校验 (e.g. ID 查重)。

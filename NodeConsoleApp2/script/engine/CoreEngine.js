@@ -2,7 +2,6 @@
 import GameFSM from './GameFSM.js';
 import GameLoop from './GameLoop.js';
 import DataManager from './DataManagerV2.js';
-import BuffSystem from './BuffSystem.js';
 
 class CoreEngine {
     constructor() {
@@ -10,7 +9,6 @@ class CoreEngine {
         this.fsm = GameFSM;
         this.loop = GameLoop;
         this.data = DataManager;
-        this.buffSystem = BuffSystem;
         
         this.input = {
             login: this.login.bind(this),
@@ -508,32 +506,8 @@ class CoreEngine {
                 result = this.executeEnemySkill(action);
             }
             
-            // Emit Action Executed for BuffSystem
-            if (result && result.isHit) {
-                // Resolve source and target objects
-                let sourceObj = (action.source === 'PLAYER') ? this.data.playerData : null;
-                let targetObj = (action.source === 'PLAYER') ? 
-                    (this.data.currentLevelData.enemies.find(e => e.id === action.targetId)) : 
-                    this.data.playerData;
-                
-                if (action.source === 'ENEMY') {
-                    // For Enemy, logic is reversed
-                    sourceObj = this.data.currentLevelData.enemies.find(e => e.id === action.sourceId);
-                    targetObj = this.data.playerData;
-                }
-
-                // Post-Action Trigger
-                this.eventBus.emit('ACTION_EXECUTED', {
-                    action: 'ATTACK', // Simplify to ATTACK for now, or derive from skill type
-                    source: sourceObj,
-                    target: targetObj,
-                    result: result,
-                    skillId: action.skillId
-                });
-            }
-
             // 将动作记录到历史记录
-            if this.currentHistoryEntry) {
+            if (this.currentHistoryEntry) {
                 this.currentHistoryEntry.actions.push({
                     order: actionOrder,
                     ...action,
@@ -545,7 +519,6 @@ class CoreEngine {
         }
 
         if (this.fsm.currentState === 'BATTLE_LOOP') {
-            this.eventBus.emit('TURN_END', { turn: this.currentTurn });
             this.startTurn();
         }
     }
@@ -571,7 +544,6 @@ class CoreEngine {
             return { isHit: true, heal: healAmount, targetHpRemaining: player.stats.hp };
         }
 
-        // --- Context / Pipeline Pattern ---
         const damage = skillConfig.value;
         let targetName = action.targetId;
         let result = { isHit: false, damage: 0 };
@@ -584,59 +556,21 @@ class CoreEngine {
                     return { isHit: false, reason: 'dead' };
                 }
 
-                // 1. Create Combat Context
-                let context = {
-                    source: player,
-                    target: enemy,
-                    skill: skillConfig,
-                    targetPart: action.bodyPart || 'chest',
-                    baseDamage: damage,
-                    damageMultiplier: 1.0,
-                    armorPenetration: 0.0, // 0 - 1.0
-                    finalDamage: 0,
-                    armorDamage: 0,
-                    cancel: false
-                };
-
-                // 2. Trigger: Attack Pre (Modify output)
-                this.eventBus.emit('BATTLE_ATTACK_PRE', context);
-
-                if (context.cancel) {
-                    return { isHit: false, reason: 'cancelled' };
-                }
-
-                // 3. Calculation: Output Damage
-                let actualDamage = Math.floor(context.baseDamage * context.damageMultiplier);
+                // New Damage Logic: Armor -> HP
+                let actualDamage = damage;
                 let armorDamage = 0;
-
-                // 4. Calculation: Defense & Armor
-                if (enemy.bodyParts && enemy.bodyParts[context.targetPart]) {
-                    const part = enemy.bodyParts[context.targetPart];
+                let targetPart = action.bodyPart || 'chest'; // Default to chest
+                
+                if (enemy.bodyParts && enemy.bodyParts[targetPart]) {
+                    const part = enemy.bodyParts[targetPart];
                     
                     // Apply weakness
                     if (part.weakness) {
                         actualDamage = Math.floor(actualDamage * part.weakness);
                     }
 
-                    // Armor Logic with Penetration
-                    let effectiveCurrentArmor = part.current;
-                    // Note: Penetration affects how much armor we "see", not necessarily destroying it differently
-                    // Simple Design: Penetration reduces the *blocking* power of armor, bypassing it to HP
-                    
-                    if (effectiveCurrentArmor > 0) {
-                        // Regular flow: Damage -> Armor -> HP
-                        // With Pen: Some damage bypasses Armor
-                        // For simplicity in V1: Just standard reduction, but allow context to modify part.current conceptually?
-                        // Let's stick to standard flow first: Armor takes hit first.
-                        
-                        // Apply Armor Penetration if implemented in future advanced calculations. 
-                        // For now, if armorPenetration > 0, we can say some damage ignores armor.
-                        let bypassDamage = 0;
-                        if (context.armorPenetration > 0) {
-                            bypassDamage = Math.floor(actualDamage * context.armorPenetration);
-                            actualDamage -= bypassDamage;
-                        }
-
+                    // Reduce Armor first (current)
+                    if (part.current > 0) {
                         if (part.current >= actualDamage) {
                             part.current -= actualDamage;
                             armorDamage = actualDamage;
@@ -647,40 +581,22 @@ class CoreEngine {
                             part.current = 0;
                             part.status = 'BROKEN';
                         }
-                        
-                        actualDamage += bypassDamage; // Add back bypassed damage
                     }
                 }
-                
-                context.armorDamage = armorDamage;
-                context.finalDamage = actualDamage;
 
-                // 5. Trigger: Take Damage (Shields, Absorb)
-                this.eventBus.emit('BATTLE_TAKE_DAMAGE', context);
-
-                // 6. Apply Final Damage to HP
-                if (context.finalDamage > 0) {
-                    enemy.hp -= context.finalDamage;
+                // Remaining damage goes to HP
+                if (actualDamage > 0) {
+                    enemy.hp -= actualDamage;
                     if (enemy.hp < 0) enemy.hp = 0;
-                }
-
-                // 7. Trigger: Death Check
-                if (enemy.hp <= 0) {
-                    const deathContext = { target: enemy, cancelDeath: false };
-                    this.eventBus.emit('BATTLE_DEATH_CHECK', deathContext);
-                    if (deathContext.cancelDeath) {
-                         // Revive logic usually handled by Buff setting HP > 0
-                         if(enemy.hp <= 0) enemy.hp = 1; // Fallback to 1 HP if not set
-                    }
                 }
 
                 targetName = `${enemy.id} (HP: ${enemy.hp})`;
                 result = { 
                     isHit: true, 
-                    damage: context.finalDamage, 
-                    armorDamage: context.armorDamage,
+                    damage: actualDamage, 
+                    armorDamage: armorDamage,
                     targetHpRemaining: enemy.hp,
-                    targetPart: context.targetPart
+                    targetPart: targetPart
                 };
             }
         }
@@ -699,52 +615,25 @@ class CoreEngine {
         const baseDamage = skillConfig ? skillConfig.value : 10;
         const skillName = skillConfig ? skillConfig.name : action.skillId;
 
-        // --- Context / Pipeline Pattern ---
-        let context = {
-            source: this.data.currentLevelData.enemies.find(e => e.id === action.sourceId),
-            target: player,
-            skill: skillConfig,
-            targetPart: action.bodyPart || 'chest',
-            baseDamage: baseDamage,
-            damageMultiplier: 1.0,
-            armorPenetration: 0.0,
-            finalDamage: 0,
-            armorDamage: 0,
-            cancel: false
-        };
-
-        // 1. Trigger: Attack Pre
-        this.eventBus.emit('BATTLE_ATTACK_PRE', context);
-
-        if (context.cancel) {
-             return { isHit: false, reason: 'cancelled' };
-        }
-
-        // 2. Calculation
-        let actualDamage = Math.floor(context.baseDamage * context.damageMultiplier);
+        // New Damage Logic for Player
+        let actualDamage = baseDamage;
         let armorDamage = 0;
+        let targetPart = action.bodyPart || 'chest'; // Default to chest
         
         // Access player battle state for body parts
         const runtime = this.data.dataConfig.runtime;
         const playerBattleState = runtime ? runtime.playerBattleState : null;
 
-        if (playerBattleState && playerBattleState.bodyParts && playerBattleState.bodyParts[context.targetPart]) {
-            const part = playerBattleState.bodyParts[context.targetPart];
+        if (playerBattleState && playerBattleState.bodyParts && playerBattleState.bodyParts[targetPart]) {
+            const part = playerBattleState.bodyParts[targetPart];
             
             // Apply weakness
             if (part.weakness) {
                 actualDamage = Math.floor(actualDamage * part.weakness);
             }
 
-            // Armor Logic
+            // Reduce Armor first (current)
             if (part.current > 0) {
-                // Apply Armor Penetration logic
-                let bypassDamage = 0;
-                if (context.armorPenetration > 0) {
-                    bypassDamage = Math.floor(actualDamage * context.armorPenetration);
-                    actualDamage -= bypassDamage;
-                }
-
                 if (part.current >= actualDamage) {
                     part.current -= actualDamage;
                     armorDamage = actualDamage;
@@ -755,42 +644,24 @@ class CoreEngine {
                     part.current = 0;
                     part.status = 'BROKEN';
                 }
-                
-                actualDamage += bypassDamage;
             }
         }
 
-        context.armorDamage = armorDamage;
-        context.finalDamage = actualDamage;
-
-        // 3. Trigger: Take Damage
-        this.eventBus.emit('BATTLE_TAKE_DAMAGE', context);
-
-        // 4. Apply
-        if (context.finalDamage > 0) {
-            player.stats.hp -= context.finalDamage;
+        if (actualDamage > 0) {
+            player.stats.hp -= actualDamage;
             if (player.stats.hp < 0) player.stats.hp = 0;
-        }
-
-        // 5. Trigger: Death Check
-        if (player.stats.hp <= 0) {
-             const deathContext = { target: player, cancelDeath: false };
-             this.eventBus.emit('BATTLE_DEATH_CHECK', deathContext);
-             if (deathContext.cancelDeath) {
-                 if(player.stats.hp <= 0) player.stats.hp = 1;
-             }
         }
         
         this.eventBus.emit('DATA_UPDATE', player);
         
-        const log = `${action.sourceId} used ${skillName} attacked Player for ${context.finalDamage} HP damage (Armor: ${context.armorDamage})!`;
+        const log = `${action.sourceId} used ${skillName} attacked Player for ${actualDamage} HP damage (Armor: ${armorDamage})!`;
         this.eventBus.emit('BATTLE_LOG', { text: log });
         this.emitBattleUpdate();
 
         return { 
             isHit: true, 
-            damage: context.finalDamage, 
-            armorDamage: context.armorDamage,
+            damage: actualDamage, 
+            armorDamage: armorDamage,
             targetHpRemaining: player.stats.hp 
         };
     }
