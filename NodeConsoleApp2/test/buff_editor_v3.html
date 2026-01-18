@@ -25,6 +25,14 @@
 			height: 100vh;
 			display: flex;
 			flex-direction: column;
+			overflow: hidden;
+		}
+
+		#app {
+			flex: 1;
+			min-height: 0;
+			display: flex;
+			flex-direction: column;
 		}
 
 		[v-cloak] { display: none; }
@@ -57,6 +65,7 @@
 			flex: 1;
 			overflow: hidden;
 			display: flex;
+			min-height: 0;
 		}
 
 		aside {
@@ -66,6 +75,8 @@
 			border-right: 1px solid var(--border-color);
 			display: flex;
 			flex-direction: column;
+			overflow: hidden;
+			min-height: 0;
 		}
 
 		.center {
@@ -73,18 +84,22 @@
 			min-width: 360px;
 			background: var(--panel-bg);
 			border-right: 1px solid var(--border-color);
-			overflow: auto;
+			overflow-y: auto;
+			overflow-x: hidden;
 			padding: 14px;
+			min-height: 0;
 		}
 
 		.right {
 			width: 34%;
 			min-width: 320px;
-			overflow: auto;
+			overflow-y: auto;
+			overflow-x: hidden;
 			padding: 14px;
 			display: flex;
 			flex-direction: column;
 			gap: 12px;
+			min-height: 0;
 		}
 
 		.panel {
@@ -133,8 +148,10 @@
 			list-style: none;
 			padding: 0;
 			margin: 0;
-			overflow: auto;
+			overflow-y: auto;
+			overflow-x: hidden;
 			flex: 1;
+			min-height: 0;
 		}
 
 		.buff-item {
@@ -461,7 +478,10 @@
 					<div class="small" style="margin-top:10px; font-weight:700;">buffs</div>
 					<div v-if="simPlayer && simPlayer.buffs" class="small">
 						<div v-if="simPlayer.buffs.getAll().length===0">无</div>
-						<div v-for="b in simPlayer.buffs.getAll()" :key="b.instanceId">{{ b.id }} (stacks={{b.stacks}}, rem={{b.remaining}})</div>
+						<div v-for="b in simPlayer.buffs.getAll()" :key="b.instanceId" style="display:flex; align-items:center; justify-content:space-between; gap:10px;">
+							<span>{{ b.id }} (stacks={{b.stacks}}, rem={{b.remaining}})</span>
+							<button class="btn btn-sm btn-danger" @click="removeBuffFrom('player', b.id)">Remove</button>
+						</div>
 					</div>
 				</div>
 
@@ -487,7 +507,7 @@
 
 					<div class="kv" style="margin-top:8px;" v-if="simEnemy">
 						<div class="k">id</div><div class="v">{{ simEnemy.id }}</div>
-						<div class="k">hp</div><div class="v">{{ simEnemy.hp }} / {{ simEnemy.maxHp }}</div>
+						<div class="k">hp</div><div class="v">{{ (simEnemy.stats && simEnemy.stats.hp !== undefined) ? simEnemy.stats.hp : simEnemy.hp }} / {{ (simEnemy.stats && simEnemy.stats.maxHp !== undefined) ? simEnemy.stats.maxHp : simEnemy.maxHp }}</div>
 						<div class="k">speed</div><div class="v">{{ simEnemy.speed || 0 }}</div>
 					</div>
 					<div class="small" style="margin-top:10px; font-weight:700;">bodyParts</div>
@@ -506,7 +526,10 @@
 					<div class="small" style="margin-top:10px; font-weight:700;">buffs</div>
 					<div v-if="simEnemy && simEnemy.buffs" class="small">
 						<div v-if="simEnemy.buffs.getAll().length===0">无</div>
-						<div v-for="b in simEnemy.buffs.getAll()" :key="b.instanceId">{{ b.id }} (stacks={{b.stacks}}, rem={{b.remaining}})</div>
+						<div v-for="b in simEnemy.buffs.getAll()" :key="b.instanceId" style="display:flex; align-items:center; justify-content:space-between; gap:10px;">
+							<span>{{ b.id }} (stacks={{b.stacks}}, rem={{b.remaining}})</span>
+							<button class="btn btn-sm btn-danger" @click="removeBuffFrom('enemy', b.id)">Remove</button>
+						</div>
 					</div>
 				</div>
 
@@ -634,10 +657,17 @@
 		function normalizeEnemyTemplateToOneInstance(enemyTemplate) {
 			const e = deepClone(enemyTemplate);
 
+			if (!e.stats) e.stats = {};
+
 			// 兼容 DataManagerV2.instantiateLevel 的运行时字段
-			e.hp = (e.stats && typeof e.stats.hp === 'number') ? e.stats.hp : (e.hp ?? 1);
-			e.maxHp = (e.stats && typeof e.stats.maxHp === 'number') ? e.stats.maxHp : (e.maxHp ?? e.hp);
-			e.speed = (e.stats && typeof e.stats.speed === 'number') ? e.stats.speed : (e.speed ?? 0);
+			e.stats.hp = (typeof e.stats.hp === 'number') ? e.stats.hp : (typeof e.hp === 'number' ? e.hp : 1);
+			e.stats.maxHp = (typeof e.stats.maxHp === 'number') ? e.stats.maxHp : (typeof e.maxHp === 'number' ? e.maxHp : e.stats.hp);
+			e.stats.speed = (typeof e.stats.speed === 'number') ? e.stats.speed : (typeof e.speed === 'number' ? e.speed : 0);
+
+			// 保持便捷字段同步（部分逻辑/旧 UI 可能仍读取 hp/maxHp/speed）
+			e.hp = e.stats.hp;
+			e.maxHp = e.stats.maxHp;
+			e.speed = e.stats.speed;
 
 			if (e.bodyParts) {
 				for (const key of Object.keys(e.bodyParts)) {
@@ -831,6 +861,7 @@
 						if (!b.lifecycle) {
 							b.lifecycle = { duration: 3, maxStacks: 1, stackStrategy: 'refresh', removeOnBattleEnd: true };
 						}
+						if (b.description === undefined) b.description = '';
 						if (!Array.isArray(b.tags)) b.tags = [];
 						if (!b.effects) b.effects = [];
 						if (!b.statModifiers) b.statModifiers = {};
@@ -1064,6 +1095,13 @@
 					this.log(`Removed ${this.currentBuff.id} from ${this.applyTarget}`, 'info');
 				},
 
+				removeBuffFrom(side, buffId) {
+					const target = (side === 'player') ? this.simPlayer : this.simEnemy;
+					if (!target || !target.buffs) return;
+					const ok = target.buffs.remove(buffId, 'manual');
+					this.log(ok ? `Removed ${buffId} from ${side}` : `Remove failed: ${buffId} not found on ${side}`, ok ? 'info' : 'warn');
+				},
+
 				castAttack() {
 					const attacker = (this.castSource === 'player') ? this.simPlayer : this.simEnemy;
 					const target = (this.castTarget === 'enemy') ? this.simEnemy : this.simPlayer;
@@ -1147,9 +1185,17 @@
 					if (finalDamage > 0) {
 						if (target.stats && typeof target.stats.hp === 'number') {
 							target.stats.hp = Math.max(0, target.stats.hp - finalDamage);
+							if (typeof target.hp === 'number') target.hp = target.stats.hp;
 						} else if (typeof target.hp === 'number') {
 							target.hp = Math.max(0, target.hp - finalDamage);
+							if (target.stats) target.stats.hp = target.hp;
 						}
+					}
+
+					if (target.stats && typeof target.stats.maxHp === 'number') {
+						target.maxHp = target.stats.maxHp;
+					} else if (typeof target.maxHp === 'number' && target.stats) {
+						target.stats.maxHp = target.maxHp;
 					}
 
 					context.damageDealt = finalDamage;

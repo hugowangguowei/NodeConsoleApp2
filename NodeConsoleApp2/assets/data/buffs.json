@@ -2,6 +2,7 @@
     "buff_poison": {
         "id": "buff_poison",
         "name": "中毒",
+        "description": "持续伤害：每回合结束时对自身造成最大生命值 5% 的伤害（可叠加，刷新持续时间）。",
         "type": "debuff",
         "tags": [
             "poison",
@@ -26,6 +27,7 @@
     "buff_stun": {
         "id": "buff_stun",
         "name": "晕眩",
+        "description": "控制：回合开始时跳过本回合行动（持续 1 回合）。",
         "type": "debuff",
         "tags": [
             "control"
@@ -47,6 +49,7 @@
     "buff_strength": {
         "id": "buff_strength",
         "name": "力量增强",
+        "description": "属性增益：攻击力 +5（flat），可叠加 3 层，刷新持续时间。",
         "type": "buff",
         "tags": [
             "stat_up"
@@ -67,6 +70,7 @@
     "buff_shield": {
         "id": "buff_shield",
         "name": "护盾",
+        "description": "吸收伤害：受到伤害时获得 20 点护盾吸收值（通过 context.shieldPool 生效，不直接增加护甲）。",
         "type": "buff",
         "tags": [
             "defense"
@@ -89,6 +93,7 @@
     "buff_bleed": {
         "id": "buff_bleed",
         "name": "流血",
+        "description": "持续伤害：每回合开始时对自身造成 5 点流血伤害（可叠加，刷新持续时间）。",
         "type": "debuff",
         "tags": [
             "physical",
@@ -113,6 +118,7 @@
     "buff_burn": {
         "id": "buff_burn",
         "name": "燃烧",
+        "description": "持续伤害：每回合开始时对自身造成 10 点火焰伤害（可叠加，刷新持续时间）。",
         "type": "debuff",
         "tags": [
             "fire",
@@ -137,6 +143,7 @@
     "buff_freeze": {
         "id": "buff_freeze",
         "name": "冻结",
+        "description": "控制：回合开始时跳过本回合行动，并获得少量防御加成（def +5）。",
         "type": "debuff",
         "tags": [
             "ice",
@@ -165,6 +172,7 @@
     "buff_slow": {
         "id": "buff_slow",
         "name": "减速",
+        "description": "减益：速度 -5（flat），可叠加 3 层，刷新持续时间。",
         "type": "debuff",
         "tags": [
             "control",
@@ -186,6 +194,7 @@
     "debuff_weak": {
         "id": "debuff_weak",
         "name": "虚弱",
+        "description": "减益：造成的伤害降低（damageDealtMult -20%）。",
         "type": "debuff",
         "tags": [
             "weakness"
@@ -206,6 +215,7 @@
     "buff_vulnerable": {
         "id": "buff_vulnerable",
         "name": "易伤",
+        "description": "减益：受到的伤害提高（damageTakenMult +20%），可叠加 3 层。",
         "type": "debuff",
         "tags": [
             "vulnerable"
@@ -248,6 +258,7 @@
     "buff_berserk": {
         "id": "buff_berserk",
         "name": "狂暴",
+        "description": "高风险增益：攻击提高（atk +50%），命中降低（hitRate -0.2）。",
         "type": "buff",
         "tags": [
             "offensive",
@@ -273,6 +284,7 @@
     "buff_focus": {
         "id": "buff_focus",
         "name": "专注",
+        "description": "增益：暴击率 +0.2，命中率 +0.1。",
         "type": "buff",
         "tags": [
             "offensive",
@@ -298,6 +310,7 @@
     "buff_magic_surge": {
         "id": "buff_magic_surge",
         "name": "魔力涌动",
+        "description": "增益：法术伤害提高（magicDmg +50%），持续 1 回合。",
         "type": "buff",
         "tags": [
             "magic"
@@ -318,6 +331,7 @@
     "buff_poison_coat": {
         "id": "buff_poison_coat",
         "name": "剧毒涂层",
+        "description": "增益：攻击命中后为目标施加中毒（buff_poison）。",
         "type": "buff",
         "tags": [
             "offensive"
@@ -340,6 +354,7 @@
     "buff_eagle_eye": {
         "id": "buff_eagle_eye",
         "name": "鹰眼",
+        "description": "必定命中(忽略闪避)（TBD：需要命中判定管线支持）",
         "type": "buff",
         "tags": [
             "offensive",
@@ -367,6 +382,7 @@
     "buff_armor_pen": {
         "id": "buff_armor_pen",
         "name": "破甲",
+        "description": "下一次攻击削弱目标护甲减免（通过 onAttackPre 写入 armorMitigationMult 临时修正，随后消耗自我）。",
         "type": "buff",
         "tags": [
             "offensive"
@@ -399,6 +415,7 @@
     "buff_bless": {
         "id": "buff_bless",
         "name": "祝福",
+        "description": "增益：命中率 +0.2，闪避率 +0.1。",
         "type": "buff",
         "tags": [
             "divine"
@@ -423,6 +440,7 @@
     "buff_iron_will": {
         "id": "buff_iron_will",
         "name": "钢铁意志",
+        "description": "增益：防御 +5（flat），可叠加 3 层（add）。",
         "type": "buff",
         "tags": [
             "defense"
@@ -443,6 +461,7 @@
     "buff_block": {
         "id": "buff_block",
         "name": "格挡",
+        "description": "减伤：受到伤害前将伤害乘以 0.5（持续 1 回合）。",
         "type": "buff",
         "tags": [
             "defense"
@@ -466,6 +485,7 @@
     "buff_pain_sup": {
         "id": "buff_pain_sup",
         "name": "痛苦压制",
+        "description": "减伤：受到的伤害降低（damageTakenMult -30%）。",
         "type": "buff",
         "tags": [
             "defense",
@@ -487,6 +507,7 @@
     "buff_evasion": {
         "id": "buff_evasion",
         "name": "残影",
+        "description": "增益：闪避率 +0.6（持续 1 回合）。",
         "type": "buff",
         "tags": [
             "defense",
@@ -563,6 +584,7 @@
     "buff_revive": {
         "id": "buff_revive",
         "name": "神愿复苏",
+        "description": "复活：死亡时复活并恢复 50% 生命值（需要死亡事件管线支持）。",
         "type": "buff",
         "tags": [
             "divine",
@@ -587,6 +609,7 @@
     "buff_shield_wall": {
         "id": "buff_shield_wall",
         "name": "盾墙",
+        "description": "增益：大幅增加最大行动点数（maxAp +3）。",
         "type": "buff",
         "tags": [
             "defense",
@@ -609,6 +632,7 @@
     "buff_thorns": {
         "id": "buff_thorns",
         "name": "荆棘",
+        "description": "反伤：防御结算后对攻击者造成其本次造成伤害的 30%。",
         "type": "buff",
         "tags": [
             "defense",
@@ -633,6 +657,7 @@
     "buff_counter": {
         "id": "buff_counter",
         "name": "反击姿态",
+        "description": "反击姿态：防御结算后对攻击者发起一次攻击（需 CombatSystem 支持），并大幅提高闪避。",
         "type": "buff",
         "tags": [
             "offensive",
@@ -699,6 +724,7 @@
     "buff_damage_absorb": {
         "id": "buff_damage_absorb",
         "name": "圣盾",
+        "description": "TBD：吸收本次受到的伤害并转化为治疗（需要 absorbToHeal 管线支持）。",
         "type": "buff",
         "tags": [
             "defense",
@@ -721,6 +747,7 @@
     "passive_heavy_armor": {
         "id": "passive_heavy_armor",
         "name": "重甲负重",
+        "description": "装备被动：速度 -5。",
         "type": "hidden",
         "tags": [
             "equipment"
@@ -741,6 +768,7 @@
     "passive_vampire": {
         "id": "passive_vampire",
         "name": "吸血 (装备)",
+        "description": "装备被动：攻击后按造成伤害的 20% 治疗自身。",
         "type": "hidden",
         "tags": [
             "equipment"
@@ -764,6 +792,7 @@
     "passive_knight": {
         "id": "passive_knight",
         "name": "骑士精神",
+        "description": "装备被动：伤害 +5（dmg +5）。",
         "type": "hidden",
         "tags": [
             "equipment"
@@ -784,6 +813,7 @@
     "passive_gladiator": {
         "id": "passive_gladiator",
         "name": "角斗士之心",
+        "description": "TBD：受到攻击后有概率触发反击（需要反击动作与触发概率/冷却字段规范）。",
         "type": "hidden",
         "tags": [
             "equipment"
@@ -812,6 +842,7 @@
     "passive_dragon": {
         "id": "passive_dragon",
         "name": "龙鳞",
+        "description": "装备被动：受到的伤害降低（damageTakenMult -10%）。",
         "type": "hidden",
         "tags": [
             "equipment"
@@ -832,6 +863,7 @@
     "passive_phoenix": {
         "id": "passive_phoenix",
         "name": "凤凰涅槃",
+        "description": "装备被动：死亡时复活并恢复 50% HP（限 1 次，依赖 onDeath 事件）。",
         "type": "hidden",
         "tags": [
             "equipment"
@@ -856,6 +888,7 @@
     "passive_speed_boost": {
         "id": "passive_speed_boost",
         "name": "极速",
+        "description": "装备被动：速度 +10。",
         "type": "hidden",
         "tags": [
             "equipment"
@@ -876,6 +909,7 @@
     "passive_thunder_strike": {
         "id": "passive_thunder_strike",
         "name": "雷击",
+        "description": "装备被动：攻击后对目标追加 5 点雷电伤害。",
         "type": "hidden",
         "tags": [
             "equipment"
@@ -900,6 +934,7 @@
     "passive_cursed_self_dmg": {
         "id": "passive_cursed_self_dmg",
         "name": "诅咒",
+        "description": "装备诅咒：每回合结束对自身造成 5 点伤害。",
         "type": "hidden",
         "tags": [
             "equipment",

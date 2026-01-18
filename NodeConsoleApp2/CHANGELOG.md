@@ -100,3 +100,10 @@
         - 玩家 HP 重置为 MaxHP。
         - 玩家 AP 重置为 MaxAP。
         - 玩家所有身体部位 (Body Parts) 的耐久度修复为最大值，状态重置为 NORMAL。
+
+### 修复 (2026-01-18) - Buff Editor v3 测试器
+- **UI 独立滚动**: 为 `test/buff_editor_v3.html` 增加 `#app` 的 flex 高度约束并禁用 `body` 自身滚动，避免页面整体被内容撑高导致三列无法独立滚动。
+- **Enemy 状态不刷新**: 修复 `test/buff_editor_v3.html` 中 enemies 面板 HP 不更新的问题：
+    - 统一 enemy 运行时血量存储到 `stats.hp/maxHp` 并保持 `hp/maxHp` 同步。
+    - enemies 面板显示优先读取 `stats.hp/maxHp`（回退到 `hp/maxHp`）。
+    - `castAttack` 在扣血后同步 `target.stats.hp` 与 `target.hp`，避免 BuffSystem 与模拟攻击写入不同字段导致 UI 不刷新。
