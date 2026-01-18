@@ -39,6 +39,8 @@ export default class BuffSystem {
 		this._subscribe('BATTLE_TAKE_DAMAGE_PRE', this._onTakeDamagePre.bind(this));
 		this._subscribe('BATTLE_TAKE_DAMAGE', this._onTakeDamage.bind(this));
 		this._subscribe('BATTLE_DEFEND_POST', this._onDefendPost.bind(this));
+		// Buff Editor / 测试器专用：行动尝试入口
+		this._subscribe('BATTLE_ACTION_PRE', this._onActionPre.bind(this));
 	}
 
 	stop() {
@@ -82,6 +84,10 @@ export default class BuffSystem {
 
 	_onDefendPost(context) {
 		this._dispatchToParticipants('onDefendPost', context);
+	}
+
+	_onActionPre(context) {
+		this._dispatchToParticipants('onActionPre', context);
 	}
 
 	_dispatchToAll(triggerName, baseContext) {

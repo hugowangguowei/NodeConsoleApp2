@@ -122,6 +122,15 @@ export default class BuffManager {
 					totals[stat].percent += (value * b.stacks);
 				} else if (type === 'overwrite') {
 					totals[stat].overwrite = value;
+				} else {
+					this.eventBus?.emit?.('BUFF:WARN', {
+						ownerId: this.ownerId,
+						buffId: b.id,
+						statKey: stat,
+						type,
+						value,
+						reason: 'statModifier_type_not_supported'
+					});
 				}
 			}
 		}

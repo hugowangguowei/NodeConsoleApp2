@@ -2,6 +2,8 @@
 
 > 本文档用于记录 `test/buff_editor_v3.html` 的功能验证结果，作为后续回归测试/缺陷追踪依据。
 
+测试时间：2026-01-18-13:24 
+
 ## 1. 测试信息
 
 - 测试工具：`test/buff_editor_v3.html`
@@ -119,3 +121,89 @@
   3) 若你确实希望护盾表现为护甲加成，则需要明确映射策略：护盾应该增哪个部位/全部部位护甲，以及 UI 应如何展示。
 - 结论：
   我们需要明确“护盾”的设计期望，护盾的目标是能够吸收n层伤害，而不是直接增加护甲值。
+
+## 4. 本轮回归方案（基于结论）
+
+> 目标：把本轮测试中“结论”固化为回归用例，后续每次修改 `buffs.json` / `BuffSystem` / `buff_editor_v3.html` 后都可以重复执行，快速确认没有回归。
+
+### 4.1 回归环境与前置条件
+
+- 测试页面：`test/buff_editor_v3.html`
+- 数据文件：
+  - `assets/data/buffs.json`
+  - `assets/data/enemies.json`
+  - `assets/data/player.json`
+- 前置操作：
+  1) 打开页面后点击 `Load Project buffs.json`
+  2) 确认右侧 `Player 数据` 与 `Enemies 数据` 均显示（加载成功）
+  3) 若需要清空状态，点击 `Reset Sim`
+
+### 4.2 回归用例（必测）
+
+#### R-01 Description 字段完整性回归（对应 G-01）
+
+- 目标：确保 buff 数据具备基础可读性，编辑器中 `Description` 字段可展示/可编辑。
+- 步骤：
+  1) 左侧依次选择：`buff_poison`、`buff_stun`、`buff_strength`、`buff_shield`
+  2) 查看编辑区 `Description` 是否有文本
+- 期望：
+  - `Description` 字段存在且可编辑；
+  - 推荐：上述关键 buff 的描述不为空（便于测试）。
+
+#### R-02 Buff 删除能力回归（对应 G-02）
+
+- 目标：模拟调试区支持快速删除已施加 buff，用于组合验证。
+- 步骤：
+  1) 选择 `buff_poison`，Apply 到 enemy
+  2) 在右侧 `Enemies 数据` -> `buffs` 列表中点击该 buff 右侧的 `Remove`
+  3) 重复一次：选择同一 buff Apply 到 player，并在 `Player 数据` -> `buffs` 中点击 `Remove`
+- 期望：
+  - 被移除的 buff 立即从列表消失；
+  - 日志区出现明确的移除记录（manual）。
+- 备注：当前回归以“按 buffId（按类型）删除”为验收标准。
+
+#### R-03 眩晕可测性回归（对应 B-02 结论）
+
+- 目标：明确当前工具对眩晕的可测边界，避免误判。
+- 步骤：
+  1) Apply `buff_stun` 到 enemy
+  2) 点击 `Start Turn`
+  3) 观察日志与状态变化
+- 期望：
+  - 由于当前缺少“敌方尝试行动”入口，本用例仅要求：buff 能被正确添加与到期移除（或持续到期 tick）；
+  - **不**以“敌方无法行动”作为验收标准。
+- 后续升级：当增加“敌方尝试行动”按钮后，本用例应升级为验证 `skipTurn` 对敌方行动的实际拦截。
+
+#### R-04 力量增强 flat 生效回归（对应 B-03 结论）
+
+- 目标：确认 `flat` 类型增伤稳定且可复现。
+- 步骤：
+  1) Reset Sim
+  2) 记录一次未加 buff 的 `Cast Attack` 结果（rawDamage=20，player -> enemy）
+  3) Apply `buff_strength` 到 player
+  4) 再执行一次 `Cast Attack`
+- 期望：
+  - 第二次伤害高于第一次（flat 生效）。
+
+#### R-05 护盾预期修正回归（对应 B-04 结论）
+
+- 目标：将护盾的预期从“增加护甲”修正为“吸收伤害”，并验证吸收逻辑可追溯。
+- 步骤：
+  1) Apply `buff_shield` 到 enemy
+  2) 让 player -> enemy 执行 `Cast Attack`
+  3) 观察日志中是否出现 Shield/absorbed 相关提示，且最终 HP 扣减减少
+- 期望：
+  - 不要求护甲（bodyParts）数值变化；
+  - 伤害流程应优先消耗护盾吸收层（例如 `context.shieldPool`），并在日志中可定位。
+
+### 4.3 回归结果记录格式（建议）
+
+- 测试时间：
+- 测试页面版本：
+- 数据版本：`assets/data/buffs.json`（记录主要改动点即可）
+- 回归结果：
+  - R-01: PASS
+  - R-02: PASS
+  - R-03: PASS/FAIL
+  - R-04: PASS/FAIL
+  - R-05: PASS/FAIL

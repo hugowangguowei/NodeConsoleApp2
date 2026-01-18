@@ -543,6 +543,30 @@
 
 					<div class="hr"></div>
 
+					<div class="small" style="font-weight:700;">行动尝试 (Try Action)</div>
+					<div class="row" style="margin-top:6px;">
+						<div class="col">
+							<select class="select" v-model="tryActionActor">
+								<option value="enemy">Enemy</option>
+								<option value="player">Player</option>
+							</select>
+							<div class="small">actor</div>
+						</div>
+						<div class="col">
+							<select class="select" v-model="tryActionType">
+								<option value="attack">attack</option>
+								<option value="skill">skill</option>
+								<option value="defend">defend</option>
+							</select>
+							<div class="small">actionType</div>
+						</div>
+					</div>
+					<div style="margin-top:6px;">
+						<button class="btn btn-sm btn-primary" @click="tryAction">Try Action</button>
+					</div>
+
+					<div class="hr"></div>
+
 					<div class="small" style="font-weight:700;">施加 Buff</div>
 					<div class="row" style="margin-top:6px;">
 						<div class="col">
@@ -741,6 +765,9 @@
 					castSource: 'player',
 					castTarget: 'enemy',
 					castRawDamage: 20,
+
+					tryActionActor: 'enemy',
+					tryActionType: 'attack',
 
 					logs: []
 				};

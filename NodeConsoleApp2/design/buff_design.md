@@ -141,8 +141,23 @@ Buff对象是所有效果的最小单元。一个标准的 Buff 对象包含**基础信息**、**生命周期控
 #### 4.1.4 A4 护盾/吸收/转化（Shield / Absorb / Conversion）
 
 * 典型：护盾吸收、伤害转化为治疗
-* 触发点：`onTakeDamage`
+* 触发点（规范）：优先使用 `onTakeDamagePre`（而不是 `onTakeDamage`）
 * 示例：`buff_shield`（`absorbDamage`）、`buff_damage_absorb`（Aegis，文档中定义）
+
+**设计口径统一**（对应本轮测试结论）：
+
+- 护盾（Shield）的目标是“吸收 n 层伤害”，不是“增加护甲值/改变 bodyParts”。
+- 护盾属于独立吸收层，推荐通过 `context.shieldPool` 实现：在最终扣血前优先消耗 shield。
+
+**可追溯日志要求**（回归验证必需）：
+
+- 当 shield 吸收发生时，建议输出结构化日志字段（或至少在文本中包含）：
+  - `incomingDamage`
+  - `absorbed`
+  - `remainingDamage`
+  - `remainingShield`
+  - `sourceBuffId`
+  - `targetId`
 
 ---
 
@@ -214,6 +229,24 @@ Buff 的效果分为**静态属性修正**和**动态触发行为**两类。
 *   **支持属性**: `maxHp`, `atk`, `def`, `speed`, `critRate`, `hitRate`, `dodgeRate`, `actionPoints` (上限), `damageDealtMult`, `damageTakenMult`, `armorMitigationMult`.
 *   **计算方式**: `Final = (Base + Flat_Sum) * (1 + Percent_Sum)`
 
+#### 3.1.1 `statModifiers.type` 支持范围（与当前引擎对齐）
+
+为保证回归可测与可定位，`statModifiers` 的 `type` 需要明确支持范围，并规定“未支持时必须告警”。
+
+- **MVP 支持**（与现有 `BuffManager.getEffectiveStat` 对齐）：
+  - `flat`
+  - `percent` / `percent_base`
+  - `overwrite`
+- **预留但不保证实现**（占位 type，允许出现在数据中，但需要日志提示）：
+  - `percent_current`
+  - `formula`
+  - `mult` / `multi`
+
+未支持 type 的统一策略：
+
+- 不允许静默忽略。
+- 建议统一发出 `BUFF:WARN`：`{ ownerId, buffId, statKey, type, value, reason: 'statModifier_type_not_supported' }`
+
 ### 3.2 动态触发行为 (Triggered Actions)
 通过监听战斗事件总线 (EventBus) 触发特定效果。
 
@@ -226,6 +259,10 @@ Buff 的效果分为**静态属性修正**和**动态触发行为**两类。
 | `onDefendPre` | 防御结算前 | 闪避判断、格挡减免 |
 | `onDefendPost` | 防御结算后 | 反伤(Thorns)、受击回能 |
 | `onDeath` | 死亡时 | 复活、亡语爆炸 |
+
+#### 3.2.1 行动尝试事件（用于控制类 Buff 可测性）
+
+（本节已迁移至 `design/buff_editor_design.md`，作为“测试工具需要提供的行动模拟入口/事件”。）
 
 ---
 

@@ -218,6 +218,31 @@ buffSystem.registerManager(simulatedEnemy.buffs);
     *   **模拟死亡 (Death)**:
         *   手动将 HP 设为 0，触发 `onDeath` (测试复活类 Buff)。
 
+#### 5.2.1 行动尝试入口（用于控制类 Buff 可测性）
+
+对应 `buff_editor_test_doc.md` 的结论（B-02 / R-03）：当前工具缺少“敌方尝试行动”的模拟入口，导致 `buff_stun/buff_freeze`（`skipTurn`）只能打标记而无法验证是否真正拦截行动。
+
+**需求**：在模拟区增加“行动尝试”按钮，用于驱动控制类 Buff 的回归验证。
+
+- UI（建议）：
+  - `[Enemy Try Action]` / `[Player Try Action]`
+  - 或通用：`[Try Action]` + 选择 actor（player/enemy）+ actionType（attack/skill/defend）
+
+- 事件（建议统一命名）：
+  - `BATTLE_ACTION_INTENT`
+  - `BATTLE_ACTION_PRE`
+  - `BATTLE_ACTION_POST`
+
+- payload（最小集）：
+  - `{ actor, actionType, skillId?, target?, bodyPart?, cancelled?: false, cancelReason?: string }`
+
+**回归验收口径**：
+
+- 当 actor 持有 `skipTurn` 控制（例如 `buff_stun`）时，`BATTLE_ACTION_PRE` 阶段应把：
+  - `context.cancelled = true`
+  - `context.cancelReason = 'control:skipTurn[:buffId]'`
+- Sim UI 需要把“行动被取消”以日志方式展示出来（而不是仅依赖回合开始/结束）。
+
 ### 5.3 反馈与日志 (Feedback & Logs)
 
 *   **可视化反馈**: 当模拟事件触发导致属性变更时，状态监视区应有闪烁或漂浮文字动画 (e.g., HP -5)。
