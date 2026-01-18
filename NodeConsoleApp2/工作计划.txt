@@ -296,3 +296,4 @@ buff示例可以参照skill和item的设计文档。但是buff设计方案作为skill和item设计文档的
 如果你希望下一步把 v3 的“中间列编辑区”也做成更严格的 schema 编辑（比如 effects 的 params 表单化，而不是 JSON textarea），我可以继续迭代。
 
 现在已经对buff_design和buff_editor_design进行了系统更新，我希望结合buff_editor_test_doc_v2测试出的问题，对代码进行必要的修改，同样要坚持模块化、低耦合的方案进行实现。
+我希望缩减aside 的宽度为原来的75%，center divde 的比例为原来的75%，剩下的宽度都留给right class,这样的话，能够留出足够的宽度，让模拟调试区的player数据和enemies数据并列，让操作按钮和日志区域的位置往上提一下。

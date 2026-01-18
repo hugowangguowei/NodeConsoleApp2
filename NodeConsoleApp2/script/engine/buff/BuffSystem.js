@@ -13,6 +13,7 @@ export default class BuffSystem {
 			modifyAP: (ctx, effect) => this._act_modifyAP(ctx, effect),
 			absorbDamage: (ctx, effect) => this._act_absorbDamage(ctx, effect),
 			modifyDamageTaken: (ctx, effect) => this._act_modifyDamageTaken(ctx, effect),
+			setDamageTaken: (ctx, effect) => this._act_setDamageTaken(ctx, effect),
 			attack: (ctx, effect) => this._act_attack(ctx, effect),
 			absorbToHeal: (ctx, effect) => this._act_absorbToHeal(ctx, effect),
 			revive: (ctx, effect) => this._act_revive(ctx, effect),
@@ -75,7 +76,31 @@ export default class BuffSystem {
 	}
 
 	_onTakeDamagePre(context) {
+		this._applyStatModifiersToContext(context);
 		this._dispatchToParticipants('onTakeDamagePre', context);
+	}
+
+	_applyStatModifiersToContext(context) {
+		if (!context || typeof context !== 'object') return;
+		const attacker = context.attacker || context.source;
+		const target = context.target;
+
+		// attacker: damageDealtMult 													
+		if (attacker?.buffs?.getEffectiveStat) {
+			const dealtMult = attacker.buffs.getEffectiveStat('damageDealtMult', 0);
+			if (Number.isFinite(dealtMult) && dealtMult !== 0) {
+				context.damageDealtMult = (context.damageDealtMult || 0) + dealtMult;
+			}
+		}
+
+		// target: damageTakenMult
+		if (target?.buffs?.getEffectiveStat) {
+			const takenMult = target.buffs.getEffectiveStat('damageTakenMult', 0);
+			if (Number.isFinite(takenMult) && takenMult !== 0) {
+				const base = (context.damageTakenMult || 1);
+				context.damageTakenMult = base * (1 + takenMult);
+			}
+		}
 	}
 
 	_onTakeDamage(context) {

@@ -69,7 +69,7 @@
 		}
 
 		aside {
-			width: 22%;
+			width: 16.5%;
 			min-width: 220px;
 			background: var(--panel-bg);
 			border-right: 1px solid var(--border-color);
@@ -80,7 +80,7 @@
 		}
 
 		.center {
-			width: 44%;
+			width: 33%;
 			min-width: 360px;
 			background: var(--panel-bg);
 			border-right: 1px solid var(--border-color);
@@ -91,15 +91,25 @@
 		}
 
 		.right {
-			width: 34%;
+			width: 50.5%;
 			min-width: 320px;
 			overflow-y: auto;
 			overflow-x: hidden;
 			padding: 14px;
 			display: flex;
 			flex-direction: column;
-			gap: 12px;
+			gap: 10px;
 			min-height: 0;
+		}
+
+		.sim-top-row {
+			display: flex;
+			gap: 12px;
+			align-items: flex-start;
+		}
+		.sim-top-row > .panel {
+			flex: 1;
+			min-width: 0;
 		}
 
 		.panel {
@@ -454,42 +464,43 @@
 
 			<!-- Right: Simulation Debug Area -->
 			<div class="right">
-				<div class="panel">
-					<div class="panel-title">模拟调试区 - Player 数据</div>
-					<div class="small">从 `player.json` 加载（优先），否则使用 fallback</div>
-					<div class="kv" style="margin-top:8px;" v-if="simPlayer">
-						<div class="k">id</div><div class="v">{{ simPlayer.id }}</div>
-						<div class="k">hp</div><div class="v">{{ simPlayer.stats.hp }} / {{ simPlayer.stats.maxHp }}</div>
-						<div class="k">ap</div><div class="v">{{ simPlayer.stats.ap }} / {{ simPlayer.stats.maxAp || simPlayer.stats.ap }}</div>
-						<div class="k">speed</div><div class="v">{{ simPlayer.stats.speed }}</div>
-					</div>
-					<div class="small" style="margin-top:10px; font-weight:700;">bodyParts</div>
-					<table class="table" v-if="simPlayer && simPlayer.bodyParts">
-						<thead><tr><th>part</th><th>current/max</th><th>weakness</th></tr></thead>
-						<tbody>
-							<tr v-for="(p, key) in simPlayer.bodyParts" :key="key">
-								<td>{{ key }}</td>
-								<td>{{ p.current }} / {{ p.max }}</td>
-								<td>{{ p.weakness }}</td>
-							</tr>
-						</tbody>
-					</table>
+				<div class="sim-top-row">
+					<div class="panel">
+						<div class="panel-title">模拟调试区 - Player 数据</div>
+						<div class="small">从 `player.json` 加载（优先），否则使用 fallback</div>
+						<div class="kv" style="margin-top:8px;" v-if="simPlayer">
+							<div class="k">id</div><div class="v">{{ simPlayer.id }}</div>
+							<div class="k">hp</div><div class="v">{{ simPlayer.stats.hp }} / {{ simPlayer.stats.maxHp }}</div>
+							<div class="k">ap</div><div class="v">{{ simPlayer.stats.ap }} / {{ simPlayer.stats.maxAp || simPlayer.stats.ap }}</div>
+							<div class="k">speed</div><div class="v">{{ simPlayer.stats.speed }}</div>
+						</div>
+						<div class="small" style="margin-top:10px; font-weight:700;">bodyParts</div>
+						<table class="table" v-if="simPlayer && simPlayer.bodyParts">
+							<thead><tr><th>part</th><th>current/max</th><th>weakness</th></tr></thead>
+							<tbody>
+								<tr v-for="(p, key) in simPlayer.bodyParts" :key="key">
+									<td>{{ key }}</td>
+									<td>{{ p.current }} / {{ p.max }}</td>
+									<td>{{ p.weakness }}</td>
+								</tr>
+							</tbody>
+						</table>
 
-					<div class="small" style="margin-top:10px; font-weight:700;">buffs</div>
-					<div v-if="simPlayer && simPlayer.buffs" class="small">
-						<div v-if="simPlayer.buffs.getAll().length===0">无</div>
-						<div v-for="b in simPlayer.buffs.getAll()" :key="b.instanceId" style="display:flex; align-items:center; justify-content:space-between; gap:10px;">
-							<span>{{ b.id }} (stacks={{b.stacks}}, rem={{b.remaining}})</span>
-							<button class="btn btn-sm btn-danger" @click="removeBuffFrom('player', b.id)">Remove</button>
+						<div class="small" style="margin-top:10px; font-weight:700;">buffs</div>
+						<div v-if="simPlayer && simPlayer.buffs" class="small">
+							<div v-if="simPlayer.buffs.getAll().length===0">无</div>
+							<div v-for="b in simPlayer.buffs.getAll()" :key="b.instanceId" style="display:flex; align-items:center; justify-content:space-between; gap:10px;">
+								<span>{{ b.id }} (stacks={{b.stacks}}, rem={{b.remaining}})</span>
+								<button class="btn btn-sm btn-danger" @click="removeBuffFrom('player', b.id)">Remove</button>
+							</div>
 						</div>
 					</div>
-				</div>
 
-				<div class="panel">
-					<div class="panel-title">
-						<span>模拟调试区 - Enemies 数据</span>
-						<button class="btn btn-sm btn-dark" @click="reloadEnemies">Reload</button>
-					</div>
+					<div class="panel">
+						<div class="panel-title">
+							<span>模拟调试区 - Enemies 数据</span>
+							<button class="btn btn-sm btn-dark" @click="reloadEnemies">Reload</button>
+						</div>
 					<div class="row">
 						<div class="col">
 							<div class="small">Enemy Template</div>
@@ -523,12 +534,13 @@
 						</tbody>
 					</table>
 
-					<div class="small" style="margin-top:10px; font-weight:700;">buffs</div>
-					<div v-if="simEnemy && simEnemy.buffs" class="small">
-						<div v-if="simEnemy.buffs.getAll().length===0">无</div>
-						<div v-for="b in simEnemy.buffs.getAll()" :key="b.instanceId" style="display:flex; align-items:center; justify-content:space-between; gap:10px;">
-							<span>{{ b.id }} (stacks={{b.stacks}}, rem={{b.remaining}})</span>
-							<button class="btn btn-sm btn-danger" @click="removeBuffFrom('enemy', b.id)">Remove</button>
+						<div class="small" style="margin-top:10px; font-weight:700;">buffs</div>
+						<div v-if="simEnemy && simEnemy.buffs" class="small">
+							<div v-if="simEnemy.buffs.getAll().length===0">无</div>
+							<div v-for="b in simEnemy.buffs.getAll()" :key="b.instanceId" style="display:flex; align-items:center; justify-content:space-between; gap:10px;">
+								<span>{{ b.id }} (stacks={{b.stacks}}, rem={{b.remaining}})</span>
+								<button class="btn btn-sm btn-danger" @click="removeBuffFrom('enemy', b.id)">Remove</button>
+							</div>
 						</div>
 					</div>
 				</div>
@@ -1147,12 +1159,12 @@
 
 				turnStart() {
 					this.log(`--- TURN_START (turn=${this.simTurn}) ---`, 'info');
-					EventBus.emit('TURN_START', { turn: this.simTurn });
+					(this.eventBus || EventBus).emit('TURN_START', { turn: this.simTurn });
 				},
 
 				turnEnd() {
 					this.log(`--- TURN_END (turn=${this.simTurn}) ---`, 'info');
-					EventBus.emit('TURN_END', { turn: this.simTurn });
+					(this.eventBus || EventBus).emit('TURN_END', { turn: this.simTurn });
 					this.simTurn += 1;
 				},
 
