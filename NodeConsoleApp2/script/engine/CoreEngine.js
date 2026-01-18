@@ -2,6 +2,7 @@
 import GameFSM from './GameFSM.js';
 import GameLoop from './GameLoop.js';
 import DataManager from './DataManagerV2.js';
+import { BuffRegistry, BuffManager, BuffSystem } from './buff/index.js';
 
 class CoreEngine {
     constructor() {
@@ -9,6 +10,9 @@ class CoreEngine {
         this.fsm = GameFSM;
         this.loop = GameLoop;
         this.data = DataManager;
+
+		this.buffRegistry = new BuffRegistry();
+		this.buffSystem = new BuffSystem(this.eventBus, this.buffRegistry);
         
         this.input = {
             login: this.login.bind(this),
@@ -36,6 +40,8 @@ class CoreEngine {
         this.fsm.changeState('INIT');
         
         await this.data.loadConfigs();
+		this.buffRegistry.setDefinitions((this.data.gameConfig && this.data.gameConfig.buffs) ? this.data.gameConfig.buffs : {});
+		this.buffSystem.start();
         
         this.loop.start();
         
@@ -96,6 +102,14 @@ class CoreEngine {
     }
 
     startBattle() {
+        // Ensure BuffManager exists for player
+        if (this.data.playerData) {
+			if (!this.data.playerData.buffs) {
+				this.data.playerData.buffs = new BuffManager(this.data.playerData, this.buffRegistry, this.eventBus);
+				this.buffSystem.registerManager(this.data.playerData.buffs);
+			}
+		}
+
         // Reset Player State at start of battle (Design 3.3)
         if (this.data.playerData) {
             const p = this.data.playerData;
@@ -152,6 +166,17 @@ class CoreEngine {
             player: playerWithRuntime, 
             level: this.data.currentLevelData 
         });
+
+		// Ensure BuffManager exists for enemies
+		if (this.data.currentLevelData && Array.isArray(this.data.currentLevelData.enemies)) {
+			for (const enemy of this.data.currentLevelData.enemies) {
+				if (!enemy.buffs) {
+					enemy.buffs = new BuffManager(enemy, this.buffRegistry, this.eventBus);
+					this.buffSystem.registerManager(enemy.buffs);
+				}
+			}
+		}
+
         this.startTurn();
     }
 
@@ -221,6 +246,12 @@ class CoreEngine {
         const runtime = this.data.dataConfig.runtime;
         this.currentTurn = runtime.turn || 1;
         this.battlePhase = runtime.phase || 'PLANNING';
+
+		// Ensure BuffManager exists for player after load
+		if (this.data.playerData && !this.data.playerData.buffs) {
+			this.data.playerData.buffs = new BuffManager(this.data.playerData, this.buffRegistry, this.eventBus);
+			this.buffSystem.registerManager(this.data.playerData.buffs);
+		}
         
         // 恢复队列
         this.playerSkillQueue = runtime.queues ? (runtime.queues.player || []) : [];
@@ -518,6 +549,11 @@ class CoreEngine {
             this.checkBattleStatus();
         }
 
+		// Turn end hooks (DoT / duration tick)
+		if (this.fsm.currentState === 'BATTLE_LOOP') {
+			this.eventBus.emit('TURN_END', { turn: this.currentTurn });
+		}
+
         if (this.fsm.currentState === 'BATTLE_LOOP') {
             this.startTurn();
         }
@@ -556,8 +592,21 @@ class CoreEngine {
                     return { isHit: false, reason: 'dead' };
                 }
 
+                // Combat Context (Buff pipeline)
+				const context = {
+					attacker: player,
+					target: enemy,
+					skillId: action.skillId,
+					bodyPart: action.bodyPart,
+					rawDamage: damage,
+					damageDealt: 0,
+					damageTaken: 0,
+					tempModifiers: Object.create(null)
+				};
+				this.eventBus.emit('BATTLE_ATTACK_PRE', context);
+
                 // New Damage Logic: Armor -> HP
-                let actualDamage = damage;
+                let actualDamage = context.rawDamage;
                 let armorDamage = 0;
                 let targetPart = action.bodyPart || 'chest'; // Default to chest
                 
@@ -569,26 +618,57 @@ class CoreEngine {
                         actualDamage = Math.floor(actualDamage * part.weakness);
                     }
 
+                    // Apply armor mitigation mult from buffs (破甲等写入 tempModifiers)
+					let armorMitMult = 1.0;
+					const tmp = context.tempModifiers && context.tempModifiers.armorMitigationMult;
+					if (Array.isArray(tmp) && tmp.length > 0) {
+						for (const m of tmp) {
+							if (m.type === 'percent_current') {
+								armorMitMult *= (1 + m.value);
+							} else if (m.type === 'flat') {
+								armorMitMult += m.value;
+							}
+						}
+					}
+
                     // Reduce Armor first (current)
                     if (part.current > 0) {
-                        if (part.current >= actualDamage) {
-                            part.current -= actualDamage;
-                            armorDamage = actualDamage;
+                        // armorMitMult > 1 => armor更“软”，等效为放大对护甲的穿透
+						const mitigated = Math.ceil(actualDamage * armorMitMult);
+						if (part.current >= mitigated) {
+							part.current -= mitigated;
+							armorDamage = mitigated;
                             actualDamage = 0;
                         } else {
-                            armorDamage = part.current;
-                            actualDamage -= part.current;
+							armorDamage = part.current;
+							actualDamage = Math.max(0, mitigated - part.current);
                             part.current = 0;
                             part.status = 'BROKEN';
                         }
                     }
                 }
 
+                // TakeDamagePre hooks (e.g. shield / damage taken mult)
+				context.damageTaken = actualDamage;
+				this.eventBus.emit('BATTLE_TAKE_DAMAGE_PRE', context);
+				if (context.damageTakenMult) {
+					context.damageTaken = Math.floor(context.damageTaken * context.damageTakenMult);
+				}
+				if (context.shieldPool) {
+					const absorbed = Math.min(context.shieldPool, context.damageTaken);
+					context.damageTaken -= absorbed;
+					context.shieldPool -= absorbed;
+				}
+
                 // Remaining damage goes to HP
+                actualDamage = context.damageTaken;
                 if (actualDamage > 0) {
                     enemy.hp -= actualDamage;
                     if (enemy.hp < 0) enemy.hp = 0;
                 }
+
+				context.damageDealt = actualDamage;
+				this.eventBus.emit('BATTLE_ATTACK_POST', context);
 
                 targetName = `${enemy.id} (HP: ${enemy.hp})`;
                 result = { 
@@ -615,8 +695,26 @@ class CoreEngine {
         const baseDamage = skillConfig ? skillConfig.value : 10;
         const skillName = skillConfig ? skillConfig.name : action.skillId;
 
+        // Resolve attacker
+		const enemy = (this.data.currentLevelData && this.data.currentLevelData.enemies)
+			? this.data.currentLevelData.enemies.find(e => e.id === action.sourceId)
+			: null;
+
+		// Combat Context (Buff pipeline)
+		const context = {
+			attacker: enemy,
+			target: player,
+			skillId: action.skillId,
+			bodyPart: action.bodyPart,
+			rawDamage: baseDamage,
+			damageDealt: 0,
+			damageTaken: 0,
+			tempModifiers: Object.create(null)
+		};
+		this.eventBus.emit('BATTLE_ATTACK_PRE', context);
+
         // New Damage Logic for Player
-        let actualDamage = baseDamage;
+        let actualDamage = context.rawDamage;
         let armorDamage = 0;
         let targetPart = action.bodyPart || 'chest'; // Default to chest
         
@@ -632,25 +730,55 @@ class CoreEngine {
                 actualDamage = Math.floor(actualDamage * part.weakness);
             }
 
+            // Apply armor mitigation mult from buffs
+			let armorMitMult = 1.0;
+			const tmp = context.tempModifiers && context.tempModifiers.armorMitigationMult;
+			if (Array.isArray(tmp) && tmp.length > 0) {
+				for (const m of tmp) {
+					if (m.type === 'percent_current') {
+						armorMitMult *= (1 + m.value);
+					} else if (m.type === 'flat') {
+						armorMitMult += m.value;
+					}
+				}
+			}
+
             // Reduce Armor first (current)
             if (part.current > 0) {
-                if (part.current >= actualDamage) {
-                    part.current -= actualDamage;
-                    armorDamage = actualDamage;
+                const mitigated = Math.ceil(actualDamage * armorMitMult);
+                if (part.current >= mitigated) {
+                    part.current -= mitigated;
+                    armorDamage = mitigated;
                     actualDamage = 0;
                 } else {
                     armorDamage = part.current;
-                    actualDamage -= part.current;
+                    actualDamage = Math.max(0, mitigated - part.current);
                     part.current = 0;
                     part.status = 'BROKEN';
                 }
             }
         }
 
+        // TakeDamagePre hooks (e.g. shield / damage taken mult)
+		context.damageTaken = actualDamage;
+		this.eventBus.emit('BATTLE_TAKE_DAMAGE_PRE', context);
+		if (context.damageTakenMult) {
+			context.damageTaken = Math.floor(context.damageTaken * context.damageTakenMult);
+		}
+		if (context.shieldPool) {
+			const absorbed = Math.min(context.shieldPool, context.damageTaken);
+			context.damageTaken -= absorbed;
+			context.shieldPool -= absorbed;
+		}
+
+		actualDamage = context.damageTaken;
         if (actualDamage > 0) {
             player.stats.hp -= actualDamage;
             if (player.stats.hp < 0) player.stats.hp = 0;
         }
+
+		context.damageDealt = actualDamage;
+		this.eventBus.emit('BATTLE_ATTACK_POST', context);
         
         this.eventBus.emit('DATA_UPDATE', player);
         

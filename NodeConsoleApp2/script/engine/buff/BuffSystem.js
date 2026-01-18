@@ -1,0 +1,272 @@
+export default class BuffSystem {
+	constructor(eventBus, registry) {
+		this.eventBus = eventBus;
+		this.registry = registry;
+		this._subscriptions = [];
+		this._managers = new Set();
+
+		this._actionLibrary = {
+			damage: (ctx, effect) => this._act_damage(ctx, effect),
+			heal: (ctx, effect) => this._act_heal(ctx, effect),
+			applyBuff: (ctx, effect) => this._act_applyBuff(ctx, effect),
+			skipTurn: (ctx, effect) => this._act_skipTurn(ctx, effect),
+			modifyAP: (ctx, effect) => this._act_modifyAP(ctx, effect),
+			absorbDamage: (ctx, effect) => this._act_absorbDamage(ctx, effect),
+			modifyDamageTaken: (ctx, effect) => this._act_modifyDamageTaken(ctx, effect),
+			attack: (ctx, effect) => this._act_attack(ctx, effect),
+			absorbToHeal: (ctx, effect) => this._act_absorbToHeal(ctx, effect),
+			revive: (ctx, effect) => this._act_revive(ctx, effect),
+			REMOVE_SELF: (ctx, effect) => this._act_removeSelf(ctx, effect),
+			MODIFY_STAT_TEMP: (ctx, effect) => this._act_modifyStatTemp(ctx, effect)
+		};
+	}
+
+	registerManager(buffManager) {
+		if (!buffManager) return;
+		this._managers.add(buffManager);
+	}
+
+	unregisterManager(buffManager) {
+		this._managers.delete(buffManager);
+	}
+
+	start() {
+		// 兼容当前引擎事件
+		this._subscribe('TURN_START', this._onTurnStart.bind(this));
+		this._subscribe('TURN_END', this._onTurnEnd.bind(this));
+		this._subscribe('BATTLE_ATTACK_PRE', this._onAttackPre.bind(this));
+		this._subscribe('BATTLE_ATTACK_POST', this._onAttackPost.bind(this));
+		this._subscribe('BATTLE_TAKE_DAMAGE_PRE', this._onTakeDamagePre.bind(this));
+		this._subscribe('BATTLE_TAKE_DAMAGE', this._onTakeDamage.bind(this));
+		this._subscribe('BATTLE_DEFEND_POST', this._onDefendPost.bind(this));
+	}
+
+	stop() {
+		for (const unsub of this._subscriptions) {
+			try { unsub(); } catch { /* noop */ }
+		}
+		this._subscriptions = [];
+	}
+
+	_subscribe(eventName, handler) {
+		if (!this.eventBus?.on) return;
+		const unsub = this.eventBus.on(eventName, handler);
+		if (typeof unsub === 'function') this._subscriptions.push(unsub);
+	}
+
+	_onTurnStart(payload) {
+		this._dispatchToAll('onTurnStart', { payload });
+	}
+
+	_onTurnEnd(payload) {
+		this._dispatchToAll('onTurnEnd', { payload });
+		for (const m of this._managers) m.tickTurn();
+	}
+
+	_onAttackPre(context) {
+		// context: { attacker/target/... }（按 buff_design.md 的 pipeline 思路）
+		this._dispatchToParticipants('onAttackPre', context);
+	}
+
+	_onAttackPost(context) {
+		this._dispatchToParticipants('onAttackPost', context);
+	}
+
+	_onTakeDamagePre(context) {
+		this._dispatchToParticipants('onTakeDamagePre', context);
+	}
+
+	_onTakeDamage(context) {
+		this._dispatchToParticipants('onTakeDamage', context);
+	}
+
+	_onDefendPost(context) {
+		this._dispatchToParticipants('onDefendPost', context);
+	}
+
+	_dispatchToAll(triggerName, baseContext) {
+		for (const m of this._managers) {
+			this._processManager(m, triggerName, baseContext);
+		}
+	}
+
+	_dispatchToParticipants(triggerName, context) {
+		const attacker = context?.attacker || context?.source;
+		const target = context?.target;
+
+		for (const m of this._managers) {
+			const owner = m.owner;
+			if (owner && ((attacker && owner === attacker) || (target && owner === target))) {
+				this._processManager(m, triggerName, { ...context });
+			}
+		}
+	}
+
+	_processManager(manager, triggerName, context) {
+		const buffs = manager.getAll();
+		for (const b of buffs) {
+			const effects = b.definition?.effects;
+			if (!Array.isArray(effects)) continue;
+
+			for (const effect of effects) {
+				if (!effect || effect.trigger !== triggerName) continue;
+
+				const actionKey = effect.action;
+				const fn = this._actionLibrary[actionKey];
+				if (!fn) {
+					this.eventBus?.emit?.('BUFF:WARN', { ownerId: manager.ownerId, buffId: b.id, reason: 'action_not_supported', action: actionKey, trigger: triggerName });
+					continue;
+				}
+
+				try {
+					fn({ manager, buff: b, context }, effect);
+				} catch (err) {
+					this.eventBus?.emit?.('BUFF:ERROR', { ownerId: manager.ownerId, buffId: b.id, trigger: triggerName, action: actionKey, error: String(err?.message || err) });
+				}
+			}
+		}
+	}
+
+	_resolveTarget({ manager, context }, effectTarget) {
+		if (effectTarget === 'self') return manager.owner;
+		if (effectTarget === 'attacker') return context?.attacker || context?.source;
+		if (effectTarget === 'target') return context?.target;
+		return manager.owner;
+	}
+
+	_resolveValue(ctx, effect) {
+		const v = effect.value;
+		if (typeof v === 'number') return v;
+		if (typeof v !== 'string') return 0;
+
+		// 支持最小公式：允许引用 context / self.stats 等
+		// 例如: "damageDealt * 0.2" / "maxHp * 0.05"
+		const target = this._resolveTarget(ctx, effect.target);
+		const self = ctx.manager.owner;
+		const context = ctx.context || {};
+
+		const scope = {
+			context,
+			self,
+			target,
+			// 兼容 buffs.json 里已有字段名
+			damageDealt: context.damageDealt,
+			damageTaken: context.damageTaken,
+			maxHp: (self?.stats?.maxHp ?? self?.maxHp),
+			hp: (self?.stats?.hp ?? self?.hp),
+			ap: (self?.stats?.ap ?? self?.ap)
+		};
+
+		try {
+			// eslint-disable-next-line no-new-func
+			const fn = new Function('s', `with (s) { return (${v}); }`);
+			const out = fn(scope);
+			return Number.isFinite(out) ? out : 0;
+		} catch {
+			return 0;
+		}
+	}
+
+	_act_damage(ctx, effect) {
+		const target = this._resolveTarget(ctx, effect.target);
+		if (!target) return;
+		const amount = this._resolveValue(ctx, effect);
+		if (!Number.isFinite(amount) || amount <= 0) return;
+
+		// 只做最小实现：直接扣 hp（不走护甲/部位），复杂逻辑留给 CombatSystem pipeline。
+		if (target.stats) {
+			target.stats.hp = Math.max(0, target.stats.hp - amount);
+		} else if (typeof target.hp === 'number') {
+			target.hp = Math.max(0, target.hp - amount);
+		}
+
+		this.eventBus?.emit?.('BATTLE_LOG', { text: `[Buff] ${ctx.buff.id} dealt ${amount} damage to ${target.id || 'target'}` });
+	}
+
+	_act_heal(ctx, effect) {
+		const target = this._resolveTarget(ctx, effect.target);
+		if (!target) return;
+		const amount = this._resolveValue(ctx, effect);
+		if (!Number.isFinite(amount) || amount <= 0) return;
+
+		if (target.stats) {
+			const maxHp = target.stats.maxHp ?? target.stats.hp;
+			target.stats.hp = Math.min(maxHp, target.stats.hp + amount);
+		} else if (typeof target.hp === 'number') {
+			target.hp = target.hp + amount;
+		}
+
+		this.eventBus?.emit?.('BATTLE_LOG', { text: `[Buff] ${ctx.buff.id} healed ${amount} HP for ${target.id || 'target'}` });
+	}
+
+	_act_applyBuff(ctx, effect) {
+		const target = this._resolveTarget(ctx, effect.target);
+		if (!target?.buffs) return;
+		const buffId = effect.value;
+		if (!buffId) return;
+		target.buffs.add(buffId);
+	}
+
+	_act_skipTurn(ctx) {
+		// 用 context 打标，交由 FSM/战斗回合处理
+		ctx.context.skipTurn = true;
+	}
+
+	_act_modifyAP(ctx, effect) {
+		const target = this._resolveTarget(ctx, effect.target);
+		if (!target) return;
+		const amount = this._resolveValue(ctx, effect);
+		if (!Number.isFinite(amount) || amount === 0) return;
+		if (target.stats && typeof target.stats.ap === 'number') {
+			target.stats.ap += amount;
+		}
+	}
+
+	_act_absorbDamage(ctx, effect) {
+		// 最小实现：写入 context.shieldPool（由伤害管线消耗）
+		const amount = this._resolveValue(ctx, effect);
+		if (!Number.isFinite(amount) || amount <= 0) return;
+		ctx.context.shieldPool = (ctx.context.shieldPool || 0) + amount;
+	}
+
+	_act_modifyDamageTaken(ctx, effect) {
+		// 最小实现：写入 context.damageTakenMult
+		const mult = effect.value;
+		if (!Number.isFinite(mult) || mult <= 0) return;
+		ctx.context.damageTakenMult = (ctx.context.damageTakenMult || 1) * mult;
+	}
+
+	_act_attack() {
+		// 反击等需要 CombatSystem 执行实际攻击，当前先占位。
+	}
+
+	_act_absorbToHeal() {
+		// 需要伤害管线支持：把即将造成的伤害转为治疗。
+	}
+
+	_act_revive() {
+		// 需要死亡/结算管线支持
+	}
+
+	_act_removeSelf(ctx) {
+		ctx.manager.remove(ctx.buff.id, 'consume');
+	}
+
+	_act_modifyStatTemp(ctx, effect) {
+		// 统一写入 context.tempModifiers[stat]，由战斗管线读取
+		const p = effect.params;
+		if (!p || !p.stat) return;
+
+		if (!ctx.context.tempModifiers) ctx.context.tempModifiers = Object.create(null);
+
+		// value 可以是字符串（"+0.3"）或数字
+		let raw = p.value;
+		let num = 0;
+		if (typeof raw === 'number') num = raw;
+		else if (typeof raw === 'string') num = Number(raw);
+		if (!Number.isFinite(num)) num = 0;
+
+		ctx.context.tempModifiers[p.stat] = ctx.context.tempModifiers[p.stat] || [];
+		ctx.context.tempModifiers[p.stat].push({ value: num, type: p.type || 'flat' });
+	}
+}

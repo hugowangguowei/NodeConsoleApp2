@@ -282,7 +282,7 @@ buff示例可以参照skill和item的设计文档。但是buff设计方案作为skill和item设计文档的
 2026-01-18 00:22（编辑）
 当前在buff_design,md中已经设计了很多buff对象，但是我认为没有从buff需求和buff类型出发，进行系统的分类设计。我希望你基于当前技能和装备设计文档中的buff需求，重新梳理buff类型，
 
-请以buff_design.md的设计方案为基础，帮我实现buff系统的代码。buff系统的代码应该放在script/engine/buff目录下，代码文件命名为BuffManager.js，Buff.js等。请你先分析设计方案，然后再进行编码实现。
+请以buff_design.md的设计方案为基础，帮我实现buff系统的代码。buff系统的代码应该放在script/engine/buff目录下，代码文件命名为BuffManager.js，Buff.js等。请你先分析设计方案，然后再进行编码实现。buff系统应该延续现有引擎的模块化设计风格，采用类的方式进行设计。请你先分析设计方案，然后再进行编码实现。
 
 根据你的分析，修改buff_editor_design方案，使其能够支持 "发起攻击 (Cast Skill)" 的模拟模式，即让当前选中的角色（拥有 Buff 的 simulatedTarget）充当 context.source，去攻击一个假人目标，以及其他别的必要模式，先修订、补充方案，不要修改代码
 

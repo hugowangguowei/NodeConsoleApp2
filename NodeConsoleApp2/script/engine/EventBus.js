@@ -9,6 +9,9 @@ class EventBus {
             this.listeners[event] = [];
         }
         this.listeners[event].push({ callback, context });
+
+		// 返回取消订阅函数，便于模块化系统释放监听
+		return () => this.off(event, callback);
     }
 
     off(event, callback) {

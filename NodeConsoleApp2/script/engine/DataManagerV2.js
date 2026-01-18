@@ -149,16 +149,17 @@ class DataManager {
                 return await response.json();
             };
 
-            const [skills, items, enemies, levels, player] = await Promise.all([
+            const [skills, items, enemies, levels, player, buffs] = await Promise.all([
                 fetchConfig('skills.json'),
                 fetchConfig('items.json'),
                 fetchConfig('enemies.json'),
                 fetchConfig('levels.json'),
-                fetchConfig('player.json')
+                fetchConfig('player.json'),
+                fetchConfig('buffs.json')
             ]);
             
             // Validate basic structure
-            if (!skills || !items || !enemies || !levels || !player) {
+            if (!skills || !items || !enemies || !levels || !player || !buffs) {
                  throw new Error("One or more config files are empty or invalid.");
             }
 
@@ -167,7 +168,8 @@ class DataManager {
                 items,
                 enemies,
                 levels,
-                player
+                player,
+                buffs
             };
             
             console.log("? [DataManager] Configs successfully loaded from JSON files.", this.gameConfig);
@@ -186,6 +188,16 @@ class DataManager {
                     skills: ['skill_slash', 'skill_heal', 'skill_fireball'],
                     equipment: { weapon: null, armor: { head: null, chest: null } },
                     inventory: []
+                }
+            },
+            buffs: {
+                buff_poison: {
+                    id: 'buff_poison',
+                    name: 'ÖÐ¶¾',
+                    type: 'debuff',
+                    tags: ['poison', 'dot'],
+                    lifecycle: { duration: 3, maxStacks: 5, stackStrategy: 'refresh', removeOnBattleEnd: true },
+                    effects: [{ trigger: 'onTurnEnd', action: 'damage', value: 'maxHp * 0.05', valueType: 'formula', target: 'self' }]
                 }
             },
             skills: {
