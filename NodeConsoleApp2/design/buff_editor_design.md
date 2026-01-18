@@ -271,6 +271,53 @@ buffSystem.registerManager(simulatedEnemy.buffs);
    * 对攻击者施加 `buff_lifesteal` 或 `passive_vampire`
    * 攻击后 `BATTLE_ATTACK_POST` 应触发 heal，回血不超过 maxHp
 
+---
+
+## 5.5 基于 Per-Buff 结论的工具口径与数据策略（v3）
+
+> 来源：`test/test_doc/buff_editor_test_doc_v2.md` 第三章中的“结论”条目。
+
+### 5.5.1 回归范围收敛（MVP）
+
+v3 测试器优先保证以下链路可稳定回归：
+
+- alias：`buff_lifesteal` -> `passive_vampire`
+- DoT：`buff_poison`（保留）
+- 破甲：`buff_armor_pen`（保留）
+- 护盾：`buff_shield`（按“一次性抵挡一次伤害”语义）
+- 吸血：`buff_lifesteal/passive_vampire`（保留）
+
+### 5.5.2 数据删改/过滤策略（编辑器层）
+
+- **删除**（短期不纳入回归，避免噪声）：
+  - `buff_burn`（与 `buff_bleed` 高度重复）
+  - `buff_silence_limb`（仅 tbd，无可执行字段）
+  - `buff_berserk` / `buff_focus` / `buff_magic_surge` / `buff_poison_coat` / `buff_eagle_eye` / `buff_iron_will`（依赖未落地体系或回归阶段不关注）
+  - `buff_immortality_hp` / `buff_revive`（依赖 death 管线，当前回归阶段移除）
+  - 装备被动类：默认不作为 Buff 回归范围，可用 tag 过滤
+
+- **合并/降级**：
+  - `buff_freeze`：降级为单一效果“减速”，并与 `buff_slow` 合并（或改为 aliasOf）。
+
+### 5.5.3 护盾语义（方案 B：抵挡一次）
+
+编辑器与测试器对 `buff_shield` 的验证口径统一为：
+
+- 在 `onTakeDamagePre` 阶段将本次 `context.damageTaken` 置 0
+- 触发一次后立即消耗自身（`REMOVE_SELF`）
+
+对应测试用例：R-06（需同步更新预期文本，避免仍以 shieldPool 数值口径验收）。
+
+### 5.5.4 Inspector 必须提供“可验证口径”
+
+为避免出现“buff 生效但 UI 不展示”的假失败，v3 Inspector 至少需要展示：
+
+- `effectiveSpeed`（用于验证 `buff_slow`）
+- `effectiveMaxAp`（用于验证 `buff_shield_wall` 的结论）
+- （可选）`effectiveAtk`（用于验证 strength/weak 的后续扩展）
+
+> 注：上述 `effective*` 的计算口径以 `BuffManager.getEffectiveStat(statKey, baseValue)` 为准。
+
 ## 6. 待办事项 (To-Do List)
 
 1.  对齐现有 `test/buff_editor_v2.html`，明确它在新设计中的位置（是“旧版原型”还是“升级基座”）。

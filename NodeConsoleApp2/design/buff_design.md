@@ -11,6 +11,62 @@ Buff (ÔöÒæ) Óë Debuff (¼õÒæ) ÏµÍ³ÊÇ±¾ÓÎÏ·Õ½¶·Âß¼­µÄºËĞÄµ×²ã»úÖÆ¡£Ëü²»½öÓÃÓÚ´¦ÀíÕ
 
 ---
 
+## 1.2 »ùÓÚ²âÊÔ½áÂÛµÄ¸Ä¶¯¾ö²ß£¨Test-driven Change Decisions£©
+
+> À´Ô´£º`test/test_doc/buff_editor_test_doc_v2.md` µÚÈıÕÂ£¨Per-Buff£©µÄ¡°½áÂÛ¡±ÌõÄ¿¡£
+> Ä¿±ê£º°Ñ¡°±¾ÂÖ²âÊÔ´ï³ÉµÄÈ¡Éá¡±¹Ì»¯Îª Buff ÌåÏµµÄÉè¼ÆÔ¼Êø£¬±ÜÃâºóĞøÊı¾İ¼ÌĞøÑØÓÃ²»¿É²â/Î´ÂäµØµÄ×Ö¶ÎÓëÓïÒå¡£
+
+### 1.2.1 Ô­×ÓĞÔÔ­Ôò£¨Atomic Buff£©
+
+- Buff ÊÇ¡°Ğ§¹ûÔ­×Ó¶ÔÏó¡±£¬Buff ÄÚ²¿¾¡Á¿Ö»±í´ï**µ¥Ò»»úÖÆ**¡£
+- ÈôĞèÒª¸´ºÏ×÷ÓÃ£¨ÀıÈç¡°¶³½á=Ó²¿Ø+¼õËÙ¡±£©£¬ÓÅÏÈÓÉ¼¼ÄÜ/×°±¸ÔÚÊ©¼Ó½×¶Î×éºÏ¶à¸ö Buff£¬¶ø²»ÊÇÒ»¸ö Buff ÄÚÈû¶à¸ö effect/stat¡£
+
+### 1.2.2 ±¾ÂÖ²âÊÔºóµÄÃ÷È·¾ö²ß£¨Decisions£©
+
+1) **É¾³ı£ºÈ¼ÉÕ `buff_burn`**
+   - Ô­Òò£ºÔÚµ±Ç°Î´ÒıÈëÔªËØ/¿¹ĞÔÌåÏµÊ±£¬È¼ÉÕÓëÁ÷Ñª¶¼ÊôÓÚ DoT£¨´¥·¢µã+ÉËº¦ÀàĞÍ²îÒì²»×ãÒÔÖ§³Å¶ÀÁ¢ Buff£©¡£
+   - ´¦Àí£º´Ó `assets/data/buffs.json` ÒÆ³ı£¨»òÇ¨ÒÆµ½¡°ÔªËØÌåÏµ¡±·ÖÖ§/Î´À´°æ±¾£©¡£
+
+2) **¶³½á `buff_freeze`£º½µ¼¶Îª¡°¼õËÙ¡±£¬²¢Óë `buff_slow` ºÏ²¢**
+   - Ô­Òò£º`buff_freeze` µ±Ç°ÊôÓÚ¸´ºÏĞ§¹û£¨Ó²¿Ø+·ÀÓù¼Ó³É£©£¬²»·ûºÏ¡°Ô­×ÓĞÔ¡±Ô­Ôò¡£
+   - ´¦Àí£º¶³½á½ö±£Áô¡°¼õËÙ¡±»úÖÆ£»ÂäµØ·½Ê½¿ÉÒÔÊÇ£º
+     - ·½°¸ A£ºÉ¾³ı `buff_freeze`£¬Ö»±£Áô `buff_slow`
+     - ·½°¸ B£º`buff_freeze` ¸ÄÎª `aliasOf: buff_slow`£¨±£ÁôÓïÒåÈë¿Úµ«¸´ÓÃÊµÏÖ£©
+
+3) **»¤¶Ü `buff_shield`£º²ÉÓÃ·½°¸ B£¨µÖµ²Ò»´ÎÉËº¦£©**
+   - Ô­Ôò£º»¤¶Ü²»ÊÇ¡°»¤¼×ÊıÖµ¡±£¬Ò²²»ÊÇ¡°»¤¶Ü³ØÊıÖµ¡±£¬¶øÊÇÒ»´ÎĞÔ±£»¤¡£
+   - ¹æ·¶£º
+     - Trigger£º`onTakeDamagePre`
+     - Behavior£º½«±¾´Î `context.damageTaken = 0`£¨»ò½«ÉËº¦±¶ÂÊ±äÎª 0£©
+     - Consume£ºÍ¬Ò»´ÎÊÜ»÷ºóÁ¢¼´ `REMOVE_SELF`
+
+4) **ĞéÈõ `debuff_weak`£º²ÉÓÃ·½°¸ A£¨½µµÍ atk£©£¬²»Ê¹ÓÃ `damageDealtMult`**
+   - Ô­Òò£ºµ±Ç°²âÊÔ¹Ø×¢µãÊÇ¡°Á¦Á¿ÏÂ½µ/¹¥»÷±äÈõ¡±¡£
+   - ¹æ·¶£º`debuff_weak` Ê¹ÓÃ `statModifiers.atk`£¨flat »ò percent£©£¬²»ÔÙÓÃ `statModifiers.damageDealtMult`¡£
+
+5) **É¾³ı£º²¿Î»·âÓ¡ `buff_silence_limb`**
+   - Ô­Òò£º½öÓĞÃèÊö/tbd£¬ÎŞ¿ÉÖ´ĞĞ×Ö¶Î£»ÇÒÄ¿Ç°È±ÉÙ¡°¼¼ÄÜ¿ÉÓÃĞÔ/Ä¿±ê²¿Î»¿ÉÑ¡ĞÔ¡±µÄÍ³Ò»ÅĞ¶¨¹ÜÏß¡£
+   - ´¦Àí£º´ÓÖ÷Êı¾İÒÆ³ı£¬´ı¼¼ÄÜÏµÍ³ÅĞ¶¨¹ÜÏßÃ÷È·ºóÔÙÒıÈë¡£
+
+6) **É¾³ı£ºÒÀÀµÎ´ÂäµØÌåÏµµÄ Buff£¨»Ø¹é½×¶ÎÊÕÁ²£©**
+   - °üÀ¨µ«²»ÏŞÓÚ£º`buff_berserk`£¨hitRate£©¡¢`buff_focus`£¨hitRate/critRate£©¡¢`buff_magic_surge`£¨magicDmg£©¡¢`buff_poison_coat`£¨ÓëÖĞ¶¾ÖØ¸´£©¡¢`buff_eagle_eye`£¨ÃüÖĞ/ÉÁ±ÜÅĞ¶¨È±Ê§£©¡¢`buff_iron_will`£¨def ¸ÅÄîÎ´ÂäµØ£©¡£
+   - ´¦Àí£ºÒÆ³ı»òÇ¨ÒÆµ½Î´À´°æ±¾¡£
+
+7) **`buff_block`£º±£Áô²¢ÖØĞÂ²âÊÔ**
+   - Ô­Òò£ºÊôÓÚ¿É²â»úÖÆ£¨`onTakeDamagePre` ÉËº¦±¶ÂÊĞŞ¸Ä£©¡£
+
+8) **`buff_evasion`£º¸ÄÎª¡°n ²ãÈ«ÉÁ±Ü¡±ÓïÒå£¨²»ÒÀÀµ dodgeRate£©**
+   - Ô­Òò£ºÄ¿Ç°ÎŞÉÁ±ÜÂÊÅĞ¶¨ÌåÏµ¡£
+   - ¹æ·¶£ºÒÔ¡°ÓĞÏŞ´ÎÊıÃâÒßÉËº¦¡±±í´ï£¬¶ø·Ç¸ÅÂÊÉÁ±Ü¡£
+
+9) **É¾³ı£º`buff_immortality_hp` / `buff_revive`£¨»Ø¹é½×¶ÎÒÆ³ı£©**
+   - Ô­Òò£ºĞèÒª death ÊÂ¼şÓëËÀÍöÁ÷³Ì¹³×Ó£»µ±Ç°»Ø¹é½×¶Î²»ÒıÈë¸Ã¸´ÔÓ¶È¡£
+
+10) **`buff_shield_wall`£º±£Áô£¬µ«ÑéÊÕ¿Ú¾¶µ÷ÕûÎª `effectiveMaxAp`**
+   - Ô­Òò£ºµ±Ç°Ä£ÄâÆ÷Óë UI Î´Õ¹Ê¾¿ÉÑéÖ¤¿Ú¾¶¡£
+   - ¹æ·¶£ºĞèÒªÔÚ¡°×´Ì¬¼àÊÓÇø¡±ÄÜ¹Û²ìµ½ `maxAp` µÄ±»¶¯ÌáÉı½á¹û¡£
+
+
 ## 1.1 Éè¼Æ¸Ä°æËµÃ÷£º´Ó¡°¶ÔÏóÇåµ¥¡±×ªÎª¡°ĞèÇó/ÀàĞÍÇı¶¯¡±
 
 µ±Ç°°æ±¾µÄ `buff_design.md` ÒÑ¾­ÂŞÁĞÁËºÜ¶à Buff ¶ÔÏó£¬²¢ÇÒ½¨Á¢ÁË×·Ëİ±í¡£µ«´Ó¿ÉÎ¬»¤ĞÔÓëºóĞøÊµÏÖ£¨ÓÈÆäÊÇÊı¾İÇı¶¯ÊµÏÖ£©½Ç¶È£¬ÏÖÓĞ½á¹¹´æÔÚÒ»¸öÍ´µã£º
@@ -81,7 +137,10 @@ Buff¶ÔÏóÊÇËùÓĞĞ§¹ûµÄ×îĞ¡µ¥Ôª¡£Ò»¸ö±ê×¼µÄ Buff ¶ÔÏó°üº¬**»ù´¡ĞÅÏ¢**¡¢**ÉúÃüÖÜÆÚ¿Ø
 
 * µäĞÍ£ºĞéÈõ¡¢¹¥»÷Ï÷Èõ
 * ÍÆ¼ö×Ö¶Î£º`statModifiers.damageDealtMult`
-* Ê¾Àı£º`debuff_weak`¡¢`buff_weakness`
+* Ê¾Àı£º`buff_weakness`£¨ÀúÊ·¿Ú¾¶£ºÊä³ö³ËÇø£©
+
+> ¶ÔÆë 1.2 µÄ²âÊÔ½áÂÛ£º±¾ÂÖ½«¡°ĞéÈõ¡±¿Ú¾¶¶¨ÒåÎª **½µµÍ `atk`**£¨D Àà statModifiers£©£¬¶ø²»ÊÇ `damageDealtMult`¡£
+> Òò´Ë A1 µÄ `damageDealtMult` ÈÔ¿É±£ÁôÎª¡°Î´À´¿ÉÓÃµÄÉËº¦³ËÇø»úÖÆ¡±£¬µ« `debuff_weak` ²»Ó¦ÔÙ×÷ÎªËüµÄÊ¾Àı¡£
 
 > ½¨Òé£¨ÎÄµµ²ãÃæ£©£ºÍ³Ò»ÃüÃûÓëÓïÒå£¨ÀıÈçÖ»±£ÁôÒ»¸öÏµÁĞ£º`debuff_weakness_*`£©£¬±ÜÃâ³öÏÖ¡°Í¬Òå²»Í¬ ID¡±¡£´úÂë²ãÃæÎŞĞèÁ¢¿Ì¸Ä¶¯¡£
 
@@ -142,12 +201,13 @@ Buff¶ÔÏóÊÇËùÓĞĞ§¹ûµÄ×îĞ¡µ¥Ôª¡£Ò»¸ö±ê×¼µÄ Buff ¶ÔÏó°üº¬**»ù´¡ĞÅÏ¢**¡¢**ÉúÃüÖÜÆÚ¿Ø
 
 * µäĞÍ£º»¤¶ÜÎüÊÕ¡¢ÉËº¦×ª»¯ÎªÖÎÁÆ
 * ´¥·¢µã£¨¹æ·¶£©£ºÓÅÏÈÊ¹ÓÃ `onTakeDamagePre`£¨¶ø²»ÊÇ `onTakeDamage`£©
-* Ê¾Àı£º`buff_shield`£¨`absorbDamage`£©¡¢`buff_damage_absorb`£¨Aegis£¬ÎÄµµÖĞ¶¨Òå£©
+* Ê¾Àı£º`buff_shield`£¨Ò»´ÎĞÔµÖµ²£©¡¢`buff_damage_absorb`£¨Aegis£¬ÎÄµµÖĞ¶¨Òå£©
 
-**Éè¼Æ¿Ú¾¶Í³Ò»**£¨¶ÔÓ¦±¾ÂÖ²âÊÔ½áÂÛ£©£º
+**Éè¼Æ¿Ú¾¶Í³Ò»**£¨¶ÔÆë 1.2 µÄ²âÊÔ½áÂÛ£©£º
 
-- »¤¶Ü£¨Shield£©µÄÄ¿±êÊÇ¡°ÎüÊÕ n ²ãÉËº¦¡±£¬²»ÊÇ¡°Ôö¼Ó»¤¼×Öµ/¸Ä±ä bodyParts¡±¡£
-- »¤¶ÜÊôÓÚ¶ÀÁ¢ÎüÊÕ²ã£¬ÍÆ¼öÍ¨¹ı `context.shieldPool` ÊµÏÖ£ºÔÚ×îÖÕ¿ÛÑªÇ°ÓÅÏÈÏûºÄ shield¡£
+- ±¾ÂÖ»Ø¹é¿Ú¾¶ÏÂ£¬`buff_shield` ¶¨ÒåÎª£º**µÖµ²Ò»´ÎÉËº¦£¨Ò»´ÎĞÔ£©**¡£
+- ÍÆ¼öÊµÏÖ·½Ê½£ºÔÚ `onTakeDamagePre` ½×¶Î½« `context.damageTaken = 0`£¨»òµÈ¼Û×Ö¶Î£©£¬²¢ÔÚÍ¬Ò»´ÎÊÜ»÷ºó `REMOVE_SELF`¡£
+- ÈôÎ´À´ĞèÒª¡°»¤¶Ü³Ø/¿ÉÎüÊÕÊıÖµ¡±µÄÌåÏµ£¬¿ÉÁíĞĞÒıÈë `shieldPool` »úÖÆ Buff£¨Óë±¾ÂÖ `buff_shield` Çø·Ö ID ÓëÎÄ°¸£©¡£
 
 **¿É×·ËİÈÕÖ¾ÒªÇó**£¨»Ø¹éÑéÖ¤±ØĞè£©£º
 
@@ -165,7 +225,7 @@ Buff¶ÔÏóÊÇËùÓĞĞ§¹ûµÄ×îĞ¡µ¥Ôª¡£Ò»¸ö±ê×¼µÄ Buff ¶ÔÏó°üº¬**»ù´¡ĞÅÏ¢**¡¢**ÉúÃüÖÜÆÚ¿Ø
 
 **ĞèÇó**£ºÃ¿»ØºÏ½áËãÒ»´Î£¬²»ÒÀÀµ¹¥»÷¶¯×÷¡£
 
-* B1 DoT£º`buff_poison`¡¢`buff_bleed`¡¢`buff_burn`
+* B1 DoT£º`buff_poison`¡¢`buff_bleed`£¨`buff_burn` ÒÑ´Ó `assets/data/buffs.json` ÒÆ³ı£©
 * B2 HoT£ºÖÎÁÆÀà£¨¼¼ÄÜÉè¼ÆÖĞ³öÏÖºó¿É²¹Æë£©
 * B3 ×ÊÔ´½áËã£º`buff_ap_regen`£¨ÎÄµµÖĞ¶¨Òå£©
 
@@ -175,11 +235,9 @@ Buff¶ÔÏóÊÇËùÓĞĞ§¹ûµÄ×îĞ¡µ¥Ôª¡£Ò»¸ö±ê×¼µÄ Buff ¶ÔÏó°üº¬**»ù´¡ĞÅÏ¢**¡¢**ÉúÃüÖÜÆÚ¿Ø
 
 **ĞèÇó**£º¾ö¶¨½ÇÉ«ÄÜ·ñĞĞ¶¯¡¢ĞĞ¶¯Ë³Ğò¡¢¼¼ÄÜÊÇ·ñ¿ÉÓÃ¡£
 
-* C1 Ó²¿Ø£º`buff_stun`¡¢`buff_freeze`£¨`skipTurn`£©
+* C1 Ó²¿Ø£º`buff_stun`£¨`skipTurn`£©
 * C2 Èí¿Ø£º`buff_slow`£¨speed -5£©
-* C3 ¼¼ÄÜ/²¿Î»½ûÓÃ£º`buff_silence_limb`
-
-> `buff_silence_limb` Ä¿Ç°Ö»ÓĞÃèÊöÃ»ÓĞ `effects/statModifiers`¡£ÔÚÊµÏÖÇ°ĞèÒª²¹Ò»ÌõÇåÎú¹æÔò£ºËüÊÇ¡°½ûÖ¹ÓµÓĞÄ³ tag µÄ¼¼ÄÜ¡±£¬»¹ÊÇ¡°½ûÖ¹Ñ¡ÔñÄ³²¿Î»×÷ÎªÄ¿±ê¡±¡£Á½ÖÖ¹æÔòµÄÒıÇæÅĞ¶¨µã²»Í¬¡£
+* C3 ¼¼ÄÜ/²¿Î»½ûÓÃ£º±¾ÂÖ½áÂÛÒÑÉ¾³ı `buff_silence_limb`£¨Ôİ²»ÄÉÈë»Ø¹éÓëÖ÷Êı¾İ£©
 
 ---
 
@@ -187,7 +245,7 @@ Buff¶ÔÏóÊÇËùÓĞĞ§¹ûµÄ×îĞ¡µ¥Ôª¡£Ò»¸ö±ê×¼µÄ Buff ¶ÔÏó°üº¬**»ù´¡ĞÅÏ¢**¡¢**ÉúÃüÖÜÆÚ¿Ø
 
 **ĞèÇó**£ºÖ±½ÓĞŞ¸Ä½ÇÉ«Ãæ°åÊôĞÔÓÃÓÚºóĞøËùÓĞ¼ÆËã¡£
 
-* `buff_strength`¡¢`buff_freeze` µÄ `def +5` µÈ
+* `buff_strength`¡¢`debuff_weak` µÄ `atk` ĞŞÕıµÈ
 
 ÍÆ¼ö×ö·¨£ºD Àà Buff ¾¡Á¿Ö»Ê¹ÓÃ `statModifiers`£¬²»ÒÀÀµ `effects`£¬±£Ö¤½áËã¼òµ¥¡£
 
@@ -197,10 +255,9 @@ Buff¶ÔÏóÊÇËùÓĞĞ§¹ûµÄ×îĞ¡µ¥Ôª¡£Ò»¸ö±ê×¼µÄ Buff ¶ÔÏó°üº¬**»ù´¡ĞÅÏ¢**¡¢**ÉúÃüÖÜÆÚ¿Ø
 
 **ĞèÇó**£º¸Ä±äËÀÍö¹æÔò¡¢Ìá¹©ÏÂÏŞ±£»¤»òÌØÊâÎüÊÕ»úÖÆ¡£
 
-* E1 »¤¶Ü/ÎüÊÕ£º`buff_shield`
-* E2 ÃâËÀ£º`buff_immortality_hp`
-* E3 »¤¼×²»Ğà£º`buff_immortality_armor`
-* E4 ¸´»î£º`buff_revive`¡¢×°±¸±»¶¯ `passive_phoenix`
+* E1 »¤¶Ü/ÎüÊÕ£º`buff_shield`£¨±¾ÂÖ¶¨ÒåÎª¡°Ò»´ÎĞÔµÖµ²Ò»´ÎÉËº¦¡±£©
+* E2/E4£º±¾ÂÖ»Ø¹é½×¶Î²»ÒıÈë¡°ÃâËÀ/¸´»î¡±ÌåÏµ£»¶ÔÓ¦µÄ `buff_immortality_hp` / `buff_revive` ÒÑ´Ó `assets/data/buffs.json` ÒÆ³ı
+* E3 »¤¼×²»Ğà£º`buff_immortality_armor`£¨ÊÇ·ñ±£ÁôÈ¡¾öÓÚ»¤¼×ÆÆ»µ¹ÜÏßÂäµØ£©
 
 ---
 
@@ -274,16 +331,14 @@ Buff µÄĞ§¹û·ÖÎª**¾²Ì¬ÊôĞÔĞŞÕı**ºÍ**¶¯Ì¬´¥·¢ĞĞÎª**Á½Àà¡£
 | :--- | :--- | :--- |
 | `buff_poison` | B1 DoT | `onTurnEnd` ½áËã£¬°´ `maxHp * 0.05` |
 | `buff_bleed` | B1 DoT | `onTurnStart` ¹Ì¶¨ÉËº¦ |
-| `buff_burn` | B1 DoT | `onTurnStart` ¹Ì¶¨ÉËº¦ |
+| `buff_burn` | - | ÒÑ´Ó `assets/data/buffs.json` ÒÆ³ı£¨±¾ÂÖ½áÂÛ£ºÉ¾³ı£© |
 | `buff_stun` | C1 Ó²¿Ø | `skipTurn` |
-| `buff_freeze` | C1 Ó²¿Ø + D ÊôĞÔĞŞÕı | `skipTurn` + `def +5` |
+| `buff_freeze` | - | ÒÑ´Ó `assets/data/buffs.json` ÒÆ³ı£¨±¾ÂÖ½áÂÛ£º½µ¼¶²¢Óë `buff_slow` ºÏ²¢/alias£© |
 | `buff_slow` | C2 Èí¿Ø£¨ËÙ¶È£© | `speed -5` |
-| `buff_shield` | A4 / E1 »¤¶ÜÎüÊÕ | `onTakeDamage` -> `absorbDamage` |
-| `debuff_weak` | A1 Êä³öĞŞÕı | `damageDealtMult -0.2` |
 | `buff_weakness` | A1 Êä³öĞŞÕı | `damageDealtMult -0.15`£¨ÓëÉÏÓïÒåÖØµş£© |
 | `buff_vulnerable` | A2 ³ĞÉËĞŞÕı | `damageTakenMult +0.2` |
 | `buff_strength` | D ÊôĞÔĞŞÕı | `atk +5` |
-| `buff_silence_limb` | C3 ½ûÓÃÀà£¨´ıÃ÷È·¹æÔò£© | Ä¿Ç°Ö»ÓĞÃèÊö£¬ÎŞ¿ÉÖ´ĞĞ×Ö¶Î |
+| `buff_silence_limb` | - | ÒÑ´Ó `assets/data/buffs.json` ÒÆ³ı£¨±¾ÂÖ½áÂÛ£ºÉ¾³ı£© |
 
 > ÆÆ¼×/»¤¼×½»»¥Àà Buff ÔÚ `buffs.json` Àï»¹Î´³öÏÖ£¨»òÃüÃû²»Ã÷ÏÔ£©¡£ºóĞø²¹³äÆÆ¼× Buff Ê±ÇëÊ¹ÓÃ 4.1.3 µÄ¡°¸Ä»¤¼×¼õÃâÏµÊı¡±ÓïÒå¡£
 
@@ -302,7 +357,8 @@ Buff µÄĞ§¹û·ÖÎª**¾²Ì¬ÊôĞÔĞŞÕı**ºÍ**¶¯Ì¬´¥·¢ĞĞÎª**Á½Àà¡£
 
 #### R1. `debuff_weak` Óë `buff_weakness` µÄÓïÒåÖØ¸´
 
-* ÏÖ×´£ºÁ½Õß¶¼ÊôÓÚ A1 Êä³öĞŞÕı£¨½µµÍÔì³ÉÉËº¦£©£¬ÇÒ±êÇ©Í¬Îª `weakness`£¬²îÒì½öÔÚÊıÖµ/³ÖĞø»ØºÏ¡£
+* ÏÖ×´£¨ÀúÊ·£©£ºÁ½Õß¶¼±»ÓÃÓÚ±í´ï¡°Ôì³ÉÉËº¦±äÈõ¡±¡£
+* ¶ÔÆë±¾ÂÖ½áÂÛ£º`debuff_weak` ÒÑ¸ÄÎª **½µµÍ `atk`**£¬¶ø `buff_weakness`£¨Èô±£Áô£©Ôò´ú±í **Êä³ö³ËÇø `damageDealtMult`**¡£
 * ·çÏÕ£º
   * UI/±à¼­Æ÷²ãºÜÄÑ½âÊÍÁ½Õß²î±ğ£»
   * ÊµÏÖ²ã»áÓöµ½¡°Í¬Àà Debuff ÊÇ·ñ»¥³â/¸²¸Ç/µş¼Ó¡±µÄ¾ö²ßÑ¹Á¦¡£
@@ -342,21 +398,25 @@ Buff µÄĞ§¹û·ÖÎª**¾²Ì¬ÊôĞÔĞŞÕı**ºÍ**¶¯Ì¬´¥·¢ĞĞÎª**Á½Àà¡£
 
 #### R5. `skipTurn` ĞÍ¿ØÖÆ£¨`buff_stun` / `buff_freeze`£©´æÔÚÖØµş£¬µ«ÊôÓÚ¡°¿É¿ØÈßÓà¡±
 
-* ÏÖ×´£ºÁ½Õß¶¼Í¨¹ı `skipTurn` ´ï³ÉÓ²¿Ø¡£
+* ÏÖ×´£¨ÀúÊ·£©£ºÁ½Õß¶¼Í¨¹ı `skipTurn` ´ï³ÉÓ²¿Ø¡£
 * ½áÂÛ£ºÕâ²»Ëã±ØĞëºÏ²¢µÄÈßÓà£¬ÒòÎª¡°¿ØÖÆÀ´Ô´/±êÇ©/¿¹ĞÔ¡±¿ÉÄÜ²»Í¬¡£
 * ĞŞÕı½¨Òé£º
   * ÔÚÀàĞÍÌåÏµÖĞÃ÷È·£º`skipTurn` ÊôÓÚ C1 »úÖÆ£»`freeze` Ö»ÊÇ¡°¶îÍâ¸½´øÊôĞÔ/±êÇ©¡±µÄ±äÌå¡£
   * Í³Ò»Ğ´·¨£ºC1 µÄÓ²¿Ø¶¼ÓÃ `effects: [{ trigger: onTurnStart, action: skipTurn }]`£¬²îÒìÌåÏÖÔÚ `tags` Óë¸½¼Ó `statModifiers`¡£
 
+> ¶ÔÆë±¾ÂÖ½áÂÛ£º`buff_freeze` ÒÑÒÆ³öÖ÷Êı¾İ£¬²»ÔÙ×÷ÎªÏÖÓĞ Buff µÄÈßÓàÌÖÂÛ¶ÔÏó£»ÈôÎ´À´ÖØĞÂÒıÈë£¬Ó¦°´¡°Ô­×ÓĞÔ¡±²ğ·ÖÎª¶à¸ö Buff¡£
+
 #### R6. ¡°ÃüÖĞ±Ø¶¨ÃüÖĞ¡±Àà£¨`buff_eagle_eye`£©µ±Ç°Ö»ÓĞ description£¬µÈÍ¬ÓÚ°ë³ÉÆ· Buff
 
-* ÏÖ×´£ºÖ»ÓĞ `description`£¬ÎŞ `effects/statModifiers`£¬ÊôÓÚ¡°ÎÄµµ/Êı¾İÈßÓàÕ¼Î»¡±¡£
+* ÏÖ×´£¨ÀúÊ·£©£ºÖ»ÓĞ `description`£¬ÎŞ `effects/statModifiers`£¬ÊôÓÚ¡°ÎÄµµ/Êı¾İÈßÓàÕ¼Î»¡±¡£
 * ĞŞÕı½¨Òé£º
   * ÒªÃ´²¹Æë¿ÉÖ´ĞĞ×Ö¶Î£¨¼û M2/M6£©£¬ÒªÃ´±ê×¢Îª `tbd` ²¢´Ó¡°ÒÑÍê³É Buff Çåµ¥¡±ÒÆ³ö¡£
 
+> ¶ÔÆë±¾ÂÖ½áÂÛ£º`buff_eagle_eye` ÒÑ´Ó `assets/data/buffs.json` ÒÆ³ı¡£
+
 #### R7. ¡°¶¨Òå¿Ú¾¶ÖØ¸´¡±£ºÍ¬Ò»¸ÅÄîÍ¬Ê±ÓÃ `def` Óë `armor` ±í´ï£¨ÆÆ¼×Ïà¹Ø£©
 
-* ÏÖ×´£ºA3 ÒÑÃ÷È·¡°»¤¼×°´²¿Î»¡±£¬µ« `buff_armor_pen` µÄÊ¾ÀıÓë `buffs.json` ÈÔÔÚÓÃ `def` ×öÆÆ¼×¡£
+* ÏÖ×´£¨ÀúÊ·£©£ºA3 ÒÑÃ÷È·¡°»¤¼×°´²¿Î»¡±£¬µ«¾ÉÊı¾İÔøÓÃ `def` ×öÆÆ¼×¡£
 * ·çÏÕ£ºµ¼ÖÂÊµÏÖÊ±°Ñ¡°»¤¼×ÏµÍ³¡±ÍË»¯Îª¡°·ÀÓùÁ¦ÏµÍ³¡±£¬ÓëÏîÄ¿ºËĞÄ²îÒì»¯Éè¶¨³åÍ»¡£
 * ĞŞÕı½¨Òé£º±¾´ÎÎÄµµĞèÒªÍ³Ò»¿Ú¾¶£¨¼û 5.1.3 / 8.3.2 ĞŞÕı£©¡£
 
@@ -466,11 +526,11 @@ Buff µÄĞ§¹û·ÖÎª**¾²Ì¬ÊôĞÔĞŞÕı**ºÍ**¶¯Ì¬´¥·¢ĞĞÎª**Á½Àà¡£
 * `buff_armor_pen`£¨ÆÆ¼×ÒâÍ¼£©µÄÊµÏÖÃèÊö£¬ºóĞøÓ¦»ùÓÚ `armorMitigationMult`£¨¸Ä»¤¼×¼õÃâÏµÊı£©¶ø²»ÊÇ¸Ä `def`¡£
 * ±¾ÎÄµµºóÎÄµÄ `8.3.2` Ê¾Àı»á¾İ´Ëµ÷Õû£¨µ±ÄãÒªÇóÊµÏÖ´úÂëÇ°£¬½¨ÒéÏÈ°ÑÊ¾ÀıÍ³Ò»£©¡£
 
-²¹³ä£ºµ±Ç° `assets/data/buffs.json` µÄ `buff_armor_pen` ÈÔÊÇ `MODIFY_STAT_TEMP` + `def`¡£ÎªÁË±ÜÃâ¸ÅÄî»ìÂÒ£º
+²¹³ä£º`assets/data/buffs.json` µÄ `buff_armor_pen` ÒÑ¶ÔÆëÎª `MODIFY_STAT_TEMP` + `armorMitigationMult`¡£
 
 * ÎÄµµÒÔ¡°»¤¼×°´²¿Î»¡±ÎªµÚÒ»Ô­Ôò£¬ÆÆ¼×Ó¦µ±Ó°Ïì `armorMitigationMult`£¨»òÉÏÏÂÎÄÖĞµÄ `armorMitigationMult`£©£¬¶ø²»ÊÇ `def`¡£
 * ÏÖ½×¶ÎÔÊĞí JSON Ôİ²»¸Ä£¬µ«ĞèÒªÔÚÊµÏÖ BuffSystem Ê±Ìá¹©Ò»¸ö¼æÈİ²ã£º
-  * ÈôÓöµ½ `stat=def` ÇÒ Buff ÓïÒåÎªÆÆ¼×£ºÔÚÈÕÖ¾ÖĞÌáÊ¾¡°¾É×Ö¶Î¿Ú¾¶£¨def£©½«Ç¨ÒÆµ½ armorMitigationMult¡±¡£
+  * ÈôÓöµ½¾ÉÊı¾İÈÔÊ¹ÓÃ `stat=def` ±í´ïÆÆ¼×£ºÔÚÈÕÖ¾ÖĞÌáÊ¾¡°¾É×Ö¶Î¿Ú¾¶£¨def£©½«Ç¨ÒÆµ½ armorMitigationMult¡±¡£
 
 ---
 
@@ -483,24 +543,24 @@ Buff µÄĞ§¹û·ÖÎª**¾²Ì¬ÊôĞÔĞŞÕı**ºÍ**¶¯Ì¬´¥·¢ĞĞÎª**Á½Àà¡£
 | Buff ID | Ãû³Æ | ÀàĞÍ | À´Ô´¼¼ÄÜ/Ö°Òµ | Ğ§¹ûÃèÊö | ÊµÏÖÂß¼­ |
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | `buff_bleed` | Á÷Ñª (Bleed) | Debuff | ½£Êõ (Duelist) | Ã¿»ØºÏÊÜµ½ÎïÀíÉËº¦ | `onTurnStart` -> `damage` (flat value) |
-| `buff_burn` | È¼ÉÕ (Burn) | Debuff | ÔªËØ (Elementalist) | Ã¿»ØºÏÊÜµ½»ğÑæÉËº¦ | `onTurnStart` -> `damage` (flat value) |
+| `buff_burn` | È¼ÉÕ (Burn) | Debuff | ÔªËØ (Elementalist) | ÒÑ´ÓÖ÷Êı¾İÒÆ³ı£¨Î´À´°æ±¾£ºÔªËØÌåÏµÔÙÒıÈë£© | - |
 | `buff_poison` | ÖĞ¶¾ (Poison) | Debuff | ÓÎÏÀ (Ranger), Í¿¶¾ | Ã¿»ØºÏÊÜµ½×î´óHP°Ù·Ö±ÈÉËº¦ | `onTurnEnd` -> `damage` (percent maxHP) |
 | `buff_stun` | Ñ£ÔÎ (Stun) | Debuff | ÖØ×° (Juggernaut), µÀ¾ß | Ìø¹ıµ±Ç°»ØºÏ | ÒıÇæ×´Ì¬¼ì²é `canAct = false`, `onTurnStart` -> decrease duration |
-| `buff_freeze` | ¶³½á (Freeze) | Debuff | ÔªËØ (Elementalist) | Ìø¹ıµ±Ç°»ØºÏ£¬¿ÉÄÜÔö¼Ó»¤¼× | Í¬ Stun, µ«¸½¼Ó `statModifiers: { def: +value }` |
+| `buff_freeze` | ¶³½á (Freeze) | Debuff | ÔªËØ (Elementalist) | ÒÑ´ÓÖ÷Êı¾İÒÆ³ı£¨Î´À´°æ±¾£º¿É×÷Îª `buff_slow` µÄ alias ÔÙÒıÈë£© | - |
 | `buff_slow` | ¼õËÙ (Slow) | Debuff | ¾Ñ»÷ (Sniper) | ËÙ¶ÈÏÔÖø½µµÍ | `statModifiers: { speed: -value }` |
-| `buff_weakness` | ĞéÈõ (Weakness) | Debuff | Ìú±Ú (Guardian), ¾Ñ»÷ | Ôì³ÉµÄÉËº¦½µµÍ | `statModifiers: { damageDealtMult: -percent }` |
+| `buff_weakness` | ĞéÈõ (Weakness) | Debuff | Ìú±Ú (Guardian), ¾Ñ»÷ | £¨¿Ú¾¶´ı¶¨£º±¾ÂÖ¸üÆ«ºÃÒÔ `atk` ±í´ïĞéÈõ£»Èô±£Áô damageDealtMult£¬ĞèÃ÷È·Óë `debuff_weak` Çø·Ö£© | - |
 | `buff_vulnerable` | Ò×ÉË (Vulnerable)| Debuff | ¾Ñ»÷ (Sniper) | ÊÜµ½µÄÉËº¦Ôö¼Ó | `statModifiers: { damageTakenMult: +percent }` |
-| `buff_silence_limb`| ÖÂ²Ğ (Crippled) | Debuff | ¾Ñ»÷ (Sniper) | ÌØ¶¨²¿Î»Éú³ÉµÄ¼¼ÄÜ²»¿ÉÓÃ | ÒıÇæÌØÊâÂß¼­: ½ûÖ¹ÌØ¶¨Tag¼¼ÄÜ |
+| `buff_silence_limb`| ÖÂ²Ğ (Crippled) | Debuff | ¾Ñ»÷ (Sniper) | ÒÑ´ÓÖ÷Êı¾İÒÆ³ı£¨Î´À´°æ±¾£ºĞèÏÈÂäµØ¡°¼¼ÄÜ/²¿Î»¿ÉÓÃĞÔÅĞ¶¨¹ÜÏß¡±£© | - |
 
 ### 6.2 Õ½¶·ÔöÒæÀà (Combat Buffs - Offensive)
 
 | Buff ID | Ãû³Æ | ÀàĞÍ | À´Ô´¼¼ÄÜ/Ö°Òµ | Ğ§¹ûÃèÊö | ÊµÏÖÂß¼­ |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| `buff_berserk` | ¿ñ±© (Berserk) | Buff | ÖØ×° (Juggernaut) | ÉËº¦´ó·ùÔö¼Ó£¬ÃüÖĞ½µµÍ | `statModifiers: { atk: +50%, hitRate: -20% }` |
-| `buff_focus` | ×¨×¢ (Focus) | Buff | ¾Ñ»÷ (Sniper) | ±©»÷ÂÊÓëÃüÖĞÂÊÌáÉı | `statModifiers: { critRate: +20%, hitRate: +10% }` |
-| `buff_magic_surge`| Ä§Á¦¹ıÔØ (Surge) | Buff | ÔªËØ (Elementalist) | ÏÂ»ØºÏÄ§Á¦ÉËº¦ÌáÉı | `statModifiers: { magicDmg: +50% }` (Duration: 1) |
-| `buff_poison_coat`| ¶¾ËØÍ¿²ã (Coating)| Buff | ÓÎÏÀ (Ranger) | ¹¥»÷Ê±Ê©¼ÓÖĞ¶¾Ğ§¹û | `onAttackPost` -> `applyBuff: buff_poison` |
-| `buff_eagle_eye` | Ó¥ÑÛ (Eagle Eye) | Buff | ¾Ñ»÷ (Sniper) | ¼õÉÙ¾àÀë³Í·£(Õë¶ÔºóÅÅ) | ÒıÇæÌØÊâÂß¼­: Ignore Range Penalty |
+| `buff_berserk` | ¿ñ±© (Berserk) | Buff | ÖØ×° (Juggernaut) | ÒÑ´ÓÖ÷Êı¾İÒÆ³ı£¨Î´À´°æ±¾£ºÃüÖĞ/±©»÷Á´Â·ÂäµØºóÔÙÒıÈë£© | - |
+| `buff_focus` | ×¨×¢ (Focus) | Buff | ¾Ñ»÷ (Sniper) | ÒÑ´ÓÖ÷Êı¾İÒÆ³ı£¨Î´À´°æ±¾£ºÃüÖĞ/±©»÷Á´Â·ÂäµØºóÔÙÒıÈë£© | - |
+| `buff_magic_surge`| Ä§Á¦¹ıÔØ (Surge) | Buff | ÔªËØ (Elementalist) | ÒÑ´ÓÖ÷Êı¾İÒÆ³ı£¨Î´À´°æ±¾£º·¨ÊõÉËº¦ÌåÏµÂäµØºóÔÙÒıÈë£© | - |
+| `buff_poison_coat`| ¶¾ËØÍ¿²ã (Coating)| Buff | ÓÎÏÀ (Ranger) | ÒÑ´ÓÖ÷Êı¾İÒÆ³ı£¨Î´À´°æ±¾£ºÓëÖĞ¶¾µş¼Ó/À´Ô´¹æÔòÃ÷È·ºóÔÙÒıÈë£© | - |
+| `buff_eagle_eye` | Ó¥ÑÛ (Eagle Eye) | Buff | ¾Ñ»÷ (Sniper) | ÒÑ´ÓÖ÷Êı¾İÒÆ³ı£¨Î´À´°æ±¾£ºÃüÖĞÅĞ¶¨¹ÜÏßÂäµØºóÔÙÒıÈë£© | - |
 | `buff_armor_pen` | ÆÆ¼×ÒâÍ¼ (Feint) | Buff | ½£Êõ (Duelist) | ÏÂ´Î¹¥»÷Ï÷Èõ»¤¼×¼õÃâ£¨Ìá¸ßÄ¿±ê»¤¼×¼õÃâÏµÊı£© | `onAttackPre` -> Apply `armorMitigationMult` (Temp/Context) |
 | `buff_bless` | ×£¸£ (Bless) | Buff | ÉñÊ¥ (Cleric) | ÃüÖĞÂÊÓëÉÁ±ÜÂÊÌáÉı | `statModifiers: { hitRate: +20%, dodgeRate: +10% }` |
 
@@ -508,14 +568,14 @@ Buff µÄĞ§¹û·ÖÎª**¾²Ì¬ÊôĞÔĞŞÕı**ºÍ**¶¯Ì¬´¥·¢ĞĞÎª**Á½Àà¡£
 
 | Buff ID | Ãû³Æ | ÀàĞÍ | À´Ô´¼¼ÄÜ/Ö°Òµ | Ğ§¹ûÃèÊö | ÊµÏÖÂß¼­ |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| `buff_iron_will` | ¸ÖÌúÒâÖ¾ (Iron Will)| Buff | Ìú±Ú (Guardian) | »¤¼×/·ÀÓùÌáÉı | `statModifiers: { def: +value }` |
-| `buff_block` | ¸ñµ² (Block) | Buff | Ìú±Ú (Guardian) | ÏÂ´ÎÊÜµ½µÄÉËº¦¼õ°ë | `onTakeDamage` (Pre) -> Modify Incoming Dmg * 0.5 |
+| `buff_iron_will` | ¸ÖÌúÒâÖ¾ (Iron Will)| Buff | Ìú±Ú (Guardian) | ÒÑ´ÓÖ÷Êı¾İÒÆ³ı£¨Î´À´°æ±¾£ºdef/»¤¼×¿Ú¾¶Í³Ò»ºóÔÙÒıÈë£© | - |
+| `buff_block` | ¸ñµ² (Block) | Buff | Ìú±Ú (Guardian) | ÏÂ´ÎÊÜµ½µÄÉËº¦¼õ°ë | `onTakeDamagePre` -> Modify Incoming Dmg * 0.5 |
 | `buff_pain_sup` | Í´¿àÑ¹ÖÆ (Suppression)| Buff | ÉñÊ¥ (Cleric) | ÊÜµ½µÄÉËº¦¼õÉÙ30% | `statModifiers: { damageTakenMult: -30% }` |
-| `buff_evasion` | ²ĞÓ° (Evasion) | Buff | ÓÎÏÀ (Ranger) | ÉÁ±ÜÂÊ´ó·ùÌáÉı | `statModifiers: { dodgeRate: +60% }` |
-| `buff_immortality_hp`| ÌìÊ¹ÊØ»¤ (Immortal HP) | Buff | ÉñÊ¥ (Cleric) | HPÎŞ·¨½µÖÁ1ÒÔÏÂ | `onTakeDamage` -> ensure HP >= 1 |
-| `buff_immortality_armor`| ²»Ğà±ÚÀİ (Immortal Armor) | Buff | Ìú±Ú (Guardian) | »¤¼×ÎŞ·¨±»ÆÆ»µ | `onTakeDamage` -> ensure Armor >= 1 |
-| `buff_shield` | »¤¶Ü (Shield) | Buff | ÉñÊ¥ (Cleric) | µÖ¿ÛÉËº¦ | ÌØÊâÀàĞÍ `shield`: ÓµÓĞ `value` ÊôĞÔ£¬`onTakeDamage` ÓÅÏÈ¿Û³ı |
-| `buff_revive` | ¹â»Ô¸´ËÕ (Revive) | Buff | ÉñÊ¥ (Cleric) | ¸´»î | `onDeath` -> Cancel Death, Heal |
+| `buff_evasion` | ²ĞÓ° (Evasion) | Buff | ÓÎÏÀ (Ranger) | £¨±¾ÂÖ½áÂÛ£ºn ´ÎÃâÒßÉËº¦£»µ±Ç°Ö÷Êı¾İÊµÏÖÎª 1 ´Î£© | `onTakeDamagePre` -> `damageTaken=0` + `REMOVE_SELF` |
+| `buff_immortality_hp`| ÌìÊ¹ÊØ»¤ (Immortal HP) | Buff | ÉñÊ¥ (Cleric) | £¨±¾ÂÖ½áÂÛ£º»Ø¹é½×¶ÎÒÆ³ı£»Ö÷Êı¾İÒÑÒÆ³ı£© | - |
+| `buff_immortality_armor`| ²»Ğà±ÚÀİ (Immortal Armor) | Buff | Ìú±Ú (Guardian) | »¤¼×ÎŞ·¨±»ÆÆ»µ£¨TBD£© | ĞèÒª»¤¼×ÆÆ»µ/»¤¼×ÉËº¦¹ÜÏßÖ§³Ö£¨°´²¿Î»£© |
+| `buff_shield` | »¤¶Ü (Shield) | Buff | ÉñÊ¥ (Cleric) | µÖµ²Ò»´ÎÉËº¦£¨Ò»´ÎĞÔ£© | `onTakeDamagePre` -> `damageTaken=0` + `REMOVE_SELF` |
+| `buff_revive` | ¹â»Ô¸´ËÕ (Revive) | Buff | ÉñÊ¥ (Cleric) | £¨±¾ÂÖ½áÂÛ£º»Ø¹é½×¶ÎÒÆ³ı£»Ö÷Êı¾İÒÑÒÆ³ı£© | - |
 | `buff_shield_wall` | ¶ÜÇ½ (Shield Wall) | Buff | Ìú±Ú (Guardian) | »¤¼×¹²Ïí£¬APÌáÉı | ÒıÇæÂß¼­: Shared Armor Pool, `statModifiers: { maxAp: +3 }` |
 
 ### 6.4 ÌØÊâ»úÖÆÀà (Special Mechanics)
@@ -526,7 +586,7 @@ Buff µÄĞ§¹û·ÖÎª**¾²Ì¬ÊôĞÔĞŞÕı**ºÍ**¶¯Ì¬´¥·¢ĞĞÎª**Á½Àà¡£
 | `buff_counter` | ·´»÷×ËÌ¬ (Counter) | Buff | Ìú±Ú (Guardian) | ÉÁ±Ü²¢·´»÷±ØÖĞ | `statModifiers: { dodge: +100% }, onDefendPost` -> `attack` |
 | `buff_lifesteal` | ÎüÑª (Lifesteal) | Buff | ½£Êõ (Duelist), ×°±¸ | ¹¥»÷Ôì³ÉÉËº¦»Ø¸´HP | `onAttackPost` -> `heal` (percent of dmg) |
 | `buff_ap_regen` | Õ½Êõ»Ö¸´ (AP Regen)| Buff | ÓÎÏÀ (Ranger), ×°±¸ | ĞĞ¶¯Á¦»Ö¸´/ÏûºÄ¼õÉÙ | `onTurnStart` -> `modifyAP: +1` »ò `statModifiers: { apCost: -1 }` |
-| `buff_damage_absorb`| Ê¥¶Ü (Aegis) | Buff | Ìú±Ú (Guardian) | ÊÜµ½µÄÉËº¦×ª»¯ÎªÖÎÁÆ | `onTakeDamage` -> `heal` (value=dmg), `cancelDmg: true` |
+| `buff_damage_absorb`| Ê¥¶Ü (Aegis) | Buff | Ìú±Ú (Guardian) | ÊÜµ½µÄÉËº¦×ª»¯ÎªÖÎÁÆ£¨TBD£© | `onTakeDamagePre` -> `absorbToHeal`£¨ĞèÒª¶¯×÷¿âÖ§³Ö£© |
 
 ---
 
@@ -550,30 +610,30 @@ Buff µÄĞ§¹û·ÖÎª**¾²Ì¬ÊôĞÔĞŞÕı**ºÍ**¶¯Ì¬´¥·¢ĞĞÎª**Á½Àà¡£
 | Buff ID | ¹ØÁª¼¼ÄÜ (skills) | ¹ØÁª×°±¸ (items) |
 | :--- | :--- | :--- |
 | `buff_bleed` | Ñª¹ÜÇĞ¸î (Artery Slice), Ç§ÈĞ·ç±© (Thousand Cuts), ÑªĞÈÊÕ¸î (Bloody Harvest - ÏûºÄ), ĞÉºìÖÕ½á (Crimson Finale - ÒÆ³ı) | - |
-| `buff_burn` | »ğÇòÊõ (Fireball), È¼ÓÍÍ¶ÖÀ (Oil Slick - ÑÓ³¤) | - |
+| `buff_burn` | »ğÇòÊõ (Fireball), È¼ÓÍÍ¶ÖÀ (Oil Slick - ÑÓ³¤) | - £¨±¾ÂÖ½áÂÛ£ºÒÑÉ¾³ı/ÒÆ³ö»Ø¹é·¶Î§£© |
 | `buff_poison` | ¶¾ÒºÍ¿²ã (Poison Coating - Ê©¼ÓÕß) | - |
 | `buff_stun` | ¶ÜÅÆÃÍ»÷ (Shield Bash), ÂùÅ£Í·é³ (Headbutt), ´óµØÕğ»÷ (Earthquake) | - |
-| `buff_freeze` | ±ù×¶Êõ (Ice Lance), ±©·çÑ© (Blizzard) | - |
+| `buff_freeze` | ±ù×¶Êõ (Ice Lance), ±©·çÑ© (Blizzard) | - £¨±¾ÂÖ½áÂÛ£º½µ¼¶²¢Óë `buff_slow` ºÏ²¢/alias£»Ö÷Êı¾İÒÑÒÆ³ıÔ­ freeze »úÖÆ£© |
 | `buff_slow` | Õğµ´²¨ (Shockwave), Ï¥¸ÇÉä»÷ (Knee Shot), ±ùËªĞÂĞÇ (Frost Nova - ÀàËÆ) | `passive_heavy_armor` (ÀàËÆĞ§¹û) |
 | `debuff_weak` | - | `helm_gladiator` (ÀàËÆĞ§¹û) |
 | `buff_weakness` | ÌôĞÆ (Taunt), Ô¶³Ì²ğ½â (Disarm) | - |
 | `buff_vulnerable` | Èõµã±ê¼Ç (Mark Target), ¸Ğµç (Elementalist feature) | - |
-| `buff_silence_limb`| ÖÂ²ĞÉä»÷ (Crippling Shot) | - |
-| `buff_berserk` | ¿ñ±©×ËÌ¬ (Berserk) | - |
-| `buff_focus` | ÎÈ¹ÌÃé×¼ (Steady Aim) | - |
-| `buff_magic_surge` | ¹ıÔØ (Overload) | - |
-| `buff_poison_coat` | ¶¾ÒºÍ¿²ã (Poison Coating) | - |
-| `buff_eagle_eye` | Ó¥ÑÛ (Eagle Eye) | - |
+| `buff_silence_limb`| ÖÂ²ĞÉä»÷ (Crippling Shot) | - £¨±¾ÂÖ½áÂÛ£ºÒÑÉ¾³ı/ÒÆ³ö»Ø¹é·¶Î§£© |
+| `buff_berserk` | ¿ñ±©×ËÌ¬ (Berserk) | - £¨±¾ÂÖ½áÂÛ£ºÒÑÉ¾³ı/ÒÆ³ö»Ø¹é·¶Î§£© |
+| `buff_focus` | ÎÈ¹ÌÃé×¼ (Steady Aim) | - £¨±¾ÂÖ½áÂÛ£ºÒÑÉ¾³ı/ÒÆ³ö»Ø¹é·¶Î§£© |
+| `buff_magic_surge` | ¹ıÔØ (Overload) | - £¨±¾ÂÖ½áÂÛ£ºÒÑÉ¾³ı/ÒÆ³ö»Ø¹é·¶Î§£© |
+| `buff_poison_coat` | ¶¾ÒºÍ¿²ã (Poison Coating) | - £¨±¾ÂÖ½áÂÛ£ºÒÑÉ¾³ı/ÒÆ³ö»Ø¹é·¶Î§£© |
+| `buff_eagle_eye` | Ó¥ÑÛ (Eagle Eye) | - £¨±¾ÂÖ½áÂÛ£ºÒÑÉ¾³ı/ÒÆ³ö»Ø¹é·¶Î§£© |
 | `buff_armor_pen` | Ñğ¹¥ (Feint) | - |
 | `buff_bless` | ×£¸£ (Bless) | - |
-| `buff_iron_will` | ¸ÖÌúÒâÖ¾ (Iron Will) | - |
+| `buff_iron_will` | ¸ÖÌúÒâÖ¾ (Iron Will) | - £¨±¾ÂÖ½áÂÛ£ºÒÑÉ¾³ı/ÒÆ³ö»Ø¹é·¶Î§£© |
 | `buff_block` | ¸ñµ² (Block) | - |
 | `buff_pain_sup` | Í´¿àÑ¹ÖÆ (Pain Suppression) | - |
 | `buff_evasion` | Õ½Êõ·­¹ö (Tactical Roll), ²ĞÓ° (Afterimage) | - |
-| `buff_immortality_hp` | ÌìÊ¹ÊØ»¤ (Guardian Angel) | - |
+| `buff_immortality_hp` | ÌìÊ¹ÊØ»¤ (Guardian Angel) | - £¨±¾ÂÖ½áÂÛ£º»Ø¹é½×¶ÎÒÆ³ı£© |
 | `buff_immortality_armor` | ²»Ğà±ÚÀİ (Immortal Bastion) | - |
 | `buff_shield` | ĞÅÑöÖ®¶Ü (Shield of Faith) | - |
-| `buff_revive` | ¹â»Ô¸´ËÕ (Radiant Revitalize) | `acc_pendant_phoenix` |
+| `buff_revive` | ¹â»Ô¸´ËÕ (Radiant Revitalize) | `acc_pendant_phoenix`£¨±¾ÂÖ½áÂÛ£º»Ø¹é½×¶ÎÒÆ³ı£© |
 | `buff_shield_wall` | ¶ÜÇ½ (Shield Wall) | - |
 | `buff_thorns` | ¼â´Ì·ÀÓù (Spiked Shell) | - |
 | `buff_counter` | ·´»÷×ËÌ¬ (Counter Stance) | - |
@@ -716,8 +776,8 @@ EventBus.emit("onAttackPost", attacker, defender, contextData);
 
 **2. Âß¼­Á÷ (Logic Flow)**:
 1.  **Ç°ÖÃ¹³×Ó (`onAttackPre`)**: Õ½¶·ÏµÍ³ÔÚ¼ÆËãÉËº¦¹«Ê½ `Step 1: RawDmg = Atk - Def` Ö®Ç°£¬´¥·¢´ËÊÂ¼ş¡£
-2.  **Ö´ĞĞĞŞÕı**: `ActionLibrary.MODIFY_STAT_TEMP` ½éÈë£¬¶ÁÈ¡Ä¿±êµÄ `def` (ÀıÈç 100)£¬½«ÆäÔÚ**±¾´Î¼ÆËãÉÏÏÂÎÄ**ÖĞÁÙÊ±±ê¼ÇÎª `70` (100 * (1-0.3))¡£×¢ÒâÕâ²»»áÓÀ¾ÃĞŞ¸ÄµĞÈËµÄÃæ°åÊôĞÔ£¬Ö»Ó°Ïìµ±´ÎÉËº¦¹«Ê½¡£
-3.  **¼ÆËãÉËº¦**: Õ½¶·ÏµÍ³Ê¹ÓÃĞŞÕıºóµÄ `70` ½øĞĞÉËº¦¼ÆËã¡£
+2.  **Ö´ĞĞĞŞÕı**: `ActionLibrary.MODIFY_STAT_TEMP` ½éÈë£¬ÔÚ**±¾´Î¼ÆËãÉÏÏÂÎÄ**ÖĞĞ´Èë `armorMitigationMult`£¨ÀıÈç +30%£©£¬ÓÃÓÚÏ÷Èõ¡°Ä¿±ê²¿Î»»¤¼×²ÎÓë¼õÃâÊ±µÄ¼õÃâÏµÊı¡±¡£
+3.  **¼ÆËãÉËº¦**: Õ½¶·ÏµÍ³ÔÚ»¤¼×½áËã½×¶Î¶ÁÈ¡¸Ã `armorMitigationMult`£¬´Ó¶øÈÃÏàÍ¬»¤¼×ÖµÏÂµÄ×îÖÕÉËº¦¸ü¸ß¡£
 4.  **ºóÖÃ¹³×Ó (`onAttackPost`)**: ÉËº¦½áËãÍê±Ï¡£
 5.  **×ÔÎÒÏûºÄ**: ´¥·¢ `REMOVE_SELF`£¬Buff ´ÓÁĞ±íÖĞÒÆ³ı£¬È·±£Ğ§¹ûÖ»ÉúĞ§Ò»´Î¡£
 
@@ -790,7 +850,7 @@ EventBus.emit("onAttackPost", attacker, defender, contextData);
 
 2.  **ÆÆ¼×Ê§Ğ§ (Armor Pen Failure)**:
     *   **ÏÖÏó**: »¤¼×¼õÃâÊıÖµÎ´±ä¡£
-    *   **Ô­Òò**: ÆÆ¼×ÒÀÀµ `onAttackPre` Ê±»ú´¥·¢£¬Ä¿µÄÊÇÔÚ¡°ÉËº¦¼ÆËã¹«Ê½Ö´ĞĞÇ°¡±ÁÙÊ±ĞŞ¸Ä²ÎÊı¡£Ä£Äâ´úÂëÖĞ£¬ÊÂ¼ş´¥·¢ (`onAttackPre`) ºÍ ÉËº¦¼ÆËã (`damage - armor`) ÊÇ·ÖÀëµÄ£¬ÊÂ¼ş´¥·¢½ö½ö´òÓ¡ÁËÈÕÖ¾£¬²¢Ã»ÓĞ½«ĞŞ¸ÄºóµÄ²ÎÊı´«µİ¸øÉËº¦¼ÆËã²½Öè¡£
+    *   **Ô­Òò**: ÆÆ¼×ÒÀÀµ `onAttackPre` Ê±»ú´¥·¢£¬Ä¿µÄÊÇÔÚ¡°»¤¼×½áËã½×¶Î¡±ÁÙÊ±ĞŞ¸Ä `armorMitigationMult`¡£Ä£Äâ´úÂëÖĞ£¬ÊÂ¼ş´¥·¢ (`onAttackPre`) ºÍ »¤¼×½áËã ÊÇ·ÖÀëµÄ£¬ÊÂ¼ş´¥·¢½ö½ö´òÓ¡ÁËÈÕÖ¾£¬²¢Ã»ÓĞ½«ĞŞ¸ÄºóµÄ²ÎÊı´«µİ¸ø»¤¼×½áËã²½Öè¡£
     *   **È±Ê§**: È±ÉÙ**¿É±äÉÏÏÂÎÄ (Mutable Context)** µÄ´«µİ»úÖÆ¡£
 
 ### 9.2 ÄÚºËÄ£¿éĞèÇó (Module Requirements)
@@ -821,31 +881,27 @@ async function executeCombatAction(attacker, target, actionData) {
         attacker: attacker,
         target: target,
         rawDamage: actionData.baseDamage,
-        armorPenetration: 0,      // ÆÆ¼× (³õÖµ0)
-        damageMultiplier: 1.0,    // ÉËº¦³ËÇø (³õÖµ1.0)
+        armorMitigationMult: 1.0, // »¤¼×¼õÃâÏµÊı³ËÇø (³õÖµ 1.0)
+        damageMultiplier: 1.0,    // ÉËº¦³ËÇø (³õÖµ 1.0)
         resultLog: []
     };
 
     // 2. ´¥·¢½×¶Î: ¹¥»÷Ç° (Attack Pre)
     // BuffSystem ¼àÌıµ½´ËÊÂ¼ş£¬Èô attacker ÓĞ¡°ÆÆ¼×ÒâÍ¼¡±Buff£º
-    // -> ´¥·¢ ACTION: "MODIFY_CONTEXT" -> context.armorPenetration = 0.3
+    // -> ´¥·¢ ACTION: "MODIFY_CONTEXT" -> context.armorMitigationMult *= 1.3
     await EventBus.emit('BATTLE_ATTACK_PRE', context);
 
     // 3. ¼ÆËã½×¶Î: ¶¯Ì¬ÊôĞÔ»ñÈ¡
-    // »ñÈ¡Ä¿±ê·ÀÓùÁ¦ (ÕâÀï»á¼ÆËãÄ¿±êµÄ ±»¶¯Buff ĞŞÕı£¬Èç¡°¸ÖÌúÒâÖ¾¡±)
-    let targetDef = StatCalculator.get(target, 'def'); 
-
-    // Ó¦ÓÃÉÏÏÂÎÄÖĞµÄÆÆ¼×ĞŞÕı
-    let effectiveDef = targetDef * (1 - context.armorPenetration);
-
-    // 4. ¼ÆËã½×¶Î: »ù´¡ÉËº¦
-    let finalDamage = Math.max(1, context.rawDamage - effectiveDef);
+    // ÕâÀï²»ÔÙÓÃ def ×ö¡°»¤¼×¡±£¬»¤¼×°´²¿Î»²ÎÓë¼õÃâ£º
+    // finalDamage = rawDamage * f(armorValue) * context.armorMitigationMult
+    // £¨f(armorValue) Îª»¤¼×ÏµÍ³¶¨ÒåµÄ¼õÃâº¯Êı/ÏµÊı£©
+    let finalDamage = context.rawDamage;
 
     // 5. ´¥·¢½×¶Î: ÊÜ»÷Ç° (Take Damage Pre / Defense Pre)
     // BuffSystem ¼àÌıµ½´ËÊÂ¼ş£¬Èô target ÓĞ¡°Ò×ÉË¡±Buff£º
     // -> BuffÊôĞÔÖĞ×Ô´ø statModifiers.damageTakenMult
     // »òÕßÊÇ¶¯Ì¬´¥·¢µÄĞ§¹û
-    let takenMult = StatCalculator.get(target, 'damageTakenMult') || 1.0; 
+    let takenMult = StatCalculator.get(target, 'damageTakenMult') || 1.0;
     finalDamage *= takenMult;
 
     // 6. ½áËãÓ¦ÓÃ

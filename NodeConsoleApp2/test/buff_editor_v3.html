@@ -749,6 +749,8 @@
 					// runtime
 					registry: null,
 					buffSystem: null,
+					eventBus: null,
+					_busUnsubs: [],
 
 					// simulation
 					simTurn: 1,
@@ -819,6 +821,43 @@
 						if (el) el.scrollTop = el.scrollHeight;
 					});
 				},
+
+				tryAction() {
+					const actor = (this.tryActionActor === 'player') ? this.simPlayer : this.simEnemy;
+					if (!actor) {
+						this.log('[TryAction] actor not ready.', 'warn');
+						return;
+					}
+
+					const target = (this.tryActionActor === 'player') ? this.simEnemy : this.simPlayer;
+					let bodyPart = this.selectedBodyPart;
+					if (target?.bodyParts && (!bodyPart || !target.bodyParts[bodyPart])) {
+						bodyPart = Object.keys(target.bodyParts)[0] || bodyPart;
+					}
+
+					const context = {
+						actor,
+						actionType: this.tryActionType,
+						target,
+						bodyPart,
+						cancelled: false,
+						cancelReason: ''
+					};
+
+					this.log(`=== TryAction actor=${this.tryActionActor} type=${this.tryActionType} ===`, 'info');
+					EventBus.emit('BATTLE_ACTION_PRE', context);
+
+					if (context.skipTurn === true && context.cancelled !== true) {
+						context.cancelled = true;
+						context.cancelReason = context.cancelReason || 'control:skipTurn';
+					}
+
+					if (context.cancelled) {
+						this.log(`[ActionCancelled] cancelled=true reason=${context.cancelReason || 'unknown'}`, 'warn');
+					} else {
+						this.log('[ActionAllowed] cancelled=false', 'success');
+					}
+				},
 				clearLogs() {
 					this.logs = [];
 				},
@@ -834,27 +873,38 @@
 				},
 
 				initRuntime() {
+					// 清理旧 runtime（避免重复订阅与旧 manager 累积）
+					try { this.buffSystem?.stop?.(); } catch { /* noop */ }
+					for (const u of this._busUnsubs) {
+						try { u(); } catch { /* noop */ }
+					}
+					this._busUnsubs = [];
+
+					// Buff Editor 使用独立 EventBus，避免污染/叠加全局引擎事件
+					// 通过现有单例对象的 constructor 创建同类实例（EventBus.js 默认 export new EventBus()）
+					this.eventBus = new EventBus.constructor(); // 直接创建新实例
+
 					this.registry = new BuffRegistry(this.buffDictionary);
-					this.buffSystem = new BuffSystem(EventBus, this.registry);
+					this.buffSystem = new BuffSystem(this.eventBus, this.registry);
 					this.buffSystem.start();
 
-					// Hook logs
-					EventBus.on('BATTLE_LOG', payload => {
+					// Hook logs（使用 on 返回的 unsub，确保可释放）
+					this._busUnsubs.push(this.eventBus.on('BATTLE_LOG', payload => {
 						if (!payload) return;
 						this.log(payload.text || JSON.stringify(payload), 'info');
-					});
-					EventBus.on('BUFF:WARN', payload => {
+					}));
+					this._busUnsubs.push(this.eventBus.on('BUFF:WARN', payload => {
 						this.log(`[BUFF:WARN] ${JSON.stringify(payload)}`, 'warn');
-					});
-					EventBus.on('BUFF:ERROR', payload => {
+					}));
+					this._busUnsubs.push(this.eventBus.on('BUFF:ERROR', payload => {
 						this.log(`[BUFF:ERROR] ${JSON.stringify(payload)}`, 'error');
-					});
-					EventBus.on('BUFF:ADDED', payload => {
+					}));
+					this._busUnsubs.push(this.eventBus.on('BUFF:ADDED', payload => {
 						this.log(`[BUFF:ADDED] ${JSON.stringify(payload)}`, 'success');
-					});
-					EventBus.on('BUFF:REMOVED', payload => {
+					}));
+					this._busUnsubs.push(this.eventBus.on('BUFF:REMOVED', payload => {
 						this.log(`[BUFF:REMOVED] ${JSON.stringify(payload)}`, 'info');
-					});
+					}));
 				},
 
 				async loadProjectBuffs() {
@@ -1057,6 +1107,11 @@
 					const tpl = this.enemyCatalog[this.selectedEnemyTemplateId];
 					if (!tpl) return;
 					this.simEnemy = normalizeEnemyTemplateToOneInstance(tpl);
+					// reload/切换模板后：确保 enemy 具备可用 BuffManager，且已注册到 BuffSystem
+					if (this.registry && this.buffSystem) {
+						this.simEnemy.buffs = new BuffManager(this.simEnemy, this.registry, this.eventBus || EventBus);
+						this.buffSystem.registerManager(this.simEnemy.buffs);
+					}
 					if (this.availableTargetParts.length > 0) {
 						this.selectedBodyPart = this.availableTargetParts[0];
 					}
@@ -1074,7 +1129,7 @@
 
 					// reset actors
 					if (!this.simPlayer) this.simPlayer = normalizePlayerTemplate({});
-					this.simPlayer.buffs = new BuffManager(this.simPlayer, this.registry, EventBus);
+					this.simPlayer.buffs = new BuffManager(this.simPlayer, this.registry, this.eventBus || EventBus);
 					this.buffSystem.registerManager(this.simPlayer.buffs);
 
 					if (!this.simEnemy) {
@@ -1086,7 +1141,7 @@
 							bodyParts: { chest: { max: 10, weakness: 1.0 } }
 						});
 					}
-					this.simEnemy.buffs = new BuffManager(this.simEnemy, this.registry, EventBus);
+					this.simEnemy.buffs = new BuffManager(this.simEnemy, this.registry, this.eventBus || EventBus);
 					this.buffSystem.registerManager(this.simEnemy.buffs);
 				},
 
@@ -1154,7 +1209,7 @@
 					this.log(`=== CastAttack ${this.castSource} -> ${this.castTarget} (raw=${context.rawDamage}, part=${bodyPart}) ===`, 'info');
 
 					// 1) attack pre
-					EventBus.emit('BATTLE_ATTACK_PRE', context);
+					(this.eventBus || EventBus).emit('BATTLE_ATTACK_PRE', context);
 					this.log(`[Context after ATTACK_PRE] ${JSON.stringify({ tempModifiers: context.tempModifiers })}`, 'info');
 
 					// 2) armor phase (align CoreEngine logic)
@@ -1194,7 +1249,7 @@
 
 					// 3) take damage pre
 					context.damageTaken = actualDamage;
-					EventBus.emit('BATTLE_TAKE_DAMAGE_PRE', context);
+					(this.eventBus || EventBus).emit('BATTLE_TAKE_DAMAGE_PRE', context);
 					this.log(`[Context after TAKE_DAMAGE_PRE] ${JSON.stringify({ damageTaken: context.damageTaken, damageTakenMult: context.damageTakenMult, shieldPool: context.shieldPool })}`, 'info');
 
 					if (context.damageTakenMult) {
@@ -1226,7 +1281,7 @@
 					}
 
 					context.damageDealt = finalDamage;
-					EventBus.emit('BATTLE_ATTACK_POST', context);
+					(this.eventBus || EventBus).emit('BATTLE_ATTACK_POST', context);
 
 					this.log(`[Result] hpDamage=${finalDamage}, armorDamage=${armorDamage}`, finalDamage > 0 ? 'error' : 'success');
 				},

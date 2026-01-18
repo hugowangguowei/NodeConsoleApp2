@@ -294,3 +294,5 @@ buff示例可以参照skill和item的设计文档。但是buff设计方案作为skill和item设计文档的
 在测试中，我执行力的操作顺序如下:加载buffs.json文件，在最左侧选择破甲buff，然后点击“施加Buff”按钮，选择敌人作为目标，选择了Player atk->Enemy，发现敌人收到的伤害没有产生增益，请分析原因，先不用修改代码。
 
 如果你希望下一步把 v3 的“中间列编辑区”也做成更严格的 schema 编辑（比如 effects 的 params 表单化，而不是 JSON textarea），我可以继续迭代。
+
+现在已经对buff_design和buff_editor_design进行了系统更新，我希望结合buff_editor_test_doc_v2测试出的问题，对代码进行必要的修改，同样要坚持模块化、低耦合的方案进行实现。

@@ -70,7 +70,7 @@
     "buff_shield": {
         "id": "buff_shield",
         "name": "护盾",
-        "description": "吸收伤害：受到伤害时获得 20 点护盾吸收值（通过 context.shieldPool 生效，不直接增加护甲）。",
+        "description": "护盾：抵挡一次伤害（一次性）。",
         "type": "buff",
         "tags": [
             "defense"
@@ -83,9 +83,15 @@
         },
         "effects": [
             {
-                "trigger": "onTakeDamage",
-                "action": "absorbDamage",
-                "value": 20,
+                "trigger": "onTakeDamagePre",
+                "action": "setDamageTaken",
+                "value": 0,
+                "valueType": "overwrite",
+                "target": "self"
+            },
+            {
+                "trigger": "onTakeDamagePre",
+                "action": "REMOVE_SELF",
                 "target": "self"
             }
         ]
@@ -115,60 +121,7 @@
             }
         ]
     },
-    "buff_burn": {
-        "id": "buff_burn",
-        "name": "燃烧",
-        "description": "持续伤害：每回合开始时对自身造成 10 点火焰伤害（可叠加，刷新持续时间）。",
-        "type": "debuff",
-        "tags": [
-            "fire",
-            "dot"
-        ],
-        "lifecycle": {
-            "duration": 3,
-            "maxStacks": 3,
-            "stackStrategy": "refresh",
-            "removeOnBattleEnd": true
-        },
-        "effects": [
-            {
-                "trigger": "onTurnStart",
-                "action": "damage",
-                "value": 10,
-                "valueType": "flat",
-                "target": "self"
-            }
-        ]
-    },
-    "buff_freeze": {
-        "id": "buff_freeze",
-        "name": "冻结",
-        "description": "控制：回合开始时跳过本回合行动，并获得少量防御加成（def +5）。",
-        "type": "debuff",
-        "tags": [
-            "ice",
-            "control"
-        ],
-        "lifecycle": {
-            "duration": 1,
-            "maxStacks": 1,
-            "stackStrategy": "replace",
-            "removeOnBattleEnd": true
-        },
-        "effects": [
-            {
-                "trigger": "onTurnStart",
-                "action": "skipTurn",
-                "target": "self"
-            }
-        ],
-        "statModifiers": {
-            "def": {
-                "value": 5,
-                "type": "flat"
-            }
-        }
-    },
+    
     "buff_slow": {
         "id": "buff_slow",
         "name": "减速",
@@ -194,7 +147,7 @@
     "debuff_weak": {
         "id": "debuff_weak",
         "name": "虚弱",
-        "description": "减益：造成的伤害降低（damageDealtMult -20%）。",
+        "description": "减益：攻击力降低（atk -20%）。",
         "type": "debuff",
         "tags": [
             "weakness"
@@ -206,7 +159,7 @@
             "removeOnBattleEnd": true
         },
         "statModifiers": {
-            "damageDealtMult": {
+            "atk": {
                 "value": -0.2,
                 "type": "percent"
             }
@@ -233,152 +186,7 @@
             }
         }
     },
-    "buff_silence_limb": {
-        "id": "buff_silence_limb",
-        "name": "部位封印",
-        "type": "debuff",
-        "tags": [
-            "disable"
-        ],
-        "lifecycle": {
-            "duration": 2,
-            "maxStacks": 1,
-            "stackStrategy": "refresh",
-            "removeOnBattleEnd": true
-        },
-        "description": "禁止使用特定部位的技能",
-        "tbd": {
-            "reason": "当前仅有描述，缺少可执行字段；需要明确它影响技能可用性还是目标部位可选性",
-            "proposed": {
-                "mode": "disableTargetParts",
-                "disabledParts": []
-            }
-        }
-    },
-    "buff_berserk": {
-        "id": "buff_berserk",
-        "name": "狂暴",
-        "description": "高风险增益：攻击提高（atk +50%），命中降低（hitRate -0.2）。",
-        "type": "buff",
-        "tags": [
-            "offensive",
-            "mental"
-        ],
-        "lifecycle": {
-            "duration": 3,
-            "maxStacks": 1,
-            "stackStrategy": "refresh",
-            "removeOnBattleEnd": true
-        },
-        "statModifiers": {
-            "atk": {
-                "value": 0.5,
-                "type": "percent"
-            },
-            "hitRate": {
-                "value": -0.2,
-                "type": "flat"
-            }
-        }
-    },
-    "buff_focus": {
-        "id": "buff_focus",
-        "name": "专注",
-        "description": "增益：暴击率 +0.2，命中率 +0.1。",
-        "type": "buff",
-        "tags": [
-            "offensive",
-            "mental"
-        ],
-        "lifecycle": {
-            "duration": 2,
-            "maxStacks": 1,
-            "stackStrategy": "refresh",
-            "removeOnBattleEnd": true
-        },
-        "statModifiers": {
-            "critRate": {
-                "value": 0.2,
-                "type": "flat"
-            },
-            "hitRate": {
-                "value": 0.1,
-                "type": "flat"
-            }
-        }
-    },
-    "buff_magic_surge": {
-        "id": "buff_magic_surge",
-        "name": "魔力涌动",
-        "description": "增益：法术伤害提高（magicDmg +50%），持续 1 回合。",
-        "type": "buff",
-        "tags": [
-            "magic"
-        ],
-        "lifecycle": {
-            "duration": 1,
-            "maxStacks": 1,
-            "stackStrategy": "refresh",
-            "removeOnBattleEnd": true
-        },
-        "statModifiers": {
-            "magicDmg": {
-                "value": 0.5,
-                "type": "percent"
-            }
-        }
-    },
-    "buff_poison_coat": {
-        "id": "buff_poison_coat",
-        "name": "剧毒涂层",
-        "description": "增益：攻击命中后为目标施加中毒（buff_poison）。",
-        "type": "buff",
-        "tags": [
-            "offensive"
-        ],
-        "lifecycle": {
-            "duration": 3,
-            "maxStacks": 1,
-            "stackStrategy": "refresh",
-            "removeOnBattleEnd": true
-        },
-        "effects": [
-            {
-                "trigger": "onAttackPost",
-                "action": "applyBuff",
-                "value": "buff_poison",
-                "target": "target"
-            }
-        ]
-    },
-    "buff_eagle_eye": {
-        "id": "buff_eagle_eye",
-        "name": "鹰眼",
-        "description": "必定命中(忽略闪避)（TBD：需要命中判定管线支持）",
-        "type": "buff",
-        "tags": [
-            "offensive",
-            "tech"
-        ],
-        "lifecycle": {
-            "duration": 3,
-            "maxStacks": 1,
-            "stackStrategy": "refresh",
-            "removeOnBattleEnd": true
-        },
-        "description": "必定命中(忽略闪避)",
-        "tbd": {
-            "reason": "需要命中判定管线支持（例如 ignoreDodge/forceHit）",
-            "proposed": {
-                "statModifiers": {
-                    "ignoreDodge": {
-                        "value": 1,
-                        "type": "overwrite"
-                    }
-                }
-            }
-        }
-    },
+    
     "buff_armor_pen": {
         "id": "buff_armor_pen",
         "name": "破甲",
@@ -393,7 +201,7 @@
             "stackStrategy": "refresh",
             "removeOnBattleEnd": true
         },
-        "description": "下一次攻击削弱目标护甲减免（提高护甲减免系数）",
+        
         "effects": [
             {
                 "trigger": "onAttackPre",
@@ -437,27 +245,7 @@
             }
         }
     },
-    "buff_iron_will": {
-        "id": "buff_iron_will",
-        "name": "钢铁意志",
-        "description": "增益：防御 +5（flat），可叠加 3 层（add）。",
-        "type": "buff",
-        "tags": [
-            "defense"
-        ],
-        "lifecycle": {
-            "duration": 3,
-            "maxStacks": 3,
-            "stackStrategy": "add",
-            "removeOnBattleEnd": true
-        },
-        "statModifiers": {
-            "def": {
-                "value": 5,
-                "type": "flat"
-            }
-        }
-    },
+    
     "buff_block": {
         "id": "buff_block",
         "name": "格挡",
@@ -507,7 +295,7 @@
     "buff_evasion": {
         "id": "buff_evasion",
         "name": "残影",
-        "description": "增益：闪避率 +0.6（持续 1 回合）。",
+        "description": "增益：抵挡 1 次伤害（一次性）。",
         "type": "buff",
         "tags": [
             "defense",
@@ -519,40 +307,20 @@
             "stackStrategy": "refresh",
             "removeOnBattleEnd": true
         },
-        "statModifiers": {
-            "dodgeRate": {
-                "value": 0.6,
-                "type": "flat"
+        "effects": [
+            {
+                "trigger": "onTakeDamagePre",
+                "action": "setDamageTaken",
+                "value": 0,
+                "valueType": "overwrite",
+                "target": "self"
+            },
+            {
+                "trigger": "onTakeDamagePre",
+                "action": "REMOVE_SELF",
+                "target": "self"
             }
-        }
-    },
-    "buff_immortality_hp": {
-        "id": "buff_immortality_hp",
-        "name": "天使守护",
-        "type": "buff",
-        "tags": [
-            "divine"
-        ],
-        "lifecycle": {
-            "duration": 2,
-            "maxStacks": 1,
-            "stackStrategy": "refresh",
-            "removeOnBattleEnd": true
-        },
-        "description": "HP无法低于1点",
-        "tbd": {
-            "reason": "需要在 onTakeDamagePre 或伤害应用阶段提供 clamp 机制",
-            "proposed": {
-                "effects": [
-                    {
-                        "trigger": "onTakeDamagePre",
-                        "action": "clampHpMin",
-                        "value": 1,
-                        "target": "self"
-                    }
-                ]
-            }
-        }
+        ]
     },
     "buff_immortality_armor": {
         "id": "buff_immortality_armor",
@@ -581,31 +349,6 @@
             }
         }
     },
-    "buff_revive": {
-        "id": "buff_revive",
-        "name": "神愿复苏",
-        "description": "复活：死亡时复活并恢复 50% 生命值（需要死亡事件管线支持）。",
-        "type": "buff",
-        "tags": [
-            "divine",
-            "hidden"
-        ],
-        "lifecycle": {
-            "duration": 5,
-            "maxStacks": 1,
-            "stackStrategy": "refresh",
-            "removeOnBattleEnd": true
-        },
-        "effects": [
-            {
-                "trigger": "onDeath",
-                "action": "revive",
-                "value": 0.5,
-                "valueType": "percent",
-                "target": "self"
-            }
-        ]
-    },
     "buff_shield_wall": {
         "id": "buff_shield_wall",
         "name": "盾墙",
@@ -626,8 +369,7 @@
                 "value": 3,
                 "type": "flat"
             }
-        },
-        "description": "大幅增加最大行动点数"
+        }
     },
     "buff_thorns": {
         "id": "buff_thorns",
