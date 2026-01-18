@@ -1,0 +1,1176 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+	<meta charset="UTF-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+	<title>Buff Editor v3 - NodeConsoleApp2</title>
+	<script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+	<style>
+		:root {
+			--primary-color: #3498db;
+			--secondary-color: #2c3e50;
+			--danger-color: #e74c3c;
+			--success-color: #2ecc71;
+			--light-bg: #f5f6fa;
+			--border-color: #dcdde1;
+			--panel-bg: #ffffff;
+			--monospace: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+		}
+
+		body {
+			font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+			margin: 0;
+			background: var(--light-bg);
+			color: var(--secondary-color);
+			height: 100vh;
+			display: flex;
+			flex-direction: column;
+		}
+
+		[v-cloak] { display: none; }
+
+		header {
+			background: var(--secondary-color);
+			color: #fff;
+			padding: 10px 16px;
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+		}
+
+		.btn {
+			padding: 8px 12px;
+			border: none;
+			border-radius: 4px;
+			cursor: pointer;
+			font-size: 14px;
+			transition: opacity 0.2s;
+		}
+		.btn:hover { opacity: 0.9; }
+		.btn-primary { background: var(--primary-color); color: #fff; }
+		.btn-success { background: var(--success-color); color: #fff; }
+		.btn-danger { background: var(--danger-color); color: #fff; }
+		.btn-sm { padding: 4px 8px; font-size: 12px; }
+		.btn-dark { background: #34495e; color: #fff; }
+
+		.main {
+			flex: 1;
+			overflow: hidden;
+			display: flex;
+		}
+
+		aside {
+			width: 22%;
+			min-width: 220px;
+			background: var(--panel-bg);
+			border-right: 1px solid var(--border-color);
+			display: flex;
+			flex-direction: column;
+		}
+
+		.center {
+			width: 44%;
+			min-width: 360px;
+			background: var(--panel-bg);
+			border-right: 1px solid var(--border-color);
+			overflow: auto;
+			padding: 14px;
+		}
+
+		.right {
+			width: 34%;
+			min-width: 320px;
+			overflow: auto;
+			padding: 14px;
+			display: flex;
+			flex-direction: column;
+			gap: 12px;
+		}
+
+		.panel {
+			background: var(--panel-bg);
+			border: 1px solid var(--border-color);
+			border-radius: 8px;
+			padding: 12px;
+		}
+
+		.panel-title {
+			font-weight: 700;
+			margin-bottom: 10px;
+			padding-bottom: 6px;
+			border-bottom: 1px solid #eee;
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+		}
+
+		.input, .select, .textarea {
+			width: 100%;
+			padding: 8px;
+			border: 1px solid var(--border-color);
+			border-radius: 4px;
+			box-sizing: border-box;
+		}
+		.textarea { min-height: 80px; resize: vertical; font-family: var(--monospace); }
+
+		.row {
+			display: flex;
+			gap: 10px;
+		}
+		.col { flex: 1; }
+
+		.small {
+			font-size: 12px;
+			color: #666;
+		}
+
+		.search {
+			padding: 10px;
+			border-bottom: 1px solid var(--border-color);
+		}
+
+		.buff-list {
+			list-style: none;
+			padding: 0;
+			margin: 0;
+			overflow: auto;
+			flex: 1;
+		}
+
+		.buff-item {
+			padding: 10px 12px;
+			border-bottom: 1px solid #eee;
+			cursor: pointer;
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+		}
+		.buff-item:hover { background: #f0f0f0; }
+		.buff-item.active { background: #e3f2fd; border-left: 4px solid var(--primary-color); }
+
+		.kv {
+			display: grid;
+			grid-template-columns: 120px 1fr;
+			gap: 6px 10px;
+			font-size: 13px;
+		}
+		.kv .k { color: #555; }
+		.kv .v { font-family: var(--monospace); white-space: pre-wrap; }
+
+		.badge {
+			display: inline-block;
+			padding: 2px 6px;
+			border-radius: 999px;
+			font-size: 12px;
+			background: #eef;
+			margin-right: 6px;
+		}
+
+		.log {
+			background: #1f2d3a;
+			color: #ecf0f1;
+			border-radius: 8px;
+			padding: 10px;
+			font-family: var(--monospace);
+			font-size: 12px;
+			max-height: 320px;
+			overflow: auto;
+			border: 1px solid #15212b;
+		}
+
+		.log-entry {
+			padding: 4px 0;
+			border-bottom: 1px solid rgba(255,255,255,0.06);
+		}
+		.log-entry:last-child { border-bottom: none; }
+		.log-entry.warn { color: #f1c40f; }
+		.log-entry.error { color: #e74c3c; }
+		.log-entry.success { color: #2ecc71; }
+
+		.table {
+			width: 100%;
+			border-collapse: collapse;
+			font-size: 12px;
+		}
+		.table th, .table td {
+			border-bottom: 1px solid #eee;
+			padding: 6px 4px;
+			text-align: left;
+		}
+		.table th { color: #666; font-weight: 700; }
+
+		.hr { height: 1px; background: #eee; margin: 10px 0; }
+	</style>
+</head>
+<body>
+	<div id="app" v-cloak>
+		<header>
+			<div style="display:flex; flex-direction:column; gap:2px;">
+				<div style="font-weight: 800; font-size: 16px;">Buff Editor v3 (测试器模式)</div>
+				<div class="small">对齐 `BuffRegistry/BuffManager/BuffSystem` 与 `CoreEngine` 的事件/context 管线</div>
+			</div>
+			<div style="display:flex; gap:8px; align-items:center;">
+				<input type="file" ref="fileInput" @change="onImportFile" style="display:none" accept=".json" />
+				<button class="btn btn-dark" @click="loadProjectBuffs">Load Project `buffs.json`</button>
+				<button class="btn btn-primary" @click="$refs.fileInput.click()">Import .json</button>
+				<button class="btn btn-success" @click="exportJSON" :disabled="!buffDictionary || Object.keys(buffDictionary).length===0">Export .json</button>
+			</div>
+		</header>
+
+		<div class="main">
+			<!-- Left: Buff List -->
+			<aside>
+				<div class="search">
+					<input class="input" v-model="searchQuery" placeholder="Search by id/name/tag..." />
+					<div class="small" style="margin-top:6px;">Loaded: {{ buffCount }} buffs</div>
+				</div>
+
+				<div style="padding: 10px; display:flex; gap:8px;">
+					<button class="btn btn-primary" style="flex:1" @click="createNewBuff">+ New Buff</button>
+					<button class="btn btn-danger" style="flex:1" @click="deleteCurrentBuff" :disabled="!currentBuff">Delete</button>
+				</div>
+
+				<ul class="buff-list">
+					<li
+						v-for="b in filteredBuffs"
+						:key="b.id"
+						class="buff-item"
+						:class="{active: currentBuffId === b.id}"
+						@click="selectBuff(b.id)"
+					>
+						<div style="display:flex; flex-direction:column; gap:2px;">
+							<div style="font-weight:700;">{{ b.name || b.id }}</div>
+							<div class="small">{{ b.id }}</div>
+						</div>
+						<div style="display:flex; gap:6px; align-items:center;">
+							<span class="badge" v-if="b.type">{{ b.type }}</span>
+							<span class="badge" v-if="b.aliasOf">alias</span>
+						</div>
+					</li>
+				</ul>
+			</aside>
+
+			<!-- Center: Buff Detail -->
+			<div class="center">
+				<div class="panel" v-if="currentBuff">
+					<div class="panel-title">
+						<span>Buff 详情 / 编辑</span>
+						<span class="small">当前ID：{{ currentBuff.id }}</span>
+					</div>
+
+					<div class="row">
+						<div class="col">
+							<div class="small">ID</div>
+							<input class="input" v-model="currentBuff.id" />
+						</div>
+						<div class="col">
+							<div class="small">Type</div>
+							<select class="select" v-model="currentBuff.type">
+								<option value="buff">buff</option>
+								<option value="debuff">debuff</option>
+								<option value="hidden">hidden</option>
+							</select>
+						</div>
+					</div>
+
+					<div class="row" style="margin-top:10px;">
+						<div class="col">
+							<div class="small">Name</div>
+							<input class="input" v-model="currentBuff.name" />
+						</div>
+						<div class="col">
+							<div class="small">aliasOf</div>
+							<input class="input" v-model="currentBuff.aliasOf" placeholder="可选：复用另一条定义" />
+						</div>
+					</div>
+
+					<div style="margin-top:10px;">
+						<div class="small">Description</div>
+						<textarea class="textarea" v-model="currentBuff.description"></textarea>
+					</div>
+
+					<div class="row" style="margin-top:10px;">
+						<div class="col">
+							<div class="small">Tags (逗号分隔)</div>
+							<input class="input" v-model="tagsString" placeholder="e.g. dot, poison" />
+						</div>
+						<div class="col">
+							<div class="small">Lifecycle</div>
+							<div class="row">
+								<div class="col">
+									<input class="input" type="number" v-model.number="currentBuff.lifecycle.duration" placeholder="duration" />
+									<div class="small">duration</div>
+								</div>
+								<div class="col">
+									<input class="input" type="number" v-model.number="currentBuff.lifecycle.maxStacks" placeholder="maxStacks" />
+									<div class="small">maxStacks</div>
+								</div>
+							</div>
+							<div class="row" style="margin-top:6px;">
+								<div class="col">
+									<select class="select" v-model="currentBuff.lifecycle.stackStrategy">
+										<option value="refresh">refresh</option>
+										<option value="add">add</option>
+										<option value="extend">extend</option>
+										<option value="replace">replace</option>
+									</select>
+									<div class="small">stackStrategy</div>
+								</div>
+								<div class="col" style="display:flex; flex-direction:column; justify-content:center;">
+									<label class="small" style="display:flex; gap:8px; align-items:center;">
+										<input type="checkbox" v-model="currentBuff.lifecycle.removeOnBattleEnd" /> removeOnBattleEnd
+									</label>
+								</div>
+							</div>
+						</div>
+					</div>
+
+					<div class="hr"></div>
+
+					<div class="panel-title">
+						<span>Stat Modifiers</span>
+						<button class="btn btn-sm btn-primary" @click="addStatModifier">+ Add</button>
+					</div>
+					<div v-if="!currentBuff.statModifiers || Object.keys(currentBuff.statModifiers).length===0" class="small">无</div>
+					<table v-else class="table">
+						<thead>
+							<tr>
+								<th>stat</th>
+								<th>type</th>
+								<th>value</th>
+								<th></th>
+							</tr>
+						</thead>
+						<tbody>
+							<tr v-for="(m, statKey) in currentBuff.statModifiers" :key="statKey">
+								<td><input class="input" style="padding:6px" :value="statKey" @change="e=>renameStatModifier(statKey, e.target.value)" /></td>
+								<td>
+									<select class="select" style="padding:6px" v-model="m.type">
+										<option value="flat">flat</option>
+										<option value="percent">percent</option>
+										<option value="overwrite">overwrite</option>
+									</select>
+								</td>
+								<td><input class="input" style="padding:6px" v-model.number="m.value" /></td>
+								<td><button class="btn btn-sm btn-danger" @click="removeStatModifier(statKey)">&times;</button></td>
+							</tr>
+						</tbody>
+					</table>
+
+					<div class="hr"></div>
+
+					<div class="panel-title">
+						<span>Effects</span>
+						<button class="btn btn-sm btn-primary" @click="addEffect">+ Add</button>
+					</div>
+					<div v-if="!currentBuff.effects || currentBuff.effects.length===0" class="small">无</div>
+					<div v-else>
+						<div v-for="(ef, idx) in currentBuff.effects" :key="idx" class="panel" style="margin-bottom:10px;">
+							<div class="row" style="align-items:center;">
+								<div class="col">
+									<div class="small">trigger</div>
+									<select class="select" v-model="ef.trigger">
+										<option value="onTurnStart">onTurnStart</option>
+										<option value="onTurnEnd">onTurnEnd</option>
+										<option value="onAttackPre">onAttackPre</option>
+										<option value="onTakeDamagePre">onTakeDamagePre</option>
+										<option value="onTakeDamage">onTakeDamage</option>
+										<option value="onAttackPost">onAttackPost</option>
+										<option value="onDefendPost">onDefendPost</option>
+									</select>
+								</div>
+								<div class="col">
+									<div class="small">action</div>
+									<input class="input" v-model="ef.action" placeholder="damage/heal/applyBuff/MODIFY_STAT_TEMP/REMOVE_SELF..." />
+								</div>
+								<div class="col">
+									<div class="small">target</div>
+									<select class="select" v-model="ef.target">
+										<option value="self">self</option>
+										<option value="target">target</option>
+										<option value="attacker">attacker</option>
+									</select>
+								</div>
+								<div style="display:flex; align-items:flex-end;">
+									<button class="btn btn-sm btn-danger" @click="removeEffect(idx)">Remove</button>
+								</div>
+							</div>
+
+							<div class="row" style="margin-top:10px;">
+								<div class="col">
+									<div class="small">value (damage/heal/applyBuff支持)</div>
+									<input class="input" v-model="ef.value" placeholder="number 或公式字符串，如: maxHp * 0.05" />
+								</div>
+								<div class="col">
+									<div class="small">valueType</div>
+									<select class="select" v-model="ef.valueType">
+										<option value="flat">flat</option>
+										<option value="percent">percent</option>
+										<option value="formula">formula</option>
+										<option value="mult">mult</option>
+									</select>
+								</div>
+							</div>
+
+							<div style="margin-top:10px;">
+								<div class="small">params（用于 MODIFY_STAT_TEMP 等）</div>
+								<textarea class="textarea" v-model="ef._paramsJson" @blur="syncParamsJson(idx)" placeholder='例如：{"stat":"armorMitigationMult","value":"+0.3","type":"percent_current"}'></textarea>
+								<div class="small">提示：此处为了快速测试，使用 JSON 文本编辑。输入无效 JSON 会在日志中提示。</div>
+							</div>
+						</div>
+					</div>
+
+					<div class="hr"></div>
+
+					<div class="panel-title">
+						<span>JSON 预览（当前buff）</span>
+						<button class="btn btn-sm btn-dark" @click="copyCurrentBuffJson">Copy</button>
+					</div>
+					<textarea class="textarea" readonly :value="currentBuffJson"></textarea>
+				</div>
+
+				<div class="panel" v-else>
+					<div class="panel-title">未选中 Buff</div>
+					<div class="small">从左侧选择一个 Buff，或新建。</div>
+				</div>
+			</div>
+
+			<!-- Right: Simulation Debug Area -->
+			<div class="right">
+				<div class="panel">
+					<div class="panel-title">模拟调试区 - Player 数据</div>
+					<div class="small">从 `player.json` 加载（优先），否则使用 fallback</div>
+					<div class="kv" style="margin-top:8px;" v-if="simPlayer">
+						<div class="k">id</div><div class="v">{{ simPlayer.id }}</div>
+						<div class="k">hp</div><div class="v">{{ simPlayer.stats.hp }} / {{ simPlayer.stats.maxHp }}</div>
+						<div class="k">ap</div><div class="v">{{ simPlayer.stats.ap }} / {{ simPlayer.stats.maxAp || simPlayer.stats.ap }}</div>
+						<div class="k">speed</div><div class="v">{{ simPlayer.stats.speed }}</div>
+					</div>
+					<div class="small" style="margin-top:10px; font-weight:700;">bodyParts</div>
+					<table class="table" v-if="simPlayer && simPlayer.bodyParts">
+						<thead><tr><th>part</th><th>current/max</th><th>weakness</th></tr></thead>
+						<tbody>
+							<tr v-for="(p, key) in simPlayer.bodyParts" :key="key">
+								<td>{{ key }}</td>
+								<td>{{ p.current }} / {{ p.max }}</td>
+								<td>{{ p.weakness }}</td>
+							</tr>
+						</tbody>
+					</table>
+
+					<div class="small" style="margin-top:10px; font-weight:700;">buffs</div>
+					<div v-if="simPlayer && simPlayer.buffs" class="small">
+						<div v-if="simPlayer.buffs.getAll().length===0">无</div>
+						<div v-for="b in simPlayer.buffs.getAll()" :key="b.instanceId">{{ b.id }} (stacks={{b.stacks}}, rem={{b.remaining}})</div>
+					</div>
+				</div>
+
+				<div class="panel">
+					<div class="panel-title">
+						<span>模拟调试区 - Enemies 数据</span>
+						<button class="btn btn-sm btn-dark" @click="reloadEnemies">Reload</button>
+					</div>
+					<div class="row">
+						<div class="col">
+							<div class="small">Enemy Template</div>
+							<select class="select" v-model="selectedEnemyTemplateId" @change="applyEnemyTemplate">
+								<option v-for="(enemy, key) in enemyCatalog" :key="key" :value="key">{{ enemy.name || key }} ({{ key }})</option>
+							</select>
+						</div>
+						<div class="col">
+							<div class="small">Target Part</div>
+							<select class="select" v-model="selectedBodyPart">
+								<option v-for="partKey in availableTargetParts" :key="partKey" :value="partKey">{{ partKey }}</option>
+							</select>
+						</div>
+					</div>
+
+					<div class="kv" style="margin-top:8px;" v-if="simEnemy">
+						<div class="k">id</div><div class="v">{{ simEnemy.id }}</div>
+						<div class="k">hp</div><div class="v">{{ simEnemy.hp }} / {{ simEnemy.maxHp }}</div>
+						<div class="k">speed</div><div class="v">{{ simEnemy.speed || 0 }}</div>
+					</div>
+					<div class="small" style="margin-top:10px; font-weight:700;">bodyParts</div>
+					<table class="table" v-if="simEnemy && simEnemy.bodyParts">
+						<thead><tr><th>part</th><th>current/max</th><th>weakness</th><th>status</th></tr></thead>
+						<tbody>
+							<tr v-for="(p, key) in simEnemy.bodyParts" :key="key">
+								<td>{{ key }}</td>
+								<td>{{ p.current }} / {{ p.max }}</td>
+								<td>{{ p.weakness }}</td>
+								<td>{{ p.status }}</td>
+							</tr>
+						</tbody>
+					</table>
+
+					<div class="small" style="margin-top:10px; font-weight:700;">buffs</div>
+					<div v-if="simEnemy && simEnemy.buffs" class="small">
+						<div v-if="simEnemy.buffs.getAll().length===0">无</div>
+						<div v-for="b in simEnemy.buffs.getAll()" :key="b.instanceId">{{ b.id }} (stacks={{b.stacks}}, rem={{b.remaining}})</div>
+					</div>
+				</div>
+
+				<div class="panel">
+					<div class="panel-title">模拟调试区 - 操作按钮</div>
+					<div class="row">
+						<button class="btn btn-sm btn-primary" @click="turnStart">Start Turn</button>
+						<button class="btn btn-sm btn-dark" @click="turnEnd">End Turn</button>
+						<button class="btn btn-sm btn-danger" @click="resetSimulation">Reset Sim</button>
+					</div>
+
+					<div class="hr"></div>
+
+					<div class="small" style="font-weight:700;">施加 Buff</div>
+					<div class="row" style="margin-top:6px;">
+						<div class="col">
+							<select class="select" v-model="applyTarget">
+								<option value="player">Player</option>
+								<option value="enemy">Enemy</option>
+							</select>
+							<div class="small">目标</div>
+						</div>
+						<div class="col">
+							<input class="input" type="number" v-model.number="applyStacks" />
+							<div class="small">stacks</div>
+						</div>
+						<div class="col">
+							<input class="input" type="number" v-model.number="applyDurationOverride" placeholder="optional" />
+							<div class="small">duration override</div>
+						</div>
+					</div>
+					<div style="margin-top:6px;">
+						<button class="btn btn-sm btn-success" @click="applySelectedBuff" :disabled="!currentBuff">Apply Selected Buff</button>
+						<button class="btn btn-sm btn-danger" style="margin-left:8px;" @click="removeSelectedBuff" :disabled="!currentBuff">Remove Selected Buff</button>
+					</div>
+
+					<div class="hr"></div>
+
+					<div class="small" style="font-weight:700;">发起攻击 (Cast Skill / Attack)</div>
+					<div class="row" style="margin-top:6px;">
+						<div class="col">
+							<select class="select" v-model="castSource">
+								<option value="player">Player</option>
+								<option value="enemy">Enemy</option>
+							</select>
+							<div class="small">Source</div>
+						</div>
+						<div class="col">
+							<select class="select" v-model="castTarget">
+								<option value="enemy">Enemy</option>
+								<option value="player">Player</option>
+							</select>
+							<div class="small">Target</div>
+						</div>
+					</div>
+					<div class="row" style="margin-top:6px;">
+						<div class="col">
+							<input class="input" type="number" v-model.number="castRawDamage" />
+							<div class="small">rawDamage</div>
+						</div>
+						<div class="col">
+							<select class="select" v-model="selectedBodyPart">
+								<option v-for="partKey in castTargetParts" :key="partKey" :value="partKey">{{ partKey }}</option>
+							</select>
+							<div class="small">bodyPart（Target）</div>
+						</div>
+					</div>
+					<div style="margin-top:6px;">
+						<button class="btn btn-sm btn-primary" @click="castAttack">Cast Attack</button>
+					</div>
+				</div>
+
+				<div class="panel">
+					<div class="panel-title">
+						<span>日志区域</span>
+						<div style="display:flex; gap:8px;">
+							<button class="btn btn-sm btn-dark" @click="clearLogs">Clear</button>
+							<button class="btn btn-sm btn-dark" @click="copyLogs">Copy</button>
+						</div>
+					</div>
+					<div class="log" ref="logEl">
+						<div v-if="logs.length===0" class="small" style="color:#95a5a6;">暂无日志</div>
+						<div v-for="(l, idx) in logs" :key="idx" class="log-entry" :class="l.level">
+							<span style="opacity:0.65;">[{{ l.time }}]</span>
+							{{ l.msg }}
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<script type="module">
+		import EventBus from '../script/engine/EventBus.js';
+		import DataManager from '../script/engine/DataManagerV2.js';
+		import { BuffRegistry, BuffManager, BuffSystem } from '../script/engine/buff/index.js';
+
+		const { createApp } = Vue;
+
+		const DEFAULT_BUFF = {
+			id: 'new_buff',
+			name: 'New Buff',
+			description: '',
+			icon: '',
+			type: 'buff',
+			tags: [],
+			lifecycle: {
+				duration: 3,
+				maxStacks: 1,
+				stackStrategy: 'refresh',
+				removeOnBattleEnd: true
+			},
+			effects: [],
+			statModifiers: {}
+		};
+
+		function deepClone(x) {
+			return JSON.parse(JSON.stringify(x));
+		}
+
+		function nowTime() {
+			return new Date().toLocaleTimeString();
+		}
+
+		function normalizeEnemyTemplateToOneInstance(enemyTemplate) {
+			const e = deepClone(enemyTemplate);
+
+			// 兼容 DataManagerV2.instantiateLevel 的运行时字段
+			e.hp = (e.stats && typeof e.stats.hp === 'number') ? e.stats.hp : (e.hp ?? 1);
+			e.maxHp = (e.stats && typeof e.stats.maxHp === 'number') ? e.stats.maxHp : (e.maxHp ?? e.hp);
+			e.speed = (e.stats && typeof e.stats.speed === 'number') ? e.stats.speed : (e.speed ?? 0);
+
+			if (e.bodyParts) {
+				for (const key of Object.keys(e.bodyParts)) {
+					const p = e.bodyParts[key];
+					const maxVal = (p.max !== undefined) ? p.max : (p.maxArmor || 0);
+					p.max = maxVal;
+					p.current = (p.current !== undefined) ? p.current : maxVal;
+					p.weakness = (p.weakness !== undefined) ? p.weakness : 1.0;
+					p.status = p.status || 'NORMAL';
+				}
+			}
+
+			return e;
+		}
+
+		function normalizePlayerTemplate(playerTemplate) {
+			const p = deepClone(playerTemplate);
+			p.id = p.id || 'player';
+
+			if (!p.stats) {
+				p.stats = { hp: 100, maxHp: 100, ap: 3, maxAp: 6, speed: 10 };
+			}
+			p.stats.hp = (p.stats.hp !== undefined) ? p.stats.hp : (p.stats.maxHp || 100);
+			p.stats.maxHp = (p.stats.maxHp !== undefined) ? p.stats.maxHp : p.stats.hp;
+			p.stats.ap = (p.stats.ap !== undefined) ? p.stats.ap : (p.stats.maxAp || 3);
+			p.stats.speed = (p.stats.speed !== undefined) ? p.stats.speed : 10;
+
+			// bodyParts：如果 player.json 未定义，生成最小部位
+			if (!p.bodyParts) {
+				p.bodyParts = {
+					head: { current: 0, max: 0, weakness: 1.5, status: 'NORMAL' },
+					chest: { current: 10, max: 10, weakness: 1.0, status: 'NORMAL' },
+					abdomen: { current: 0, max: 0, weakness: 1.1, status: 'NORMAL' }
+				};
+			} else {
+				for (const key of Object.keys(p.bodyParts)) {
+					const part = p.bodyParts[key];
+					part.max = (part.max !== undefined) ? part.max : (part.maxArmor || 0);
+					part.current = (part.current !== undefined) ? part.current : part.max;
+					part.weakness = (part.weakness !== undefined) ? part.weakness : 1.0;
+					part.status = part.status || 'NORMAL';
+				}
+			}
+
+			return p;
+		}
+
+		createApp({
+			data() {
+				return {
+					searchQuery: '',
+					buffDictionary: {},
+					currentBuffId: null,
+
+					// runtime
+					registry: null,
+					buffSystem: null,
+
+					// simulation
+					simTurn: 1,
+					simPlayer: null,
+					simEnemy: null,
+					enemyCatalog: {},
+					selectedEnemyTemplateId: null,
+					selectedBodyPart: 'chest',
+
+					applyTarget: 'enemy',
+					applyStacks: 1,
+					applyDurationOverride: null,
+
+					castSource: 'player',
+					castTarget: 'enemy',
+					castRawDamage: 20,
+
+					logs: []
+				};
+			},
+			computed: {
+				buffCount() {
+					return this.buffDictionary ? Object.keys(this.buffDictionary).length : 0;
+				},
+				buffList() {
+					return Object.values(this.buffDictionary || {});
+				},
+				filteredBuffs() {
+					const q = (this.searchQuery || '').trim().toLowerCase();
+					if (!q) return this.buffList;
+					return this.buffList.filter(b => {
+						const hay = [b.id, b.name, ...(b.tags || [])].filter(Boolean).join(' ').toLowerCase();
+						return hay.includes(q);
+					});
+				},
+				currentBuff() {
+					return this.currentBuffId ? this.buffDictionary[this.currentBuffId] : null;
+				},
+				tagsString: {
+					get() {
+						return (this.currentBuff && Array.isArray(this.currentBuff.tags)) ? this.currentBuff.tags.join(', ') : '';
+					},
+					set(v) {
+						if (!this.currentBuff) return;
+						this.currentBuff.tags = (v || '').split(',').map(s => s.trim()).filter(Boolean);
+					}
+				},
+				currentBuffJson() {
+					if (!this.currentBuff) return '';
+					return JSON.stringify(this.currentBuff, null, 2);
+				},
+				availableTargetParts() {
+					return this.simEnemy && this.simEnemy.bodyParts ? Object.keys(this.simEnemy.bodyParts) : [];
+				},
+				castTargetParts() {
+					const target = (this.castTarget === 'enemy') ? this.simEnemy : this.simPlayer;
+					return target && target.bodyParts ? Object.keys(target.bodyParts) : [];
+				}
+			},
+			methods: {
+				log(msg, level = 'info') {
+					this.logs.push({ time: nowTime(), msg, level });
+					this.$nextTick(() => {
+						const el = this.$refs.logEl;
+						if (el) el.scrollTop = el.scrollHeight;
+					});
+				},
+				clearLogs() {
+					this.logs = [];
+				},
+				copyLogs() {
+					const text = this.logs.map(l => `[${l.time}] ${l.level.toUpperCase()} ${l.msg}`).join('\n');
+					navigator.clipboard?.writeText(text);
+					this.log('Logs copied.', 'success');
+				},
+				copyCurrentBuffJson() {
+					if (!this.currentBuff) return;
+					navigator.clipboard?.writeText(this.currentBuffJson);
+					this.log('Current buff JSON copied.', 'success');
+				},
+
+				initRuntime() {
+					this.registry = new BuffRegistry(this.buffDictionary);
+					this.buffSystem = new BuffSystem(EventBus, this.registry);
+					this.buffSystem.start();
+
+					// Hook logs
+					EventBus.on('BATTLE_LOG', payload => {
+						if (!payload) return;
+						this.log(payload.text || JSON.stringify(payload), 'info');
+					});
+					EventBus.on('BUFF:WARN', payload => {
+						this.log(`[BUFF:WARN] ${JSON.stringify(payload)}`, 'warn');
+					});
+					EventBus.on('BUFF:ERROR', payload => {
+						this.log(`[BUFF:ERROR] ${JSON.stringify(payload)}`, 'error');
+					});
+					EventBus.on('BUFF:ADDED', payload => {
+						this.log(`[BUFF:ADDED] ${JSON.stringify(payload)}`, 'success');
+					});
+					EventBus.on('BUFF:REMOVED', payload => {
+						this.log(`[BUFF:REMOVED] ${JSON.stringify(payload)}`, 'info');
+					});
+				},
+
+				async loadProjectBuffs() {
+					try {
+						const res = await fetch('../assets/data/buffs.json');
+						if (!res.ok) throw new Error(`HTTP ${res.status}`);
+						const json = await res.json();
+						this.setBuffDictionaryFromJson(json);
+						this.log('Loaded project buffs.json', 'success');
+					} catch (e) {
+						this.log(`Failed to load project buffs.json. ${e.message}`, 'error');
+					}
+				},
+
+				setBuffDictionaryFromJson(json) {
+					let dict = {};
+					if (Array.isArray(json)) {
+						for (const b of json) {
+							if (b && b.id) dict[b.id] = b;
+						}
+					} else if (json && typeof json === 'object') {
+						if (json.id && typeof json.id === 'string') {
+							dict[json.id] = json;
+						} else {
+							dict = json;
+						}
+					}
+
+					// normalize lifecycle container
+					for (const [id, b] of Object.entries(dict)) {
+						if (!b.lifecycle) {
+							b.lifecycle = { duration: 3, maxStacks: 1, stackStrategy: 'refresh', removeOnBattleEnd: true };
+						}
+						if (!Array.isArray(b.tags)) b.tags = [];
+						if (!b.effects) b.effects = [];
+						if (!b.statModifiers) b.statModifiers = {};
+
+						// prepare editor helper
+						if (Array.isArray(b.effects)) {
+							for (const ef of b.effects) {
+								if (!ef) continue;
+								if (ef.params && !ef._paramsJson) ef._paramsJson = JSON.stringify(ef.params, null, 2);
+								if (!ef.params && !ef._paramsJson) ef._paramsJson = '';
+							}
+						}
+
+						// fix id consistency
+						b.id = b.id || id;
+					}
+
+					this.buffDictionary = dict;
+					this.currentBuffId = Object.keys(dict)[0] || null;
+
+					this.initRuntime();
+					this.resetSimulation();
+				},
+
+				onImportFile(ev) {
+					const file = ev.target.files && ev.target.files[0];
+					if (!file) return;
+					const reader = new FileReader();
+					reader.onload = (e) => {
+						try {
+							const json = JSON.parse(e.target.result);
+							this.setBuffDictionaryFromJson(json);
+							this.log(`Imported ${this.buffCount} buffs from file`, 'success');
+						} catch (err) {
+							this.log(`Import failed: ${err.message}`, 'error');
+						}
+					};
+					reader.readAsText(file);
+					ev.target.value = '';
+				},
+
+				exportJSON() {
+					const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(this.buffDictionary, null, 2));
+					const a = document.createElement('a');
+					a.setAttribute('href', dataStr);
+					a.setAttribute('download', 'buffs.json');
+					document.body.appendChild(a);
+					a.click();
+					a.remove();
+					this.log('Exported buffs.json', 'success');
+				},
+
+				selectBuff(id) {
+					this.currentBuffId = id;
+				},
+
+				createNewBuff() {
+					const b = deepClone(DEFAULT_BUFF);
+					b.id = `new_buff_${Date.now()}`;
+					this.buffDictionary[b.id] = b;
+					this.currentBuffId = b.id;
+					this.log(`Created new buff: ${b.id}`, 'success');
+					this.initRuntime();
+				},
+
+				deleteCurrentBuff() {
+					if (!this.currentBuff) return;
+					if (!confirm(`Delete ${this.currentBuff.id}?`)) return;
+					delete this.buffDictionary[this.currentBuff.id];
+					this.currentBuffId = Object.keys(this.buffDictionary)[0] || null;
+					this.log('Deleted buff.', 'info');
+					this.initRuntime();
+				},
+
+				addStatModifier() {
+					if (!this.currentBuff) return;
+					if (!this.currentBuff.statModifiers) this.currentBuff.statModifiers = {};
+					let key = 'newStat';
+					let i = 1;
+					while (this.currentBuff.statModifiers[key]) key = `newStat${i++}`;
+					this.currentBuff.statModifiers[key] = { value: 0, type: 'flat' };
+				},
+
+				renameStatModifier(oldKey, newKey) {
+					if (!this.currentBuff || !newKey || oldKey === newKey) return;
+					if (this.currentBuff.statModifiers[newKey]) {
+						this.log(`Stat key exists: ${newKey}`, 'warn');
+						return;
+					}
+					const val = this.currentBuff.statModifiers[oldKey];
+					delete this.currentBuff.statModifiers[oldKey];
+					this.currentBuff.statModifiers[newKey] = val;
+				},
+
+				removeStatModifier(statKey) {
+					if (!this.currentBuff) return;
+					delete this.currentBuff.statModifiers[statKey];
+				},
+
+				addEffect() {
+					if (!this.currentBuff) return;
+					if (!Array.isArray(this.currentBuff.effects)) this.currentBuff.effects = [];
+					this.currentBuff.effects.push({
+						trigger: 'onTurnEnd',
+						action: 'damage',
+						target: 'self',
+						value: 1,
+						valueType: 'flat',
+						params: {},
+						_paramsJson: ''
+					});
+				},
+
+				removeEffect(idx) {
+					if (!this.currentBuff) return;
+					this.currentBuff.effects.splice(idx, 1);
+				},
+
+				syncParamsJson(idx) {
+					if (!this.currentBuff || !this.currentBuff.effects || !this.currentBuff.effects[idx]) return;
+					const ef = this.currentBuff.effects[idx];
+					if (!ef._paramsJson || !ef._paramsJson.trim()) {
+						ef.params = undefined;
+						return;
+					}
+					try {
+						ef.params = JSON.parse(ef._paramsJson);
+					} catch (e) {
+						this.log(`Params JSON invalid: ${e.message}`, 'error');
+					}
+				},
+
+				reloadEnemies() {
+					this.loadProjectEnemies();
+				},
+
+				async loadProjectEnemies() {
+					try {
+						const res = await fetch('../assets/data/enemies.json');
+						if (!res.ok) throw new Error(`HTTP ${res.status}`);
+						const json = await res.json();
+						this.enemyCatalog = json;
+						this.selectedEnemyTemplateId = Object.keys(json)[0] || null;
+						this.applyEnemyTemplate();
+						this.log('Loaded enemies.json', 'success');
+					} catch (e) {
+						this.log(`Failed to load enemies.json. ${e.message}`, 'error');
+					}
+				},
+
+				async loadProjectPlayer() {
+					try {
+						const res = await fetch('../assets/data/player.json');
+						if (!res.ok) throw new Error(`HTTP ${res.status}`);
+						const json = await res.json();
+						this.simPlayer = normalizePlayerTemplate(json.default ? json.default : json);
+						this.log('Loaded player.json', 'success');
+					} catch (e) {
+						this.log(`Failed to load player.json. ${e.message}`, 'warn');
+						this.simPlayer = normalizePlayerTemplate({});
+					}
+				},
+
+				applyEnemyTemplate() {
+					if (!this.selectedEnemyTemplateId) return;
+					const tpl = this.enemyCatalog[this.selectedEnemyTemplateId];
+					if (!tpl) return;
+					this.simEnemy = normalizeEnemyTemplateToOneInstance(tpl);
+					if (this.availableTargetParts.length > 0) {
+						this.selectedBodyPart = this.availableTargetParts[0];
+					}
+					this.log(`Enemy selected: ${this.selectedEnemyTemplateId}`, 'info');
+				},
+
+				resetSimulation() {
+					this.simTurn = 1;
+					this.logs = [];
+					this.log('Simulation reset.', 'info');
+
+					if (!this.registry || !this.buffSystem) {
+						this.initRuntime();
+					}
+
+					// reset actors
+					if (!this.simPlayer) this.simPlayer = normalizePlayerTemplate({});
+					this.simPlayer.buffs = new BuffManager(this.simPlayer, this.registry, EventBus);
+					this.buffSystem.registerManager(this.simPlayer.buffs);
+
+					if (!this.simEnemy) {
+						// fallback enemy if none loaded
+						this.simEnemy = normalizeEnemyTemplateToOneInstance({
+							id: 'dummy',
+							name: 'Dummy',
+							stats: { hp: 50, maxHp: 50, speed: 8 },
+							bodyParts: { chest: { max: 10, weakness: 1.0 } }
+						});
+					}
+					this.simEnemy.buffs = new BuffManager(this.simEnemy, this.registry, EventBus);
+					this.buffSystem.registerManager(this.simEnemy.buffs);
+				},
+
+				turnStart() {
+					this.log(`--- TURN_START (turn=${this.simTurn}) ---`, 'info');
+					EventBus.emit('TURN_START', { turn: this.simTurn });
+				},
+
+				turnEnd() {
+					this.log(`--- TURN_END (turn=${this.simTurn}) ---`, 'info');
+					EventBus.emit('TURN_END', { turn: this.simTurn });
+					this.simTurn += 1;
+				},
+
+				applySelectedBuff() {
+					if (!this.currentBuff) return;
+					const target = (this.applyTarget === 'player') ? this.simPlayer : this.simEnemy;
+					if (!target || !target.buffs) return;
+
+					const options = { stacks: this.applyStacks };
+					if (this.applyDurationOverride !== null && this.applyDurationOverride !== undefined && this.applyDurationOverride !== '') {
+						options.duration = this.applyDurationOverride;
+					}
+					target.buffs.add(this.currentBuff.id, options);
+					this.log(`Applied ${this.currentBuff.id} to ${this.applyTarget}`, 'success');
+				},
+
+				removeSelectedBuff() {
+					if (!this.currentBuff) return;
+					const target = (this.applyTarget === 'player') ? this.simPlayer : this.simEnemy;
+					if (!target || !target.buffs) return;
+					target.buffs.remove(this.currentBuff.id, 'manual');
+					this.log(`Removed ${this.currentBuff.id} from ${this.applyTarget}`, 'info');
+				},
+
+				castAttack() {
+					const attacker = (this.castSource === 'player') ? this.simPlayer : this.simEnemy;
+					const target = (this.castTarget === 'enemy') ? this.simEnemy : this.simPlayer;
+					if (!attacker || !target) return;
+
+					let bodyPart = this.selectedBodyPart;
+					if (!bodyPart || !target.bodyParts || !target.bodyParts[bodyPart]) {
+						const parts = target.bodyParts ? Object.keys(target.bodyParts) : [];
+						bodyPart = parts[0] || 'chest';
+					}
+
+					const context = {
+						attacker,
+						target,
+						skillId: 'test_attack',
+						bodyPart,
+						rawDamage: this.castRawDamage,
+						damageDealt: 0,
+						damageTaken: 0,
+						tempModifiers: Object.create(null)
+					};
+
+					this.log(`=== CastAttack ${this.castSource} -> ${this.castTarget} (raw=${context.rawDamage}, part=${bodyPart}) ===`, 'info');
+
+					// 1) attack pre
+					EventBus.emit('BATTLE_ATTACK_PRE', context);
+					this.log(`[Context after ATTACK_PRE] ${JSON.stringify({ tempModifiers: context.tempModifiers })}`, 'info');
+
+					// 2) armor phase (align CoreEngine logic)
+					let actualDamage = context.rawDamage;
+					let armorDamage = 0;
+
+					const part = target.bodyParts && target.bodyParts[bodyPart] ? target.bodyParts[bodyPart] : null;
+					if (part) {
+						if (part.weakness) actualDamage = Math.floor(actualDamage * part.weakness);
+
+						let armorMitMult = 1.0;
+						const tmp = context.tempModifiers && context.tempModifiers.armorMitigationMult;
+						if (Array.isArray(tmp)) {
+							for (const m of tmp) {
+								if (!m) continue;
+								if (m.type === 'percent_current') armorMitMult *= (1 + m.value);
+								else if (m.type === 'flat') armorMitMult += m.value;
+							}
+						}
+
+						if (part.current > 0) {
+							const mitigated = Math.ceil(actualDamage * armorMitMult);
+							if (part.current >= mitigated) {
+								part.current -= mitigated;
+								armorDamage = mitigated;
+								actualDamage = 0;
+							} else {
+								armorDamage = part.current;
+								actualDamage = Math.max(0, mitigated - part.current);
+								part.current = 0;
+								part.status = 'BROKEN';
+							}
+						}
+
+						this.log(`[ArmorPhase] weakness=${part.weakness || 1} armorMitMultApplied => armorDamage=${armorDamage}, hpPending=${actualDamage}`, 'info');
+					}
+
+					// 3) take damage pre
+					context.damageTaken = actualDamage;
+					EventBus.emit('BATTLE_TAKE_DAMAGE_PRE', context);
+					this.log(`[Context after TAKE_DAMAGE_PRE] ${JSON.stringify({ damageTaken: context.damageTaken, damageTakenMult: context.damageTakenMult, shieldPool: context.shieldPool })}`, 'info');
+
+					if (context.damageTakenMult) {
+						context.damageTaken = Math.floor(context.damageTaken * context.damageTakenMult);
+					}
+					if (context.shieldPool) {
+						const absorbed = Math.min(context.shieldPool, context.damageTaken);
+						context.damageTaken -= absorbed;
+						context.shieldPool -= absorbed;
+						this.log(`[Shield] absorbed=${absorbed}, remainingDamage=${context.damageTaken}`, 'info');
+					}
+
+					// 4) apply damage
+					const finalDamage = context.damageTaken;
+					if (finalDamage > 0) {
+						if (target.stats && typeof target.stats.hp === 'number') {
+							target.stats.hp = Math.max(0, target.stats.hp - finalDamage);
+						} else if (typeof target.hp === 'number') {
+							target.hp = Math.max(0, target.hp - finalDamage);
+						}
+					}
+
+					context.damageDealt = finalDamage;
+					EventBus.emit('BATTLE_ATTACK_POST', context);
+
+					this.log(`[Result] hpDamage=${finalDamage}, armorDamage=${armorDamage}`, finalDamage > 0 ? 'error' : 'success');
+				},
+
+				async mountedInit() {
+					// Try to load project data to reduce confusion
+					await this.loadProjectBuffs();
+					await this.loadProjectEnemies();
+					await this.loadProjectPlayer();
+
+					this.resetSimulation();
+				}
+			},
+			mounted() {
+				this.mountedInit();
+			}
+		}).mount('#app');
+	</script>
+</body>
+</html>
