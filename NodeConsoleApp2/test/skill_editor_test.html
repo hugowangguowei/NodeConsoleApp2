@@ -4,12 +4,18 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>技能编辑器原型</title>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <style>
         :root {
             --bg-color: #f4f4f4;
             --panel-bg: #ffffff;
             --border-color: #ccc;
             --primary-color: #007bff;
+            --secondary-color: #2c3e50;
+            --danger-color: #e74c3c;
+            --success-color: #2ecc71;
+            --light-bg: #f5f6fa;
+            --monospace: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
             --grid-line-color: #e0e0e0;
             --grid-size: 100px;
         }
@@ -41,11 +47,21 @@
             box-shadow: 0 2px 5px rgba(0,0,0,0.05);
             z-index: 100;
         }
-        #toolbar button {
-            margin-right: 10px;
-            padding: 6px 12px;
+        .btn {
+            padding: 8px 12px;
+            border: none;
+            border-radius: 4px;
             cursor: pointer;
+            font-size: 14px;
+            transition: opacity 0.2s;
+            margin-right: 8px;
         }
+        .btn:hover { opacity: 0.9; }
+        .btn-primary { background: var(--primary-color); color: #fff; }
+        .btn-success { background: var(--success-color); color: #fff; }
+        .btn-danger { background: var(--danger-color); color: #fff; }
+        .btn-dark { background: #34495e; color: #fff; }
+        .btn-sm { padding: 4px 8px; font-size: 12px; }
 
         #main-container {
             display: flex;
@@ -204,33 +220,77 @@
 
         /* D. Properties Panel (Right Sidebar) */
         #properties-panel {
-            width: 300px;
+            width: 420px;
             background: var(--panel-bg);
             border-left: 1px solid var(--border-color);
             display: flex;
             flex-direction: column;
             z-index: 90;
+            overflow: hidden;
         }
-        .prop-group {
-            padding: 15px;
+        .panel-title {
+            padding: 10px;
+            font-weight: 800;
+            background: #eee;
+            border-bottom: 1px solid #ddd;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .panel-scroll {
+            overflow-y: auto;
+            overflow-x: hidden;
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            min-height: 0;
+        }
+        .panel {
+            background: var(--panel-bg);
+            border: 1px solid #e6e6e6;
+            border-radius: 8px;
+            padding: 12px;
+        }
+        .panel .panel-h {
+            font-weight: 800;
+            margin-bottom: 10px;
+            padding-bottom: 6px;
             border-bottom: 1px solid #eee;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
         }
-        .prop-group label {
-            display: block;
-            margin-bottom: 5px;
-            font-weight: bold;
-            font-size: 12px;
-            color: #555;
-        }
-        .prop-group input, 
-        .prop-group select,
-        .prop-group textarea {
+        .small { font-size: 12px; color: #666; }
+        .badge { display:inline-block; padding:2px 6px; border-radius:999px; font-size:12px; background:#eef; margin-right:6px; }
+        .input, .select, .textarea {
             width: 100%;
-            padding: 6px;
-            box-sizing: border-box;
-            border: 1px solid #ccc;
+            padding: 8px;
+            border: 1px solid var(--border-color);
             border-radius: 4px;
+            box-sizing: border-box;
         }
+        .textarea { min-height: 80px; resize: vertical; font-family: var(--monospace); font-size: 12px; }
+        .grid2 {
+            display: grid;
+            grid-template-columns: 120px 1fr;
+            gap: 8px 10px;
+            align-items: center;
+        }
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12px;
+        }
+        .table th, .table td {
+            border-bottom: 1px solid #eee;
+            padding: 6px 4px;
+            text-align: left;
+            vertical-align: top;
+        }
+        .table th { color: #666; font-weight: 800; }
+        .row-actions { display:flex; gap:6px; }
+        .error { color: var(--danger-color); font-size: 12px; }
 
         /* Utility */
         .debug-info {
@@ -251,13 +311,17 @@
 <div id="app">
     <!-- A. Toolbar -->
     <div id="toolbar">
-        <button onclick="document.getElementById('file-input').click()">导入 JSON</button>
-        <input type="file" id="file-input" accept=".json" style="display: none;" onchange="editor.importJson(this)">
-        <button onclick="editor.createNewSkill()">新建技能 (+)</button>
-        <button onclick="editor.exportJson()">导出 JSON</button>
-        <button onclick="editor.clearCanvas()">清空画布</button>
+        <input type="file" id="file-input" accept=".json" style="display: none;" onchange="editor.importJsonFile(this)">
+        <button class="btn btn-dark" onclick="editor.loadProjectData()">Load Project Data</button>
+        <button class="btn btn-primary" onclick="document.getElementById('file-input').click()">Import skills.json</button>
+        <button class="btn btn-primary" onclick="editor.createNewSkill()">+ New Skill</button>
+        <button class="btn btn-success" onclick="editor.exportJson(true)">Export (dev)
+        </button>
+        <button class="btn btn-success" onclick="editor.exportJson(false)">Export (runtime)
+        </button>
+        <button class="btn btn-danger" onclick="editor.clearCanvas()">Clear</button>
         <span style="flex:1"></span>
-        <button onclick="editor.autoLayout()">自动布局</button>
+        <button class="btn btn-dark" onclick="editor.autoLayout()">Auto Layout</button>
     </div>
 
     <div id="main-container">
@@ -294,37 +358,178 @@
 
         <!-- D. Properties Panel -->
         <div id="properties-panel">
-            <div class="panel-header">属性面板</div>
-            <div id="prop-content">
-                <div class="prop-group">
-                    <label>ID</label>
-                    <input type="text" id="prop-id" readonly>
+            <div class="panel-title">
+                <div>Skill Properties</div>
+                <div class="small" id="prop-validate-summary">No selection</div>
+            </div>
+            <div class="panel-scroll" id="prop-content">
+                <div class="panel">
+                    <div class="panel-h">
+                        <span>Summary</span>
+                        <span id="prop-summary-badge" class="badge">—</span>
+                    </div>
+                    <div class="small" id="prop-summary-text">Select a node to edit...</div>
+                    <div style="margin-top:10px; display:flex; gap:8px;">
+                        <button class="btn btn-primary" style="flex:1" onclick="editor.duplicateCurrentNode()" id="btn-dup" disabled>Duplicate</button>
+                        <button class="btn btn-danger" style="flex:1" onclick="editor.deleteCurrentNode()" id="btn-del" disabled>Delete</button>
+                    </div>
                 </div>
-                <div class="prop-group">
-                    <label>技能名称</label>
-                    <input type="text" id="prop-name">
+
+                <div class="panel">
+                    <div class="panel-h">Basic Info</div>
+                    <div class="grid2">
+                        <div class="small">id</div>
+                        <input class="input" type="text" id="prop-id">
+
+                        <div class="small">name</div>
+                        <input class="input" type="text" id="prop-name">
+
+                        <div class="small">rarity</div>
+                        <select class="select" id="prop-rarity">
+                            <option value="Common">Common</option>
+                            <option value="Uncommon">Uncommon</option>
+                            <option value="Rare">Rare</option>
+                            <option value="Epic">Epic</option>
+                            <option value="Legendary">Legendary</option>
+                        </select>
+                    </div>
+                    <div style="margin-top:10px;">
+                        <div class="small" style="margin-bottom:6px;">description</div>
+                        <textarea class="textarea" id="prop-desc"></textarea>
+                    </div>
+                    <div class="error" id="err-id" style="display:none; margin-top:8px;"></div>
                 </div>
-                <div class="prop-group">
-                    <label>稀有度</label>
-                    <select id="prop-rarity">
-                        <option value="Common">普通 (Common)</option>
-                        <option value="Uncommon">稀有 (Uncommon)</option>
-                        <option value="Rare">卓越 (Rare)</option>
-                        <option value="Epic">史诗 (Epic)</option>
-                        <option value="Legendary">传说 (Legendary)</option>
-                    </select>
+
+                <div class="panel">
+                    <div class="panel-h">Target & Timing</div>
+                    <div class="grid2">
+                        <div class="small">cost</div>
+                        <input class="input" type="number" id="prop-cost">
+
+                        <div class="small">speed</div>
+                        <input class="input" type="number" id="prop-speed">
+
+                        <div class="small">targetType</div>
+                        <select class="select" id="prop-targetType">
+                            <option value="SELF">SELF</option>
+                            <option value="ENEMY">ENEMY</option>
+                            <option value="SINGLE_PART">SINGLE_PART</option>
+                            <option value="ALL_PARTS">ALL_PARTS</option>
+                            <option value="RANDOM_PART">RANDOM_PART</option>
+                            <option value="SELF_PARTS">SELF_PARTS</option>
+                        </select>
+
+                        <div class="small">requiredPart</div>
+                        <select class="select" id="prop-requiredPart">
+                            <option value="">(none)</option>
+                            <option value="head">head</option>
+                            <option value="chest">chest</option>
+                            <option value="arm">arm</option>
+                            <option value="leg">leg</option>
+                        </select>
+
+                        <div class="small">targetParts</div>
+                        <div style="position:relative;">
+                            <button type="button" class="btn btn-dark btn-sm" id="targetPartsBtn" style="width:100%; text-align:left;">(none)</button>
+                            <div id="targetPartsDropdown" class="panel" style="position:absolute; top:36px; left:0; right:0; z-index:999; display:none; padding:10px;">
+                                <div class="small" style="margin-bottom:8px;">选择 `SELF_PARTS` 目标部位</div>
+                                <label class="small" style="display:flex; gap:8px; align-items:center;"><input type="checkbox" value="head">head</label>
+                                <label class="small" style="display:flex; gap:8px; align-items:center;"><input type="checkbox" value="chest">chest</label>
+                                <label class="small" style="display:flex; gap:8px; align-items:center;"><input type="checkbox" value="left_arm">left_arm</label>
+                                <label class="small" style="display:flex; gap:8px; align-items:center;"><input type="checkbox" value="right_arm">right_arm</label>
+                                <label class="small" style="display:flex; gap:8px; align-items:center;"><input type="checkbox" value="left_leg">left_leg</label>
+                                <label class="small" style="display:flex; gap:8px; align-items:center;"><input type="checkbox" value="right_leg">right_leg</label>
+                                <div style="margin-top:10px; display:flex; gap:8px;">
+                                    <button type="button" class="btn btn-sm btn-dark" id="targetPartsAll">All</button>
+                                    <button type="button" class="btn btn-sm btn-dark" id="targetPartsNone">None</button>
+                                    <span style="flex:1"></span>
+                                    <button type="button" class="btn btn-sm btn-primary" id="targetPartsClose">OK</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="error" id="err-target" style="display:none; margin-top:8px;"></div>
                 </div>
-                <div class="prop-group">
-                    <label>AP 消耗</label>
-                    <input type="number" id="prop-cost">
+
+                <div class="panel">
+                    <div class="panel-h">Values (optional)</div>
+                    <div class="grid2">
+                        <div class="small">type</div>
+                        <input class="input" type="text" id="prop-type" placeholder="e.g. DAMAGE / HEAL">
+
+                        <div class="small">value</div>
+                        <input class="input" type="text" id="prop-value" placeholder="number or string">
+
+                        <div class="small">valueType</div>
+                        <input class="input" type="text" id="prop-valueType" placeholder="e.g. PERCENT">
+                    </div>
                 </div>
-                <div class="prop-group">
-                    <label>描述</label>
-                    <textarea id="prop-desc" rows="4"></textarea>
+
+                <div class="panel">
+                    <div class="panel-h">
+                        <span>Buff Refs</span>
+                        <button class="btn btn-sm btn-dark" onclick="editor.addBuffRefRow('apply')" id="btn-add-apply" disabled>+ apply</button>
+                    </div>
+                    <div class="small" style="margin-bottom:8px;">编辑 `buffRefs.apply/applySelf/remove`。buffId 从 `buffs.json` 下拉选择。</div>
+
+                    <div class="small" style="font-weight:700; margin:8px 0 4px;">apply (enemy)</div>
+                    <table class="table" id="table-apply">
+                        <thead>
+                            <tr>
+                                <th>buffId</th><th>target</th><th>chance</th><th>duration</th><th>stacks</th><th></th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+
+                    <div class="small" style="font-weight:700; margin:12px 0 4px;">applySelf (self)</div>
+                    <button class="btn btn-sm btn-dark" onclick="editor.addBuffRefRow('applySelf')" id="btn-add-applySelf" disabled>+ applySelf</button>
+                    <table class="table" id="table-applySelf" style="margin-top:6px;">
+                        <thead>
+                            <tr>
+                                <th>buffId</th><th>target</th><th>chance</th><th>duration</th><th>stacks</th><th></th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+
+                    <div class="small" style="font-weight:700; margin:12px 0 4px;">remove</div>
+                    <button class="btn btn-sm btn-dark" onclick="editor.addBuffRefRow('remove')" id="btn-add-remove" disabled>+ remove</button>
+                    <table class="table" id="table-remove" style="margin-top:6px;">
+                        <thead>
+                            <tr>
+                                <th>buffId</th><th>target</th><th></th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                    <div class="error" id="err-buffs" style="display:none; margin-top:8px;"></div>
                 </div>
-                <div class="prop-group">
-                    <button onclick="editor.saveCurrentNode()">更新节点</button>
-                    <button onclick="editor.deleteCurrentNode()" style="background:#ff4444; color:white; margin-top:5px;">删除节点</button>
+
+                <div class="panel">
+                    <div class="panel-h">Effects (JSON)</div>
+                    <div class="small" style="margin-bottom:6px;">`effects[]` 目前使用 JSON 编辑（MVP）。</div>
+                    <textarea class="textarea" id="prop-effects" placeholder="[]"></textarea>
+                    <div class="error" id="err-effects" style="display:none; margin-top:8px;"></div>
+                </div>
+
+                <div class="panel">
+                    <div class="panel-h">Prerequisites</div>
+                    <div class="small" id="prop-prerequisites">—</div>
+                </div>
+
+                <div class="panel">
+                    <div class="panel-h">Editor Meta</div>
+                    <div class="grid2">
+                        <div class="small">x</div>
+                        <input class="input" type="number" id="meta-x" readonly>
+                        <div class="small">y</div>
+                        <input class="input" type="number" id="meta-y" readonly>
+                    </div>
+                </div>
+
+                <div class="panel">
+                    <button class="btn btn-success" style="width:100%;" onclick="editor.saveCurrentNode()" id="btn-save" disabled>Save Changes</button>
                 </div>
             </div>
         </div>
@@ -345,7 +550,8 @@ class SkillEditor {
         this.CANVAS_HEIGHT = 5000;
 
         // State
-        this.skills = []; // Array of skill objects
+        this.skills = []; // Array of skill objects (editor internal)
+        this.buffDict = {}; // buffs.json map
         this.selectedNodeId = null;
         this.isDragging = false;
         this.dragOffset = { x: 0, y: 0 };
@@ -372,22 +578,107 @@ class SkillEditor {
         this.elPropName = document.getElementById('prop-name');
         this.elPropRarity = document.getElementById('prop-rarity');
         this.elPropCost = document.getElementById('prop-cost');
+        this.elPropSpeed = document.getElementById('prop-speed');
+        this.elPropTargetType = document.getElementById('prop-targetType');
+        this.elPropRequiredPart = document.getElementById('prop-requiredPart');
+        // targetParts dropdown
+        this.elTargetPartsBtn = document.getElementById('targetPartsBtn');
+        this.elTargetPartsDropdown = document.getElementById('targetPartsDropdown');
+        this.elPropType = document.getElementById('prop-type');
+        this.elPropValue = document.getElementById('prop-value');
+        this.elPropValueType = document.getElementById('prop-valueType');
         this.elPropDesc = document.getElementById('prop-desc');
+        this.elPropEffects = document.getElementById('prop-effects');
+        this.elPrereqText = document.getElementById('prop-prerequisites');
+        this.elMetaX = document.getElementById('meta-x');
+        this.elMetaY = document.getElementById('meta-y');
+
+        this.elErrId = document.getElementById('err-id');
+        this.elErrTarget = document.getElementById('err-target');
+        this.elErrBuffs = document.getElementById('err-buffs');
+        this.elErrEffects = document.getElementById('err-effects');
+        this.elValidateSummary = document.getElementById('prop-validate-summary');
+        this.elSummaryText = document.getElementById('prop-summary-text');
+        this.elSummaryBadge = document.getElementById('prop-summary-badge');
 
         // Initialize
         this.initGrid();
         this.attachEvents();
         
-        // Test Data
-        this.addSkillNode({ 
-            id: 'skill_slash', name: '斩击', rarity: 'Common', cost: 2, 
-            editorMeta: { x: 100, y: 100 } 
+        // Seed minimal nodes
+        this.addSkillNode({
+            id: 'skill_slash', name: '斩击', rarity: 'Common', cost: 2, speed: 0,
+            targetType: 'SINGLE_PART',
+            description: '基础的挥砍攻击。',
+            prerequisites: [],
+            buffRefs: { apply: [], applySelf: [], remove: [] },
+            effects: [],
+            editorMeta: { x: 100, y: 100 }
         });
-        this.addSkillNode({ 
-            id: 'skill_double_slash', name: '二连斩', rarity: 'Uncommon', cost: 3, 
-            preRequisite: 'skill_slash',
-            editorMeta: { x: 300, y: 100 } 
+
+        // TargetParts dropdown interactions
+        this.elTargetPartsBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            if (this.elTargetPartsDropdown.style.display === 'none') {
+                this.elTargetPartsDropdown.style.display = 'block';
+            } else {
+                this.elTargetPartsDropdown.style.display = 'none';
+            }
         });
+
+        document.getElementById('targetPartsClose').addEventListener('click', (e) => {
+            e.preventDefault();
+            this.elTargetPartsDropdown.style.display = 'none';
+            this.updateTargetPartsBtnText();
+        });
+        document.getElementById('targetPartsAll').addEventListener('click', (e) => {
+            e.preventDefault();
+            this.setTargetPartsSelection(['head','chest','left_arm','right_arm','left_leg','right_leg']);
+        });
+        document.getElementById('targetPartsNone').addEventListener('click', (e) => {
+            e.preventDefault();
+            this.setTargetPartsSelection([]);
+        });
+
+        // Click outside closes
+        window.addEventListener('mousedown', (e) => {
+            if (!this.elTargetPartsDropdown) return;
+            if (this.elTargetPartsDropdown.style.display !== 'block') return;
+            const inside = this.elTargetPartsDropdown.contains(e.target) || this.elTargetPartsBtn.contains(e.target);
+            if (!inside) {
+                this.elTargetPartsDropdown.style.display = 'none';
+                this.updateTargetPartsBtnText();
+            }
+        });
+
+        // Checkbox changes update button label
+        this.elTargetPartsDropdown.addEventListener('change', () => {
+            this.updateTargetPartsBtnText();
+        });
+    }
+
+    setTargetPartsSelection(parts) {
+        const set = new Set(parts);
+        const checks = this.elTargetPartsDropdown.querySelectorAll('input[type="checkbox"]');
+        checks.forEach(cb => {
+            cb.checked = set.has(cb.value);
+        });
+        this.updateTargetPartsBtnText();
+    }
+
+    getSelectedTargetParts() {
+        const checks = this.elTargetPartsDropdown.querySelectorAll('input[type="checkbox"]');
+        const parts = [];
+        checks.forEach(cb => {
+            if (cb.checked) parts.push(cb.value);
+        });
+        return parts;
+    }
+
+    updateTargetPartsBtnText() {
+        const parts = this.getSelectedTargetParts();
+        this.elTargetPartsBtn.textContent = parts.length ? parts.join(', ') : '(none)';
     }
 
     // --- A. Rendering ---
@@ -464,16 +755,7 @@ class SkillEditor {
         this.elSvgLayer.appendChild(this.elTempLineGroup);
 
         this.skills.forEach(skill => {
-            // Support multiple prerequisites (preRequisites: [])
-            // Also backward compatibility for single preRequisite
-            let parents = [];
-            
-            if (skill.preRequisites && Array.isArray(skill.preRequisites)) {
-                parents = skill.preRequisites;
-            } else if (skill.preRequisite) {
-                // Should migrate? Just read for now
-                parents = [skill.preRequisite];
-            }
+            const parents = Array.isArray(skill.prerequisites) ? skill.prerequisites : [];
 
             parents.forEach(parentId => {
                 const target = this.getSkillById(parentId);
@@ -567,6 +849,14 @@ class SkillEditor {
             skill.editorMeta = { x: 14, y: 14 }; // 14 offset for 72px node in 100px grid
         }
         this.snapToGrid(skill.editorMeta);
+        // Normalize current schema
+        if (!Array.isArray(skill.prerequisites)) skill.prerequisites = [];
+        if (!skill.buffRefs) skill.buffRefs = { apply: [], applySelf: [], remove: [] };
+        if (!skill.buffRefs.apply) skill.buffRefs.apply = [];
+        if (!skill.buffRefs.applySelf) skill.buffRefs.applySelf = [];
+        if (!skill.buffRefs.remove) skill.buffRefs.remove = [];
+        if (!Array.isArray(skill.effects)) skill.effects = [];
+
         this.skills.push(skill);
         this.renderNodes();
     }
@@ -686,6 +976,11 @@ class SkillEditor {
 
         // Global Key Events for Deletion
         window.addEventListener('keydown', (e) => {
+            // 在编辑表单（input/textarea/select 或 contenteditable）时，Backspace 应用于文本编辑，不应触发删除节点/连线。
+            const tag = (e.target && e.target.tagName) ? e.target.tagName.toLowerCase() : '';
+            const isEditable = tag === 'input' || tag === 'textarea' || tag === 'select' || (e.target && e.target.isContentEditable);
+            if (isEditable) return;
+
             if (e.key === 'Delete' || e.key === 'Backspace') {
                 if (this.selectedConnection) {
                     this.deleteSelectedConnection();
@@ -787,29 +1082,21 @@ class SkillEditor {
 
     createConnection(sourceId, targetId) {
         // 逻辑：Source 是 Target 的前置 (Source -> Target)
-        // 数据模型中：target.preRequisites = [sourceId, ...]
+        // 数据模型中：target.prerequisites = [sourceId, ...]
         
         const targetSkill = this.getSkillById(targetId);
         if (!targetSkill) return;
 
-        // Ensure array exists
-        if (!targetSkill.preRequisites) {
-            targetSkill.preRequisites = [];
-            // Migrate old field if exists
-            if (targetSkill.preRequisite) {
-                targetSkill.preRequisites.push(targetSkill.preRequisite);
-                delete targetSkill.preRequisite;
-            }
-        }
+        if (!Array.isArray(targetSkill.prerequisites)) targetSkill.prerequisites = [];
 
         // 检查重复
-        if (targetSkill.preRequisites.includes(sourceId)) {
+        if (targetSkill.prerequisites.includes(sourceId)) {
             console.log('连接已存在');
             return;
         }
 
         // 更新数据
-        targetSkill.preRequisites.push(sourceId);
+        targetSkill.prerequisites.push(sourceId);
         console.log(`创建连接: ${sourceId} -> ${targetId}`);
         
         this.renderNodes();
@@ -818,31 +1105,124 @@ class SkillEditor {
     // --- D. Properties Panel Logic ---
 
     loadProperties(skill) {
-        this.elPropId.value = skill.id;
-        this.elPropName.value = skill.name;
-        // this.elPropRarity.value = skill.rarity; // Set select to value
-        // Match approximate logic for select box
-        const options = this.elPropRarity.options;
-        for (let i = 0; i < options.length; i++) {
-            if (options[i].value === skill.rarity) {
-                this.elPropRarity.selectedIndex = i;
-                break;
-            }
-        }
-        this.elPropCost.value = skill.cost;
+        // Enable buttons
+        document.getElementById('btn-save').disabled = false;
+        document.getElementById('btn-del').disabled = false;
+        document.getElementById('btn-dup').disabled = false;
+        document.getElementById('btn-add-apply').disabled = false;
+        document.getElementById('btn-add-applySelf').disabled = false;
+        document.getElementById('btn-add-remove').disabled = false;
+
+        this.elPropId.value = skill.id || '';
+        this.elPropName.value = skill.name || '';
+        this.elPropRarity.value = skill.rarity || 'Common';
+        this.elPropCost.value = skill.cost ?? 0;
+        this.elPropSpeed.value = skill.speed ?? 0;
+        this.elPropTargetType.value = skill.targetType || 'SINGLE_PART';
+        this.elPropRequiredPart.value = skill.requiredPart || '';
+        this.setTargetPartsSelection(Array.isArray(skill.targetParts) ? skill.targetParts : []);
+        this.elPropType.value = skill.type || '';
+        this.elPropValue.value = skill.value ?? '';
+        this.elPropValueType.value = skill.valueType || '';
         this.elPropDesc.value = skill.description || '';
+        this.elPropEffects.value = JSON.stringify(skill.effects || [], null, 2);
+        this.elPrereqText.textContent = (skill.prerequisites || []).join(', ') || '—';
+        this.elMetaX.value = skill.editorMeta?.x ?? '';
+        this.elMetaY.value = skill.editorMeta?.y ?? '';
+
+        this.renderBuffRefTables();
+        this.updateSummary();
     }
 
     saveCurrentNode() {
         if (!this.selectedNodeId) return;
         const skill = this.getSkillById(this.selectedNodeId);
-        if (skill) {
-            skill.name = this.elPropName.value;
-            skill.rarity = this.elPropRarity.value;
-            skill.cost = parseInt(this.elPropCost.value);
-            skill.description = this.elPropDesc.value;
-            this.renderNodes();
+        if (!skill) return;
+
+        // Clear errors
+        this.setError(this.elErrId, null);
+        this.setError(this.elErrTarget, null);
+        this.setError(this.elErrBuffs, null);
+        this.setError(this.elErrEffects, null);
+
+        const newId = (this.elPropId.value || '').trim();
+        if (!newId) {
+            this.setError(this.elErrId, 'id 不能为空');
+            this.updateSummary();
+            return;
         }
+        if (newId !== skill.id && this.getSkillById(newId)) {
+            this.setError(this.elErrId, `id 冲突：${newId} 已存在`);
+            this.updateSummary();
+            return;
+        }
+
+        // Target validation
+        const targetType = this.elPropTargetType.value;
+        const requiredPart = this.elPropRequiredPart.value || undefined;
+        const targetParts = this.getSelectedTargetParts();
+        if (targetType === 'SELF_PARTS' && targetParts.length === 0) {
+            this.setError(this.elErrTarget, 'targetType=SELF_PARTS 时必须填写 targetParts');
+            this.updateSummary();
+            return;
+        }
+
+        // Parse effects
+        let effects = [];
+        try {
+            effects = JSON.parse(this.elPropEffects.value || '[]');
+            if (!Array.isArray(effects)) throw new Error('effects 必须是数组');
+        } catch (e) {
+            this.setError(this.elErrEffects, 'effects JSON 无法解析：' + e.message);
+            this.updateSummary();
+            return;
+        }
+
+        // Apply changes
+        skill.id = newId;
+        skill.name = (this.elPropName.value || '').trim();
+        skill.rarity = this.elPropRarity.value;
+        skill.cost = Number(this.elPropCost.value || 0);
+        skill.speed = Number(this.elPropSpeed.value || 0);
+        skill.targetType = targetType;
+
+        if (requiredPart) skill.requiredPart = requiredPart; else delete skill.requiredPart;
+        if (targetParts.length > 0) skill.targetParts = targetParts; else delete skill.targetParts;
+
+        const type = (this.elPropType.value || '').trim();
+        if (type) skill.type = type; else delete skill.type;
+
+        const valueRaw = (this.elPropValue.value || '').trim();
+        if (valueRaw === '') {
+            delete skill.value;
+        } else {
+            const maybeNumber = Number(valueRaw);
+            skill.value = Number.isNaN(maybeNumber) ? valueRaw : maybeNumber;
+        }
+
+        const valueType = (this.elPropValueType.value || '').trim();
+        if (valueType) skill.valueType = valueType; else delete skill.valueType;
+
+        skill.description = this.elPropDesc.value || '';
+        skill.effects = effects;
+
+        // Keep editorMeta in sync on UI
+        this.elMetaX.value = skill.editorMeta?.x ?? '';
+        this.elMetaY.value = skill.editorMeta?.y ?? '';
+
+        // If renamed id: update references
+        if (newId !== this.selectedNodeId) {
+            const oldId = this.selectedNodeId;
+            this.skills.forEach(s => {
+                if (Array.isArray(s.prerequisites)) {
+                    s.prerequisites = s.prerequisites.map(p => (p === oldId ? newId : p));
+                }
+            });
+            this.selectedNodeId = newId;
+        }
+
+        this.renderNodes();
+        this.updateSummary();
     }
 
     deleteCurrentNode() {
@@ -851,10 +1231,9 @@ class SkillEditor {
             this.skills = this.skills.filter(s => s.id !== this.selectedNodeId);
             // Also remove connections
             this.skills.forEach(s => {
-                if (s.preRequisites) {
-                    s.preRequisites = s.preRequisites.filter(pid => pid !== this.selectedNodeId);
+                if (s.prerequisites) {
+                    s.prerequisites = s.prerequisites.filter(pid => pid !== this.selectedNodeId);
                 }
-                if (s.preRequisite === this.selectedNodeId) s.preRequisite = null;
             });
             this.selectedNodeId = null;
             this.renderNodes();
@@ -868,13 +1247,8 @@ class SkillEditor {
         const targetSkill = this.getSkillById(target);
         
         if (targetSkill) {
-            // Try array removal
-            if (targetSkill.preRequisites) {
-                targetSkill.preRequisites = targetSkill.preRequisites.filter(pid => pid !== source);
-            }
-            // Try legacy field removal
-            if (targetSkill.preRequisite === source) {
-                targetSkill.preRequisite = null;
+            if (Array.isArray(targetSkill.prerequisites)) {
+                targetSkill.prerequisites = targetSkill.prerequisites.filter(pid => pid !== source);
             }
             console.log(`已删除连接: ${source} -> ${target}`);
         }
@@ -896,6 +1270,11 @@ class SkillEditor {
             name: '新技能',
             rarity: 'Common',
             cost: 1,
+            speed: 0,
+            targetType: 'SINGLE_PART',
+            prerequisites: [],
+            buffRefs: { apply: [], applySelf: [], remove: [] },
+            effects: [],
             editorMeta: { x: vX, y: vY }
         });
     }
@@ -907,77 +1286,112 @@ class SkillEditor {
         }
     }
     
-    importJson(input) {
+    async loadProjectData() {
+        try {
+            const [skillsResp, buffsResp] = await Promise.all([
+                fetch('../assets/data/skills.json'),
+                fetch('../assets/data/buffs.json')
+            ]);
+            const skillsData = await skillsResp.json();
+            const buffsData = await buffsResp.json();
+
+            this.buffDict = buffsData || {};
+
+            const newSkills = [];
+            Object.keys(skillsData || {}).forEach((key) => {
+                const sk = skillsData[key];
+                if (!sk.id) sk.id = key;
+                newSkills.push(sk);
+            });
+            this.normalizeImportedSkills(newSkills);
+            this.skills = newSkills;
+            this.selectedNodeId = null;
+            this.renderNodes();
+            this.pan = { x: 0, y: 0 };
+            this.zoom = 1;
+            this.updateTransform();
+            alert(`Loaded skills: ${this.skills.length}, buffs: ${Object.keys(this.buffDict).length}`);
+        } catch (e) {
+            console.error(e);
+            alert('Load Project Data failed: ' + e.message);
+        }
+    }
+
+    importJsonFile(input) {
         const file = input.files[0];
         if (!file) return;
-
         const reader = new FileReader();
         reader.onload = (e) => {
             try {
-                const content = e.target.result;
-                let data = JSON.parse(content);
-                let newSkills = [];
-
+                const data = JSON.parse(e.target.result);
+                const newSkills = [];
                 if (Array.isArray(data)) {
-                    newSkills = data;
+                    // legacy array format
+                    data.forEach(s => newSkills.push(s));
                 } else if (typeof data === 'object' && data !== null) {
-                    // 支持 Map 格式 (引擎格式) 转换为数组
-                    Object.keys(data).forEach(key => {
-                        const skill = data[key];
-                        if (!skill.id) skill.id = key;
-                        newSkills.push(skill);
+                    Object.keys(data).forEach(k => {
+                        const s = data[k];
+                        if (!s.id) s.id = k;
+                        newSkills.push(s);
                     });
                 } else {
-                    throw new Error('未知的 JSON 数据格式');
+                    throw new Error('未知 JSON 格式');
                 }
 
-                // 数据补全与对齐
-                newSkills.forEach((skill, index) => {
-                    // Normalize preRequisites
-                    if (skill.preRequisite && !skill.preRequisites) {
-                        skill.preRequisites = [skill.preRequisite];
-                        delete skill.preRequisite;
-                    }
-                    if (!skill.preRequisites) {
-                        skill.preRequisites = [];
-                    }
-
-                    if (!skill.editorMeta) {
-                        // 如果缺失坐标，按照网格顺序默认排列 (每行10个)
-                        const col = index % 10;
-                        const row = Math.floor(index / 10);
-                        skill.editorMeta = { 
-                            x: col * this.GRID_SIZE + 14, 
-                            y: row * this.GRID_SIZE + 14 
-                        };
-                    } else {
-                        // 确保现有坐标对齐网格
-                        this.snapToGrid(skill.editorMeta);
-                    }
-                });
-
-                if (confirm(`解析成功，共找到 ${newSkills.length} 个技能。\n是否覆盖当前画布？`)) {
+                this.normalizeImportedSkills(newSkills);
+                if (confirm(`解析成功：${newSkills.length} skills。覆盖当前画布？`)) {
                     this.skills = newSkills;
                     this.selectedNodeId = null;
                     this.renderNodes();
-                    // 重置视图位置
-                    this.pan = { x: 0, y: 0 };
-                    this.zoom = 1;
-                    this.updateTransform();
                 }
-
             } catch (err) {
                 console.error(err);
                 alert('导入失败: ' + err.message);
             }
-            // 清空input，允许重复导入同一文件
             input.value = '';
         };
         reader.readAsText(file);
     }
 
-    exportJson() {
-        const jsonStr = JSON.stringify(this.skills, null, 2);
+    normalizeImportedSkills(newSkills) {
+        newSkills.forEach((skill, index) => {
+            // Migrate legacy preRequisite/preRequisites -> prerequisites
+            if (skill.preRequisite && !skill.prerequisites) {
+                skill.prerequisites = [skill.preRequisite];
+                delete skill.preRequisite;
+            }
+            if (skill.preRequisites && !skill.prerequisites) {
+                skill.prerequisites = skill.preRequisites;
+                delete skill.preRequisites;
+            }
+            if (!Array.isArray(skill.prerequisites)) skill.prerequisites = [];
+
+            if (!skill.buffRefs) skill.buffRefs = { apply: [], applySelf: [], remove: [] };
+            if (!skill.buffRefs.apply) skill.buffRefs.apply = [];
+            if (!skill.buffRefs.applySelf) skill.buffRefs.applySelf = [];
+            if (!skill.buffRefs.remove) skill.buffRefs.remove = [];
+
+            if (!Array.isArray(skill.effects)) skill.effects = [];
+
+            if (!skill.editorMeta) {
+                const col = index % 10;
+                const row = Math.floor(index / 10);
+                skill.editorMeta = { x: col * this.GRID_SIZE + 14, y: row * this.GRID_SIZE + 14 };
+            } else {
+                this.snapToGrid(skill.editorMeta);
+            }
+        });
+    }
+
+    exportJson(includeEditorMeta = true) {
+        const output = {};
+        this.skills.forEach(s => {
+            const clone = JSON.parse(JSON.stringify(s));
+            if (!includeEditorMeta) delete clone.editorMeta;
+            output[clone.id] = clone;
+        });
+
+        const jsonStr = JSON.stringify(output, null, 2);
         const blob = new Blob([jsonStr], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
         
@@ -989,6 +1403,167 @@ class SkillEditor {
         
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
+    }
+
+    duplicateCurrentNode() {
+        if (!this.selectedNodeId) return;
+        const src = this.getSkillById(this.selectedNodeId);
+        if (!src) return;
+        const copy = JSON.parse(JSON.stringify(src));
+        copy.id = `${src.id}_copy_${Date.now()}`;
+        copy.name = `${src.name || 'Skill'} (Copy)`;
+        copy.prerequisites = Array.isArray(src.prerequisites) ? [...src.prerequisites] : [];
+        copy.editorMeta = { x: (src.editorMeta?.x ?? 14) + 100, y: (src.editorMeta?.y ?? 14) + 0 };
+        this.addSkillNode(copy);
+    }
+
+    setError(el, msg) {
+        if (!el) return;
+        if (!msg) {
+            el.style.display = 'none';
+            el.textContent = '';
+        } else {
+            el.style.display = 'block';
+            el.textContent = msg;
+        }
+    }
+
+    updateSummary() {
+        const skill = this.selectedNodeId ? this.getSkillById(this.selectedNodeId) : null;
+        if (!skill) {
+            this.elValidateSummary.textContent = 'No selection';
+            this.elSummaryText.textContent = 'Select a node to edit...';
+            this.elSummaryBadge.textContent = '—';
+            return;
+        }
+        const issues = [];
+        if (!skill.id) issues.push('missing id');
+        if (skill.buffRefs) {
+            const all = [];
+            ['apply','applySelf','remove'].forEach(k => {
+                (skill.buffRefs[k] || []).forEach(r => all.push(r));
+            });
+            all.forEach(r => {
+                if (r?.buffId && this.buffDict && Object.keys(this.buffDict).length > 0) {
+                    if (!this.buffDict[r.buffId]) issues.push(`unknown buffId: ${r.buffId}`);
+                }
+                if (typeof r?.chance === 'number' && (r.chance < 0 || r.chance > 1)) issues.push('chance out of range');
+            });
+        }
+        this.elValidateSummary.textContent = issues.length === 0 ? 'OK' : `${issues.length} issue(s)`;
+        this.elSummaryBadge.textContent = issues.length === 0 ? '✅ OK' : '⚠️';
+        this.elSummaryText.textContent = `${skill.id} / ${skill.name || ''}`;
+    }
+
+    renderBuffRefTables() {
+        const skill = this.selectedNodeId ? this.getSkillById(this.selectedNodeId) : null;
+        const tables = {
+            apply: document.querySelector('#table-apply tbody'),
+            applySelf: document.querySelector('#table-applySelf tbody'),
+            remove: document.querySelector('#table-remove tbody'),
+        };
+        Object.values(tables).forEach(t => { if (t) t.innerHTML = ''; });
+        if (!skill) return;
+
+        const renderBuffIdSelect = (value) => {
+            const buffIds = Object.keys(this.buffDict || {});
+            if (buffIds.length === 0) {
+                return `<input class="input" data-field="buffId" value="${value || ''}" placeholder="buffId"/>`;
+            }
+            const options = ['<option value="">(select)</option>']
+                .concat(buffIds.map(id => `<option value="${id}" ${id===value?'selected':''}>${id}</option>`));
+            return `<select class="select" data-field="buffId">${options.join('')}</select>`;
+        };
+
+        const renderRow = (kind, row, index) => {
+            if (kind === 'remove') {
+                return `
+                    <tr data-kind="${kind}" data-index="${index}">
+                        <td>${renderBuffIdSelect(row.buffId)}</td>
+                        <td>
+                            <select class="select" data-field="target">
+                                <option value="self" ${(row.target||'self')==='self'?'selected':''}>self</option>
+                                <option value="enemy" ${(row.target||'self')==='enemy'?'selected':''}>enemy</option>
+                            </select>
+                        </td>
+                        <td><button class="btn btn-sm btn-danger" data-action="del">Del</button></td>
+                    </tr>
+                `;
+            }
+            return `
+                <tr data-kind="${kind}" data-index="${index}">
+                    <td>${renderBuffIdSelect(row.buffId)}</td>
+                    <td>
+                        <select class="select" data-field="target">
+                            <option value="enemy" ${(row.target||'enemy')==='enemy'?'selected':''}>enemy</option>
+                            <option value="self" ${(row.target||'enemy')==='self'?'selected':''}>self</option>
+                        </select>
+                    </td>
+                    <td><input class="input" data-field="chance" type="number" step="0.01" value="${row.chance ?? 1}"/></td>
+                    <td><input class="input" data-field="duration" type="number" value="${row.duration ?? ''}"/></td>
+                    <td><input class="input" data-field="stacks" type="number" value="${row.stacks ?? ''}"/></td>
+                    <td><button class="btn btn-sm btn-danger" data-action="del">Del</button></td>
+                </tr>
+            `;
+        };
+
+        ['apply','applySelf','remove'].forEach(kind => {
+            const arr = skill.buffRefs?.[kind] || [];
+            arr.forEach((row, idx) => {
+                tables[kind].insertAdjacentHTML('beforeend', renderRow(kind, row, idx));
+            });
+        });
+
+        // Wire events once via event delegation
+        const container = document.getElementById('properties-panel');
+        if (!this._buffRefDelegated) {
+            this._buffRefDelegated = true;
+            container.addEventListener('change', (e) => {
+                const tr = e.target.closest('tr[data-kind]');
+                if (!tr) return;
+                const kind = tr.dataset.kind;
+                const index = Number(tr.dataset.index);
+                const field = e.target.dataset.field;
+                if (!field) return;
+                const sk = this.getSkillById(this.selectedNodeId);
+                if (!sk) return;
+                const row = sk.buffRefs[kind][index];
+                let v = e.target.value;
+                if (field === 'chance' || field === 'duration' || field === 'stacks') {
+                    v = v === '' ? undefined : Number(v);
+                }
+                row[field] = v;
+                this.updateSummary();
+            });
+            container.addEventListener('click', (e) => {
+                const btn = e.target.closest('button[data-action="del"]');
+                if (!btn) return;
+                const tr = e.target.closest('tr[data-kind]');
+                if (!tr) return;
+                const kind = tr.dataset.kind;
+                const index = Number(tr.dataset.index);
+                const sk = this.getSkillById(this.selectedNodeId);
+                if (!sk) return;
+                sk.buffRefs[kind].splice(index, 1);
+                this.renderBuffRefTables();
+                this.updateSummary();
+            });
+        }
+    }
+
+    addBuffRefRow(kind) {
+        if (!this.selectedNodeId) return;
+        const sk = this.getSkillById(this.selectedNodeId);
+        if (!sk) return;
+        if (!sk.buffRefs) sk.buffRefs = { apply: [], applySelf: [], remove: [] };
+        if (!Array.isArray(sk.buffRefs[kind])) sk.buffRefs[kind] = [];
+        if (kind === 'remove') {
+            sk.buffRefs[kind].push({ buffId: '', target: 'self' });
+        } else {
+            sk.buffRefs[kind].push({ buffId: '', target: kind === 'applySelf' ? 'self' : 'enemy', chance: 1.0 });
+        }
+        this.renderBuffRefTables();
+        this.updateSummary();
     }
 
     autoLayout() {

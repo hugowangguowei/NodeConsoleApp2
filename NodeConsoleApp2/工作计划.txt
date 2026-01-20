@@ -302,3 +302,5 @@ buff示例可以参照skill和item的设计文档。但是buff设计方案作为skill和item设计文档的
 我对buff体系进行了系统性的更新（包括buff_design.md和buff_editor_design.md），请你基于新的设计方案，进行skill_design.md和item_design.md的更新，确保技能和装备设计文档中的buff引用符合新的buff设计方案。先不用写代码，先在设计文档中补充内容。
 
 对于A类buff，将与其对应的技能删去。对于B类buff，一致化命名，对于C类buff，明确技能引用，避免出错。
+
+在skill_editor_test中，对于技能编辑状态，点击backspace时候，都会触发是否删除当前技能的弹窗，这个不合理，在技能编辑状态下，点击backspace不应该出发这个操作
