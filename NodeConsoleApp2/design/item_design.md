@@ -17,6 +17,31 @@
 
 ---
 
+## 1.1 物品与 Buff 系统的对接规范（重要）
+
+本节用于把 `item_design.md` 中的“装备效果描述”与新版 `buff_design.md` / `assets/data/buffs.json` 对齐。
+
+### 1.1.1 设计原则
+
+1. **装备效果=Buff 引用**：装备不直接写“特殊逻辑”，而是通过 `buffId` 组合表达。
+2. **低耦合**：装备系统只负责“何时把 Buff 装到谁身上”，Buff 的触发器/动作由 Buff 自身定义。
+3. **部位/槽位与 Buff 的作用域解耦**：
+   - “装备穿在头/身/四肢”属于物品和角色系统的装备槽概念；
+   - “Buff 影响头部护甲/躯干减伤”等属于 Buff 的 `scope.part`（或目标配置）概念。
+
+### 1.1.2 装备 Buff 引用字段约定（文档层面）
+
+> 本节是“设计文档约定”，用于后续落地成 `items.json` schema（如果你后续计划更新数据文件）。
+
+- `buffRefs.passive`: 装备后立即生效、持续到卸下为止的被动 Buff 列表（通常 `lifecycle.duration = -1`）
+- `buffRefs.proc`: 装备提供的触发类 Buff 列表（例如“暴击时施加易伤”“受击前触发护盾”），由 Buff 的 `effects[].trigger` 决定触发时机
+- `buffRefs.onEquip` / `buffRefs.onUnequip`: 装备/卸下瞬间施加/移除的 Buff（多数情况下通过引擎统一处理“卸下移除”即可）
+
+每个引用项建议具备：
+- `buffId`: 必须存在于 `assets/data/buffs.json`
+- `target`: 通常为 `self`（装备给自己），少数诅咒类也可设计为“被攻击者”但建议仍用 Buff 的触发器实现
+- `notes`: 说明该 Buff 的触发点与适用范围（不写具体运行逻辑）
+
 ## 2. 装备机制 (Item Mechanics)
 
 装备系统深度集成于 Buff/Debuff 系统，遵循以下机制：
@@ -115,7 +140,7 @@
 4.  **数据结构**:
         *   装备数据结构应包含 `buffs` 数组，直接映射到 Buff 系统，避免在装备类中写死逻辑代码。
 
-    ## 6. 装备-Buff 追溯表 (Traceability)
+## 6. 装备 -> Buff 追溯表 (Traceability)
 
     下表列出了装备与其提供的 Buff/Passive 效果的对应关系。
 

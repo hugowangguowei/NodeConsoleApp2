@@ -1,83 +1,1094 @@
 {
-    "skill_slash": { "id": "skill_slash", "name": "斩击", "cost": 2, "type": "DAMAGE", "value": 20, "speed": 0, "targetType": "SINGLE_PART", "description": "基础的挥砍攻击。" },
-    "skill_heal": { "id": "skill_heal", "name": "治疗", "cost": 3, "type": "HEAL", "value": 30, "speed": -2, "targetType": "GLOBAL", "description": "恢复少量生命值。" },
-    "skill_fireball": { "id": "skill_fireball", "name": "火球术", "cost": 4, "type": "DAMAGE", "value": 50, "speed": -5, "targetType": "SINGLE_PART", "description": "高额火焰伤害，施加燃烧。", "applyBuff": { "id": "buff_burn", "chance": 1.0, "duration": 3 } },
-    "skill_bite": { "id": "skill_bite", "name": "撕咬", "cost": 2, "type": "DAMAGE", "value": 15, "speed": 2, "targetType": "SINGLE_PART", "description": "野兽的撕咬。" },
+  "skill_slash": {
+    "id": "skill_slash",
+    "name": "斩击",
+    "cost": 2,
+    "type": "DAMAGE",
+    "value": 20,
+    "speed": 0,
+    "targetType": "SINGLE_PART",
+    "description": "基础的挥砍攻击。"
+  },
+  "skill_heal": {
+    "id": "skill_heal",
+    "name": "治疗",
+    "cost": 3,
+    "type": "HEAL",
+    "value": 30,
+    "speed": -2,
+    "targetType": "SELF",
+    "description": "恢复少量生命值。"
+  },
+  "skill_bite": {
+    "id": "skill_bite",
+    "name": "撕咬",
+    "cost": 2,
+    "type": "DAMAGE",
+    "value": 15,
+    "speed": 2,
+    "targetType": "SINGLE_PART",
+    "description": "野兽的撕咬。"
+  },
 
-    "skill_heavy_swing": { "id": "skill_heavy_swing", "name": "重锤挥击", "cost": 3, "rarity": "Common", "type": "DAMAGE", "value": 1.2, "valueType": "PERCENT", "speed": 0, "targetType": "SINGLE_PART", "description": "对选中部位造成 120% 物理伤害。若目标该部位护甲 > 0，伤害修正为 130%。" },
-    "skill_shield_bash": { "id": "skill_shield_bash", "name": "盾牌猛击", "cost": 3, "rarity": "Common", "type": "DAMAGE", "value": 10, "speed": 0, "targetType": "SINGLE_PART", "description": "造成少量伤害，40% 概率眩晕。", "effects": [{ "type": "STUN", "chance": 0.4 }] },
-    "skill_headbutt": { "id": "skill_headbutt", "name": "蛮牛头槌", "cost": 2, "rarity": "Common", "type": "DAMAGE", "value": 15, "speed": 0, "targetType": "SINGLE_PART", "requiredPart": "head", "description": "自身受到 5 点反噬伤害，25% 概率眩晕。", "effects": [{ "type": "STUN", "chance": 0.25 }, { "type": "SELF_DAMAGE", "value": 5 }] },
-    "skill_savage_charge": { "id": "skill_savage_charge", "name": "野蛮冲撞", "cost": 4, "rarity": "Uncommon", "type": "DAMAGE_CONTROL", "value": 30, "speed": 2, "targetType": "SINGLE_PART", "description": "对躯干造成中等伤害。如果此攻击令护甲归零，则击退敌人。" },
-    "skill_skull_cracker": { "id": "skill_skull_cracker", "name": "碎颅重击", "cost": 4, "rarity": "Uncommon", "type": "DAMAGE", "value": 150, "valueType": "PERCENT", "speed": -3, "targetType": "SINGLE_PART", "requiredPart": "head", "description": "对头部造成 150% 伤害，若有护甲额外造成破甲。" },
-    "skill_shockwave": { "id": "skill_shockwave", "name": "震荡波", "cost": 4, "rarity": "Rare", "type": "AOE_DAMAGE", "value": 10, "speed": -2, "targetType": "ALL_PARTS", "description": "全体伤害并减速。", "applyBuff": { "id": "buff_slow", "duration": 1 } },
-    "skill_execute": { "id": "skill_execute", "name": "处决", "cost": 3, "rarity": "Rare", "type": "DAMAGE", "value": 3.0, "valueType": "PERCENT", "speed": 1, "targetType": "SINGLE_PART", "description": "只能对 HP < 30% 的目标使用。造成 300% 的巨额真实伤害。" },
-    "skill_earthquake": { "id": "skill_earthquake", "name": "大地震击", "cost": 5, "rarity": "Epic", "type": "AOE_DAMAGE", "value": 40, "speed": -4, "targetType": "ALL_PARTS", "description": "对所有部位造成 40 点破甲伤害，并有 50% 概率对头部造成 [眩晕]。", "effects": [{"type": "ARMOR_BREAK", "value": 40}, {"type": "STUN", "chance": 0.5, "targetPart": "head"}] },
-    "skill_berserk": { "id": "skill_berserk", "name": "狂暴姿态", "cost": 3, "rarity": "Epic", "type": "BUFF_SELF", "speed": 5, "targetType": "SELF", "description": "[Buff] 下 2 回合造成的伤害提升 50%，但自身所有部位护甲减少 50%。", "applyBuff": { "id": "buff_berserk", "duration": 2 } },
-    "skill_ragnarok": { "id": "skill_ragnarok", "name": "诸神黄昏", "cost": 6, "rarity": "Legendary", "type": "AOE_DAMAGE", "value": 2.0, "valueType": "PERCENT", "speed": -5, "targetType": "ALL_PARTS", "description": "对所有部位造成毁灭性打击 (200% ATK)，且该攻击具有 100% 的破甲效率。" },
+  "skill_heavy_swing": {
+    "id": "skill_heavy_swing",
+    "name": "重锤挥击",
+    "rarity": "Common",
+    "cost": 3,
+    "type": "DAMAGE",
+    "value": 1.2,
+    "valueType": "PERCENT",
+    "speed": 0,
+    "targetType": "SINGLE_PART",
+    "description": "对选中部位造成 120% 物理伤害。若目标该部位护甲 > 0，伤害修正为 130%。",
+    "prerequisites": []
+  },
+  "skill_shield_bash": {
+    "id": "skill_shield_bash",
+    "name": "盾牌猛击",
+    "rarity": "Common",
+    "cost": 3,
+    "type": "DAMAGE",
+    "value": 10,
+    "speed": 0,
+    "targetType": "SINGLE_PART",
+    "description": "攻击躯干：造成少量伤害，并有 40% 概率对目标施加 buff_stun（持续 1 回合）。",
+    "buffRefs": {
+      "apply": [
+        { "buffId": "buff_stun", "target": "enemy", "chance": 0.4, "duration": 1 }
+      ]
+    },
+    "prerequisites": []
+  },
+  "skill_headbutt": {
+    "id": "skill_headbutt",
+    "name": "蛮牛头槌",
+    "rarity": "Common",
+    "cost": 2,
+    "type": "DAMAGE",
+    "value": 15,
+    "speed": 0,
+    "targetType": "SINGLE_PART",
+    "requiredPart": "head",
+    "description": "攻击头部：造成固定物理伤害；自身受到少量反噬伤害；并有 25% 概率对目标施加 buff_stun。",
+    "effects": [
+      { "type": "SELF_DAMAGE", "value": 5 }
+    ],
+    "buffRefs": {
+      "apply": [
+        { "buffId": "buff_stun", "target": "enemy", "chance": 0.25, "duration": 1 }
+      ]
+    },
+    "prerequisites": []
+  },
+  "skill_savage_charge": {
+    "id": "skill_savage_charge",
+    "name": "野蛮冲撞",
+    "rarity": "Uncommon",
+    "cost": 4,
+    "type": "DAMAGE",
+    "value": 30,
+    "speed": 2,
+    "targetType": "SINGLE_PART",
+    "requiredPart": "chest",
+    "description": "对躯干造成中等伤害。如果此攻击令护甲归零，则额外施加 buff_slow（用减速近似击退）。",
+    "buffRefs": {
+      "apply": [
+        { "buffId": "buff_slow", "target": "enemy", "chance": 1.0, "duration": 1 }
+      ]
+    },
+    "prerequisites": ["skill_heavy_swing"]
+  },
+  "skill_skull_cracker": {
+    "id": "skill_skull_cracker",
+    "name": "碎颅重击",
+    "rarity": "Uncommon",
+    "cost": 4,
+    "type": "DAMAGE",
+    "value": 1.5,
+    "valueType": "PERCENT",
+    "speed": -3,
+    "targetType": "SINGLE_PART",
+    "requiredPart": "head",
+    "description": "对头部造成 150% 物理伤害。若头部有护甲，额外造成 30 点破甲伤害（纯数值护甲伤害）。",
+    "effects": [
+      { "type": "ARMOR_DAMAGE", "value": 30, "targetPart": "head" }
+    ],
+    "prerequisites": ["skill_headbutt"]
+  },
+  "skill_shockwave": {
+    "id": "skill_shockwave",
+    "name": "震荡波",
+    "rarity": "Rare",
+    "cost": 4,
+    "type": "DAMAGE",
+    "value": 10,
+    "speed": -2,
+    "targetType": "ALL_PARTS",
+    "description": "猛击地面：对目标施加 buff_slow（速度 -5，持续 2 回合），并造成少量伤害。",
+    "buffRefs": {
+      "apply": [
+        { "buffId": "buff_slow", "target": "enemy", "chance": 1.0, "duration": 2 }
+      ]
+    },
+    "prerequisites": ["skill_savage_charge"]
+  },
+  "skill_execute": {
+    "id": "skill_execute",
+    "name": "处决",
+    "rarity": "Rare",
+    "cost": 3,
+    "type": "DAMAGE_TRUE",
+    "value": 3.0,
+    "valueType": "PERCENT",
+    "speed": 1,
+    "targetType": "SINGLE_PART",
+    "description": "只能对 HP < 30% 的目标使用。造成 300% 的巨额真实伤害。",
+    "requirements": {
+      "targetHpPercentBelow": 0.3
+    },
+    "prerequisites": ["skill_skull_cracker"]
+  },
+  "skill_earthquake": {
+    "id": "skill_earthquake",
+    "name": "大地震击",
+    "rarity": "Epic",
+    "cost": 5,
+    "type": "DAMAGE",
+    "value": 50,
+    "speed": -4,
+    "targetType": "SINGLE_PART",
+    "description": "强力打击：造成高额伤害，并有 50% 概率施加 buff_stun（持续 1 回合）。",
+    "buffRefs": {
+      "apply": [
+        { "buffId": "buff_stun", "target": "enemy", "chance": 0.5, "duration": 1 }
+      ]
+    },
+    "prerequisites": ["skill_shockwave"]
+  },
+  "skill_ragnarok": {
+    "id": "skill_ragnarok",
+    "name": "诸神黄昏",
+    "rarity": "Legendary",
+    "cost": 6,
+    "type": "DAMAGE",
+    "value": 2.0,
+    "valueType": "PERCENT",
+    "speed": -5,
+    "targetType": "ALL_PARTS",
+    "description": "对所有部位造成毁灭性打击 (200% ATK)。",
+    "prerequisites": ["skill_earthquake"]
+  },
 
-    "skill_iron_will": { "id": "skill_iron_will", "name": "钢铁意志", "cost": 2, "rarity": "Common", "type": "REPAIR", "value": 15, "speed": 1, "targetType": "SELF_PARTS", "targetParts": ["head", "chest"], "description": "恢复头部和躯干护甲 15 点。" },
-    "skill_block": { "id": "skill_block", "name": "格挡", "cost": 2, "rarity": "Common", "type": "BUFF_SELF", "speed": 10, "targetType": "SELF", "description": "[Buff] 本回合受到的下一次伤害减少 50%。", "applyBuff": { "id": "buff_block", "duration": 1 } },
-    "skill_taunt": { "id": "skill_taunt", "name": "挑衅", "cost": 1, "rarity": "Common", "type": "DEBUFF_ENEMY", "speed": 5, "targetType": "GLOBAL", "description": "[Debuff] 敌人下回合造成的伤害降低 10%。", "applyBuff": { "id": "buff_taunt", "duration": 1 } },
-    "skill_spiked_shell": { "id": "skill_spiked_shell", "name": "尖刺防御", "cost": 3, "rarity": "Uncommon", "type": "BUFF_SELF", "value": 0, "speed": 1, "targetType": "SELF", "description": "获得反伤状态。", "applyBuff": { "id": "buff_thorns", "duration": 2 } },
-    "skill_regroup": { "id": "skill_regroup", "name": "重整旗鼓", "cost": 3, "rarity": "Uncommon", "type": "REPAIR", "value": 10, "speed": 2, "targetType": "SELF_PARTS", "targetParts": ["left_arm", "right_arm", "left_leg", "right_leg"], "description": "恢复所有肢体 10 点护甲值，并解除流血。" },
-    "skill_counter_stance": { "id": "skill_counter_stance", "name": "反击姿态", "cost": 3, "rarity": "Rare", "type": "BUFF_SELF", "speed": 5, "targetType": "SELF", "description": "[Buff] 本回合若成功闪避或格挡了攻击，立即对攻击者发动一次 100% 伤害的反击。", "applyBuff": { "id": "buff_counter_stance", "duration": 1 } },
-    "skill_futile_struggle": { "id": "skill_futile_struggle", "name": "无谓挣扎", "cost": 3, "rarity": "Rare", "type": "DEBUFF_ENEMY", "speed": 1, "targetType": "GLOBAL", "description": "[Debuff] 目标造成的伤害如果被护甲完全抵消，则其自身 AP -1。", "applyBuff": { "id": "buff_futile_struggle", "duration": 2 } },
-    "skill_shield_wall": { "id": "skill_shield_wall", "name": "盾墙", "cost": 5, "rarity": "Epic", "type": "BUFF_SELF", "value": 0, "speed": 5, "targetType": "SELF", "description": "大幅提升防御，下回合 AP+3。", "applyBuff": { "id": "buff_shield_wall", "duration": 1 } },
-    "skill_immortal_bastion": { "id": "skill_immortal_bastion", "name": "不朽壁垒", "cost": 4, "rarity": "Epic", "type": "BUFF_SELF", "speed": 1, "targetType": "SELF", "description": "[Buff] 2 回合内，护甲无法被破坏 (最低保持为 1)。", "applyBuff": { "id": "buff_immortal_bastion", "duration": 2 } },
-    "skill_aegis": { "id": "skill_aegis", "name": "绝对防御", "cost": 5, "rarity": "Legendary", "type": "BUFF_SELF", "speed": 10, "targetType": "SELF", "description": "[Buff] 本回合免疫所有伤害，并将其转化为等量的 HP 治疗。", "applyBuff": { "id": "buff_aegis", "duration": 1 } },
+  "skill_iron_will": {
+    "id": "skill_iron_will",
+    "name": "钢铁意志",
+    "rarity": "Common",
+    "cost": 2,
+    "type": "ARMOR_REPAIR",
+    "value": 15,
+    "speed": 1,
+    "targetType": "SELF_PARTS",
+    "targetParts": ["head", "chest"],
+    "description": "立刻恢复躯干和头部 15 点护甲值。",
+    "prerequisites": []
+  },
+  "skill_block": {
+    "id": "skill_block",
+    "name": "格挡",
+    "rarity": "Common",
+    "cost": 2,
+    "type": "BUFF_SELF",
+    "speed": 10,
+    "targetType": "SELF",
+    "description": "对自身施加 buff_block（持续 1 回合）。",
+    "buffRefs": {
+      "applySelf": [
+        { "buffId": "buff_block", "target": "self", "chance": 1.0, "duration": 1 }
+      ]
+    },
+    "prerequisites": []
+  },
+  "skill_taunt": {
+    "id": "skill_taunt",
+    "name": "挑衅",
+    "rarity": "Common",
+    "cost": 1,
+    "type": "DEBUFF_ENEMY",
+    "speed": 5,
+    "targetType": "ENEMY",
+    "description": "对目标施加 debuff_weak（降低输出）。",
+    "buffRefs": {
+      "apply": [
+        { "buffId": "debuff_weak", "target": "enemy", "chance": 1.0, "duration": 1 }
+      ]
+    },
+    "prerequisites": []
+  },
+  "skill_regroup": {
+    "id": "skill_regroup",
+    "name": "重整旗鼓",
+    "rarity": "Uncommon",
+    "cost": 3,
+    "type": "ARMOR_REPAIR",
+    "value": 10,
+    "speed": 2,
+    "targetType": "SELF_PARTS",
+    "targetParts": ["left_arm", "right_arm", "left_leg", "right_leg"],
+    "description": "恢复四肢护甲 10 点，并解除流血状态。",
+    "buffRefs": {
+      "remove": [
+        { "buffId": "buff_bleed", "target": "self" }
+      ]
+    },
+    "prerequisites": ["skill_iron_will"]
+  },
+  "skill_hold_the_line": {
+    "id": "skill_hold_the_line",
+    "name": "稳固防线",
+    "rarity": "Rare",
+    "cost": 3,
+    "type": "BUFF_SELF",
+    "speed": 5,
+    "targetType": "SELF",
+    "description": "对自身施加 buff_shield 与 buff_block。",
+    "buffRefs": {
+      "applySelf": [
+        { "buffId": "buff_shield", "target": "self", "chance": 1.0, "duration": 1 },
+        { "buffId": "buff_block", "target": "self", "chance": 1.0, "duration": 1 }
+      ]
+    },
+    "prerequisites": ["skill_block"]
+  },
+  "skill_suppress": {
+    "id": "skill_suppress",
+    "name": "压制",
+    "rarity": "Rare",
+    "cost": 3,
+    "type": "DAMAGE",
+    "value": 25,
+    "speed": 0,
+    "targetType": "SINGLE_PART",
+    "requiredPart": "chest",
+    "description": "攻击躯干：造成中等伤害，并刷新目标的 debuff_weak。",
+    "buffRefs": {
+      "apply": [
+        { "buffId": "debuff_weak", "target": "enemy", "chance": 1.0, "duration": 1 }
+      ]
+    },
+    "prerequisites": ["skill_taunt"]
+  },
+  "skill_fortify": {
+    "id": "skill_fortify",
+    "name": "堡垒姿态",
+    "rarity": "Epic",
+    "cost": 4,
+    "type": "BUFF_SELF",
+    "speed": 0,
+    "targetType": "SELF",
+    "description": "对自身施加 buff_shield，并立刻恢复少量护甲值。",
+    "effects": [
+      { "type": "ARMOR_REPAIR", "value": 10, "targetPart": "chest" }
+    ],
+    "buffRefs": {
+      "applySelf": [
+        { "buffId": "buff_shield", "target": "self", "chance": 1.0, "duration": 1 }
+      ]
+    },
+    "prerequisites": ["skill_hold_the_line"]
+  },
+  "skill_aegis": {
+    "id": "skill_aegis",
+    "name": "绝对防御",
+    "rarity": "Legendary",
+    "cost": 5,
+    "type": "BUFF_SELF",
+    "speed": 10,
+    "targetType": "SELF",
+    "description": "对自身施加 buff_shield 与 buff_block（简化实现版）。",
+    "buffRefs": {
+      "applySelf": [
+        { "buffId": "buff_shield", "target": "self", "chance": 1.0, "duration": 1 },
+        { "buffId": "buff_block", "target": "self", "chance": 1.0, "duration": 1 }
+      ]
+    },
+    "prerequisites": ["skill_fortify"]
+  },
 
-    "skill_artery_slice": { "id": "skill_artery_slice", "name": "血管切割", "cost": 2, "rarity": "Common", "type": "DAMAGE", "value": 15, "speed": 2, "targetType": "SINGLE_PART", "description": "造成伤害并施加流血。", "applyBuff": { "id": "buff_bleed", "duration": 3 } },
-    "skill_double_thrust": { "id": "skill_double_thrust", "name": "二连刺", "cost": 2, "rarity": "Common", "type": "DAMAGE_MULTI", "value": 0.6, "valueType": "PERCENT", "speed": 4, "targetType": "RANDOM_PART", "hitCount": 2, "description": "快速攻击两次，每次造成 60% 伤害。" },
-    "skill_feint": { "id": "skill_feint", "name": "佯攻", "cost": 1, "rarity": "Common", "type": "BUFF_SELF", "speed": 8, "targetType": "SELF", "description": "[Buff] 自身下一次攻击必定命中，且无视 15% 护甲。", "applyBuff": { "id": "buff_feint", "duration": 1 } },
-    "skill_bloodletting": { "id": "skill_bloodletting", "name": "放血", "cost": 3, "rarity": "Uncommon", "type": "DAMAGE", "value": 20, "speed": 2, "targetType": "SINGLE_PART", "requiredPart": "chest", "description": "攻击躯干。如果敌人已有流血状态，流血层数 +1，并刷新持续时间。" },
-    "skill_blade_dance": { "id": "skill_blade_dance", "name": "剑舞", "cost": 3, "rarity": "Uncommon", "type": "DAMAGE_MULTI", "value": 0.5, "valueType": "PERCENT", "speed": 5, "targetType": "RANDOM_PART", "hitCount": 3, "description": "对随机部位发动 3 次攻击，每次造成 50% 伤害。若全部命中，自身速度 +3。" },
-    "skill_precision_thrust": { "id": "skill_precision_thrust", "name": "弱点突刺", "cost": 3, "rarity": "Rare", "type": "DAMAGE", "value": 1.5, "valueType": "CRIT_MULTIPLIER", "speed": 3, "targetType": "SINGLE_PART", "description": "必定暴击，只能攻击破损部位。" },
-    "skill_bloodthirst": { "id": "skill_bloodthirst", "name": "鲜血渴望", "cost": 2, "rarity": "Rare", "type": "BUFF_SELF", "speed": 1, "targetType": "SELF", "description": "[Buff] 2 回合内，每当流血效果造成伤害，自身回复 5 点 HP。", "applyBuff": { "id": "buff_bloodthirst", "duration": 2 } },
-    "skill_bloody_harvest": { "id": "skill_bloody_harvest", "name": "血腥收割", "cost": 3, "rarity": "Epic", "type": "DAMAGE", "value": 1.5, "valueType": "cond_bleed_multiplier", "speed": 2, "targetType": "SINGLE_PART", "description": "对流血目标造成额外 50% 伤害。" },
-    "skill_crimson_finale": { "id": "skill_crimson_finale", "name": "猩红终结", "cost": 4, "rarity": "Epic", "type": "DAMAGE", "value": 30, "valueType": "PER_STACK", "multiplierProp": "buff_bleed", "speed": 1, "targetType": "SINGLE_PART", "description": "移除目标所有流血层数。每移除一层，造成 30 点真实伤害。" },
-    "skill_thousand_cuts": { "id": "skill_thousand_cuts", "name": "千刃风暴", "cost": 5, "rarity": "Legendary", "type": "DAMAGE_MULTI", "value": 0.1, "valueType": "PERCENT", "speed": 6, "targetType": "SINGLE_PART", "hitCount": 10, "description": "对目标进行 10 次微量攻击，每次攻击有 20% 概率施加一层 [流血 I]。", "effects": [{"type": "APPLY_BUFF", "buffId": "buff_bleed", "chance": 0.2}] },
-    
-    "skill_quick_shot": { "id": "skill_quick_shot", "name": "连珠箭", "cost": 1, "rarity": "Common", "type": "DAMAGE", "value": 0.5, "valueType": "PERCENT", "speed": 5, "targetType": "SINGLE_PART", "description": "50% 伤害，低 AP 消耗。" },
-    "skill_quick_step": { "id": "skill_quick_step", "name": "快步", "cost": 0, "rarity": "Common", "type": "BUFF_SELF", "speed": 10, "targetType": "SELF", "description": "本回合速度 +10。", "applyBuff": { "id": "buff_speed_up", "duration": 1, "value": 10 } },
-    "skill_distract_shot": { "id": "skill_distract_shot", "name": "牵制射击", "cost": 2, "rarity": "Common", "type": "DAMAGE", "value": 0.8, "valueType": "PERCENT", "speed": 4, "targetType": "SINGLE_PART", "description": "造成 80% 伤害，并有 25% 概率使目标下回合 AP -1。", "effects": [{"type": "AP_REDUCE", "value": 1, "chance": 0.25}] },
-    "skill_tactical_roll": { "id": "skill_tactical_roll", "name": "战术翻滚", "cost": 2, "rarity": "Uncommon", "type": "BUFF_SELF", "speed": 4, "targetType": "SELF", "description": "提升闪避，下一次攻击技能 AP 消耗 -1。", "applyBuff": { "id": "buff_evasion", "duration": 1 } },
-    "skill_wind_arrow": { "id": "skill_wind_arrow", "name": "疾风箭", "cost": 3, "rarity": "Uncommon", "type": "DAMAGE", "value": 1.8, "valueType": "PERCENT", "speed": 6, "targetType": "SINGLE_PART", "description": "如果比敌人先行动，造成 180% 剧烈伤害。" },
-    "skill_poison_coating": { "id": "skill_poison_coating", "name": "毒液涂层", "cost": 2, "rarity": "Rare", "type": "BUFF_SELF", "speed": 2, "targetType": "SELF", "description": "下回合远程攻击附带中毒。", "applyBuff": { "id": "buff_poison_coating", "duration": 1 } },
-    "skill_adrenaline": { "id": "skill_adrenaline", "name": "肾上腺素", "cost": 0, "rarity": "Rare", "type": "BUFF_SELF", "speed": 10, "targetType": "SELF", "description": "立即获得 2 点 AP，但下回合 AP 上限 -2。", "effects": [{"type": "AP_GAIN", "value": 2}, {"type": "AP_DEBUFF_NEXT_TURN", "value": 2}] },
-    "skill_rapid_fire": { "id": "skill_rapid_fire", "name": "极速连击", "cost": 4, "rarity": "Epic", "type": "DAMAGE_MULTI", "value": 0.4, "valueType": "PERCENT", "speed": 5, "hitCount": 5, "targetType": "RANDOM_PART", "description": "射出 5 支箭，每支造成 40% 伤害，随机分配给未被破坏的部位。" },
-    "skill_afterimage": { "id": "skill_afterimage", "name": "残影", "cost": 4, "rarity": "Epic", "type": "BUFF_SELF", "speed": 6, "targetType": "SELF", "description": "[Buff] 闪避率提升 60%，持续 2 回合。闪避成功时回复 1 AP。", "applyBuff": { "id": "buff_afterimage", "duration": 2 } },
-    "skill_time_warp": { "id": "skill_time_warp", "name": "时空扭曲", "cost": 6, "rarity": "Legendary", "type": "EXTRA_TURN", "speed": 10, "targetType": "SELF", "description": "立即获得一个新的回合 (Extra Turn)，但该额外回合只有一半的 AP 上限。" },
+  "skill_artery_slice": {
+    "id": "skill_artery_slice",
+    "name": "血管切割",
+    "rarity": "Common",
+    "cost": 2,
+    "type": "DAMAGE",
+    "value": 15,
+    "speed": 2,
+    "targetType": "SINGLE_PART",
+    "description": "攻击四肢：命中后对目标施加 buff_bleed。",
+    "buffRefs": {
+      "apply": [
+        { "buffId": "buff_bleed", "target": "enemy", "chance": 1.0, "duration": 3 }
+      ]
+    },
+    "prerequisites": []
+  },
+  "skill_double_thrust": {
+    "id": "skill_double_thrust",
+    "name": "二连刺",
+    "rarity": "Common",
+    "cost": 2,
+    "type": "DAMAGE_MULTI",
+    "value": 0.6,
+    "valueType": "PERCENT",
+    "speed": 4,
+    "targetType": "RANDOM_PART",
+    "hitCount": 2,
+    "description": "快速攻击两次，每次造成 60% 伤害。",
+    "prerequisites": []
+  },
+  "skill_feint": {
+    "id": "skill_feint",
+    "name": "佯攻",
+    "rarity": "Common",
+    "cost": 1,
+    "type": "BUFF_SELF",
+    "speed": 8,
+    "targetType": "SELF",
+    "description": "对自身施加 buff_armor_pen。",
+    "buffRefs": {
+      "applySelf": [
+        { "buffId": "buff_armor_pen", "target": "self", "chance": 1.0, "duration": 1 }
+      ]
+    },
+    "prerequisites": []
+  },
+  "skill_bloodletting": {
+    "id": "skill_bloodletting",
+    "name": "放血",
+    "rarity": "Uncommon",
+    "cost": 3,
+    "type": "DAMAGE",
+    "value": 20,
+    "speed": 2,
+    "targetType": "SINGLE_PART",
+    "requiredPart": "chest",
+    "description": "攻击躯干：若目标已有流血，额外叠加 1 层并刷新持续时间。",
+    "effects": [
+      { "type": "BUFF_STACK_ADD", "buffId": "buff_bleed", "stacks": 1, "refresh": true, "condition": "targetHasBuff" }
+    ],
+    "prerequisites": ["skill_artery_slice"]
+  },
+  "skill_blade_dance": {
+    "id": "skill_blade_dance",
+    "name": "剑舞",
+    "rarity": "Uncommon",
+    "cost": 3,
+    "type": "DAMAGE_MULTI",
+    "value": 0.5,
+    "valueType": "PERCENT",
+    "speed": 5,
+    "targetType": "RANDOM_PART",
+    "hitCount": 3,
+    "description": "对随机部位发动 3 次攻击，每次造成 50% 伤害。若全部命中，自身速度 +3（纯数值）。",
+    "effects": [
+      { "type": "SELF_SPEED_ADD", "value": 3, "condition": "allHits" }
+    ],
+    "prerequisites": ["skill_double_thrust"]
+  },
+  "skill_precision_thrust": {
+    "id": "skill_precision_thrust",
+    "name": "弱点突刺",
+    "rarity": "Rare",
+    "cost": 3,
+    "type": "DAMAGE",
+    "value": 1.5,
+    "valueType": "CRIT_MULTIPLIER",
+    "speed": 3,
+    "targetType": "SINGLE_PART",
+    "description": "必定暴击 (1.5x)。只能攻击护甲已破损的部位。",
+    "requirements": {
+      "targetPartArmorZero": true
+    },
+    "prerequisites": ["skill_feint"]
+  },
+  "skill_bloody_harvest": {
+    "id": "skill_bloody_harvest",
+    "name": "血腥收割",
+    "rarity": "Epic",
+    "cost": 3,
+    "type": "DAMAGE",
+    "value": 1.5,
+    "valueType": "COND_BLEED_MULT",
+    "speed": 2,
+    "targetType": "SINGLE_PART",
+    "description": "若目标处于流血状态，造成额外 50% 伤害并结算部分剩余流血伤害（实现依赖引擎能力）。",
+    "requirements": {
+      "targetHasBuff": "buff_bleed"
+    },
+    "prerequisites": ["skill_bloodletting"]
+  },
+  "skill_crimson_finale": {
+    "id": "skill_crimson_finale",
+    "name": "猩红终结",
+    "rarity": "Epic",
+    "cost": 4,
+    "type": "DAMAGE_TRUE",
+    "value": 30,
+    "valueType": "PER_STACK",
+    "speed": 1,
+    "targetType": "SINGLE_PART",
+    "description": "移除目标所有流血层数；每移除一层造成 30 点真实伤害。",
+    "effects": [
+      { "type": "REMOVE_BUFF", "buffId": "buff_bleed", "target": "enemy", "mode": "allStacks" },
+      { "type": "DAMAGE_PER_REMOVED_STACK", "buffId": "buff_bleed", "value": 30 }
+    ],
+    "prerequisites": ["skill_blade_dance"]
+  },
+  "skill_thousand_cuts": {
+    "id": "skill_thousand_cuts",
+    "name": "千刃风暴",
+    "rarity": "Legendary",
+    "cost": 5,
+    "type": "DAMAGE_MULTI",
+    "value": 0.1,
+    "valueType": "PERCENT",
+    "speed": 6,
+    "targetType": "SINGLE_PART",
+    "hitCount": 10,
+    "description": "多段攻击；每段命中有概率施加 buff_bleed。",
+    "buffRefs": {
+      "apply": [
+        { "buffId": "buff_bleed", "target": "enemy", "chance": 0.2, "duration": 3 }
+      ]
+    },
+    "prerequisites": ["skill_bloody_harvest"]
+  },
 
-    "skill_mark_target": { "id": "skill_mark_target", "name": "弱点标记", "cost": 2, "rarity": "Common", "type": "DEBUFF_ENEMY", "speed": 4, "targetType": "SINGLE_PART", "description": "标记部位，使其受到伤害增加 30%。", "applyBuff": { "id": "buff_vulnerable", "duration": 2 } },
-    "skill_steady_aim": { "id": "skill_steady_aim", "name": "稳固瞄准", "cost": 2, "rarity": "Common", "type": "BUFF_SELF", "speed": 1, "targetType": "SELF", "description": "[Buff] 自身命中率 +20%，暴击率 +10%。", "applyBuff": { "id": "buff_steady_aim", "duration": 1 } },
-    "skill_knee_shot": { "id": "skill_knee_shot", "name": "膝盖射击", "cost": 2, "rarity": "Common", "type": "DAMAGE", "value": 20, "speed": 3, "targetType": "SINGLE_PART", "requiredPart": "leg", "description": "攻击腿部。若造成 HP 伤害，敌人速度 -5 (持续 3 回合)。", "effects": [{"type": "SPEED_REDUCE", "value": 5, "duration": 3}] },
-    "skill_crippling_shot": { "id": "skill_crippling_shot", "name": "致残射击", "cost": 3, "rarity": "Uncommon", "type": "DAMAGE", "value": 20, "speed": 3, "targetType": "SINGLE_PART", "description": "攻击四肢。造成伤害后，使该部位功能失效。", "applyBuff": { "id": "buff_disabled", "duration": 2 } },
-    "skill_disarm": { "id": "skill_disarm", "name": "远程拆解", "cost": 3, "rarity": "Uncommon", "type": "DAMAGE", "value": 200, "valueType": "ARMOR_DAMAGE", "speed": 4, "targetType": "SINGLE_PART", "requiredPart": "arm", "description": "对手臂造成 200% 的护甲伤害。若护甲被破，敌人攻击力 -30%。" },
-    "skill_piercing_bolt": { "id": "skill_piercing_bolt", "name": "穿甲射击", "cost": 3, "rarity": "Rare", "type": "DAMAGE", "value": 30, "speed": 3, "targetType": "SINGLE_PART", "description": "无视 50% 护甲。" },
-    "skill_headshot": { "id": "skill_headshot", "name": "爆头", "cost": 4, "rarity": "Rare", "type": "DAMAGE", "value": 2.0, "valueType": "PERCENT", "speed": 1, "targetType": "SINGLE_PART", "requiredPart": "head", "description": "对头部造成 200% 伤害。命中率修正 -20%，但若命中必定暴击。" },
-    "skill_ghost_snipe": { "id": "skill_ghost_snipe", "name": "幽灵狙击", "cost": 4, "rarity": "Epic", "type": "DAMAGE", "value": 150, "speed": 5, "targetType": "SINGLE_PART", "description": "[无法闪避] 且无视 100% 护甲，但也无法暴击。造成固定 150 点伤害。" },
-    "skill_eagle_eye": { "id": "skill_eagle_eye", "name": "鹰眼", "cost": 3, "rarity": "Epic", "type": "BUFF_SELF", "speed": 2, "targetType": "SELF", "description": "[Buff] 接下来的 3 回合，你的攻击命中率大幅提升。", "applyBuff": { "id": "buff_eagle_eye", "duration": 3 } },
-    "skill_one_shot": { "id": "skill_one_shot", "name": "致命一击", "cost": 6, "rarity": "Legendary", "type": "DAMAGE", "value": 50, "valueType": "HP_PERCENT", "speed": -2, "targetType": "SINGLE_PART", "description": "对目标造成当前 HP 50% 的伤害 (Boss 效果减半)。" },
+  "skill_quick_shot": {
+    "id": "skill_quick_shot",
+    "name": "连珠箭",
+    "rarity": "Common",
+    "cost": 1,
+    "type": "DAMAGE",
+    "value": 0.5,
+    "valueType": "PERCENT",
+    "speed": 5,
+    "targetType": "SINGLE_PART",
+    "description": "造成 50% 伤害。",
+    "prerequisites": []
+  },
+  "skill_quick_step": {
+    "id": "skill_quick_step",
+    "name": "快步",
+    "rarity": "Common",
+    "cost": 0,
+    "type": "SELF_STAT",
+    "speed": 10,
+    "targetType": "SELF",
+    "description": "本回合速度 +10（纯数值效果）。",
+    "effects": [
+      { "type": "SELF_SPEED_ADD", "value": 10, "duration": 1 }
+    ],
+    "prerequisites": []
+  },
+  "skill_distract_shot": {
+    "id": "skill_distract_shot",
+    "name": "牵制射击",
+    "rarity": "Common",
+    "cost": 2,
+    "type": "DAMAGE",
+    "value": 0.8,
+    "valueType": "PERCENT",
+    "speed": 4,
+    "targetType": "SINGLE_PART",
+    "description": "造成 80% 伤害，并有 25% 概率使目标下回合 AP -1（纯数值/资源效果）。",
+    "effects": [
+      { "type": "TARGET_AP_REDUCE_NEXT_TURN", "value": 1, "chance": 0.25 }
+    ],
+    "prerequisites": []
+  },
+  "skill_tactical_roll": {
+    "id": "skill_tactical_roll",
+    "name": "战术翻滚",
+    "rarity": "Uncommon",
+    "cost": 2,
+    "type": "BUFF_SELF",
+    "speed": 4,
+    "targetType": "SELF",
+    "description": "对自身施加 buff_bless（用命中/闪避小幅提升近似实现）。",
+    "buffRefs": {
+      "applySelf": [
+        { "buffId": "buff_bless", "target": "self", "chance": 1.0, "duration": 1 }
+      ]
+    },
+    "prerequisites": ["skill_quick_step"]
+  },
+  "skill_wind_arrow": {
+    "id": "skill_wind_arrow",
+    "name": "疾风箭",
+    "rarity": "Uncommon",
+    "cost": 3,
+    "type": "DAMAGE",
+    "value": 1.8,
+    "valueType": "PERCENT",
+    "speed": 6,
+    "targetType": "SINGLE_PART",
+    "description": "必定先手 (Priority +1)。如果比敌人先行动，造成 180% 伤害。",
+    "effects": [
+      { "type": "PRIORITY", "value": 1 }
+    ],
+    "prerequisites": ["skill_quick_shot"]
+  },
+  "skill_poison_arrow": {
+    "id": "skill_poison_arrow",
+    "name": "毒箭",
+    "rarity": "Rare",
+    "cost": 3,
+    "type": "DAMAGE",
+    "value": 0.8,
+    "valueType": "PERCENT",
+    "speed": 2,
+    "targetType": "SINGLE_PART",
+    "description": "造成 80% 伤害，并对目标施加 buff_poison。",
+    "buffRefs": {
+      "apply": [
+        { "buffId": "buff_poison", "target": "enemy", "chance": 1.0, "duration": 3 }
+      ]
+    },
+    "prerequisites": ["skill_distract_shot"]
+  },
+  "skill_adrenaline": {
+    "id": "skill_adrenaline",
+    "name": "肾上腺素",
+    "rarity": "Rare",
+    "cost": 0,
+    "type": "AP_CHANGE",
+    "speed": 10,
+    "targetType": "SELF",
+    "description": "立即获得 2 点 AP，但下回合 AP 上限 -2（纯数值/资源效果）。",
+    "effects": [
+      { "type": "SELF_AP_GAIN", "value": 2 },
+      { "type": "SELF_AP_MAX_NEXT_TURN_ADD", "value": -2 }
+    ],
+    "prerequisites": ["skill_tactical_roll"]
+  },
+  "skill_rapid_fire": {
+    "id": "skill_rapid_fire",
+    "name": "极速连击",
+    "rarity": "Epic",
+    "cost": 4,
+    "type": "DAMAGE_MULTI",
+    "value": 0.4,
+    "valueType": "PERCENT",
+    "speed": 5,
+    "hitCount": 5,
+    "targetType": "RANDOM_PART",
+    "description": "射出 5 支箭，每支造成 40% 伤害，随机分配给未被破坏的部位。",
+    "prerequisites": ["skill_wind_arrow"]
+  },
+  "skill_suppressing_fire": {
+    "id": "skill_suppressing_fire",
+    "name": "压制射击",
+    "rarity": "Epic",
+    "cost": 4,
+    "type": "DAMAGE_MULTI",
+    "value": 0.4,
+    "valueType": "PERCENT",
+    "speed": 3,
+    "hitCount": 3,
+    "targetType": "SINGLE_PART",
+    "requiredPart": "chest",
+    "description": "攻击躯干：造成多段伤害，并对目标施加 buff_slow（刷新持续时间）。",
+    "buffRefs": {
+      "apply": [
+        { "buffId": "buff_slow", "target": "enemy", "chance": 1.0, "duration": 2 }
+      ]
+    },
+    "prerequisites": ["skill_poison_arrow"]
+  },
+  "skill_time_warp": {
+    "id": "skill_time_warp",
+    "name": "时空扭曲",
+    "rarity": "Legendary",
+    "cost": 6,
+    "type": "EXTRA_TURN",
+    "speed": 10,
+    "targetType": "SELF",
+    "description": "立即获得一个新的回合，但该额外回合只有一半的 AP 上限（需要引擎支持）。",
+    "effects": [
+      { "type": "EXTRA_TURN", "apMaxMultiplier": 0.5 }
+    ],
+    "prerequisites": ["skill_adrenaline"]
+  },
 
-    "skill_fireball": { "id": "skill_fireball", "name": "火球术", "cost": 4, "rarity": "Common", "type": "DAMAGE", "value": 50, "speed": -5, "targetType": "SINGLE_PART", "description": "高额火焰伤害，施加燃烧。", "applyBuff": { "id": "buff_burn", "chance": 1.0, "duration": 3 } },
-    "skill_lightning_bolt": { "id": "skill_lightning_bolt", "name": "闪电箭", "cost": 2, "rarity": "Common", "type": "DAMAGE", "value": "1-30", "speed": 5, "targetType": "SINGLE_PART", "description": "造成 1-30 点随机雷电伤害。若造成最大值，返还 1 AP。" },
-    "skill_oil_slick": { "id": "skill_oil_slick", "name": "燃油投掷", "cost": 2, "rarity": "Common", "type": "DEBUFF_ENEMY", "speed": 1, "targetType": "GLOBAL", "description": "施加易燃状态。", "applyBuff": { "id": "buff_oiled", "duration": 3 } },
-    "skill_ice_lance": { "id": "skill_ice_lance", "name": "冰锥术", "cost": 3, "rarity": "Uncommon", "type": "DAMAGE", "value": 40, "speed": 2, "targetType": "SINGLE_PART", "description": "造成冰霜伤害，无视 20% 护甲，并有 25% 概率 [冰冻] 敌人。", "effects": [{"type": "FREEZE", "chance": 0.25}] },
-    "skill_ring_of_fire": { "id": "skill_ring_of_fire", "name": "火焰之环", "cost": 3, "rarity": "Uncommon", "type": "AOE_DAMAGE", "value": 20, "speed": 3, "targetType": "ALL_PARTS", "description": "对自身周围造成 AOE 火焰伤害，自身受到少量反噬伤害。" },
-    "skill_frost_nova": { "id": "skill_frost_nova", "name": "冰霜新星", "cost": 3, "rarity": "Rare", "type": "AOE_DAMAGE", "value": 15, "speed": -1, "targetType": "ALL_PARTS", "description": "对敌人所有部位造成冷冻伤害，并强制敌人本回合无法使用 AP > 3 的技能。", "applyBuff": { "id": "buff_freeze", "duration": 1 } },
-    "skill_overload": { "id": "skill_overload", "name": "过载", "cost": 0, "rarity": "Rare", "type": "BUFF_SELF", "speed": 10, "targetType": "SELF", "description": "消耗 20% 当前 HP，本回合魔法伤害提升 50%。", "effects": [{"type": "SELF_DAMAGE_PERCENT", "value": 0.2}, {"type": "MAGIC_BOOST", "value": 0.5}] },
-    "skill_chain_lightning": { "id": "skill_chain_lightning", "name": "闪电链", "cost": 4, "rarity": "Epic", "type": "DAMAGE_MULTI", "value": 35, "speed": 4, "targetType": "RANDOM_PART", "hitCount": 3, "description": "对敌人随机 3 个部位造成雷电伤害。若目标 [潮湿] 或穿戴金属盔甲，伤害 +50%。" },
-    "skill_blizzard": { "id": "skill_blizzard", "name": "暴风雪", "cost": 5, "rarity": "Epic", "type": "AOE_DAMAGE", "value": 20, "speed": -2, "targetType": "ALL_PARTS", "hitCount": 3, "description": "下回合对敌人所有部位造成 3 段冰霜伤害，每段都有高概率冻结敌人。" },
-    "skill_meteor_swarm": { "id": "skill_meteor_swarm", "name": "陨石术", "cost": 6, "rarity": "Legendary", "type": "AOE_DAMAGE", "value": 100, "speed": -10, "targetType": "ALL_PARTS", "description": "[延迟] 下回合开始时，一颗陨石砸向战场，对敌人所有部位造成毁灭性火伤并大幅削减护甲。" },
+  "skill_mark_target": {
+    "id": "skill_mark_target",
+    "name": "弱点标记",
+    "rarity": "Common",
+    "cost": 2,
+    "type": "DEBUFF_ENEMY",
+    "speed": 4,
+    "targetType": "SINGLE_PART",
+    "description": "对目标施加 buff_vulnerable。",
+    "buffRefs": {
+      "apply": [
+        { "buffId": "buff_vulnerable", "target": "enemy", "chance": 1.0, "duration": 2 }
+      ]
+    },
+    "prerequisites": []
+  },
+  "skill_steady_aim": {
+    "id": "skill_steady_aim",
+    "name": "稳固瞄准",
+    "rarity": "Common",
+    "cost": 2,
+    "type": "BUFF_SELF",
+    "speed": 1,
+    "targetType": "SELF",
+    "description": "对自身施加 buff_bless（近似实现命中增益）。",
+    "buffRefs": {
+      "applySelf": [
+        { "buffId": "buff_bless", "target": "self", "chance": 1.0, "duration": 1 }
+      ]
+    },
+    "prerequisites": []
+  },
+  "skill_knee_shot": {
+    "id": "skill_knee_shot",
+    "name": "膝盖射击",
+    "rarity": "Common",
+    "cost": 2,
+    "type": "DAMAGE",
+    "value": 20,
+    "speed": 3,
+    "targetType": "SINGLE_PART",
+    "requiredPart": "leg",
+    "description": "攻击腿部：若造成 HP 伤害，对目标施加 buff_slow（用减速近似速度下降）。",
+    "buffRefs": {
+      "apply": [
+        { "buffId": "buff_slow", "target": "enemy", "chance": 1.0, "duration": 3 }
+      ]
+    },
+    "prerequisites": []
+  },
+  "skill_crippling_shot": {
+    "id": "skill_crippling_shot",
+    "name": "致残射击",
+    "rarity": "Uncommon",
+    "cost": 3,
+    "type": "DAMAGE",
+    "value": 20,
+    "speed": 3,
+    "targetType": "SINGLE_PART",
+    "description": "攻击四肢：造成伤害后，使该部位功能失效（当前不落 Buff，作为纯规则效果/待引擎支持）。",
+    "prerequisites": ["skill_knee_shot"]
+  },
+  "skill_disarm": {
+    "id": "skill_disarm",
+    "name": "远程拆解",
+    "rarity": "Uncommon",
+    "cost": 3,
+    "type": "DAMAGE_ARMOR",
+    "value": 2.0,
+    "valueType": "PERCENT",
+    "speed": 4,
+    "targetType": "SINGLE_PART",
+    "requiredPart": "arm",
+    "description": "对手臂造成 200% 的护甲伤害；若护甲被破，施加 debuff_weak（纯条件）。",
+    "effects": [
+      { "type": "APPLY_BUFF_ON_CONDITION", "buffId": "debuff_weak", "condition": "targetArmorBroken", "duration": 1 }
+    ],
+    "prerequisites": ["skill_mark_target"]
+  },
+  "skill_piercing_bolt": {
+    "id": "skill_piercing_bolt",
+    "name": "穿甲射击",
+    "rarity": "Rare",
+    "cost": 3,
+    "type": "DAMAGE",
+    "value": 30,
+    "speed": 3,
+    "targetType": "SINGLE_PART",
+    "description": "无视目标 50% 的护甲值直接造成伤害（纯计算规则）。",
+    "effects": [
+      { "type": "IGNORE_ARMOR_PERCENT", "value": 0.5 }
+    ],
+    "prerequisites": ["skill_steady_aim"]
+  },
+  "skill_headshot": {
+    "id": "skill_headshot",
+    "name": "爆头",
+    "rarity": "Rare",
+    "cost": 4,
+    "type": "DAMAGE",
+    "value": 2.0,
+    "valueType": "PERCENT",
+    "speed": 1,
+    "targetType": "SINGLE_PART",
+    "requiredPart": "head",
+    "description": "对头部造成 200% 伤害；命中率 -20%，但若命中必定暴击（纯规则）。",
+    "effects": [
+      { "type": "HIT_RATE_MOD", "value": -0.2 },
+      { "type": "FORCE_CRIT_ON_HIT", "value": 1.0 }
+    ],
+    "prerequisites": ["skill_disarm"]
+  },
+  "skill_ghost_snipe": {
+    "id": "skill_ghost_snipe",
+    "name": "幽灵狙击",
+    "rarity": "Epic",
+    "cost": 4,
+    "type": "DAMAGE_TRUE",
+    "value": 1.5,
+    "valueType": "PERCENT",
+    "speed": 5,
+    "targetType": "SINGLE_PART",
+    "description": "无法闪避且无视 100% 护甲（纯规则）。",
+    "effects": [
+      { "type": "CANNOT_DODGE" },
+      { "type": "IGNORE_ARMOR_PERCENT", "value": 1.0 },
+      { "type": "DISABLE_CRIT" }
+    ],
+    "prerequisites": ["skill_headshot"]
+  },
+  "skill_precision_mark": {
+    "id": "skill_precision_mark",
+    "name": "精准标记",
+    "rarity": "Epic",
+    "cost": 3,
+    "type": "DEBUFF_ENEMY",
+    "speed": 2,
+    "targetType": "SINGLE_PART",
+    "description": "对目标施加 buff_vulnerable（刷新持续时间），并造成一次小额伤害。",
+    "effects": [
+      { "type": "DAMAGE", "value": 10 }
+    ],
+    "buffRefs": {
+      "apply": [
+        { "buffId": "buff_vulnerable", "target": "enemy", "chance": 1.0, "duration": 2 }
+      ]
+    },
+    "prerequisites": ["skill_piercing_bolt"]
+  },
+  "skill_one_shot_one_kill": {
+    "id": "skill_one_shot_one_kill",
+    "name": "致命一击",
+    "rarity": "Legendary",
+    "cost": 6,
+    "type": "DAMAGE",
+    "value": 0.5,
+    "valueType": "HP_PERCENT",
+    "speed": -2,
+    "targetType": "SINGLE_PART",
+    "description": "需要上一回合未使用攻击技能。对目标造成当前 HP 50% 的伤害（Boss 效果减半）。",
+    "requirements": {
+      "prevTurnNoAttack": true
+    },
+    "prerequisites": ["skill_ghost_snipe"]
+  },
 
-    "skill_holy_light": { "id": "skill_holy_light", "name": "圣光术", "cost": 3, "rarity": "Common", "type": "HEAL", "value": 30, "speed": -2, "targetType": "SELF", "description": "恢复自身 30 HP。" },
-    "skill_smite": { "id": "skill_smite", "name": "惩击", "cost": 2, "rarity": "Common", "type": "DAMAGE", "value": 25, "speed": 2, "targetType": "SINGLE_PART", "description": "对敌人造成神圣伤害。如果敌人是亡灵/恶魔，伤害翻倍。" },
-    "skill_bless": { "id": "skill_bless", "name": "祝福", "cost": 2, "rarity": "Common", "type": "BUFF_SELF", "speed": 1, "targetType": "SELF", "description": "[Buff] 自身下回合命中率 +20%，闪避率 +10%。", "applyBuff": { "id": "buff_bless", "duration": 1 } },
-    "skill_shield_of_faith": { "id": "skill_shield_of_faith", "name": "信仰之盾", "cost": 3, "rarity": "Uncommon", "type": "BUFF_SELF", "speed": 2, "targetType": "SELF", "description": "增加 20 点临时护甲，且每回合结束时若护甲未破，回复 5 点 HP。", "applyBuff": { "id": "buff_shield_of_faith", "duration": 3 } },
-    "skill_pain_suppression": { "id": "skill_pain_suppression", "name": "痛苦压制", "cost": 3, "rarity": "Uncommon", "type": "BUFF_SELF", "speed": 5, "targetType": "SELF", "description": "[Buff] 受到的所有伤害减少 30%，持续 3 回合。", "applyBuff": { "id": "buff_pain_suppression", "duration": 3 } },
-    "skill_cleansing_fire": { "id": "skill_cleansing_fire", "name": "净化之火", "cost": 3, "rarity": "Rare", "type": "CLEANSE", "speed": 1, "targetType": "SELF", "description": "解除自身所有 Debuff，每解除一个，回复 15 点 HP 并对敌人造成等量伤害。" },
-    "skill_holy_shock": { "id": "skill_holy_shock", "name": "神圣震击", "cost": 3, "rarity": "Rare", "type": "DAMAGE_HEAL", "value": 30, "speed": 3, "targetType": "SINGLE_PART", "description": "对敌人造成伤害，同时治疗自己等量的生命值。" },
-    "skill_guardian_angel": { "id": "skill_guardian_angel", "name": "天使守护", "cost": 5, "rarity": "Epic", "type": "BUFF_SELF", "speed": 10, "targetType": "SELF", "description": "[Buff] 2 回合内，生命值无法低于 1。效果结束后回复 20% 最大 HP。", "applyBuff": { "id": "buff_guardian_angel", "duration": 2 } },
-    "skill_radiant_revitalize": { "id": "skill_radiant_revitalize", "name": "光辉复苏", "cost": 4, "rarity": "Epic", "type": "CLEANSE_HEAL", "value": 50, "speed": -1, "targetType": "SELF", "description": "移除所有 Debuff，并回复大量 HP 和少量护甲。" },
-    "skill_divine_shield": { "id": "skill_divine_shield", "name": "神圣护盾", "cost": 4, "rarity": "Legendary", "type": "BUFF_SELF", "speed": 5, "targetType": "SELF", "description": "免疫下一次伤害。", "applyBuff": { "id": "buff_invulnerable", "duration": 1 } }
+  "skill_arcane_missile": {
+    "id": "skill_arcane_missile",
+    "name": "奥术飞弹",
+    "rarity": "Common",
+    "cost": 2,
+    "type": "DAMAGE",
+    "value": 25,
+    "speed": 0,
+    "targetType": "SINGLE_PART",
+    "description": "对目标造成魔法伤害。",
+    "prerequisites": []
+  },
+  "skill_lightning_bolt": {
+    "id": "skill_lightning_bolt",
+    "name": "闪电箭",
+    "rarity": "Common",
+    "cost": 2,
+    "type": "DAMAGE_RANDOM",
+    "value": "1-30",
+    "speed": 5,
+    "targetType": "SINGLE_PART",
+    "description": "造成 1-30 点随机雷电伤害；若造成最大值，返还 1 AP（需要引擎支持）。",
+    "effects": [
+      { "type": "SELF_AP_GAIN_ON_MAX_ROLL", "value": 1 }
+    ],
+    "prerequisites": []
+  },
+  "skill_slow_hex": {
+    "id": "skill_slow_hex",
+    "name": "迟缓咒",
+    "rarity": "Common",
+    "cost": 2,
+    "type": "DEBUFF_ENEMY",
+    "speed": 0,
+    "targetType": "ENEMY",
+    "description": "对目标施加 buff_slow。",
+    "buffRefs": {
+      "apply": [
+        { "buffId": "buff_slow", "target": "enemy", "chance": 1.0, "duration": 2 }
+      ]
+    },
+    "prerequisites": []
+  },
+  "skill_ice_lance": {
+    "id": "skill_ice_lance",
+    "name": "冰锥术",
+    "rarity": "Uncommon",
+    "cost": 3,
+    "type": "DAMAGE",
+    "value": 30,
+    "speed": 2,
+    "targetType": "SINGLE_PART",
+    "description": "造成冰霜伤害，并有 50% 概率对目标施加 buff_slow。",
+    "buffRefs": {
+      "apply": [
+        { "buffId": "buff_slow", "target": "enemy", "chance": 0.5, "duration": 2 }
+      ]
+    },
+    "prerequisites": ["skill_arcane_missile"]
+  },
+  "skill_arcane_barrage": {
+    "id": "skill_arcane_barrage",
+    "name": "奥术弹幕",
+    "rarity": "Uncommon",
+    "cost": 3,
+    "type": "DAMAGE_MULTI",
+    "value": 10,
+    "speed": 1,
+    "hitCount": 3,
+    "targetType": "RANDOM_PART",
+    "description": "对随机部位造成多段小额伤害。",
+    "prerequisites": ["skill_arcane_missile"]
+  },
+  "skill_frost_nova": {
+    "id": "skill_frost_nova",
+    "name": "冰霜新星",
+    "rarity": "Rare",
+    "cost": 3,
+    "type": "DEBUFF_ENEMY",
+    "speed": -1,
+    "targetType": "ENEMY",
+    "description": "对目标施加 buff_slow（刷新持续时间），并造成少量伤害。",
+    "effects": [
+      { "type": "DAMAGE", "value": 10 }
+    ],
+    "buffRefs": {
+      "apply": [
+        { "buffId": "buff_slow", "target": "enemy", "chance": 1.0, "duration": 2 }
+      ]
+    },
+    "prerequisites": ["skill_ice_lance"]
+  },
+  "skill_elemental_vulnerability": {
+    "id": "skill_elemental_vulnerability",
+    "name": "元素易伤",
+    "rarity": "Rare",
+    "cost": 2,
+    "type": "DEBUFF_ENEMY",
+    "speed": 0,
+    "targetType": "ENEMY",
+    "description": "对目标施加 buff_vulnerable。",
+    "buffRefs": {
+      "apply": [
+        { "buffId": "buff_vulnerable", "target": "enemy", "chance": 1.0, "duration": 2 }
+      ]
+    },
+    "prerequisites": ["skill_slow_hex"]
+  },
+  "skill_chain_lightning": {
+    "id": "skill_chain_lightning",
+    "name": "闪电链",
+    "rarity": "Epic",
+    "cost": 4,
+    "type": "DAMAGE_MULTI",
+    "value": 20,
+    "speed": 2,
+    "hitCount": 3,
+    "targetType": "RANDOM_PART",
+    "description": "对目标随机 3 个部位造成雷电伤害。",
+    "prerequisites": ["skill_elemental_vulnerability"]
+  },
+  "skill_thunder_strike": {
+    "id": "skill_thunder_strike",
+    "name": "雷霆轰击",
+    "rarity": "Epic",
+    "cost": 4,
+    "type": "DAMAGE_MULTI",
+    "value": 25,
+    "speed": 1,
+    "hitCount": 3,
+    "targetType": "RANDOM_PART",
+    "description": "对目标随机 3 个部位造成雷电伤害。",
+    "prerequisites": ["skill_elemental_vulnerability"]
+  },
+  "skill_meteor_swarm": {
+    "id": "skill_meteor_swarm",
+    "name": "陨石术",
+    "rarity": "Legendary",
+    "cost": 6,
+    "type": "DAMAGE",
+    "value": 40,
+    "speed": -2,
+    "targetType": "ALL_PARTS",
+    "description": "对目标所有部位造成毁灭性伤害。",
+    "prerequisites": ["skill_thunder_strike"]
+  },
+
+  "skill_holy_light": {
+    "id": "skill_holy_light",
+    "name": "圣光术",
+    "rarity": "Common",
+    "cost": 3,
+    "type": "HEAL",
+    "value": 30,
+    "speed": -2,
+    "targetType": "SELF",
+    "description": "恢复自身 30 点 HP。",
+    "prerequisites": []
+  },
+  "skill_smite": {
+    "id": "skill_smite",
+    "name": "惩击",
+    "rarity": "Common",
+    "cost": 2,
+    "type": "DAMAGE",
+    "value": 25,
+    "speed": 2,
+    "targetType": "SINGLE_PART",
+    "description": "对敌人造成神圣伤害；若目标是亡灵/恶魔，伤害翻倍（纯规则）。",
+    "effects": [
+      { "type": "DAMAGE_MULTIPLIER_IF_TAG", "tag": "undead_or_demon", "multiplier": 2.0 }
+    ],
+    "prerequisites": []
+  },
+  "skill_bless": {
+    "id": "skill_bless",
+    "name": "祝福",
+    "rarity": "Common",
+    "cost": 2,
+    "type": "BUFF_SELF",
+    "speed": 1,
+    "targetType": "SELF",
+    "description": "对自身施加 buff_bless。",
+    "buffRefs": {
+      "applySelf": [
+        { "buffId": "buff_bless", "target": "self", "chance": 1.0, "duration": 1 }
+      ]
+    },
+    "prerequisites": []
+  },
+  "skill_shield_of_faith": {
+    "id": "skill_shield_of_faith",
+    "name": "信仰之盾",
+    "rarity": "Uncommon",
+    "cost": 3,
+    "type": "BUFF_SELF",
+    "speed": 2,
+    "targetType": "SELF",
+    "description": "对自身施加 buff_shield，并立刻恢复少量 HP。",
+    "effects": [
+      { "type": "HEAL", "value": 10 }
+    ],
+    "buffRefs": {
+      "applySelf": [
+        { "buffId": "buff_shield", "target": "self", "chance": 1.0, "duration": 1 }
+      ]
+    },
+    "prerequisites": ["skill_holy_light"]
+  },
+  "skill_holy_shield": {
+    "id": "skill_holy_shield",
+    "name": "圣盾",
+    "rarity": "Uncommon",
+    "cost": 3,
+    "type": "BUFF_SELF",
+    "speed": 3,
+    "targetType": "SELF",
+    "description": "对自身施加 buff_shield，并立刻回复少量 HP。",
+    "effects": [
+      { "type": "HEAL", "value": 10 }
+    ],
+    "buffRefs": {
+      "applySelf": [
+        { "buffId": "buff_shield", "target": "self", "chance": 1.0, "duration": 1 }
+      ]
+    },
+    "prerequisites": ["skill_bless"]
+  },
+  "skill_cleansing_fire": {
+    "id": "skill_cleansing_fire",
+    "name": "净化之火",
+    "rarity": "Rare",
+    "cost": 3,
+    "type": "CLEANSE",
+    "speed": 1,
+    "targetType": "SELF",
+    "description": "解除自身所有 Debuff；每解除一个，回复 15 点 HP 并对敌人造成等量伤害（需要引擎支持）。",
+    "prerequisites": ["skill_smite"]
+  },
+  "skill_holy_shock": {
+    "id": "skill_holy_shock",
+    "name": "神圣震击",
+    "rarity": "Rare",
+    "cost": 3,
+    "type": "DAMAGE_HEAL",
+    "value": 30,
+    "speed": 3,
+    "targetType": "SINGLE_PART",
+    "description": "对敌人造成伤害，同时治疗自己等量生命值（吸血机制，需引擎支持）。",
+    "prerequisites": ["skill_shield_of_faith"]
+  },
+  "skill_prayer_of_redemption": {
+    "id": "skill_prayer_of_redemption",
+    "name": "救赎祷言",
+    "rarity": "Epic",
+    "cost": 4,
+    "type": "HEAL",
+    "value": 50,
+    "speed": -1,
+    "targetType": "SELF",
+    "description": "立即恢复大量 HP，并移除自身 buff_poison / buff_bleed（若引擎支持按 id 移除）。",
+    "buffRefs": {
+      "remove": [
+        { "buffId": "buff_poison", "target": "self" },
+        { "buffId": "buff_bleed", "target": "self" }
+      ]
+    },
+    "prerequisites": ["skill_holy_shield"]
+  },
+  "skill_radiant_revitalize": {
+    "id": "skill_radiant_revitalize",
+    "name": "光辉复苏",
+    "rarity": "Epic",
+    "cost": 4,
+    "type": "HEAL",
+    "value": 50,
+    "speed": -1,
+    "targetType": "SELF",
+    "description": "立即恢复大量 HP，并对自身施加 buff_shield。",
+    "buffRefs": {
+      "applySelf": [
+        { "buffId": "buff_shield", "target": "self", "chance": 1.0, "duration": 1 }
+      ]
+    },
+    "prerequisites": ["skill_cleansing_fire"]
+  },
+  "skill_judgement": {
+    "id": "skill_judgement",
+    "name": "审判",
+    "rarity": "Legendary",
+    "cost": 5,
+    "type": "DAMAGE",
+    "value": 60,
+    "speed": 0,
+    "targetType": "SINGLE_PART",
+    "description": "造成高额神圣伤害，并施加 debuff_weak + buff_vulnerable。",
+    "buffRefs": {
+      "apply": [
+        { "buffId": "debuff_weak", "target": "enemy", "chance": 1.0, "duration": 1 },
+        { "buffId": "buff_vulnerable", "target": "enemy", "chance": 1.0, "duration": 2 }
+      ]
+    },
+    "prerequisites": ["skill_radiant_revitalize"]
+  }
 }

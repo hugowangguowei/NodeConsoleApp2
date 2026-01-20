@@ -2,34 +2,38 @@
 
 ## 1. 概述 (Overview)
 
-为了满足日益复杂的技能系统设计需求，特别是技能树结构的可视化编辑，我们需要开发一款基于网页的 **技能编辑器 (Skill Editor)**。该编辑器将允许开发者在一个可视化的二维画布上创建、编辑、连接和管理技能节点，并最终将数据导出为游戏引擎可用的 JSON 格式。
+为了满足日益复杂的技能系统设计需求，特别是技能树结构的可视化编辑，我们需要开发一款基于网页的 **技能编辑器 (Skill Editor)**。该编辑器将允许开发者在一个可视化的二维画布上创建、编辑、连接和管理技能节点，并最终将数据导出为游戏引擎可用的 JSON（目前为 `assets/data/skills.json`）。
 
 核心目标：
-*   **可视化编辑**：脱离纯文本编辑，通过节点连线直观地构建技能树。
-*   **高效管理**：支持技能的增删改查，以及流派、稀有度的快速筛选。
-*   **数据一致性**：确保导出的数据符合游戏引擎 `DataManager` 的数据结构规范。
+*   **可视化编辑**：脱离纯文本编辑，通过节点连线直观地构建技能依赖图（DAG）。
+*   **结构化 Buff 引用**：技能只“引用 Buff”，使用 `buffRefs.apply/applySelf/remove`，避免自由文本式的 [Buff] 描述。
+*   **强校验**：在编辑阶段阻止无效数据（缺失 `buffId`、环依赖、非法目标/部位组合）。
+*   **数据一致性**：确保导出的数据与当前 `assets/data/skills.json` 的字段/层级完全一致，且可被引擎加载。
 
 ---
 
 ## 2. 编辑器功能 (Editor Capabilities)
 
 ### 2.1 技能管理
-*   **载入文件**：支持从本地或远程加载技能 JSON 文件。加载完成的数据将以图谱形式展示在画布上。
+*   **载入文件**：支持从本地加载 `assets/data/skills.json` 与 `assets/data/buffs.json`。技能数据以图谱形式展示在画布上。
 *   **创建技能**：支持通过工具栏新建技能节点。
-*   **编辑属性**：选中节点后，在侧边栏编辑技能的详细属性（名称、ID、AP消耗、稀有度、效果描述、伤害倍率等）。
+*   **编辑属性**：选中节点后，在侧边栏编辑技能详细属性（见第5章字段分组），其中 Buff 必须通过 `buffRefs` 结构编辑。
 *   **删除技能**：支持删除选中的节点（智能处理前置/后置关系的解绑）。
 *   **复制/粘贴**：快速复制已有技能配置，便于制作同流派的进阶技能。
 
 ### 2.2 技能树构建 (核心功能)
 *   **节点拖拽**：在二维画布上自由拖拽技能节点，调整布局。
-*   **连线关系**：通过从一个节点拖拽连线到另一个节点，建立 **前置依赖 (Prerequisite)** 关系。
+*   **连线关系**：通过从一个节点拖拽连线到另一个节点，建立 **前置依赖 (Prerequisite)** 关系（写入目标节点的 `prerequisites[]`）。
     *   箭头的方向表示依赖方向（例如：`重锤挥击` -> `野蛮冲撞` 表示 `重锤挥击` 是 `野蛮冲撞` 的前置）。
 *   **关系解除**：选中连线并删除，解除依赖关系。
-*   **自动布局验证**：检测是否存在循环依赖（虽然DAG通常不允许环，但编辑器应给予提示）。
+*   **DAG 校验**：检测是否存在循环依赖；禁止创建会生成环的连线。
 
 ### 2.3 数据输入/输出 (I/O)
-*   **导入 JSON**：支持上传或粘贴现有的 `skills.json` 内容，还原为图谱结构。
-*   **导出 JSON**：一键生成符合游戏定义的 `skills.json` 数据结构，供开发者直接复制或下载。
+*   **导入 JSON**：支持上传或粘贴现有的 `skills.json` 内容（对象映射结构），还原为图谱结构。
+*   **导出 JSON**：一键生成符合引擎定义的 `skills.json`（对象映射结构：key 必须与 skill `id` 一致）。
+*   **导出模式**：
+    *   开发模式：保留 `editorMeta`（布局信息）。
+    *   运行模式：剥离 `editorMeta`（避免污染运行数据）。
 *   **本地缓存**：利用 `localStorage` 自动保存当前编辑进度，防止意外丢失。
 
 ---
@@ -90,21 +94,69 @@
         *   连线算法会自动寻找最近的路径（例如简化的 Manhattan Pathfinding），从源节点的某一侧出来，沿着网格线走到目标节点的某一侧进入。
 
 #### D. 右侧属性面板 (Properties Panel)
-*   **基本信息**：
-    *   `ID` (自动生成或手动指定)
-    *   `Name` (技能名称)
-    *   `Type` (下拉选择：Active/Passive/Buff)
-    *   `School` (下拉选择：Melee/Ranged/Magic)
-    *   `SubClass` (下拉选择：Juggernaut/Guardian/etc.)
-*   **数值配置**：
-    *   `Rarity` (1-5 / Common-Legendary)
-    *   `AP Cost` (数字输入)
-    *   `Cooldown` (数字输入)
-*   **效果配置**：
-    *   `Description` (文本域，支持模板变量如 `{damage}`)
-    *   `Effects` (JSON 数组编辑器，或者简化的 Key-Value 列表，用于定义伤害类型、数值、Buff ID 等)。
-*   **关系显示**：
-    *   只读显示 `Pre-requisite ID` (由画布连线自动生成，此处仅作展示)。
+参考 `buff_editor_design.md` 与 `test/buff_editor_v3.html` 的样式，右侧属性面板建议采用 **卡片式分组（Panel + Section）**：每个区块有标题、可折叠（可选）、内部使用两列网格布局（label + input），复杂字段用“可增删列表/表格”。
+
+**整体结构（推荐）**
+
+* **Panel: Skill Editor（只读摘要）**
+  * 显示：`id` / `name` / `rarity` 徽标、校验状态（?/??/?）
+  * 操作：`Duplicate` / `Delete`（与左侧列表一致）
+
+* **Panel: Basic Info（基础信息）**
+  * `id`（Text）
+    * 导出规则：JSON key 必须与 `id` 一致；若不一致，导出时提供“自动修正 key/取消导出”选项。
+  * `name`（Text）
+  * `rarity`（Select：Common/Uncommon/Rare/Epic/Legendary）
+  * `description`（Textarea，建议等宽字体，参考 buff editor 的 monospace 输入框）
+
+* **Panel: Target & Timing（行动与目标）**
+  * `cost`（Number）
+  * `speed`（Number）
+  * `targetType`（Select：SELF / ENEMY / SINGLE_PART / ALL_PARTS / RANDOM_PART / SELF_PARTS）
+  * `requiredPart`（Select，可空；当 `targetType` 为部位相关时显示）
+  * `targetParts[]`（多选/Tag；仅当 `targetType=SELF_PARTS` 时显示）
+  * 组合校验提示：
+    * `targetType=SELF_PARTS` 时必须有 `targetParts[]`。
+    * `requiredPart` 仅在需要时启用，非法组合高亮提示。
+
+* **Panel: Values（数值字段，可选）**
+  * `type`（Select/自由输入，取决于引擎约束）
+  * `value`（Number/String）
+  * `valueType`（Select，可空）
+  * 校验提示：当 `valueType=PERCENT` 时 `value` 必须是 number。
+
+* **Panel: Buff Refs（Buff 引用，核心）**
+  * 分为三个子区块（与 `buffRefs` 对齐）：
+    * `apply`（对敌方施加）
+    * `applySelf`（对自身施加）
+    * `remove`（移除/净化）
+  * 每个子区块使用“可增删表格”（与 `buff_editor_v3.html` 的表格/列表风格一致）：
+    * 列：`buffId`（Select + 搜索，数据源来自 `assets/data/buffs.json`）
+    * 列：`target`（Select：self/enemy；默认与所在分组一致，例如 apply 默认 enemy）
+    * 列：`chance`（Number，0~1，默认 1.0）
+    * 列：`duration`（Number，可空，若不填则表示使用 Buff 默认）
+    * 列：`stacks`（Number，可空）
+    * 操作：`+ Add` / `Delete row`
+  * 即时校验：
+    * `buffId` 必须存在于 `buffs.json`，不存在时整行标红并在面板顶部汇总错误。
+    * `chance` 必须在 `[0,1]`。
+
+* **Panel: Effects（扩展 effects[]）**
+  * 采用“Accordion 列表”（参考 buff editor 的 Effects/Triggers 形态）：
+    * 每条 effect 展示：`type`（必填） + 关键参数（以 key/value 形式预览）
+    * 支持：`+ Add effect` / `Delete` / 上下移动（可选）
+  * 编辑方式：
+    * MVP：提供 JSON 子编辑器（textarea）+ 简单 schema 校验。
+    * 进阶：对常见 `effect.type` 提供模板化表单（如 AP 变化、忽略护甲、额外回合）。
+
+* **Panel: Prerequisites（前置依赖）**
+  * 只读展示 `prerequisites[]`（来自画布连线），但提供：
+    * 快捷跳转到该技能节点（点击定位画布）
+    * 一键移除某个前置（等价于删除对应连线）
+  * DAG 校验错误在此面板汇总（例如：检测到环时提示并定位到相关边）。
+
+* **Panel: Editor Meta（布局信息）**
+  * `editorMeta.x/y` 只读显示（或提供“重置位置/吸附网格”按钮）。
 
 ---
 
@@ -120,7 +172,7 @@
 3.  **建立连接**:
     *   在目标锚点释放鼠标。
     *   **系统计算路径**: 根据起点和终点的网格坐标，计算一条沿着网格线的正交路径 (Manhattan Path)。
-    *   **数据更新**: 将连接关系写入数据模型（`preRequisite` 字段）。
+    *   **数据更新**: 将连接关系写入数据模型（目标节点的 `prerequisites[]` 数组）。
 4.  **删除连接**:
     *   选中连线（高亮），按 Delete 键删除。
     *   或右键与连线交互进行删除。
@@ -135,53 +187,87 @@
 
 ---
 
-## 5. 数据结构规范 (Data Structure Schema)
+## 5. 数据结构与校验 (Data Model & Validation)
 
-编辑器导出的 JSON 应当是一个对象数组，每个对象代表一个技能。
+当前项目的 `assets/data/skills.json` 使用 **对象映射**（key 为 skillId），而不是数组。编辑器内部模型与导出结构都应保持一致。
 
 ```json
-[
-  {
-    "id": "skill_melee_001",
+{
+  "skill_heavy_swing": {
+    "id": "skill_heavy_swing",
     "name": "重锤挥击",
-    "icon": "icon_bash.png",
-    "school": "melee",
-    "subClass": "juggernaut",
-    "rarity": "common", // 或 tier: 1
-    "apCost": 3,
-    "cooldown": 0,
-    "description": "对选中部位造成 120% 物理伤害。",
-    "preRequisite": null, // 无前置
-    "effects": [
-      {
-        "type": "damage_physical",
-        "value": 1.2,
-        "target": "selected_part"
-      }
-    ],
-    "editorMeta": { // 编辑器专用元数据，导出给游戏引擎时通过构建脚本剔除，或者保留也无妨
-       "x": 100,
-       "y": 200
-    }
-  },
-  {
-    "id": "skill_melee_004",
-    "name": "野蛮冲撞",
-    "preRequisite": "skill_melee_001", // 关联 ID
-    // ... 其他属性
-    "editorMeta": {
-       "x": 100,
-       "y": 400
-    }
+    "rarity": "Common",
+    "cost": 3,
+    "type": "DAMAGE",
+    "value": 1.2,
+    "valueType": "PERCENT",
+    "speed": 0,
+    "targetType": "SINGLE_PART",
+    "description": "...",
+    "buffRefs": {
+      "apply": [],
+      "applySelf": [],
+      "remove": []
+    },
+    "effects": [],
+    "prerequisites": [],
+    "editorMeta": { "x": 100, "y": 200 }
   }
-]
+}
 ```
 
-**关于 `editorMeta`**：
-为了保证下次打开编辑器时节点位置不变，我们需要在 JSON 中保存节点的 `x, y` 坐标。
-*   **方案 A**：直接保存在技能对象中。优点是实现简单，缺点是污染了游戏数据（虽然影响很小）。
-*   **方案 B**：保存为单独的 `skill_layout.json`。优点是数据纯净，缺点是维护两个文件麻烦。
-*   **建议**：采用方案 A。在游戏引擎加载时忽略 `editorMeta` 字段即可。
+### 5.1 属性面板字段分组（建议）
+
+#### A) 基础信息
+* `id`（唯一）
+* `name`
+* `rarity`（Common/Uncommon/Rare/Epic/Legendary）
+
+#### B) 行动与目标
+* `cost`
+* `speed`
+* `targetType`（`SELF` / `ENEMY` / `SINGLE_PART` / `ALL_PARTS` / `RANDOM_PART` / `SELF_PARTS`）
+* `requiredPart`（当技能要求特定部位时启用，例如 head/chest/arm/leg）
+* `targetParts[]`（当 `targetType=SELF_PARTS` 时启用）
+
+#### C) 数值（可选）
+* `type`（例如 DAMAGE / HEAL / BUFF_SELF / DAMAGE_MULTI 等）
+* `value`
+* `valueType`（PERCENT / HP_PERCENT / CRIT_MULTIPLIER / PER_STACK 等）
+
+#### D) Buff 引用（结构化）
+* `buffRefs.apply[]`：对敌方施加
+* `buffRefs.applySelf[]`：对自身施加
+* `buffRefs.remove[]`：移除（净化/驱散）
+
+每个引用项支持：`buffId`、`target(self/enemy)`、`chance`、`duration`、`stacks`。
+
+#### E) 扩展效果（可选）
+* `effects[]`：作为“引擎扩展点”，编辑器应提供 JSON 子编辑器 + 常用模板（例如 AP 变化、忽略护甲、额外回合等）。
+
+#### F) 前置关系
+* `prerequisites[]`：多前置数组（由画布连线生成）。
+
+#### G) 编辑器元数据
+* `editorMeta.x / editorMeta.y`：节点布局。
+
+### 5.2 编辑器必须实现的校验
+
+* `id` 唯一性：JSON key 必须与 skill `id` 一致（导出时自动修正或提示）。
+* `prerequisites[]`：引用必须存在，且必须保持 DAG（无环）。
+* `buffRefs.*[].buffId`：必须存在于 `assets/data/buffs.json`。
+* 目标合法性：`targetType` 与 `requiredPart/targetParts` 的组合校验。
+* 类型/数值校验（建议）：
+  - `valueType=PERCENT` 时 `value` 必须为 number。
+  - `chance` 范围为 `[0,1]`。
+
+### 5.3 关于 `editorMeta`
+
+默认方案：保存在技能对象内（单文件携带布局）。
+
+导出时建议提供两个模式：
+* 开发模式导出：保留 `editorMeta`。
+* 运行模式导出：剥离 `editorMeta`。
 
 ---
 

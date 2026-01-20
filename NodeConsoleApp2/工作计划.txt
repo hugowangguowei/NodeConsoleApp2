@@ -297,3 +297,8 @@ buff示例可以参照skill和item的设计文档。但是buff设计方案作为skill和item设计文档的
 
 现在已经对buff_design和buff_editor_design进行了系统更新，我希望结合buff_editor_test_doc_v2测试出的问题，对代码进行必要的修改，同样要坚持模块化、低耦合的方案进行实现。
 我希望缩减aside 的宽度为原来的75%，center divde 的比例为原来的75%，剩下的宽度都留给right class,这样的话，能够留出足够的宽度，让模拟调试区的player数据和enemies数据并列，让操作按钮和日志区域的位置往上提一下。
+
+2026.01.19 23:55（编辑）
+我对buff体系进行了系统性的更新（包括buff_design.md和buff_editor_design.md），请你基于新的设计方案，进行skill_design.md和item_design.md的更新，确保技能和装备设计文档中的buff引用符合新的buff设计方案。先不用写代码，先在设计文档中补充内容。
+
+对于A类buff，将与其对应的技能删去。对于B类buff，一致化命名，对于C类buff，明确技能引用，避免出错。
