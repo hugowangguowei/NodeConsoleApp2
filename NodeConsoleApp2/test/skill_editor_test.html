@@ -1279,9 +1279,19 @@ class SkillEditor {
 
     onNodeMouseDown(e, skill) {
         e.stopPropagation(); // Stop panning
-        // Select logic (Ctrl+click toggles selection)
+        // Select logic
+        // Important: Ctrl+mousedown is also the start of drag. If we treat it as a toggle,
+        // multi-selection will be destroyed when starting a group drag.
+        // Rule:
+        // - No Ctrl: single-select
+        // - Ctrl + mousedown on unselected node: add to selection
+        // - Ctrl + mousedown on selected node: keep selection, just set it as primary
         if (e.ctrlKey) {
-            this.toggleSelection(skill.id);
+            if (this.selectedNodeIds.has(skill.id)) {
+                this.setPrimarySelection(skill.id, { keepOthers: true });
+            } else {
+                this.toggleSelection(skill.id);
+            }
         } else {
             this.setPrimarySelection(skill.id);
         }
