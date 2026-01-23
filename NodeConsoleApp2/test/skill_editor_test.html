@@ -69,14 +69,51 @@
             overflow: hidden;
         }
 
-        /* B. Skill List (Left Sidebar) */
-        #skill-list-panel {
-            width: 250px;
+        /* B. Skill List Drawer (Left, default collapsed) */
+        #skill-drawer-handle {
+            position: absolute;
+            top: 50%;
+            left: 0;
+            transform: translateY(-50%);
+            width: 12px;
+            height: 96px;
+            z-index: 96;
+            background: rgba(0,0,0,0.08);
+            border: 1px solid rgba(0,0,0,0.12);
+            border-left: none;
+            border-top-right-radius: 8px;
+            border-bottom-right-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            user-select: none;
+        }
+        #skill-drawer-handle::after {
+            content: '';
+            width: 2px;
+            height: 46px;
+            background: rgba(0,0,0,0.25);
+            box-shadow: 4px 0 0 rgba(0,0,0,0.25), 8px 0 0 rgba(0,0,0,0.25);
+        }
+
+        #skill-drawer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            height: 100%;
+            width: 280px;
             background: var(--panel-bg);
             border-right: 1px solid var(--border-color);
             display: flex;
             flex-direction: column;
-            z-index: 90;
+            z-index: 95;
+            transform: translateX(-100%);
+            transition: transform 0.18s ease;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.08);
+        }
+        #skill-drawer.open {
+            transform: translateX(0);
         }
         .panel-header {
             padding: 10px;
@@ -84,7 +121,19 @@
             background: #eee;
             border-bottom: 1px solid #ddd;
         }
-        #skill-list-content {
+        #skill-drawer-search {
+            padding: 10px;
+            border-bottom: 1px solid #eee;
+        }
+        #skill-drawer-search input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            box-sizing: border-box;
+        }
+
+        #skill-drawer-content {
             flex: 1;
             overflow-y: auto;
             padding: 10px;
@@ -97,6 +146,25 @@
             cursor: grab;
             background: white;
             user-select: none;
+        }
+        .skill-list-item .meta {
+            margin-top: 4px;
+            font-size: 11px;
+            color: #666;
+        }
+        .skill-list-item .pill {
+            display: inline-block;
+            font-size: 11px;
+            padding: 2px 8px;
+            border-radius: 999px;
+            border: 1px solid #eee;
+            background: #f7f7f7;
+            margin-left: 6px;
+        }
+        .skill-list-item .pill.unplaced {
+            border-color: #ffcc80;
+            background: #fff3e0;
+            color: #a66300;
         }
         .skill-list-item:hover {
             background-color: #f0f8ff;
@@ -313,6 +381,7 @@
     <div id="toolbar">
         <input type="file" id="file-input" accept=".json" style="display: none;" onchange="editor.importJsonFile(this)">
         <button class="btn btn-dark" onclick="editor.loadProjectData()">Load Project Data</button>
+        <button class="btn btn-dark" onclick="editor.toggleSkillDrawer()">Skills</button>
         <button class="btn btn-primary" onclick="document.getElementById('file-input').click()">Import skills.json</button>
         <button class="btn btn-primary" onclick="editor.createNewSkill()">+ New Skill</button>
         <button class="btn btn-success" onclick="editor.exportJson(true)">Export (dev)
@@ -325,10 +394,18 @@
     </div>
 
     <div id="main-container">
-        <!-- B. Skill List -->
-        <div id="skill-list-panel">
-            <div class="panel-header">技能库</div>
-            <div id="skill-list-content">
+        <!-- B. Skill List Drawer (default collapsed) -->
+        <div id="skill-drawer-handle" title="Skills"></div>
+        <div id="skill-drawer" aria-label="Skill Drawer">
+            <div class="panel-header" style="display:flex; align-items:center; justify-content:space-between; gap:10px;">
+                <span>技能库</span>
+                <button class="btn btn-sm btn-dark" type="button" onclick="editor.toggleSkillDrawer(false)">Close</button>
+            </div>
+            <div id="skill-drawer-search">
+                <input id="skill-search-input" type="text" placeholder="搜索技能：name / id" autocomplete="off" />
+                <div class="small" style="margin-top:6px; color:#888;">快捷键：Ctrl+B 展开/收起，Ctrl+K 聚焦搜索</div>
+            </div>
+            <div id="skill-drawer-content">
                 <!-- Library items will be injected here -->
             </div>
         </div>
@@ -379,7 +456,7 @@
                     <div class="panel-h">Basic Info</div>
                     <div class="grid2">
                         <div class="small">id</div>
-                        <input class="input" type="text" id="prop-id">
+                        <input class="input" type="text" id="prop-id" readonly>
 
                         <div class="small">name</div>
                         <input class="input" type="text" id="prop-name">
@@ -510,6 +587,10 @@
                     <div class="panel-h">Effects (JSON)</div>
                     <div class="small" style="margin-bottom:6px;">`effects[]` 目前使用 JSON 编辑（MVP）。</div>
                     <textarea class="textarea" id="prop-effects" placeholder="[]"></textarea>
+                    <div style="margin-top:8px; display:flex; gap:8px; align-items:center;">
+                        <button class="btn btn-dark btn-sm" type="button" onclick="editor.saveEffectsJson()" id="btn-save-effects" disabled>Validate/Save Effects</button>
+                        <div class="small" id="effects-save-hint" style="color:#888;">编辑完成后点击保存（避免中间态 JSON 报错）</div>
+                    </div>
                     <div class="error" id="err-effects" style="display:none; margin-top:8px;"></div>
                 </div>
 
@@ -552,7 +633,10 @@ class SkillEditor {
         // State
         this.skills = []; // Array of skill objects (editor internal)
         this.buffDict = {}; // buffs.json map
-        this.selectedNodeId = null;
+        // Selection (single + multi)
+        this.selectedNodeId = null; // backward compat: primary selected
+        this.selectedNodeIds = new Set();
+        this.primarySelectedNodeId = null;
         this.isDragging = false;
         this.dragOffset = { x: 0, y: 0 };
         this.draggedNodeId = null;
@@ -601,9 +685,17 @@ class SkillEditor {
         this.elSummaryText = document.getElementById('prop-summary-text');
         this.elSummaryBadge = document.getElementById('prop-summary-badge');
 
+        // Skill Drawer
+        this.elSkillDrawer = document.getElementById('skill-drawer');
+        this.elSkillDrawerHandle = document.getElementById('skill-drawer-handle');
+        this.elSkillDrawerContent = document.getElementById('skill-drawer-content');
+        this.elSkillSearchInput = document.getElementById('skill-search-input');
+
         // Initialize
         this.initGrid();
         this.attachEvents();
+
+        this.initSkillDrawer();
         
         // Seed minimal nodes
         this.addSkillNode({
@@ -655,6 +747,96 @@ class SkillEditor {
         // Checkbox changes update button label
         this.elTargetPartsDropdown.addEventListener('change', () => {
             this.updateTargetPartsBtnText();
+        });
+    }
+
+    initSkillDrawer() {
+        if (this.elSkillDrawerHandle) {
+            this.elSkillDrawerHandle.addEventListener('click', () => this.toggleSkillDrawer());
+        }
+        if (this.elSkillSearchInput) {
+            this.elSkillSearchInput.addEventListener('input', () => this.renderSkillLibrary());
+            this.elSkillSearchInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') {
+                    this.elSkillSearchInput.value = '';
+                    this.renderSkillLibrary();
+                    this.toggleSkillDrawer(false);
+                }
+            });
+        }
+
+        window.addEventListener('keydown', (e) => {
+            const key = (e.key || '').toLowerCase();
+            if (e.ctrlKey && key === 'b') {
+                e.preventDefault();
+                this.toggleSkillDrawer();
+            }
+            if (e.ctrlKey && key === 'k') {
+                e.preventDefault();
+                this.toggleSkillDrawer(true);
+                this.elSkillSearchInput?.focus();
+            }
+        });
+
+        // Default collapsed as per design
+        this.toggleSkillDrawer(false);
+        this.renderSkillLibrary();
+    }
+
+    toggleSkillDrawer(forceOpen) {
+        if (!this.elSkillDrawer) return;
+        const wantOpen = typeof forceOpen === 'boolean' ? forceOpen : !this.elSkillDrawer.classList.contains('open');
+        if (wantOpen) this.elSkillDrawer.classList.add('open');
+        else this.elSkillDrawer.classList.remove('open');
+    }
+
+    renderSkillLibrary() {
+        if (!this.elSkillDrawerContent) return;
+        const q = (this.elSkillSearchInput?.value || '').trim().toLowerCase();
+        const list = this.skills
+            .slice()
+            .sort((a, b) => (a.name || '').localeCompare((b.name || ''), 'zh-CN'))
+            .filter(s => {
+                if (!q) return true;
+                return (s.name || '').toLowerCase().includes(q) || (s.id || '').toLowerCase().includes(q);
+            });
+
+        this.elSkillDrawerContent.innerHTML = '';
+        list.forEach(skill => {
+            const el = document.createElement('div');
+            el.className = 'skill-list-item';
+            el.dataset.id = skill.id;
+            el.draggable = true;
+            const unplaced = !skill.editorMeta || typeof skill.editorMeta.x !== 'number' || typeof skill.editorMeta.y !== 'number';
+
+            el.innerHTML = `
+                <div style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
+                    <div style="font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${skill.name || '(unnamed)'}</div>
+                    ${unplaced ? '<span class="pill unplaced">未布局</span>' : ''}
+                </div>
+                <div class="meta">${skill.id || ''}</div>
+            `;
+
+            el.addEventListener('click', () => {
+                this.selectedNodeId = skill.id;
+                if (!unplaced) {
+                    const wrapper = document.getElementById('canvas-wrapper');
+                    const rect = wrapper.getBoundingClientRect();
+                    const centerX = rect.width / 2;
+                    const centerY = rect.height / 2;
+                    this.pan.x = centerX - (skill.editorMeta.x + 36) * this.zoom;
+                    this.pan.y = centerY - (skill.editorMeta.y + 36) * this.zoom;
+                    this.updateTransform();
+                }
+                this.renderNodes();
+                this.loadProperties(skill);
+            });
+
+            el.addEventListener('dragstart', (ev) => {
+                ev.dataTransfer?.setData('text/skill-id', skill.id);
+            });
+
+            this.elSkillDrawerContent.appendChild(el);
         });
     }
 
@@ -710,7 +892,9 @@ class SkillEditor {
         this.skills.forEach(skill => {
             const el = document.createElement('div');
             el.className = `skill-node rarity-${skill.rarity ? skill.rarity.toLowerCase() : 'common'}`;
-            if (this.selectedNodeId === skill.id) el.classList.add('selected');
+            if ((this.selectedNodeIds && this.selectedNodeIds.has(skill.id)) || this.selectedNodeId === skill.id) {
+                el.classList.add('selected');
+            }
             
             // Initial Position (Snap to Grid Center)
             // Use editorMeta if available, otherwise default
@@ -833,7 +1017,7 @@ class SkillEditor {
         polyline.addEventListener('click', (e) => {
             e.stopPropagation();
             this.selectedConnection = { source: sourceNode.id, target: targetNode.id };
-            this.selectedNodeId = null; // Deselect node if line selected
+            this.clearSelection(); // Deselect nodes if line selected
             this.renderNodes(); // Re-render to show highlight
             this.renderConnections();
         });
@@ -859,6 +1043,7 @@ class SkillEditor {
 
         this.skills.push(skill);
         this.renderNodes();
+        this.renderSkillLibrary();
     }
 
     getSkillById(id) {
@@ -888,7 +1073,7 @@ class SkillEditor {
             if (e.target === wrapper || e.target.id === 'connection-layer' || e.target.id === 'node-layer') {
                 this.isPanning = true;
                 this.selectedConnection = null; // Click background to deselect line
-                this.selectedNodeId = null;
+                this.clearSelection();
                 this.renderNodes();
                 this.renderConnections();
 
@@ -912,8 +1097,18 @@ class SkillEditor {
                     const dx = (e.clientX - this.lastMousePos.x) / this.zoom;
                     const dy = (e.clientY - this.lastMousePos.y) / this.zoom;
                     
-                    node.editorMeta.x += dx;
-                    node.editorMeta.y += dy;
+                    // Group move: if dragging an already-selected node, move entire selection
+                    if (this.selectedNodeIds && this.selectedNodeIds.size > 0 && this.selectedNodeIds.has(this.draggedNodeId)) {
+                        this.skills.forEach(s => {
+                            if (this.selectedNodeIds.has(s.id) && s.editorMeta) {
+                                s.editorMeta.x += dx;
+                                s.editorMeta.y += dy;
+                            }
+                        });
+                    } else {
+                        node.editorMeta.x += dx;
+                        node.editorMeta.y += dy;
+                    }
                     
                     this.lastMousePos = { x: e.clientX, y: e.clientY };
                     this.renderNodes(); // Re-render (inefficient but works for prototype)
@@ -937,10 +1132,19 @@ class SkillEditor {
 
             if (this.isDragging) {
                 // Snap on Drop
-                const node = this.getSkillById(this.draggedNodeId);
-                if (node) {
-                    this.snapToGrid(node.editorMeta);
+                if (this.selectedNodeIds && this.selectedNodeIds.size > 0 && this.draggedNodeId && this.selectedNodeIds.has(this.draggedNodeId)) {
+                    this.skills.forEach(s => {
+                        if (this.selectedNodeIds.has(s.id) && s.editorMeta) {
+                            this.snapToGrid(s.editorMeta);
+                        }
+                    });
                     this.renderNodes();
+                } else {
+                    const node = this.getSkillById(this.draggedNodeId);
+                    if (node) {
+                        this.snapToGrid(node.editorMeta);
+                        this.renderNodes();
+                    }
                 }
                 this.isDragging = false;
                 this.draggedNodeId = null;
@@ -965,14 +1169,33 @@ class SkillEditor {
             this.updateTransform();
         });
 
-        // Property Inputs
-        ['id', 'name', 'cost', 'desc'].forEach(field => {
-            const el = document.getElementById('prop-' + field);
-            /* // Auto-save logic if needed
-            el.addEventListener('change', () => this.saveCurrentNode());
-            */
+        // Property Inputs: autosave on blur / Enter (except JSON textarea)
+        const autoSaveInputs = [
+            this.elPropName,
+            this.elPropCost,
+            this.elPropSpeed,
+            this.elPropType,
+            this.elPropValue,
+            this.elPropValueType,
+            this.elPropDesc,
+        ].filter(Boolean);
+
+        autoSaveInputs.forEach((el) => {
+            el.addEventListener('blur', () => this.saveCurrentNode());
+            // Enter to save (textarea should not use Enter)
+            if (el.tagName && el.tagName.toLowerCase() === 'textarea') return;
+            el.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    this.saveCurrentNode();
+                }
+            });
         });
-        document.getElementById('prop-rarity').addEventListener('change', () => this.saveCurrentNode());
+
+        // selects: save on change
+        this.elPropRarity?.addEventListener('change', () => this.saveCurrentNode());
+        this.elPropTargetType?.addEventListener('change', () => this.saveCurrentNode());
+        this.elPropRequiredPart?.addEventListener('change', () => this.saveCurrentNode());
 
         // Global Key Events for Deletion
         window.addEventListener('keydown', (e) => {
@@ -984,23 +1207,92 @@ class SkillEditor {
             if (e.key === 'Delete' || e.key === 'Backspace') {
                 if (this.selectedConnection) {
                     this.deleteSelectedConnection();
-                } else if (this.selectedNodeId) {
-                    this.deleteCurrentNode();
+                } else if (this.selectedNodeIds && this.selectedNodeIds.size > 0) {
+                    this.deleteSelectedNodes();
                 }
             }
         });
+    }
+
+    deleteSelectedNodes() {
+        if (!this.selectedNodeIds || this.selectedNodeIds.size === 0) return;
+        const ids = Array.from(this.selectedNodeIds);
+        if (!confirm(`确认删除 ${ids.length} 个技能？`)) return;
+
+        ids.forEach(id => {
+            const idx = this.skills.findIndex(s => s.id === id);
+            if (idx >= 0) this.skills.splice(idx, 1);
+        });
+
+        // Remove prerequisites pointing to deleted nodes
+        this.skills.forEach(s => {
+            if (Array.isArray(s.prerequisites)) {
+                s.prerequisites = s.prerequisites.filter(p => !this.selectedNodeIds.has(p));
+            }
+        });
+
+        this.clearSelection();
+        this.renderNodes();
+        this.renderSkillLibrary();
+        this.loadProperties(null);
     }
 
     updateTransform() {
         this.elTransformLayer.style.transform = `translate(${this.pan.x}px, ${this.pan.y}px) scale(${this.zoom})`;
     }
 
+    // --- Selection Helpers (Multi-select) ---
+    clearSelection() {
+        this.selectedNodeIds?.clear();
+        this.primarySelectedNodeId = null;
+        this.selectedNodeId = null;
+    }
+
+    setPrimarySelection(id, { keepOthers = false } = {}) {
+        if (!id) return;
+        if (!keepOthers) this.selectedNodeIds.clear();
+        this.selectedNodeIds.add(id);
+        this.primarySelectedNodeId = id;
+        this.selectedNodeId = id;
+    }
+
+    toggleSelection(id) {
+        if (!id) return;
+        if (this.selectedNodeIds.has(id)) {
+            this.selectedNodeIds.delete(id);
+            if (this.primarySelectedNodeId === id) {
+                const next = this.selectedNodeIds.values().next();
+                const newPrimary = next && !next.done ? next.value : null;
+                this.primarySelectedNodeId = newPrimary;
+                this.selectedNodeId = newPrimary;
+            }
+        } else {
+            this.selectedNodeIds.add(id);
+            this.primarySelectedNodeId = id;
+            this.selectedNodeId = id;
+        }
+
+        if (!this.primarySelectedNodeId) {
+            this.selectedNodeId = null;
+        }
+    }
+
     onNodeMouseDown(e, skill) {
         e.stopPropagation(); // Stop panning
-        // Select logic
-        this.selectedNodeId = skill.id;
+        // Select logic (Ctrl+click toggles selection)
+        if (e.ctrlKey) {
+            this.toggleSelection(skill.id);
+        } else {
+            this.setPrimarySelection(skill.id);
+        }
         this.selectedConnection = null; // Deselect connection
-        this.loadProperties(skill);
+
+        // Properties panel: only editable on single selection
+        if (this.primarySelectedNodeId && this.selectedNodeIds.size === 1) {
+            this.loadProperties(skill);
+        } else {
+            this.loadProperties(null);
+        }
         this.renderNodes(); // Update selection visual
         this.renderConnections(); // Update connection visual
 
@@ -1010,6 +1302,11 @@ class SkillEditor {
             this.startConnectionDrag(skill.id, e);
         } else {
             // Start node Move
+            // If dragging a node that is not selected, switch to single select first
+            if (!this.selectedNodeIds.has(skill.id)) {
+                this.setPrimarySelection(skill.id);
+                this.renderNodes();
+            }
             this.isDragging = true;
             this.draggedNodeId = skill.id;
             this.lastMousePos = { x: e.clientX, y: e.clientY };
@@ -1105,6 +1402,46 @@ class SkillEditor {
     // --- D. Properties Panel Logic ---
 
     loadProperties(skill) {
+        // Multi-select or no selection: show summary and disable editing
+        if (!skill) {
+            const count = this.selectedNodeIds ? this.selectedNodeIds.size : 0;
+
+            document.getElementById('btn-save').disabled = true;
+            document.getElementById('btn-dup').disabled = count !== 1;
+            document.getElementById('btn-del').disabled = count === 0;
+            document.getElementById('btn-add-apply').disabled = true;
+            document.getElementById('btn-add-applySelf').disabled = true;
+            document.getElementById('btn-add-remove').disabled = true;
+            const btnSaveEffects = document.getElementById('btn-save-effects');
+            if (btnSaveEffects) btnSaveEffects.disabled = true;
+
+            this.elPropId.value = '';
+            this.elPropName.value = '';
+            this.elPropCost.value = '';
+            this.elPropSpeed.value = '';
+            this.elPropDesc.value = '';
+            this.elPropEffects.value = '';
+            this.elPrereqText.textContent = '—';
+            this.elMetaX.value = '';
+            this.elMetaY.value = '';
+
+            if (count > 1) {
+                this.elValidateSummary.textContent = `Multi-select: ${count} nodes`;
+                this.elSummaryText.textContent = '多选模式：属性面板只读。可拖拽成组移动，或按 Delete 批量删除。';
+                this.elSummaryBadge.textContent = `${count}`;
+            } else {
+                this.elValidateSummary.textContent = 'No selection';
+                this.elSummaryText.textContent = 'Select a node to edit...';
+                this.elSummaryBadge.textContent = '—';
+            }
+
+            this.setError(this.elErrId, null);
+            this.setError(this.elErrTarget, null);
+            this.setError(this.elErrBuffs, null);
+            this.setError(this.elErrEffects, null);
+            return;
+        }
+
         // Enable buttons
         document.getElementById('btn-save').disabled = false;
         document.getElementById('btn-del').disabled = false;
@@ -1112,6 +1449,8 @@ class SkillEditor {
         document.getElementById('btn-add-apply').disabled = false;
         document.getElementById('btn-add-applySelf').disabled = false;
         document.getElementById('btn-add-remove').disabled = false;
+        const btnSaveEffects = document.getElementById('btn-save-effects');
+        if (btnSaveEffects) btnSaveEffects.disabled = false;
 
         this.elPropId.value = skill.id || '';
         this.elPropName.value = skill.name || '';
@@ -1134,6 +1473,37 @@ class SkillEditor {
         this.updateSummary();
     }
 
+    saveEffectsJson() {
+        if (!this.selectedNodeId) return;
+        const skill = this.getSkillById(this.selectedNodeId);
+        if (!skill) return;
+
+        this.setError(this.elErrEffects, null);
+
+        let effects = [];
+        try {
+            effects = JSON.parse(this.elPropEffects.value || '[]');
+            if (!Array.isArray(effects)) throw new Error('effects 必须是数组');
+            // minimal schema: each effect should be an object with type:string
+            for (let i = 0; i < effects.length; i++) {
+                const eff = effects[i];
+                if (typeof eff !== 'object' || eff === null || Array.isArray(eff)) {
+                    throw new Error(`effects[${i}] 必须是对象`);
+                }
+                if (typeof eff.type !== 'string' || !eff.type.trim()) {
+                    throw new Error(`effects[${i}].type 必须是非空字符串`);
+                }
+            }
+        } catch (e) {
+            this.setError(this.elErrEffects, 'effects JSON 无法解析/校验失败：' + e.message);
+            this.updateSummary();
+            return;
+        }
+
+        skill.effects = effects;
+        this.updateSummary();
+    }
+
     saveCurrentNode() {
         if (!this.selectedNodeId) return;
         const skill = this.getSkillById(this.selectedNodeId);
@@ -1145,17 +1515,8 @@ class SkillEditor {
         this.setError(this.elErrBuffs, null);
         this.setError(this.elErrEffects, null);
 
-        const newId = (this.elPropId.value || '').trim();
-        if (!newId) {
-            this.setError(this.elErrId, 'id 不能为空');
-            this.updateSummary();
-            return;
-        }
-        if (newId !== skill.id && this.getSkillById(newId)) {
-            this.setError(this.elErrId, `id 冲突：${newId} 已存在`);
-            this.updateSummary();
-            return;
-        }
+        // id is read-only (do not allow editing)
+        const newId = skill.id;
 
         // Target validation
         const targetType = this.elPropTargetType.value;
@@ -1167,16 +1528,7 @@ class SkillEditor {
             return;
         }
 
-        // Parse effects
-        let effects = [];
-        try {
-            effects = JSON.parse(this.elPropEffects.value || '[]');
-            if (!Array.isArray(effects)) throw new Error('effects 必须是数组');
-        } catch (e) {
-            this.setError(this.elErrEffects, 'effects JSON 无法解析：' + e.message);
-            this.updateSummary();
-            return;
-        }
+        // NOTE: effects uses dedicated Validate/Save button; do not parse/write here.
 
         // Apply changes
         skill.id = newId;
@@ -1204,24 +1556,15 @@ class SkillEditor {
         if (valueType) skill.valueType = valueType; else delete skill.valueType;
 
         skill.description = this.elPropDesc.value || '';
-        skill.effects = effects;
 
         // Keep editorMeta in sync on UI
         this.elMetaX.value = skill.editorMeta?.x ?? '';
         this.elMetaY.value = skill.editorMeta?.y ?? '';
 
-        // If renamed id: update references
-        if (newId !== this.selectedNodeId) {
-            const oldId = this.selectedNodeId;
-            this.skills.forEach(s => {
-                if (Array.isArray(s.prerequisites)) {
-                    s.prerequisites = s.prerequisites.map(p => (p === oldId ? newId : p));
-                }
-            });
-            this.selectedNodeId = newId;
-        }
+        // id is read-only; no rename flow.
 
         this.renderNodes();
+        this.renderSkillLibrary();
         this.updateSummary();
     }
 
@@ -1343,6 +1686,7 @@ class SkillEditor {
                     this.skills = newSkills;
                     this.selectedNodeId = null;
                     this.renderNodes();
+                    this.renderSkillLibrary();
                 }
             } catch (err) {
                 console.error(err);
