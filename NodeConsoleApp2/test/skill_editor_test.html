@@ -627,6 +627,10 @@ class SkillEditor {
     constructor() {
         // Constants
         this.GRID_SIZE = 100;
+        this.NODE_SIZE = 72;
+        this.NODE_HALF = this.NODE_SIZE / 2;
+        this.CONNECTION_MARGIN = 12;
+        this.ANCHOR_HYSTERESIS_PX = 14;
         this.CANVAS_WIDTH = 5000;
         this.CANVAS_HEIGHT = 5000;
 
@@ -960,45 +964,34 @@ class SkillEditor {
     }
 
     drawConnection(sourceNode, targetNode) {
-        // Simple Manhattan Routing logic
-        // Node Center Coordinates
-        const startX = sourceNode.editorMeta.x + 36; // 36 = half node width (72/2)
-        const startY = sourceNode.editorMeta.y + 36;
-        const endX = targetNode.editorMeta.x + 36;
-        const endY = targetNode.editorMeta.y + 36;
+        // Routing Strategy (per design/skill_editor_design.md)
+        // - Orthogonal polyline
+        // - Visual priority: Vertical -> Horizontal -> Vertical (V-H-V)
+        // - Adaptive anchors by relative Y (top/bottom)
+        const sX = (sourceNode.editorMeta?.x ?? 0) + this.NODE_HALF;
+        const sY = (sourceNode.editorMeta?.y ?? 0) + this.NODE_HALF;
+        const tX = (targetNode.editorMeta?.x ?? 0) + this.NODE_HALF;
+        const tY = (targetNode.editorMeta?.y ?? 0) + this.NODE_HALF;
 
-        // Determine anchors (Simplest: Right to Left)
-        // Ideally should check relative position
-        let x1, y1, x2, y2;
-        
-        if (endX > startX + this.GRID_SIZE) {
-            // Target is to the right
-            x1 = startX + 36; y1 = startY; // Source Right
-            x2 = endX - 36; y2 = endY;     // Target Left
-        } else if (endX < startX - this.GRID_SIZE) {
-            // Target is to the left
-            x1 = startX - 36; y1 = startY; // Source Left
-            x2 = endX + 36; y2 = endY;     // Target Right
-        } else {
-            // Same column or close vertical
-            x1 = startX; y1 = startY + 36; // Source Bottom
-            x2 = endX; y2 = endY - 36;     // Target Top
-        }
+        const [start, end] = this.getAdaptiveAnchors(sourceNode, targetNode);
 
-        // Draw Polyline
-        // Start -> MidX -> MidX,TargetY -> Target
-        const midX = (x1 + x2) / 2;
-        
-        let pathStr = '';
-        // Only drawing simple horizontal/vertical elbow for now
-        // Advanced Manhattan routing needs grid collision detection
-        
-        if (Math.abs(x2 - x1) > Math.abs(y2 - y1)) {
-            // Horizontal dominance
-             pathStr = `${x1},${y1} ${midX},${y1} ${midX},${y2} ${x2},${y2}`;
-        } else {
-             pathStr = `${x1},${y1} ${x1},${(y1+y2)/2} ${x2},${(y1+y2)/2} ${x2},${y2}`;
-        }
+        const margin = this.CONNECTION_MARGIN;
+        const leaveY = start.dir === 'bottom' ? start.y + margin : start.y - margin;
+        const enterY = end.dir === 'top' ? end.y - margin : end.y + margin;
+
+        // Choose a mid channel between leaveY and enterY, then snap to grid line
+        let midY = (leaveY + enterY) / 2;
+        midY = this.snapToGridLine(midY);
+
+        const points = [
+            [start.x, start.y],
+            [start.x, leaveY],
+            [end.x, midY],
+            [end.x, enterY],
+            [end.x, end.y],
+        ];
+
+        const pathStr = points.map(p => `${p[0]},${p[1]}`).join(' ');
 
         const polyline = document.createElementNS('http://www.w3.org/2000/svg', 'polyline');
         polyline.setAttribute('points', pathStr);
@@ -1023,6 +1016,47 @@ class SkillEditor {
         });
 
         this.elSvgLayer.appendChild(polyline);
+    }
+
+    // --- Routing Helpers ---
+
+    snapToGridLine(v) {
+        // Align to nearest grid line for cleaner look.
+        return Math.round(v / this.GRID_SIZE) * this.GRID_SIZE;
+    }
+
+    getAdaptiveAnchors(sourceNode, targetNode) {
+        const s = sourceNode.editorMeta || { x: 0, y: 0 };
+        const t = targetNode.editorMeta || { x: 0, y: 0 };
+        const sCenterY = s.y + this.NODE_HALF;
+        const tCenterY = t.y + this.NODE_HALF;
+
+        // hysteresis: try to keep previous direction if nodes are near the boundary
+        const key = `${sourceNode.id}->${targetNode.id}`;
+        const prev = this._edgeAnchorCache?.get(key);
+        const dy = sCenterY - tCenterY;
+
+        let verticalDir;
+        if (prev && Math.abs(dy) < this.ANCHOR_HYSTERESIS_PX) {
+            verticalDir = prev;
+        } else {
+            verticalDir = (sCenterY <= tCenterY) ? 'down' : 'up';
+        }
+
+        if (!this._edgeAnchorCache) this._edgeAnchorCache = new Map();
+        this._edgeAnchorCache.set(key, verticalDir);
+
+        if (verticalDir === 'down') {
+            return [
+                { x: s.x + this.NODE_HALF, y: s.y + this.NODE_SIZE, dir: 'bottom' },
+                { x: t.x + this.NODE_HALF, y: t.y, dir: 'top' },
+            ];
+        }
+
+        return [
+            { x: s.x + this.NODE_HALF, y: s.y, dir: 'top' },
+            { x: t.x + this.NODE_HALF, y: t.y + this.NODE_SIZE, dir: 'bottom' },
+        ];
     }
 
     // --- B. Data Management ---
