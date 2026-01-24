@@ -197,6 +197,7 @@
 - `SELECT_FIXED_PART`：指定部位（通常对应 `targetType=SINGLE_PART` 且存在 `requiredPart`）
 - `SELECT_RANDOM_PART`：随机部位（通常对应 `targetType=RANDOM_PART`）
 - `SELECT_ALL_PARTS`：全部部位（通常对应 `targetType=ALL_PARTS` 或 `SELF_PARTS`）
+- `SELECT_LISTED_PARTS`：（建议扩展）指定多个部位（用于 `SCOPE_MULTI_PARTS` 但不覆盖全身的情况，例如“只作用四肢/只作用双腿/只加固上半身”等）
 
 #### 3.7.4 标签完整性建议（推荐约束）
 

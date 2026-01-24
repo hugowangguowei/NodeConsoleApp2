@@ -193,6 +193,22 @@
       gap: 6px 10px;
     }
 
+    .checklist {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px 10px;
+      align-items: center;
+    }
+    .check-item {
+      display:flex;
+      gap:8px;
+      align-items:center;
+      font-size: 13px;
+      color: #111827;
+      user-select: none;
+    }
+    .check-item input { transform: translateY(1px); }
+
     @media (max-width: 1200px) {
       #layout { grid-template-columns: 320px 1fr 380px; }
     }
@@ -271,6 +287,17 @@
             <tbody></tbody>
           </table>
         </div>
+
+        <div class="card" style="margin-top: 12px;">
+          <div class="card-h">
+            <div>需求/资源分布（简版）</div>
+            <div class="muted">requirements / slotCost / castParts</div>
+          </div>
+          <table class="table" id="req-stat-table">
+            <thead><tr><th>metric</th><th>count</th><th class="muted">notes</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
       </div>
     </main>
 
@@ -304,6 +331,9 @@
             <div class="muted">cost</div>
             <input class="input" id="f-cost" type="number" step="1" />
 
+            <div class="muted">costs.ap</div>
+            <input class="input" id="f-costs-ap" type="number" step="1" placeholder="(可选，以 cost 为准或保持一致)" />
+
             <div class="muted">speed</div>
             <input class="input" id="f-speed" type="number" step="1" />
 
@@ -329,13 +359,48 @@
             <div class="muted">targetType</div>
             <input class="input" id="f-targetType" />
 
-            <div class="muted">requiredPart</div>
-            <input class="input" id="f-requiredPart" />
+            <div class="muted">requiredPart（必选）</div>
+            <select class="select" id="f-requiredPart">
+              <option value="">(none)</option>
+              <option value="head">head</option>
+              <option value="chest">chest</option>
+              <option value="left_arm">left_arm</option>
+              <option value="right_arm">right_arm</option>
+              <option value="left_leg">left_leg</option>
+              <option value="right_leg">right_leg</option>
+              <option value="arm">arm</option>
+              <option value="leg">leg</option>
+            </select>
+
+            <div class="muted">targetParts（可选）</div>
+            <div class="tag-box">
+              <div class="muted" style="margin-bottom:6px;">多选；若设置了 requiredPart，工具会强制将其包含在 targetParts 中。</div>
+              <div class="checklist" id="targetParts-box"></div>
+            </div>
           </div>
           <div style="margin-top: 10px;">
             <div class="muted" style="margin-bottom: 6px;">description</div>
             <textarea class="textarea" id="f-desc"></textarea>
           </div>
+        </div>
+
+        <div class="card" style="margin-bottom: 12px;">
+          <div class="card-h"><div>需求 / 资源（新方案）</div><div class="muted">requirements + castParts + slotCost</div></div>
+          <div class="grid2">
+            <div class="muted">castParts（来源部位）</div>
+            <div class="tag-box">
+              <div class="muted" style="margin-bottom:6px;">多选；为空表示不依赖部位（如祷言/魔法）。</div>
+              <div class="checklist" id="castParts-box"></div>
+            </div>
+
+            <div class="muted">slotCost（槽位）</div>
+            <input class="input" id="f-slotCost" type="number" step="1" placeholder="默认 1" />
+          </div>
+          <div style="margin-top: 10px;">
+            <div class="muted" style="margin-bottom: 6px;">requirements（JSON）</div>
+            <textarea class="textarea" id="f-requirements" placeholder="{}"></textarea>
+          </div>
+          <div class="error" id="err-req" style="display:none; margin-top: 6px;"></div>
         </div>
 
         <div class="card" style="margin-bottom: 12px;">
@@ -385,8 +450,12 @@
       // Archetype
       'ARCH_HEAVY','ARCH_WALL','ARCH_SWORD','ARCH_RANGER','ARCH_SNIPER','ARCH_ELEMENT','ARCH_HOLY',
       // Conditional
-      'UNCONDITIONAL','CONDITIONAL'
+      'UNCONDITIONAL','CONDITIONAL',
+      // Resource
+      'RES_AP','RES_SLOT','REQ_SELF_PART','LIMIT_PER_TURN'
     ];
+
+    const KNOWN_PARTS = ['head','chest','left_arm','right_arm','left_leg','right_leg'];
 
     const state = {
       loaded: false,
@@ -459,7 +528,13 @@
       if (skill.targetType === 'ALL_PARTS' || skill.targetType === 'SELF_PARTS') tags.add('SELECT_ALL_PARTS');
 
       // Conditional
-      tags.add('UNCONDITIONAL');
+      if (skill.requirements && Object.keys(skill.requirements).length) tags.add('CONDITIONAL');
+      else tags.add('UNCONDITIONAL');
+
+      // Resource (new design)
+      if (typeof skill.cost === 'number' || typeof skill.costs?.ap === 'number') tags.add('RES_AP');
+      if (typeof skill.slotCost === 'number' && skill.slotCost > 0) tags.add('RES_SLOT');
+      if (Array.isArray(skill.castParts) && skill.castParts.length) tags.add('REQ_SELF_PART');
 
       return Array.from(tags);
     }
@@ -467,6 +542,33 @@
     function getEffectiveTags(skill) {
       if (Array.isArray(skill.tags) && skill.tags.length) return skill.tags;
       return inferTags(skill);
+    }
+
+    function computeReqStats(skillsById) {
+      const skills = Object.values(skillsById);
+      const hasReq = skills.filter(s => s && s.requirements && Object.keys(s.requirements).length).length;
+      const hasCastParts = skills.filter(s => Array.isArray(s.castParts) && s.castParts.length).length;
+      const hasSlotCost = skills.filter(s => typeof s.slotCost === 'number').length;
+      const slotCostGt1 = skills.filter(s => typeof s.slotCost === 'number' && s.slotCost > 1).length;
+      const hasCostsAp = skills.filter(s => typeof s.costs?.ap === 'number').length;
+      return [
+        { metric: 'has requirements', count: hasReq, notes: 'skills.requirements 非空' },
+        { metric: 'has castParts', count: hasCastParts, notes: '来源部位约束（设计层）' },
+        { metric: 'has slotCost', count: hasSlotCost, notes: '槽位字段存在（含 0/1/2...）' },
+        { metric: 'slotCost > 1', count: slotCostGt1, notes: '重型技能占多槽' },
+        { metric: 'has costs.ap', count: hasCostsAp, notes: '结构化 AP 字段（与 cost 并存）' },
+      ];
+    }
+
+    function renderReqStatTable() {
+      const rows = computeReqStats(state.skillsById);
+      const tbody = $('req-stat-table').querySelector('tbody');
+      tbody.innerHTML = '';
+      for (const r of rows) {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>${escapeHtml(r.metric)}</td><td>${r.count}</td><td class="muted">${escapeHtml(r.notes || '')}</td>`;
+        tbody.appendChild(tr);
+      }
     }
 
     function computeTagDistribution(skillsById) {
@@ -477,6 +579,17 @@
         for (const t of getEffectiveTags(s)) {
           counts.set(t, (counts.get(t) || 0) + 1);
         }
+
+    function renderReqStatTable() {
+      const rows = computeReqStats(state.skillsById);
+      const tbody = $('req-stat-table').querySelector('tbody');
+      tbody.innerHTML = '';
+      for (const r of rows) {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>${escapeHtml(r.metric)}</td><td>${r.count}</td><td class="muted">${escapeHtml(r.notes || '')}</td>`;
+        tbody.appendChild(tr);
+      }
+    }
       }
       return { counts, totalSkills: ids.length };
     }
@@ -644,6 +757,7 @@
       $('analysis-summary').textContent = state.loaded ? `skills: ${Object.keys(state.skillsById).length}` : '—';
       renderTagDist();
       renderBasicStatTable();
+      renderReqStatTable();
       renderSkillList();
       renderEditor();
       updateButtons();
@@ -683,6 +797,12 @@
         $('f-valueType').value = '';
         $('f-targetType').value = '';
         $('f-requiredPart').value = '';
+        renderPartsChecklist('targetParts-box', [], ()=>{});
+        renderPartsChecklist('castParts-box', [], ()=>{});
+        $('f-slotCost').value = '';
+        $('f-costs-ap').value = '';
+        $('f-requirements').value = '';
+        $('err-req').style.display = 'none';
         $('f-desc').value = '';
         $('f-tags').value = '';
         $('f-effects').value = '';
@@ -704,6 +824,33 @@
       $('f-valueType').value = s.valueType || '';
       $('f-targetType').value = s.targetType || '';
       $('f-requiredPart').value = s.requiredPart || '';
+      $('f-costs-ap').value = typeof s.costs?.ap === 'number' ? s.costs.ap : '';
+
+      const tp = Array.isArray(s.targetParts) ? s.targetParts : [];
+      renderPartsChecklist('targetParts-box', tp, (newParts)=> {
+        const ss = getSelectedSkill();
+        if (!ss) return;
+        ss.targetParts = newParts;
+        ensureRequiredPartConsistency(ss);
+        renderSkillList();
+        renderTagDist();
+        renderBasicStatTable();
+        renderReqStatTable();
+      }, { lockRequired: s.requiredPart || '' });
+
+      const cp = Array.isArray(s.castParts) ? s.castParts : [];
+      renderPartsChecklist('castParts-box', cp, (newParts)=> {
+        const ss = getSelectedSkill();
+        if (!ss) return;
+        ss.castParts = newParts;
+        renderSkillList();
+        renderTagDist();
+        renderBasicStatTable();
+        renderReqStatTable();
+      });
+
+      $('f-slotCost').value = typeof s.slotCost === 'number' ? s.slotCost : '';
+      $('f-requirements').value = JSON.stringify(s.requirements || {}, null, 2);
       $('f-desc').value = s.description || '';
 
       const tags = Array.isArray(s.tags) ? s.tags : [];
@@ -716,6 +863,46 @@
 
       $('err-tags').style.display = 'none';
       $('err-json').style.display = 'none';
+      $('err-req').style.display = 'none';
+    }
+
+    function ensureRequiredPartConsistency(skill) {
+      if (!skill) return;
+      const rp = skill.requiredPart;
+      if (!rp) return;
+      if (!Array.isArray(skill.targetParts)) skill.targetParts = [];
+      if (!skill.targetParts.includes(rp)) skill.targetParts = [rp, ...skill.targetParts];
+      // normalize
+      skill.targetParts = Array.from(new Set(skill.targetParts.filter(p => !!p)));
+    }
+
+    function renderPartsChecklist(containerId, selectedParts, onChange, opts = {}) {
+      const container = $(containerId);
+      container.innerHTML = '';
+      const selected = new Set((selectedParts || []).map(String));
+      const lockRequired = opts.lockRequired;
+
+      for (const part of KNOWN_PARTS) {
+        const label = document.createElement('label');
+        label.className = 'check-item';
+
+        const cb = document.createElement('input');
+        cb.type = 'checkbox';
+        cb.checked = selected.has(part);
+        if (lockRequired && part === lockRequired) cb.disabled = true;
+
+        cb.addEventListener('change', ()=> {
+          if (cb.checked) selected.add(part);
+          else selected.delete(part);
+          onChange(Array.from(selected));
+        });
+
+        const span = document.createElement('span');
+        span.textContent = part;
+        label.appendChild(cb);
+        label.appendChild(span);
+        container.appendChild(label);
+      }
     }
 
     function bindEditorField(id, getter, setter) {
@@ -727,6 +914,7 @@
         renderSkillList();
         renderTagDist();
         renderBasicStatTable();
+        renderReqStatTable();
       });
     }
 
@@ -879,13 +1067,61 @@
       bindEditorField('f-name', el => el.value, (s,v)=> s.name = v);
       bindEditorField('f-rarity', el => el.value || undefined, (s,v)=> { if (v) s.rarity = v; else delete s.rarity; });
       bindEditorField('f-cost', el => parseNumberOrEmpty(el.value), (s,v)=> { if (v == null) delete s.cost; else s.cost = v; });
+      bindEditorField('f-costs-ap', el => parseNumberOrEmpty(el.value), (s,v)=> {
+        if (v == null) {
+          if (s.costs) { delete s.costs.ap; if (!Object.keys(s.costs).length) delete s.costs; }
+        } else {
+          s.costs = s.costs && typeof s.costs === 'object' ? s.costs : {};
+          s.costs.ap = v;
+        }
+      });
       bindEditorField('f-speed', el => parseNumberOrEmpty(el.value), (s,v)=> { if (v == null) delete s.speed; else s.speed = v; });
       bindEditorField('f-type', el => el.value || undefined, (s,v)=> { if (v) s.type = v; else delete s.type; });
       bindEditorField('f-value', el => parseNumberOrEmpty(el.value), (s,v)=> { if (v == null) delete s.value; else s.value = v; });
       bindEditorField('f-valueType', el => el.value || undefined, (s,v)=> { if (v) s.valueType = v; else delete s.valueType; });
       bindEditorField('f-targetType', el => el.value || undefined, (s,v)=> { if (v) s.targetType = v; else delete s.targetType; });
-      bindEditorField('f-requiredPart', el => el.value || undefined, (s,v)=> { if (v) s.requiredPart = v; else delete s.requiredPart; });
+      bindEditorField('f-requiredPart', el => el.value || undefined, (s,v)=> {
+        if (v) s.requiredPart = v; else delete s.requiredPart;
+        ensureRequiredPartConsistency(s);
+        // refresh checkboxes lock state
+        const tp = Array.isArray(s.targetParts) ? s.targetParts : [];
+        renderPartsChecklist('targetParts-box', tp, (newParts)=> {
+          const ss = getSelectedSkill();
+          if (!ss) return;
+          ss.targetParts = newParts;
+          ensureRequiredPartConsistency(ss);
+          renderSkillList();
+          renderTagDist();
+          renderBasicStatTable();
+          renderReqStatTable();
+        }, { lockRequired: s.requiredPart || '' });
+      });
       bindEditorField('f-desc', el => el.value, (s,v)=> s.description = v);
+
+      bindEditorField('f-slotCost', el => parseNumberOrEmpty(el.value), (s,v)=> { if (v == null) delete s.slotCost; else s.slotCost = v; });
+
+      // requirements: validate on blur
+      $('f-requirements').addEventListener('blur', ()=> {
+        const s = getSelectedSkill();
+        if (!s) return;
+        const raw = $('f-requirements').value.trim();
+        if (!raw) {
+          delete s.requirements;
+          $('err-req').style.display = 'none';
+          renderAll();
+          return;
+        }
+        try {
+          const obj = JSON.parse(raw);
+          if (!obj || typeof obj !== 'object' || Array.isArray(obj)) throw new Error('requirements 必须是对象');
+          s.requirements = obj;
+          $('err-req').style.display = 'none';
+          renderAll();
+        } catch (e) {
+          $('err-req').textContent = `requirements JSON 不合法：${e.message}`;
+          $('err-req').style.display = 'block';
+        }
+      });
 
       // tags: validate on blur
       $('f-tags').addEventListener('blur', saveTags);

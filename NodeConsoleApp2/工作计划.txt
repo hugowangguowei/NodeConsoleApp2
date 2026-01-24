@@ -349,3 +349,7 @@ buff示例可以参照skill和item的设计文档。但是buff设计方案作为skill和item设计文档的
 结合skill_balance_design.md文件中的设计方案和skill_design.md文件中的技能设计，帮我修订skills_近战.json文件的技能设计，使其符合新的设计方案。
 
 结合skill_balance_design.md文件中的设计方案和skill_design.md文件中的技能设计，修改skill_balance_tool.html文件，重点是目标对象、需求数据等内容。
+
+我不能理解skill_balance_tool.html中，requiredPart 和 targetparts的区别，请你分析一下这两个字段的设计初衷，先不要修改代码。
+
+那么我认为 当前的目标选择（target)逻辑非常不合理，targetType按照skill_balance_design.md中的设计，按释放对象维度应该包含3个层面，请仔细阅读skill_balance_design.md文件第3.7节，重新设计skill_balance_tool.html中的目标选择逻辑，先不要修改代码。

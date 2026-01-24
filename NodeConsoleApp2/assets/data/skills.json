@@ -6,7 +6,11 @@
     "type": "DAMAGE",
     "value": 20,
     "speed": 0,
-    "targetType": "SINGLE_PART",
+    "target": {
+      "subject": "SUBJECT_ENEMY",
+      "scope": "SCOPE_PART",
+      "selection": { "mode": "SELECT_FIXED_PART" }
+    },
     "description": "基础的挥砍攻击。"
   },
   "skill_heal": {
@@ -16,7 +20,7 @@
     "type": "HEAL",
     "value": 30,
     "speed": -2,
-    "targetType": "SELF",
+    "target": { "subject": "SUBJECT_SELF", "scope": "SCOPE_ENTITY" },
     "description": "恢复少量生命值。"
   },
   "skill_bite": {
@@ -26,7 +30,11 @@
     "type": "DAMAGE",
     "value": 15,
     "speed": 2,
-    "targetType": "SINGLE_PART",
+    "target": {
+      "subject": "SUBJECT_ENEMY",
+      "scope": "SCOPE_PART",
+      "selection": { "mode": "SELECT_FIXED_PART" }
+    },
     "description": "野兽的撕咬。"
   },
 
@@ -39,7 +47,11 @@
     "value": 1.2,
     "valueType": "PERCENT",
     "speed": 0,
-    "targetType": "SINGLE_PART",
+    "target": {
+      "subject": "SUBJECT_ENEMY",
+      "scope": "SCOPE_PART",
+      "selection": { "mode": "SELECT_FIXED_PART" }
+    },
     "description": "对选中部位造成 120% 物理伤害。若目标该部位护甲 > 0，伤害修正为 130%。",
     "prerequisites": []
   },
@@ -51,7 +63,11 @@
     "type": "DAMAGE",
     "value": 10,
     "speed": 0,
-    "targetType": "SINGLE_PART",
+    "target": {
+      "subject": "SUBJECT_ENEMY",
+      "scope": "SCOPE_PART",
+      "selection": { "mode": "SELECT_FIXED_PART", "part": "chest" }
+    },
     "description": "攻击躯干：造成少量伤害，并有 40% 概率对目标施加 buff_stun（持续 1 回合）。",
     "buffRefs": {
       "apply": [
@@ -68,8 +84,11 @@
     "type": "DAMAGE",
     "value": 15,
     "speed": 0,
-    "targetType": "SINGLE_PART",
-    "requiredPart": "head",
+    "target": {
+      "subject": "SUBJECT_ENEMY",
+      "scope": "SCOPE_PART",
+      "selection": { "mode": "SELECT_FIXED_PART", "part": "head" }
+    },
     "description": "攻击头部：造成固定物理伤害；自身受到少量反噬伤害；并有 25% 概率对目标施加 buff_stun。",
     "effects": [
       { "type": "SELF_DAMAGE", "value": 5 }
@@ -89,8 +108,11 @@
     "type": "DAMAGE",
     "value": 30,
     "speed": 2,
-    "targetType": "SINGLE_PART",
-    "requiredPart": "chest",
+    "target": {
+      "subject": "SUBJECT_ENEMY",
+      "scope": "SCOPE_PART",
+      "selection": { "mode": "SELECT_FIXED_PART", "part": "chest" }
+    },
     "description": "对躯干造成中等伤害。如果此攻击令护甲归零，则额外施加 buff_slow（用减速近似击退）。",
     "buffRefs": {
       "apply": [
@@ -108,8 +130,11 @@
     "value": 1.5,
     "valueType": "PERCENT",
     "speed": -3,
-    "targetType": "SINGLE_PART",
-    "requiredPart": "head",
+    "target": {
+      "subject": "SUBJECT_ENEMY",
+      "scope": "SCOPE_PART",
+      "selection": { "mode": "SELECT_FIXED_PART", "part": "head" }
+    },
     "description": "对头部造成 150% 物理伤害。若头部有护甲，额外造成 30 点破甲伤害（纯数值护甲伤害）。",
     "effects": [
       { "type": "ARMOR_DAMAGE", "value": 30, "targetPart": "head" }
@@ -124,7 +149,11 @@
     "type": "DAMAGE",
     "value": 10,
     "speed": -2,
-    "targetType": "ALL_PARTS",
+    "target": {
+      "subject": "SUBJECT_ENEMY",
+      "scope": "SCOPE_MULTI_PARTS",
+      "selection": { "mode": "SELECT_ALL_PARTS" }
+    },
     "description": "猛击地面：对目标施加 buff_slow（速度 -5，持续 2 回合），并造成少量伤害。",
     "buffRefs": {
       "apply": [
@@ -142,7 +171,11 @@
     "value": 3.0,
     "valueType": "PERCENT",
     "speed": 1,
-    "targetType": "SINGLE_PART",
+    "target": {
+      "subject": "SUBJECT_ENEMY",
+      "scope": "SCOPE_PART",
+      "selection": { "mode": "SELECT_FIXED_PART" }
+    },
     "description": "只能对 HP < 30% 的目标使用。造成 300% 的巨额真实伤害。",
     "requirements": {
       "targetHpPercentBelow": 0.3
@@ -157,7 +190,11 @@
     "type": "DAMAGE",
     "value": 50,
     "speed": -4,
-    "targetType": "SINGLE_PART",
+    "target": {
+      "subject": "SUBJECT_ENEMY",
+      "scope": "SCOPE_PART",
+      "selection": { "mode": "SELECT_FIXED_PART" }
+    },
     "description": "强力打击：造成高额伤害，并有 50% 概率施加 buff_stun（持续 1 回合）。",
     "buffRefs": {
       "apply": [
@@ -175,7 +212,11 @@
     "value": 2.0,
     "valueType": "PERCENT",
     "speed": -5,
-    "targetType": "ALL_PARTS",
+    "target": {
+      "subject": "SUBJECT_ENEMY",
+      "scope": "SCOPE_MULTI_PARTS",
+      "selection": { "mode": "SELECT_ALL_PARTS" }
+    },
     "description": "对所有部位造成毁灭性打击 (200% ATK)。",
     "prerequisites": ["skill_earthquake"]
   },
@@ -188,8 +229,11 @@
     "type": "ARMOR_REPAIR",
     "value": 15,
     "speed": 1,
-    "targetType": "SELF_PARTS",
-    "targetParts": ["head", "chest"],
+    "target": {
+      "subject": "SUBJECT_SELF",
+      "scope": "SCOPE_MULTI_PARTS",
+      "selection": { "mode": "SELECT_LISTED_PARTS", "parts": ["head", "chest"] }
+    },
     "description": "立刻恢复躯干和头部 15 点护甲值。",
     "prerequisites": []
   },
@@ -200,7 +244,7 @@
     "cost": 2,
     "type": "BUFF_SELF",
     "speed": 10,
-    "targetType": "SELF",
+    "target": { "subject": "SUBJECT_SELF", "scope": "SCOPE_ENTITY" },
     "description": "对自身施加 buff_block（持续 1 回合）。",
     "buffRefs": {
       "applySelf": [
@@ -216,7 +260,7 @@
     "cost": 1,
     "type": "DEBUFF_ENEMY",
     "speed": 5,
-    "targetType": "ENEMY",
+    "target": { "subject": "SUBJECT_ENEMY", "scope": "SCOPE_ENTITY" },
     "description": "对目标施加 debuff_weak（降低输出）。",
     "buffRefs": {
       "apply": [
@@ -233,8 +277,11 @@
     "type": "ARMOR_REPAIR",
     "value": 10,
     "speed": 2,
-    "targetType": "SELF_PARTS",
-    "targetParts": ["left_arm", "right_arm", "left_leg", "right_leg"],
+    "target": {
+      "subject": "SUBJECT_SELF",
+      "scope": "SCOPE_MULTI_PARTS",
+      "selection": { "mode": "SELECT_LISTED_PARTS", "parts": ["left_arm", "right_arm", "left_leg", "right_leg"] }
+    },
     "description": "恢复四肢护甲 10 点，并解除流血状态。",
     "buffRefs": {
       "remove": [
@@ -250,7 +297,7 @@
     "cost": 3,
     "type": "BUFF_SELF",
     "speed": 5,
-    "targetType": "SELF",
+    "target": { "subject": "SUBJECT_SELF", "scope": "SCOPE_ENTITY" },
     "description": "对自身施加 buff_shield 与 buff_block。",
     "buffRefs": {
       "applySelf": [
@@ -268,8 +315,11 @@
     "type": "DAMAGE",
     "value": 25,
     "speed": 0,
-    "targetType": "SINGLE_PART",
-    "requiredPart": "chest",
+    "target": {
+      "subject": "SUBJECT_ENEMY",
+      "scope": "SCOPE_PART",
+      "selection": { "mode": "SELECT_FIXED_PART", "part": "chest" }
+    },
     "description": "攻击躯干：造成中等伤害，并刷新目标的 debuff_weak。",
     "buffRefs": {
       "apply": [
@@ -285,7 +335,7 @@
     "cost": 4,
     "type": "BUFF_SELF",
     "speed": 0,
-    "targetType": "SELF",
+    "target": { "subject": "SUBJECT_SELF", "scope": "SCOPE_ENTITY" },
     "description": "对自身施加 buff_shield，并立刻恢复少量护甲值。",
     "effects": [
       { "type": "ARMOR_REPAIR", "value": 10, "targetPart": "chest" }
@@ -304,7 +354,7 @@
     "cost": 5,
     "type": "BUFF_SELF",
     "speed": 10,
-    "targetType": "SELF",
+    "target": { "subject": "SUBJECT_SELF", "scope": "SCOPE_ENTITY" },
     "description": "对自身施加 buff_shield 与 buff_block（简化实现版）。",
     "buffRefs": {
       "applySelf": [
@@ -323,7 +373,14 @@
     "type": "DAMAGE",
     "value": 15,
     "speed": 2,
-    "targetType": "SINGLE_PART",
+    "target": {
+      "subject": "SUBJECT_ENEMY",
+      "scope": "SCOPE_PART",
+      "selection": {
+        "mode": "SELECT_FIXED_PART",
+        "parts": ["left_arm", "right_arm", "left_leg", "right_leg"]
+      }
+    },
     "description": "攻击四肢：命中后对目标施加 buff_bleed。",
     "buffRefs": {
       "apply": [
@@ -341,7 +398,11 @@
     "value": 0.6,
     "valueType": "PERCENT",
     "speed": 4,
-    "targetType": "RANDOM_PART",
+    "target": {
+      "subject": "SUBJECT_ENEMY",
+      "scope": "SCOPE_PART",
+      "selection": { "mode": "SELECT_RANDOM_PART" }
+    },
     "hitCount": 2,
     "description": "快速攻击两次，每次造成 60% 伤害。",
     "prerequisites": []
@@ -353,7 +414,7 @@
     "cost": 1,
     "type": "BUFF_SELF",
     "speed": 8,
-    "targetType": "SELF",
+    "target": { "subject": "SUBJECT_SELF", "scope": "SCOPE_ENTITY" },
     "description": "对自身施加 buff_armor_pen。",
     "buffRefs": {
       "applySelf": [
@@ -370,8 +431,11 @@
     "type": "DAMAGE",
     "value": 20,
     "speed": 2,
-    "targetType": "SINGLE_PART",
-    "requiredPart": "chest",
+    "target": {
+      "subject": "SUBJECT_ENEMY",
+      "scope": "SCOPE_PART",
+      "selection": { "mode": "SELECT_FIXED_PART", "part": "chest" }
+    },
     "description": "攻击躯干：若目标已有流血，额外叠加 1 层并刷新持续时间。",
     "effects": [
       { "type": "BUFF_STACK_ADD", "buffId": "buff_bleed", "stacks": 1, "refresh": true, "condition": "targetHasBuff" }
@@ -387,7 +451,11 @@
     "value": 0.5,
     "valueType": "PERCENT",
     "speed": 5,
-    "targetType": "RANDOM_PART",
+    "target": {
+      "subject": "SUBJECT_ENEMY",
+      "scope": "SCOPE_PART",
+      "selection": { "mode": "SELECT_RANDOM_PART" }
+    },
     "hitCount": 3,
     "description": "对随机部位发动 3 次攻击，每次造成 50% 伤害。若全部命中，自身速度 +3（纯数值）。",
     "effects": [
@@ -404,7 +472,11 @@
     "value": 1.5,
     "valueType": "CRIT_MULTIPLIER",
     "speed": 3,
-    "targetType": "SINGLE_PART",
+    "target": {
+      "subject": "SUBJECT_ENEMY",
+      "scope": "SCOPE_PART",
+      "selection": { "mode": "SELECT_FIXED_PART" }
+    },
     "description": "必定暴击 (1.5x)。只能攻击护甲已破损的部位。",
     "requirements": {
       "targetPartArmorZero": true
@@ -420,7 +492,11 @@
     "value": 1.5,
     "valueType": "COND_BLEED_MULT",
     "speed": 2,
-    "targetType": "SINGLE_PART",
+    "target": {
+      "subject": "SUBJECT_ENEMY",
+      "scope": "SCOPE_PART",
+      "selection": { "mode": "SELECT_FIXED_PART" }
+    },
     "description": "若目标处于流血状态，造成额外 50% 伤害并结算部分剩余流血伤害（实现依赖引擎能力）。",
     "requirements": {
       "targetHasBuff": "buff_bleed"
@@ -436,7 +512,11 @@
     "value": 30,
     "valueType": "PER_STACK",
     "speed": 1,
-    "targetType": "SINGLE_PART",
+    "target": {
+      "subject": "SUBJECT_ENEMY",
+      "scope": "SCOPE_PART",
+      "selection": { "mode": "SELECT_FIXED_PART" }
+    },
     "description": "移除目标所有流血层数；每移除一层造成 30 点真实伤害。",
     "effects": [
       { "type": "REMOVE_BUFF", "buffId": "buff_bleed", "target": "enemy", "mode": "allStacks" },
@@ -453,7 +533,11 @@
     "value": 0.1,
     "valueType": "PERCENT",
     "speed": 6,
-    "targetType": "SINGLE_PART",
+    "target": {
+      "subject": "SUBJECT_ENEMY",
+      "scope": "SCOPE_PART",
+      "selection": { "mode": "SELECT_FIXED_PART" }
+    },
     "hitCount": 10,
     "description": "多段攻击；每段命中有概率施加 buff_bleed。",
     "buffRefs": {
@@ -473,7 +557,11 @@
     "value": 0.5,
     "valueType": "PERCENT",
     "speed": 5,
-    "targetType": "SINGLE_PART",
+    "target": {
+      "subject": "SUBJECT_ENEMY",
+      "scope": "SCOPE_PART",
+      "selection": { "mode": "SELECT_FIXED_PART" }
+    },
     "description": "造成 50% 伤害。",
     "prerequisites": []
   },
@@ -484,7 +572,7 @@
     "cost": 0,
     "type": "SELF_STAT",
     "speed": 10,
-    "targetType": "SELF",
+    "target": { "subject": "SUBJECT_SELF", "scope": "SCOPE_ENTITY" },
     "description": "本回合速度 +10（纯数值效果）。",
     "effects": [
       { "type": "SELF_SPEED_ADD", "value": 10, "duration": 1 }
@@ -500,7 +588,11 @@
     "value": 0.8,
     "valueType": "PERCENT",
     "speed": 4,
-    "targetType": "SINGLE_PART",
+    "target": {
+      "subject": "SUBJECT_ENEMY",
+      "scope": "SCOPE_PART",
+      "selection": { "mode": "SELECT_FIXED_PART" }
+    },
     "description": "造成 80% 伤害，并有 25% 概率使目标下回合 AP -1（纯数值/资源效果）。",
     "effects": [
       { "type": "TARGET_AP_REDUCE_NEXT_TURN", "value": 1, "chance": 0.25 }
@@ -514,7 +606,7 @@
     "cost": 2,
     "type": "BUFF_SELF",
     "speed": 4,
-    "targetType": "SELF",
+    "target": { "subject": "SUBJECT_SELF", "scope": "SCOPE_ENTITY" },
     "description": "对自身施加 buff_bless（用命中/闪避小幅提升近似实现）。",
     "buffRefs": {
       "applySelf": [
@@ -532,7 +624,11 @@
     "value": 1.8,
     "valueType": "PERCENT",
     "speed": 6,
-    "targetType": "SINGLE_PART",
+    "target": {
+      "subject": "SUBJECT_ENEMY",
+      "scope": "SCOPE_PART",
+      "selection": { "mode": "SELECT_FIXED_PART" }
+    },
     "description": "必定先手 (Priority +1)。如果比敌人先行动，造成 180% 伤害。",
     "effects": [
       { "type": "PRIORITY", "value": 1 }
@@ -548,7 +644,11 @@
     "value": 0.8,
     "valueType": "PERCENT",
     "speed": 2,
-    "targetType": "SINGLE_PART",
+    "target": {
+      "subject": "SUBJECT_ENEMY",
+      "scope": "SCOPE_PART",
+      "selection": { "mode": "SELECT_FIXED_PART" }
+    },
     "description": "造成 80% 伤害，并对目标施加 buff_poison。",
     "buffRefs": {
       "apply": [
@@ -564,7 +664,7 @@
     "cost": 0,
     "type": "AP_CHANGE",
     "speed": 10,
-    "targetType": "SELF",
+    "target": { "subject": "SUBJECT_SELF", "scope": "SCOPE_ENTITY" },
     "description": "立即获得 2 点 AP，但下回合 AP 上限 -2（纯数值/资源效果）。",
     "effects": [
       { "type": "SELF_AP_GAIN", "value": 2 },
@@ -582,7 +682,11 @@
     "valueType": "PERCENT",
     "speed": 5,
     "hitCount": 5,
-    "targetType": "RANDOM_PART",
+    "target": {
+      "subject": "SUBJECT_ENEMY",
+      "scope": "SCOPE_PART",
+      "selection": { "mode": "SELECT_RANDOM_PART" }
+    },
     "description": "射出 5 支箭，每支造成 40% 伤害，随机分配给未被破坏的部位。",
     "prerequisites": ["skill_wind_arrow"]
   },
@@ -596,8 +700,11 @@
     "valueType": "PERCENT",
     "speed": 3,
     "hitCount": 3,
-    "targetType": "SINGLE_PART",
-    "requiredPart": "chest",
+    "target": {
+      "subject": "SUBJECT_ENEMY",
+      "scope": "SCOPE_PART",
+      "selection": { "mode": "SELECT_FIXED_PART", "part": "chest" }
+    },
     "description": "攻击躯干：造成多段伤害，并对目标施加 buff_slow（刷新持续时间）。",
     "buffRefs": {
       "apply": [
@@ -613,7 +720,7 @@
     "cost": 6,
     "type": "EXTRA_TURN",
     "speed": 10,
-    "targetType": "SELF",
+    "target": { "subject": "SUBJECT_SELF", "scope": "SCOPE_ENTITY" },
     "description": "立即获得一个新的回合，但该额外回合只有一半的 AP 上限（需要引擎支持）。",
     "effects": [
       { "type": "EXTRA_TURN", "apMaxMultiplier": 0.5 }
@@ -628,7 +735,11 @@
     "cost": 2,
     "type": "DEBUFF_ENEMY",
     "speed": 4,
-    "targetType": "SINGLE_PART",
+    "target": {
+      "subject": "SUBJECT_ENEMY",
+      "scope": "SCOPE_PART",
+      "selection": { "mode": "SELECT_FIXED_PART" }
+    },
     "description": "对目标施加 buff_vulnerable。",
     "buffRefs": {
       "apply": [
@@ -644,7 +755,7 @@
     "cost": 2,
     "type": "BUFF_SELF",
     "speed": 1,
-    "targetType": "SELF",
+    "target": { "subject": "SUBJECT_SELF", "scope": "SCOPE_ENTITY" },
     "description": "对自身施加 buff_bless（近似实现命中增益）。",
     "buffRefs": {
       "applySelf": [
@@ -661,8 +772,11 @@
     "type": "DAMAGE",
     "value": 20,
     "speed": 3,
-    "targetType": "SINGLE_PART",
-    "requiredPart": "leg",
+    "target": {
+      "subject": "SUBJECT_ENEMY",
+      "scope": "SCOPE_PART",
+      "selection": { "mode": "SELECT_FIXED_PART", "parts": ["left_leg", "right_leg"] }
+    },
     "description": "攻击腿部：若造成 HP 伤害，对目标施加 buff_slow（用减速近似速度下降）。",
     "buffRefs": {
       "apply": [
@@ -679,7 +793,14 @@
     "type": "DAMAGE",
     "value": 20,
     "speed": 3,
-    "targetType": "SINGLE_PART",
+    "target": {
+      "subject": "SUBJECT_ENEMY",
+      "scope": "SCOPE_PART",
+      "selection": {
+        "mode": "SELECT_FIXED_PART",
+        "parts": ["left_arm", "right_arm", "left_leg", "right_leg"]
+      }
+    },
     "description": "攻击四肢：造成伤害后，使该部位功能失效（当前不落 Buff，作为纯规则效果/待引擎支持）。",
     "prerequisites": ["skill_knee_shot"]
   },
@@ -692,8 +813,11 @@
     "value": 2.0,
     "valueType": "PERCENT",
     "speed": 4,
-    "targetType": "SINGLE_PART",
-    "requiredPart": "arm",
+    "target": {
+      "subject": "SUBJECT_ENEMY",
+      "scope": "SCOPE_PART",
+      "selection": { "mode": "SELECT_FIXED_PART", "parts": ["left_arm", "right_arm"] }
+    },
     "description": "对手臂造成 200% 的护甲伤害；若护甲被破，施加 debuff_weak（纯条件）。",
     "effects": [
       { "type": "APPLY_BUFF_ON_CONDITION", "buffId": "debuff_weak", "condition": "targetArmorBroken", "duration": 1 }
@@ -708,7 +832,11 @@
     "type": "DAMAGE",
     "value": 30,
     "speed": 3,
-    "targetType": "SINGLE_PART",
+    "target": {
+      "subject": "SUBJECT_ENEMY",
+      "scope": "SCOPE_PART",
+      "selection": { "mode": "SELECT_FIXED_PART" }
+    },
     "description": "无视目标 50% 的护甲值直接造成伤害（纯计算规则）。",
     "effects": [
       { "type": "IGNORE_ARMOR_PERCENT", "value": 0.5 }
@@ -724,8 +852,11 @@
     "value": 2.0,
     "valueType": "PERCENT",
     "speed": 1,
-    "targetType": "SINGLE_PART",
-    "requiredPart": "head",
+    "target": {
+      "subject": "SUBJECT_ENEMY",
+      "scope": "SCOPE_PART",
+      "selection": { "mode": "SELECT_FIXED_PART", "part": "head" }
+    },
     "description": "对头部造成 200% 伤害；命中率 -20%，但若命中必定暴击（纯规则）。",
     "effects": [
       { "type": "HIT_RATE_MOD", "value": -0.2 },
@@ -742,7 +873,11 @@
     "value": 1.5,
     "valueType": "PERCENT",
     "speed": 5,
-    "targetType": "SINGLE_PART",
+    "target": {
+      "subject": "SUBJECT_ENEMY",
+      "scope": "SCOPE_PART",
+      "selection": { "mode": "SELECT_FIXED_PART" }
+    },
     "description": "无法闪避且无视 100% 护甲（纯规则）。",
     "effects": [
       { "type": "CANNOT_DODGE" },
@@ -758,7 +893,11 @@
     "cost": 3,
     "type": "DEBUFF_ENEMY",
     "speed": 2,
-    "targetType": "SINGLE_PART",
+    "target": {
+      "subject": "SUBJECT_ENEMY",
+      "scope": "SCOPE_PART",
+      "selection": { "mode": "SELECT_FIXED_PART" }
+    },
     "description": "对目标施加 buff_vulnerable（刷新持续时间），并造成一次小额伤害。",
     "effects": [
       { "type": "DAMAGE", "value": 10 }
@@ -779,7 +918,11 @@
     "value": 0.5,
     "valueType": "HP_PERCENT",
     "speed": -2,
-    "targetType": "SINGLE_PART",
+    "target": {
+      "subject": "SUBJECT_ENEMY",
+      "scope": "SCOPE_PART",
+      "selection": { "mode": "SELECT_FIXED_PART" }
+    },
     "description": "需要上一回合未使用攻击技能。对目标造成当前 HP 50% 的伤害（Boss 效果减半）。",
     "requirements": {
       "prevTurnNoAttack": true
@@ -795,7 +938,11 @@
     "type": "DAMAGE",
     "value": 25,
     "speed": 0,
-    "targetType": "SINGLE_PART",
+    "target": {
+      "subject": "SUBJECT_ENEMY",
+      "scope": "SCOPE_PART",
+      "selection": { "mode": "SELECT_FIXED_PART" }
+    },
     "description": "对目标造成魔法伤害。",
     "prerequisites": []
   },
@@ -807,7 +954,11 @@
     "type": "DAMAGE_RANDOM",
     "value": "1-30",
     "speed": 5,
-    "targetType": "SINGLE_PART",
+    "target": {
+      "subject": "SUBJECT_ENEMY",
+      "scope": "SCOPE_PART",
+      "selection": { "mode": "SELECT_FIXED_PART" }
+    },
     "description": "造成 1-30 点随机雷电伤害；若造成最大值，返还 1 AP（需要引擎支持）。",
     "effects": [
       { "type": "SELF_AP_GAIN_ON_MAX_ROLL", "value": 1 }
@@ -821,7 +972,7 @@
     "cost": 2,
     "type": "DEBUFF_ENEMY",
     "speed": 0,
-    "targetType": "ENEMY",
+    "target": { "subject": "SUBJECT_ENEMY", "scope": "SCOPE_ENTITY" },
     "description": "对目标施加 buff_slow。",
     "buffRefs": {
       "apply": [
@@ -838,7 +989,11 @@
     "type": "DAMAGE",
     "value": 30,
     "speed": 2,
-    "targetType": "SINGLE_PART",
+    "target": {
+      "subject": "SUBJECT_ENEMY",
+      "scope": "SCOPE_PART",
+      "selection": { "mode": "SELECT_FIXED_PART" }
+    },
     "description": "造成冰霜伤害，并有 50% 概率对目标施加 buff_slow。",
     "buffRefs": {
       "apply": [
@@ -856,7 +1011,11 @@
     "value": 10,
     "speed": 1,
     "hitCount": 3,
-    "targetType": "RANDOM_PART",
+    "target": {
+      "subject": "SUBJECT_ENEMY",
+      "scope": "SCOPE_PART",
+      "selection": { "mode": "SELECT_RANDOM_PART" }
+    },
     "description": "对随机部位造成多段小额伤害。",
     "prerequisites": ["skill_arcane_missile"]
   },
@@ -867,7 +1026,7 @@
     "cost": 3,
     "type": "DEBUFF_ENEMY",
     "speed": -1,
-    "targetType": "ENEMY",
+    "target": { "subject": "SUBJECT_ENEMY", "scope": "SCOPE_ENTITY" },
     "description": "对目标施加 buff_slow（刷新持续时间），并造成少量伤害。",
     "effects": [
       { "type": "DAMAGE", "value": 10 }
@@ -886,7 +1045,7 @@
     "cost": 2,
     "type": "DEBUFF_ENEMY",
     "speed": 0,
-    "targetType": "ENEMY",
+    "target": { "subject": "SUBJECT_ENEMY", "scope": "SCOPE_ENTITY" },
     "description": "对目标施加 buff_vulnerable。",
     "buffRefs": {
       "apply": [
@@ -904,7 +1063,11 @@
     "value": 20,
     "speed": 2,
     "hitCount": 3,
-    "targetType": "RANDOM_PART",
+    "target": {
+      "subject": "SUBJECT_ENEMY",
+      "scope": "SCOPE_PART",
+      "selection": { "mode": "SELECT_RANDOM_PART" }
+    },
     "description": "对目标随机 3 个部位造成雷电伤害。",
     "prerequisites": ["skill_elemental_vulnerability"]
   },
@@ -917,7 +1080,11 @@
     "value": 25,
     "speed": 1,
     "hitCount": 3,
-    "targetType": "RANDOM_PART",
+    "target": {
+      "subject": "SUBJECT_ENEMY",
+      "scope": "SCOPE_PART",
+      "selection": { "mode": "SELECT_RANDOM_PART" }
+    },
     "description": "对目标随机 3 个部位造成雷电伤害。",
     "prerequisites": ["skill_elemental_vulnerability"]
   },
@@ -929,7 +1096,11 @@
     "type": "DAMAGE",
     "value": 40,
     "speed": -2,
-    "targetType": "ALL_PARTS",
+    "target": {
+      "subject": "SUBJECT_ENEMY",
+      "scope": "SCOPE_MULTI_PARTS",
+      "selection": { "mode": "SELECT_ALL_PARTS" }
+    },
     "description": "对目标所有部位造成毁灭性伤害。",
     "prerequisites": ["skill_thunder_strike"]
   },
@@ -942,7 +1113,7 @@
     "type": "HEAL",
     "value": 30,
     "speed": -2,
-    "targetType": "SELF",
+    "target": { "subject": "SUBJECT_SELF", "scope": "SCOPE_ENTITY" },
     "description": "恢复自身 30 点 HP。",
     "prerequisites": []
   },
@@ -954,7 +1125,11 @@
     "type": "DAMAGE",
     "value": 25,
     "speed": 2,
-    "targetType": "SINGLE_PART",
+    "target": {
+      "subject": "SUBJECT_ENEMY",
+      "scope": "SCOPE_PART",
+      "selection": { "mode": "SELECT_FIXED_PART" }
+    },
     "description": "对敌人造成神圣伤害；若目标是亡灵/恶魔，伤害翻倍（纯规则）。",
     "effects": [
       { "type": "DAMAGE_MULTIPLIER_IF_TAG", "tag": "undead_or_demon", "multiplier": 2.0 }
@@ -968,7 +1143,7 @@
     "cost": 2,
     "type": "BUFF_SELF",
     "speed": 1,
-    "targetType": "SELF",
+    "target": { "subject": "SUBJECT_SELF", "scope": "SCOPE_ENTITY" },
     "description": "对自身施加 buff_bless。",
     "buffRefs": {
       "applySelf": [
@@ -984,7 +1159,7 @@
     "cost": 3,
     "type": "BUFF_SELF",
     "speed": 2,
-    "targetType": "SELF",
+    "target": { "subject": "SUBJECT_SELF", "scope": "SCOPE_ENTITY" },
     "description": "对自身施加 buff_shield，并立刻恢复少量 HP。",
     "effects": [
       { "type": "HEAL", "value": 10 }
@@ -1003,7 +1178,7 @@
     "cost": 3,
     "type": "BUFF_SELF",
     "speed": 3,
-    "targetType": "SELF",
+    "target": { "subject": "SUBJECT_SELF", "scope": "SCOPE_ENTITY" },
     "description": "对自身施加 buff_shield，并立刻回复少量 HP。",
     "effects": [
       { "type": "HEAL", "value": 10 }
@@ -1022,7 +1197,7 @@
     "cost": 3,
     "type": "CLEANSE",
     "speed": 1,
-    "targetType": "SELF",
+    "target": { "subject": "SUBJECT_SELF", "scope": "SCOPE_ENTITY" },
     "description": "解除自身所有 Debuff；每解除一个，回复 15 点 HP 并对敌人造成等量伤害（需要引擎支持）。",
     "prerequisites": ["skill_smite"]
   },
@@ -1034,7 +1209,11 @@
     "type": "DAMAGE_HEAL",
     "value": 30,
     "speed": 3,
-    "targetType": "SINGLE_PART",
+    "target": {
+      "subject": "SUBJECT_ENEMY",
+      "scope": "SCOPE_PART",
+      "selection": { "mode": "SELECT_FIXED_PART" }
+    },
     "description": "对敌人造成伤害，同时治疗自己等量生命值（吸血机制，需引擎支持）。",
     "prerequisites": ["skill_shield_of_faith"]
   },
@@ -1046,7 +1225,7 @@
     "type": "HEAL",
     "value": 50,
     "speed": -1,
-    "targetType": "SELF",
+    "target": { "subject": "SUBJECT_SELF", "scope": "SCOPE_ENTITY" },
     "description": "立即恢复大量 HP，并移除自身 buff_poison / buff_bleed（若引擎支持按 id 移除）。",
     "buffRefs": {
       "remove": [
@@ -1064,7 +1243,7 @@
     "type": "HEAL",
     "value": 50,
     "speed": -1,
-    "targetType": "SELF",
+    "target": { "subject": "SUBJECT_SELF", "scope": "SCOPE_ENTITY" },
     "description": "立即恢复大量 HP，并对自身施加 buff_shield。",
     "buffRefs": {
       "applySelf": [
@@ -1081,7 +1260,11 @@
     "type": "DAMAGE",
     "value": 60,
     "speed": 0,
-    "targetType": "SINGLE_PART",
+    "target": {
+      "subject": "SUBJECT_ENEMY",
+      "scope": "SCOPE_PART",
+      "selection": { "mode": "SELECT_FIXED_PART" }
+    },
     "description": "造成高额神圣伤害，并施加 debuff_weak + buff_vulnerable。",
     "buffRefs": {
       "apply": [
