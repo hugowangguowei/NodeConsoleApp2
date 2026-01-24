@@ -161,21 +161,50 @@
 - `COND_STACK_GE_X`：某 buff 层数达到阈值
 - `COND_PREV_SKILL_USED`：依赖上一技能/连携
 
-### 3.6 部位维度（Part / Zone）
-
-护甲是“按部位”的关键设计，因此建议对与部位强相关的技能打标签：
-
-- `PART_TARGETED`：需要指定部位
-- `PART_ALL`：对全部部位生效（1v1 下的 AOE）
-- `PART_RANDOM`：随机部位
-- `PART_SELF`：对自身部位生效（修甲/加护甲）
-
-### 3.7 风格与流派维度（Build / Archetype）
+### 3.6 风格与流派维度（Build / Archetype）
 
 用于“设计一套技能体系”的全局组织：
 
 - 流派（示例）：`ARCH_HEAVY`（重装）、`ARCH_WALL`（铁壁）、`ARCH_SWORD`（剑术）、`ARCH_RANGER`（游侠）、`ARCH_SNIPER`（狙击）、`ARCH_ELEMENT`（元素）、`ARCH_HOLY`（神圣）
 - 距离（可选）：`MELEE` / `RANGED` / `MAGIC`
+
+### 3.7 按释放对象维度（Target Subject / Release Object）
+
+> 目的：补足“技能是对谁释放、作用在什么对象粒度上”的分类能力。
+> 该维度与 `targetType` / `requiredPart` 字段是互补关系：
+>
+> - 字段表达的是**运行时事实**（引擎如何结算）
+> - 标签表达的是**设计语义**（设计意图/用于检索与平衡统计）
+>
+> 当标签与字段冲突时，以字段为准；标签用于校验与提示。
+
+#### 3.7.1 阵营对象（Subject）
+
+- `SUBJECT_SELF`：主要对自己施放（治疗、加护甲、自增益、净化等）
+- `SUBJECT_ENEMY`：主要对敌人施放（伤害、破甲、减益、控制等）
+- `SUBJECT_BOTH`：（可选）同时影响双方（较少见，通常属于高阶机制类）
+
+#### 3.7.2 作用粒度（Scope）
+
+- `SCOPE_ENTITY`：作用在角色整体（HP/AP/速度/全局免疫等，不绑定部位）
+- `SCOPE_PART`：作用在单个部位（典型：护甲、部位 debuff、指定部位打击）
+- `SCOPE_MULTI_PARTS`：作用在多个部位（1v1 中的“AOE”等价物：全身部位伤害/全身部位增益）
+
+#### 3.7.3 选择方式（Selection，可选增强）
+
+> 若后续需要更细分的检索/校验，可增加以下可选标签；MVP 阶段可不强制要求。
+
+- `SELECT_FIXED_PART`：指定部位（通常对应 `targetType=SINGLE_PART` 且存在 `requiredPart`）
+- `SELECT_RANDOM_PART`：随机部位（通常对应 `targetType=RANDOM_PART`）
+- `SELECT_ALL_PARTS`：全部部位（通常对应 `targetType=ALL_PARTS` 或 `SELF_PARTS`）
+
+#### 3.7.4 标签完整性建议（推荐约束）
+
+- 每个技能至少具备：`SUBJECT_*` + `SCOPE_*`。
+- 若 `SUBJECT_SELF`：
+  - 常见为 `SCOPE_ENTITY`（治疗、净化）或 `SCOPE_MULTI_PARTS`（全身部位修甲/加护甲）。
+- 若 `DMG_ARMOR`：通常应为 `SCOPE_PART` 或 `SCOPE_MULTI_PARTS`。
+- 若技能要求玩家选择/指定部位，建议补充 `SELECT_FIXED_PART/SELECT_RANDOM_PART/SELECT_ALL_PARTS` 以便检索与校验。
 
 ---
 
@@ -198,7 +227,7 @@
   "speed": -1,
   "targetType": "SINGLE_PART",
   "requiredPart": "chest",
-  "tags": ["DMG_ARMOR", "ABS", "INSTANT", "ONE_SHOT", "UNCONDITIONAL", "PART_TARGETED", "MELEE", "ARCH_SWORD"],
+  "tags": ["DMG_ARMOR", "ABS", "INSTANT", "ONE_SHOT", "UNCONDITIONAL", "SUBJECT_ENEMY", "SCOPE_PART", "SELECT_FIXED_PART", "MELEE", "ARCH_SWORD"],
   "tagMeta": {
     "parts": ["chest"],
     "notes": "专门对胸甲造成高额护甲伤害"
@@ -213,7 +242,7 @@
   - 数值类型类（`ABS`/`PCT_MAX`/`PCT_CURRENT`/`SCALING`）
   - 生效时间点（`INSTANT`/`DELAYED`/`ON_EVENT`）
   - 持续周期（`ONE_SHOT`/`ONE_TURN`/`MULTI_TURN`/`BATTLE`/`PERMANENT`）
-  - 部位维度（`PART_*`）
+  - 释放对象（`SUBJECT_*`）与作用粒度（`SCOPE_*`），以及（可选）选择方式（`SELECT_*`）
   - 距离/流派（`MELEE`/`RANGED`/`MAGIC` + `ARCH_*`）
 
 - **可扩展标签**（允许自由新增，但要有约束与校验）：
@@ -242,9 +271,178 @@
 
 ---
 
-## 5. 平衡落地建议（不写代码也能执行）
+## 5. 技能需求资源与消耗模型（Resource Requirements）
 
-### 5.1 建立技能对照表（Design Sheet）
+> 目的：补齐“释放技能需要消耗什么资源、消耗多少、是否受部位与技能槽限制”的描述能力。
+>
+> 背景：当前战斗输入是“**一回合选择多个技能进行组合释放**”，因此仅用 `cost/AP` 很难完整表达约束。
+> 例如：
+>
+> - 同回合能否重复使用某种类型技能？
+> - 某些技能是否依赖“自身某个部位可用/未受伤/未被封印”？
+> - 每个部位是否有“技能槽位”上限（本回合该部位最多放几个技能）？
+> - 某些技能是否需要先占用某个部位的“姿态/准备槽”，导致同回合其他技能不能使用？
+
+### 5.1 资源类型（Resource Types）
+
+建议把“需求资源”拆成两层：
+
+1) **全局资源（Global Resources）**：不依赖部位、通常每回合刷新
+- `AP`：行动点（当前已有）
+
+2) **部位资源（Part Resources）**：与自身部位绑定，适合表达“多技能组合释放”的结构性约束
+- `PartSlot`：部位技能槽（关键）
+  - 例：头部 1 槽、躯干 2 槽、左臂 1 槽…（默认上限可在角色模板中定义）
+- `PartState`：部位状态（可用性约束）
+  - 例：`partDisabled`（部位不可用/被封印）、`partBroken`（护甲破坏）、`partImmobilized` 等
+
+### 5.2 需求资源（Requirements）vs 消耗（Costs）
+
+为了避免规则混乱，建议将技能释放限制拆分为两类：
+
+- **Requirements（门槛）**：必须满足，但不一定消耗
+  - 例：需要“自身右臂可用”，需要“目标护甲未破/已破”，需要“已点亮前置技能”等
+- **Costs（消耗）**：满足后会减少资源
+  - 例：消耗 AP，消耗某部位 1 个技能槽，消耗一次“每回合次数”
+
+在“一回合多技能配置”中，`PartSlot` 更像一种 **消耗**：你把技能放进对应部位的队列，就占用了该部位的槽位。
+
+### 5.3 部位技能槽模型（Part Slots）
+
+#### 5.3.1 为什么需要槽位
+
+如果不引入槽位限制，玩家可能在同回合堆叠大量低 AP 技能，导致：
+
+- 平衡公式倾斜到“堆叠量”而不是“策略选择”
+- 速度（出手顺序）与组合设计被稀释
+- UI/交互会变成“尽可能塞满”而不是“在结构上选择”
+
+因此建议在战斗配置阶段引入：
+
+- 每个部位有一个 `slotLimit`（默认最大 8 的总体约束仍可保留，但建议给每部位再设一个更小的上限）
+- 每个技能声明其**占用哪一个自身部位**（或可选部位）以及占用几个槽
+
+#### 5.3.2 技能的“来源部位”（Cast From / Self Part)
+
+注意区分两个概念：
+
+- `targetParts`：技能作用到对方哪个部位（目标维度）
+- `castParts`：技能释放依赖自身哪个部位（来源维度）
+
+例：
+
+- “挥砍”可能要求 `castParts=["right_arm","left_arm"]`（任一手臂可用）
+- “盾击”要求 `castParts=["left_arm"]`（必须持盾的手臂）
+- “圣光祷言”可为 `castParts=[]`（不依赖部位，属于全身/精神类技能）
+
+#### 5.3.3 槽位消耗（slotCost）
+
+建议技能增加字段：
+
+- `slotCost: number`（默认 1）
+
+用于表达：
+
+- 大招/重型技能占多个槽（本回合组合空间变小）
+- 轻量技能占 0 槽（谨慎：容易被堆叠滥用，建议只用于少数辅助/触发器类技能）
+
+### 5.4 可落地的 Schema 建议（MVP）
+
+在不修改引擎代码的前提下，先把字段写进数据与设计文档，供编辑器与平衡工具使用：
+
+#### 5.4.1 技能侧字段（`skills.json`）
+
+建议新增：
+
+- `cost`：AP 消耗（现有）
+- `requirements?: { ... }`：门槛
+- `costs?: { ... }`：消耗
+
+MVP 示例：
+
+```json
+{
+  "id": "skill_shield_bash",
+  "name": "盾牌猛击",
+  "cost": 3,
+  "speed": 0,
+
+  "requirements": {
+    "selfPart": {
+      "mode": "ANY",
+      "parts": ["left_arm"],
+      "mustBeUsable": true
+    }
+  },
+
+  "costs": {
+    "ap": 3,
+    "partSlot": {
+      "part": "left_arm",
+      "slotCost": 1
+    }
+  }
+}
+```
+
+说明：
+
+- `requirements.selfPart` 用于表达“依赖自身部位”；`mode` 表达 `ANY/ALL`。
+- `costs.partSlot` 用于表达“占用哪个部位的槽位”。
+
+#### 5.4.2 角色侧字段（Player/Enemy Template）
+
+建议角色模板定义每个部位的槽位上限（仅设计层先写清楚）：
+
+```json
+{
+  "partSlots": {
+    "head": 1,
+    "chest": 2,
+    "left_arm": 1,
+    "right_arm": 1,
+    "left_leg": 1,
+    "right_leg": 1
+  }
+}
+```
+
+### 5.5 与标签体系的结合（用于平衡统计）
+
+为了让平衡工具能统计“资源约束”是否偏科，建议增加一组资源相关标签：
+
+- `RES_AP`：消耗 AP（几乎所有技能）
+- `RES_SLOT`：消耗部位槽位（绝大多数战斗技能）
+- `REQ_SELF_PART`：依赖自身部位可用
+- `REQ_POSITIONAL`：（可选）依赖站位/姿态/引导状态
+- `LIMIT_PER_TURN`：每回合次数限制（若未来需要）
+
+并建议在 `tagMeta` 里记录关键参数：
+
+```json
+{
+  "tags": ["RES_AP","RES_SLOT","REQ_SELF_PART"],
+  "tagMeta": {
+    "slot": { "part": "left_arm", "slotCost": 1 },
+    "reqSelfPart": { "mode": "ANY", "parts": ["left_arm"] }
+  }
+}
+```
+
+### 5.6 平衡性风险提示（与“一回合多技能组合”强相关）
+
+引入资源需求后，平衡检查需要额外关注：
+
+1. **零槽/低槽技能堆叠**：如果存在 `slotCost=0` 的收益技能，很容易在同回合被塞满，导致组合过强。
+2. **单部位垄断**：大量强技能都依赖同一个部位（例如右臂），会导致打法收敛，且“封印该部位”变成过强 counter。
+3. **高 AP + 高槽双重惩罚**：若大招同时高 AP、高槽位、低速度，可能变得完全不可用，需要给到更高的收益或更强的独特机制。
+4. **与速度的耦合**：同回合多技能时，速度的边际价值更高（先手连段更强），因此高速度技能需要更严格的资源约束。
+
+---
+
+## 6. 平衡落地建议（不写代码也能执行）
+
+### 6.1 建立技能对照表（Design Sheet）
 
 建议维护一个表格（可以是 Markdown 表格或 Excel），列包括：
 
@@ -255,21 +453,21 @@
 - 预期定位（输出/破甲/续航/节奏）
 - 评估指标（AP 效率、确定性、反制性、组合风险）
 
-### 5.2 重点关注的“失衡风险”清单
+### 6.2 重点关注的“失衡风险”清单
 
 - **滚雪球**：叠层 buff 导致指数成长（例如“每层提高伤害并更容易叠层”）
 - **先手锁死**：速度+控制让对方几乎无法行动
 - **低成本破甲**：便宜且稳定的破甲使护甲体系失去意义
 - **无代价续航**：治疗/上护甲过于便宜导致战斗无限拖长
 
-### 5.3 与编辑器的结合点（建议）
+### 6.3 与编辑器的结合点（建议）
 
 - 在 skill editor 的属性面板中增加 `tags`（多选）与 `tagMeta`（只读/弱编辑）。
 - 允许按 `tags` 过滤技能库、以及导出时进行标签完整性校验（至少每类选一个）。
 
 ---
 
-## 6. 附录：最小标签集合（MVP）
+## 7. 附录：最小标签集合（MVP）
 
 若要快速落地，建议先实现如下 MVP 标签：
 
@@ -277,5 +475,5 @@
 - 数值类型：`ABS` / `PCT_MAX` / `PCT_CURRENT`
 - 时间点：`INSTANT` / `ON_EVENT`
 - 周期：`ONE_SHOT` / `ONE_TURN` / `MULTI_TURN`
-- 部位：`PART_TARGETED` / `PART_ALL` / `PART_RANDOM`
+- 释放对象（MVP）：`SUBJECT_SELF` / `SUBJECT_ENEMY` + `SCOPE_ENTITY` / `SCOPE_PART` / `SCOPE_MULTI_PARTS`
 - 流派：`ARCH_*`（至少一个）

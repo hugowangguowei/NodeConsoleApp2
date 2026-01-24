@@ -10,7 +10,7 @@
     *   **攻击型 (Offensive)**: 削减敌人 HP 或破坏护甲。
     *   **防御型 (Defensive)**: 增加临时护甲、格挡伤害或进行回复。
     *   **辅助/控制型 (Support/Control)**: 施加 Buff (增益) 或 Debuff (减益)，改变战斗节奏。
-*   **资源消耗**: 所有技能均消耗行动力 (AP)。强力技能通常消耗更多 AP 或有冷却限制。
+*   **资源消耗**: 当前实现以行动力 (AP) 为主，但在“一回合内配置多个技能组合释放”的玩法下，仅用 AP 无法完整表达约束；因此设计层面预留了“需求资源 / 消耗资源”的扩展模型（见 1.3）。
 
 ---
 
@@ -46,6 +46,94 @@
 - `stacks`: 可选，若需要技能一次性叠加多层（最终仍受 Buff 的 `lifecycle.maxStacks` 限制）
 
 ---
+
+## 1.2 技能平衡标签体系与元数据规范（补充）
+
+本节将 `skill_balance_design.md` 中的“技能分类标签（Skill Tags）”融入技能设计方案，作为技能的**设计语义层**。该层不改变引擎结算，但能显著提升：技能库检索、强度对照、以及 editor 的数据校验能力。
+
+### 1.2.1 基本原则（字段 vs 标签）
+
+- 技能字段（`cost/speed/targetType/requiredPart/buffRefs/effects`）表达的是**运行时事实**（引擎如何结算）。
+- `tags/tagMeta` 表达的是**设计语义**（设计意图、用于检索与统计）。
+- 两者冲突时，以字段为准；标签用于发现问题与提示修正。
+
+### 1.2.2 数据结构（建议写入 `skills.json`，或由 Skill Editor 维护）
+
+- `tags: string[]`
+  - 存放标签枚举。
+  - 建议按固定维度顺序书写，便于肉眼扫描（示例见 1.2.6）。
+- `tagMeta?: object`
+  - 参数化信息（例如固定部位列表、设计备注等）。
+  - 不影响引擎结算；主要用于设计说明与编辑器提示。
+
+### 1.2.3 标签维度（稳定枚举，建议写死到编辑器下拉）
+
+1) **作用属性（What it changes）**
+
+- `DMG_HP` / `DMG_ARMOR` / `PIERCE` / `HEAL` / `ARMOR_ADD` / `AP_GAIN` / `SPEED` / `BUFF_APPLY` / `BUFF_REMOVE`
+
+2) **数值类型（Absolute vs Relative）**
+
+- `ABS` / `PCT_MAX` / `PCT_CURRENT` / `SCALING`
+
+3) **生效时间点（Immediate vs Delayed）**
+
+- `INSTANT` / `DELAYED` / `ON_EVENT`
+
+4) **持续周期（Duration / Lifetime）**
+
+- `ONE_SHOT` / `ONE_TURN` / `MULTI_TURN` / `BATTLE` / `PERMANENT`
+
+5) **释放对象（Target Subject / Scope / Selection）**
+
+- Subject：`SUBJECT_SELF` / `SUBJECT_ENEMY` / `SUBJECT_BOTH`
+- Scope：`SCOPE_ENTITY` / `SCOPE_PART` / `SCOPE_MULTI_PARTS`
+- Selection（可选增强）：`SELECT_FIXED_PART` / `SELECT_RANDOM_PART` / `SELECT_ALL_PARTS`
+
+6) **体系组织（Build / Archetype）**
+
+- 距离：`MELEE` / `RANGED` / `MAGIC`
+- 流派：`ARCH_HEAVY` / `ARCH_WALL` / `ARCH_SWORD` / `ARCH_RANGER` / `ARCH_SNIPER` / `ARCH_ELEMENT` / `ARCH_HOLY`
+
+### 1.2.4 可扩展标签（允许新增，但应逐步收敛）
+
+- 条件类：`COND_*`（例如 `COND_TARGET_ARMOR_BROKEN`、`COND_SELF_HP_LT_X`、`COND_STACK_GE_X`、`COND_PREV_SKILL_USED`）
+- 玩法偏好类：`COMBO` / `FINISHER` / `SETUP` 等（用于设计沟通，不建议影响结算）
+
+### 1.2.5 与运行时字段的对照（用于校验）
+
+> 下列对照用于“编辑器校验/人工审查”发现：标签与配置是否一致。
+
+- `SUBJECT_SELF` 常见对应：`targetType=SELF` 或 `targetType=SELF_PARTS`，以及 `buffRefs.applySelf` 为主。
+- `SUBJECT_ENEMY` 常见对应：`targetType=ENEMY` / `SINGLE_PART` / `ALL_PARTS` / `RANDOM_PART`，以及 `buffRefs.apply` 为主。
+- `SCOPE_ENTITY` 常见对应：不要求 `requiredPart`；效果落在 HP/AP/speed 或全局 buff。
+- `SCOPE_PART` 常见对应：`targetType=SINGLE_PART` 且存在 `requiredPart`（或运行时能明确一个部位）。
+- `SCOPE_MULTI_PARTS` 常见对应：`targetType=ALL_PARTS` 或 `targetType=SELF_PARTS`。
+- `SELECT_FIXED_PART` 常见对应：`targetType=SINGLE_PART` + `requiredPart`。
+- `SELECT_RANDOM_PART` 常见对应：`targetType=RANDOM_PART`。
+- `SELECT_ALL_PARTS` 常见对应：`targetType=ALL_PARTS` 或 `SELF_PARTS`。
+
+### 1.2.6 标签最小完备性（推荐约束）
+
+建议每个技能至少具备：
+
+- 1 个 What
+- 1 个 How
+- 1 个 When
+- 1 个 How long
+- `SUBJECT_*` + `SCOPE_*`（必选）
+- 1 个距离标签（`MELEE/RANGED/MAGIC`）
+- 1 个流派标签（`ARCH_*`）
+
+### 1.2.7 tags 示例（写法示例）
+
+以“破甲打击（对敌单部位）”为例：
+
+- 字段：`targetType=SINGLE_PART`、`requiredPart=chest`
+- 标签：
+  - `DMG_ARMOR` + `ABS` + `INSTANT` + `ONE_SHOT`
+  - `SUBJECT_ENEMY` + `SCOPE_PART` + `SELECT_FIXED_PART`
+  - `MELEE` + `ARCH_SWORD`
 
 ---
 

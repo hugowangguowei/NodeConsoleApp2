@@ -335,3 +335,17 @@ buff示例可以参照skill和item的设计文档。但是buff设计方案作为skill和item设计文档的
    对于特殊作用属性，例如护甲，还需要考虑作用部位。
 4）技能的标签体系：帮我设计一个技能设计的标签体系，确保每个技能都能够通过标签进行描述。
 
+2026.01.24 23:19
+基于skill_balance_design.md的设计，帮我实现一个技能平衡性分析工具，放到test目录下，文件命名为skill_balance_tool.html，同样可以加载assets/data/skills.json文件，分析技能的平衡性。用这个工具，我更关心技能的标签分布情况，是否存在某些标签过多或者过少的情况。与此同时，也可以对技能属性进行编辑，这一部分与skill_eidtor_test类似。请你先分析设计方案，然后再进行编码实现。
+
+在skill_balance_tool.html中， requiredPart部分，应该改为类似于skill_editor_test.html中的targetParts的多选框，能够指定必选部位，或者可选部位。请你分析方案的可行性，先不要修改代码。
+
+我发现在skill_balance_design中没有需求类型的概念，即：释放技能需要消耗什么资源？消耗资源的数量是多少？（当前对于消耗的描述简单归纳为apCost字段,但是经过分析我觉得不太够），因为本游戏的技能释放机制是在一回合内选多个技能进行组合释放，那么哪些技能释放依赖自身的某些部位，每个部位最多有多少个技能槽，这些内容都需要在需求资源中进行描述。请你基于这个思路，补充skill_balance_design.md文件，先不要修改代码。
+
+帮我分析当前的skill_balance_design.md文件第五章节，与当前的skills.json文件中的技能设计是否一致，如果不一致，帮我分析当前修改的复杂度，有没有可行性，先不要修改代码。
+
+先将skill_balance_design.md文件中的第五章节内容，增订到skill_design.md文件中，对于与skill_design中现有cost相关章节有冲突的部分，进行修改。先不要修改代码。
+
+结合skill_balance_design.md文件中的设计方案和skill_design.md文件中的技能设计，帮我修订skills_近战.json文件的技能设计，使其符合新的设计方案。
+
+结合skill_balance_design.md文件中的设计方案和skill_design.md文件中的技能设计，修改skill_balance_tool.html文件，重点是目标对象、需求数据等内容。

@@ -1,0 +1,908 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Skill Balance Tool</title>
+  <style>
+    :root {
+      --bg: #f4f4f4;
+      --panel: #ffffff;
+      --border: #d6d6d6;
+      --text: #1f2a37;
+      --muted: #6b7280;
+      --primary: #2563eb;
+      --danger: #dc2626;
+      --success: #16a34a;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    }
+
+    html, body { height: 100%; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      overflow: hidden;
+    }
+
+    header {
+      height: 52px;
+      background: var(--panel);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 0 16px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+    }
+
+    .btn {
+      border: 1px solid transparent;
+      background: #e5e7eb;
+      color: #111827;
+      padding: 8px 12px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    .btn:hover { filter: brightness(0.98); }
+    .btn-primary { background: var(--primary); color: #fff; }
+    .btn-danger { background: var(--danger); color: #fff; }
+    .btn-success { background: var(--success); color: #fff; }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .pill {
+      display: inline-block;
+      font-size: 12px;
+      padding: 2px 8px;
+      border-radius: 999px;
+      border: 1px solid #e5e7eb;
+      background: #f9fafb;
+      color: #111827;
+      white-space: nowrap;
+    }
+
+    #layout {
+      display: grid;
+      grid-template-columns: 340px 1fr 420px;
+      height: calc(100vh - 52px);
+    }
+
+    aside, main, section {
+      background: var(--panel);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    aside { border-right: 1px solid var(--border); }
+    section { border-left: 1px solid var(--border); }
+
+    .panel-title {
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--border);
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      background: #fafafa;
+    }
+
+    .panel-body {
+      padding: 12px;
+      overflow: auto;
+      min-height: 0;
+    }
+
+    .muted { color: var(--muted); font-size: 12px; }
+
+    /* Left: skill list */
+    .search-row { display:flex; gap:8px; align-items:center; margin-bottom: 10px; }
+    .input, .select, .textarea {
+      width: 100%;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 8px;
+      box-sizing: border-box;
+      font-size: 14px;
+    }
+    .textarea { min-height: 140px; resize: vertical; font-family: var(--mono); font-size: 12px; }
+
+    .skill-item {
+      border: 1px solid #e5e7eb;
+      border-radius: 10px;
+      padding: 10px;
+      margin-bottom: 10px;
+      cursor: pointer;
+      background: #fff;
+    }
+    .skill-item:hover { border-color: #c7d2fe; background: #f8fafc; }
+    .skill-item.active { border-color: #93c5fd; box-shadow: 0 0 0 3px rgba(59,130,246,0.18); }
+    .skill-item .name { font-weight: 800; }
+    .skill-item .meta { margin-top: 6px; display:flex; gap:6px; flex-wrap: wrap; }
+
+    /* Center: analysis */
+    .two-col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .card {
+      border: 1px solid #e5e7eb;
+      border-radius: 12px;
+      padding: 12px;
+      background: #fff;
+    }
+    .card-h {
+      display:flex;
+      align-items:center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 8px;
+      font-weight: 800;
+    }
+
+    .table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+    .table th, .table td {
+      border-bottom: 1px solid #f0f0f0;
+      padding: 6px 4px;
+      text-align: left;
+    }
+    .table th { color: #6b7280; font-weight: 800; }
+
+    .bar {
+      height: 10px;
+      border-radius: 999px;
+      background: #f3f4f6;
+      overflow: hidden;
+    }
+    .bar > div {
+      height: 100%;
+      background: linear-gradient(90deg, #60a5fa, #2563eb);
+      width: 0%;
+    }
+
+    .warn { color: #b45309; }
+
+    /* Right: editor */
+    .grid2 {
+      display: grid;
+      grid-template-columns: 120px 1fr;
+      gap: 8px 10px;
+      align-items: center;
+    }
+
+    .error { color: var(--danger); font-size: 12px; }
+
+    .tag-box {
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 8px;
+      background: #fff;
+    }
+    .tag-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px 10px;
+    }
+
+    @media (max-width: 1200px) {
+      #layout { grid-template-columns: 320px 1fr 380px; }
+    }
+    @media (max-width: 980px) {
+      body { overflow:auto; }
+      #layout { grid-template-columns: 1fr; height: auto; }
+      aside, main, section { border: none; }
+      header { position: sticky; top: 0; z-index: 20; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <input type="file" id="file-input" accept=".json,application/json" style="display:none" />
+    <button class="btn btn-dark" id="btn-load">Load skills.json</button>
+    <button class="btn btn-dark" id="btn-load-local">Load local file</button>
+    <button class="btn btn-primary" id="btn-export" disabled>Export skills.json</button>
+    <button class="btn" id="btn-reset" disabled>Reset changes</button>
+    <span style="flex:1"></span>
+    <span class="pill" id="status">未加载</span>
+  </header>
+
+  <div id="layout">
+    <aside>
+      <div class="panel-title">
+        <div>技能列表</div>
+        <div class="muted" id="skill-count">0</div>
+      </div>
+      <div class="panel-body">
+        <div class="search-row">
+          <input class="input" id="q" placeholder="搜索：id / name" />
+          <select class="select" id="tag-filter" style="max-width: 180px;">
+            <option value="">(按标签过滤)</option>
+          </select>
+        </div>
+        <div class="muted" style="margin-bottom:10px;">提示：若技能数据中没有 `tags` 字段，本工具会基于 `type` / `targetType` / `valueType` / `buffRefs` 做最小推断，用于统计分布。</div>
+        <div id="skill-list"></div>
+      </div>
+    </aside>
+
+    <main>
+      <div class="panel-title">
+        <div>平衡性分析</div>
+        <div class="muted" id="analysis-summary">—</div>
+      </div>
+      <div class="panel-body" id="analysis">
+        <div class="two-col">
+          <div class="card">
+            <div class="card-h">
+              <div>标签分布</div>
+              <div class="muted" id="tag-dist-meta">—</div>
+            </div>
+            <table class="table" id="tag-dist-table">
+              <thead><tr><th style="width: 30%">tag</th><th style="width: 15%">count</th><th>ratio</th></tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+
+          <div class="card">
+            <div class="card-h">
+              <div>异常提示</div>
+              <div class="muted">基于阈值的启发式检查</div>
+            </div>
+            <div class="muted" style="margin-bottom: 10px;">默认规则：某标签占比 &gt; 35% 判定“过多”；占比 &lt; 3% 判定“过少”。仅作辅助，不代表最终平衡结论。</div>
+            <div id="alerts"></div>
+          </div>
+        </div>
+
+        <div class="card" style="margin-top: 12px;">
+          <div class="card-h">
+            <div>成本与时序概览（简版）</div>
+            <div class="muted">cost / speed / type</div>
+          </div>
+          <table class="table" id="basic-stat-table">
+            <thead><tr><th>type</th><th>count</th><th>avg cost</th><th>avg speed</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </main>
+
+    <section>
+      <div class="panel-title">
+        <div>技能编辑</div>
+        <div class="muted" id="edit-title">未选择</div>
+      </div>
+      <div class="panel-body">
+        <div class="muted" style="margin-bottom: 10px;">编辑会直接修改内存中的技能对象；导出后可保存到 `assets/data/skills.json`。</div>
+
+        <div class="card" style="margin-bottom: 12px;">
+          <div class="card-h"><div>Basic</div><div class="muted" id="edit-id">—</div></div>
+          <div class="grid2">
+            <div class="muted">id</div>
+            <input class="input" id="f-id" readonly />
+
+            <div class="muted">name</div>
+            <input class="input" id="f-name" />
+
+            <div class="muted">rarity</div>
+            <select class="select" id="f-rarity">
+              <option value="">(none)</option>
+              <option value="Common">Common</option>
+              <option value="Uncommon">Uncommon</option>
+              <option value="Rare">Rare</option>
+              <option value="Epic">Epic</option>
+              <option value="Legendary">Legendary</option>
+            </select>
+
+            <div class="muted">cost</div>
+            <input class="input" id="f-cost" type="number" step="1" />
+
+            <div class="muted">speed</div>
+            <input class="input" id="f-speed" type="number" step="1" />
+
+            <div class="muted">type</div>
+            <select class="select" id="f-type">
+              <option value="">(none)</option>
+              <option value="DAMAGE">DAMAGE</option>
+              <option value="HEAL">HEAL</option>
+              <option value="DEFEND">DEFEND</option>
+              <option value="BUFF">BUFF</option>
+            </select>
+
+            <div class="muted">value</div>
+            <input class="input" id="f-value" type="number" step="0.01" />
+
+            <div class="muted">valueType</div>
+            <select class="select" id="f-valueType">
+              <option value="">(none)</option>
+              <option value="FLAT">FLAT</option>
+              <option value="PERCENT">PERCENT</option>
+            </select>
+
+            <div class="muted">targetType</div>
+            <input class="input" id="f-targetType" />
+
+            <div class="muted">requiredPart</div>
+            <input class="input" id="f-requiredPart" />
+          </div>
+          <div style="margin-top: 10px;">
+            <div class="muted" style="margin-bottom: 6px;">description</div>
+            <textarea class="textarea" id="f-desc"></textarea>
+          </div>
+        </div>
+
+        <div class="card" style="margin-bottom: 12px;">
+          <div class="card-h"><div>Tags</div><div class="muted">可编辑（数组）</div></div>
+          <div class="tag-box">
+            <div class="muted" style="margin-bottom: 8px;">若 `tags` 为空，会使用推断标签参与统计。编辑后建议显式写入 `tags`，以便稳定分析。</div>
+            <textarea class="textarea" id="f-tags" placeholder='例如：["DMG_HP","ABS","INSTANT","ONE_SHOT","SUBJECT_ENEMY","SCOPE_PART"]'></textarea>
+            <div class="error" id="err-tags" style="display:none; margin-top: 6px;"></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-h"><div>Effects / BuffRefs</div><div class="muted">JSON 直编</div></div>
+          <div class="muted" style="margin-bottom: 8px;">说明：此处不做强 schema 约束，仅做 JSON 语法校验。</div>
+          <div style="display:flex; gap: 8px; margin-bottom: 8px;">
+            <button class="btn btn-primary" id="btn-save-json" disabled>Save JSON fields</button>
+            <button class="btn" id="btn-revert-json" disabled>Revert JSON fields</button>
+          </div>
+          <div class="muted" style="margin-bottom: 6px;">effects</div>
+          <textarea class="textarea" id="f-effects" placeholder="[]"></textarea>
+          <div class="muted" style="margin: 10px 0 6px;">buffRefs</div>
+          <textarea class="textarea" id="f-buffRefs" placeholder="{\n  \"apply\": []\n}"></textarea>
+          <div class="error" id="err-json" style="display:none; margin-top: 6px;"></div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    const DEFAULT_SKILLS_URL = '../assets/data/skills.json';
+
+    const STABLE_TAGS = [
+      // What
+      'DMG_HP','DMG_ARMOR','PIERCE','HEAL','ARMOR_ADD','AP_GAIN','SPEED','BUFF_APPLY','BUFF_REMOVE',
+      // How
+      'ABS','PCT_MAX','PCT_CURRENT','SCALING',
+      // When
+      'INSTANT','DELAYED','ON_EVENT',
+      // How long
+      'ONE_SHOT','ONE_TURN','MULTI_TURN','BATTLE','PERMANENT',
+      // Subject & scope
+      'SUBJECT_SELF','SUBJECT_ENEMY','SUBJECT_BOTH','SCOPE_ENTITY','SCOPE_PART','SCOPE_MULTI_PARTS',
+      // Selection
+      'SELECT_FIXED_PART','SELECT_RANDOM_PART','SELECT_ALL_PARTS',
+      // Range
+      'MELEE','RANGED','MAGIC',
+      // Archetype
+      'ARCH_HEAVY','ARCH_WALL','ARCH_SWORD','ARCH_RANGER','ARCH_SNIPER','ARCH_ELEMENT','ARCH_HOLY',
+      // Conditional
+      'UNCONDITIONAL','CONDITIONAL'
+    ];
+
+    const state = {
+      loaded: false,
+      originalSkillsById: {},
+      skillsById: {},
+      selectedId: null,
+      jsonDraft: { effects: '', buffRefs: '' },
+    };
+
+    function $(id){ return document.getElementById(id); }
+
+    function setStatus(text) {
+      $('status').textContent = text;
+    }
+
+    function clone(obj) {
+      return JSON.parse(JSON.stringify(obj));
+    }
+
+    function normalizeSkillsJson(raw) {
+      if (!raw || typeof raw !== 'object') return {};
+      // In this repo, skills.json is an object keyed by skill id.
+      // But tolerate array format as well.
+      if (Array.isArray(raw)) {
+        const map = {};
+        for (const s of raw) {
+          if (s && s.id) map[s.id] = s;
+        }
+        return map;
+      }
+      return raw;
+    }
+
+    function inferTags(skill) {
+      const tags = new Set();
+
+      // What
+      if (skill.type === 'HEAL') tags.add('HEAL');
+      if (skill.type === 'DEFEND') tags.add('ARMOR_ADD');
+      if (skill.type === 'BUFF') tags.add('BUFF_APPLY');
+      if (skill.type === 'DAMAGE') tags.add('DMG_HP');
+
+      // Presence of buffRefs
+      if (skill.buffRefs?.apply?.length) tags.add('BUFF_APPLY');
+      if (skill.buffRefs?.remove?.length) tags.add('BUFF_REMOVE');
+
+      // How
+      if (skill.valueType === 'PERCENT') tags.add('PCT_MAX');
+      else if (typeof skill.value === 'number') tags.add('ABS');
+
+      // When
+      tags.add('INSTANT');
+
+      // How long
+      tags.add('ONE_SHOT');
+      if (skill.buffRefs?.apply?.some(a => typeof a?.duration === 'number' && a.duration > 1)) tags.add('MULTI_TURN');
+      if (skill.buffRefs?.apply?.some(a => typeof a?.duration === 'number' && a.duration === 1)) tags.add('ONE_TURN');
+
+      // Subject & scope (based on targetType)
+      if (skill.targetType === 'SELF' || skill.targetType === 'SELF_PARTS') tags.add('SUBJECT_SELF');
+      else tags.add('SUBJECT_ENEMY');
+
+      if (skill.targetType === 'SINGLE_PART') tags.add('SCOPE_PART');
+      else if (skill.targetType === 'ALL_PARTS' || skill.targetType === 'SELF_PARTS') tags.add('SCOPE_MULTI_PARTS');
+      else tags.add('SCOPE_ENTITY');
+
+      // selection
+      if (skill.targetType === 'SINGLE_PART' && (skill.requiredPart || skill.requiredParts)) tags.add('SELECT_FIXED_PART');
+      if (skill.targetType === 'RANDOM_PART') tags.add('SELECT_RANDOM_PART');
+      if (skill.targetType === 'ALL_PARTS' || skill.targetType === 'SELF_PARTS') tags.add('SELECT_ALL_PARTS');
+
+      // Conditional
+      tags.add('UNCONDITIONAL');
+
+      return Array.from(tags);
+    }
+
+    function getEffectiveTags(skill) {
+      if (Array.isArray(skill.tags) && skill.tags.length) return skill.tags;
+      return inferTags(skill);
+    }
+
+    function computeTagDistribution(skillsById) {
+      const counts = new Map();
+      const ids = Object.keys(skillsById);
+      for (const id of ids) {
+        const s = skillsById[id];
+        for (const t of getEffectiveTags(s)) {
+          counts.set(t, (counts.get(t) || 0) + 1);
+        }
+      }
+      return { counts, totalSkills: ids.length };
+    }
+
+    function computeBasicStats(skillsById) {
+      const groups = new Map();
+      for (const s of Object.values(skillsById)) {
+        const key = s.type || '(none)';
+        if (!groups.has(key)) groups.set(key, { count: 0, costSum: 0, speedSum: 0, costN: 0, speedN: 0 });
+        const g = groups.get(key);
+        g.count++;
+        if (typeof s.cost === 'number') { g.costSum += s.cost; g.costN++; }
+        if (typeof s.speed === 'number') { g.speedSum += s.speed; g.speedN++; }
+      }
+      return Array.from(groups.entries()).map(([type, g]) => ({
+        type,
+        count: g.count,
+        avgCost: g.costN ? (g.costSum / g.costN) : null,
+        avgSpeed: g.speedN ? (g.speedSum / g.speedN) : null,
+      })).sort((a,b)=> b.count - a.count);
+    }
+
+    function renderTagDist() {
+      const { counts, totalSkills } = computeTagDistribution(state.skillsById);
+      const rows = Array.from(counts.entries())
+        .map(([tag, count]) => ({ tag, count, ratio: totalSkills ? count / totalSkills : 0 }))
+        .sort((a,b)=> b.count - a.count);
+
+      const tbody = $('tag-dist-table').querySelector('tbody');
+      tbody.innerHTML = '';
+
+      for (const r of rows) {
+        const tr = document.createElement('tr');
+        const pct = (r.ratio * 100).toFixed(1) + '%';
+
+        const tdTag = document.createElement('td');
+        tdTag.textContent = r.tag;
+
+        const tdCount = document.createElement('td');
+        tdCount.textContent = String(r.count);
+
+        const tdBar = document.createElement('td');
+        tdBar.innerHTML = `<div class="bar"><div style="width:${Math.min(100, r.ratio * 100)}%"></div></div><div class="muted" style="margin-top:4px;">${pct}</div>`;
+
+        tr.appendChild(tdTag);
+        tr.appendChild(tdCount);
+        tr.appendChild(tdBar);
+        tbody.appendChild(tr);
+      }
+
+      $('tag-dist-meta').textContent = `skills: ${totalSkills}, tags: ${rows.length}`;
+
+      // Build filter dropdown
+      const sel = $('tag-filter');
+      const current = sel.value;
+      sel.innerHTML = `<option value="">(按标签过滤)</option>`;
+      const sortedTags = rows.map(r => r.tag);
+      for (const t of sortedTags) {
+        const opt = document.createElement('option');
+        opt.value = t;
+        opt.textContent = `${t} (${counts.get(t)})`;
+        sel.appendChild(opt);
+      }
+      sel.value = current;
+
+      renderAlerts(rows, totalSkills);
+    }
+
+    function renderAlerts(rows, totalSkills) {
+      const hi = 0.35;
+      const lo = 0.03;
+      const alerts = [];
+
+      for (const r of rows) {
+        if (totalSkills <= 0) continue;
+        if (r.ratio >= hi) alerts.push({ level: 'warn', text: `标签「${r.tag}」占比 ${(r.ratio*100).toFixed(1)}%，可能偏多（>${hi*100}%）。` });
+        if (r.ratio <= lo) alerts.push({ level: 'warn', text: `标签「${r.tag}」占比 ${(r.ratio*100).toFixed(1)}%，可能偏少（<${lo*100}%）。` });
+      }
+
+      // Detect unknown tags
+      const unknown = rows.filter(r => !STABLE_TAGS.includes(r.tag));
+      for (const u of unknown) {
+        alerts.push({ level: 'warn', text: `发现非稳定枚举标签「${u.tag}」：建议在设计文档中确认其语义并决定是否收敛为稳定枚举。` });
+      }
+
+      const container = $('alerts');
+      container.innerHTML = '';
+      if (!alerts.length) {
+        container.innerHTML = `<div class="muted">未发现明显异常（仅基于启发式规则）。</div>`;
+        return;
+      }
+      for (const a of alerts) {
+        const div = document.createElement('div');
+        div.className = a.level === 'warn' ? 'warn' : '';
+        div.style.marginBottom = '8px';
+        div.textContent = a.text;
+        container.appendChild(div);
+      }
+    }
+
+    function renderBasicStatTable() {
+      const rows = computeBasicStats(state.skillsById);
+      const tbody = $('basic-stat-table').querySelector('tbody');
+      tbody.innerHTML = '';
+      for (const r of rows) {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>${escapeHtml(r.type)}</td><td>${r.count}</td><td>${r.avgCost == null ? '-' : r.avgCost.toFixed(2)}</td><td>${r.avgSpeed == null ? '-' : r.avgSpeed.toFixed(2)}</td>`;
+        tbody.appendChild(tr);
+      }
+    }
+
+    function escapeHtml(s){
+      return String(s)
+        .replaceAll('&','&amp;')
+        .replaceAll('<','&lt;')
+        .replaceAll('>','&gt;')
+        .replaceAll('"','&quot;')
+        .replaceAll("'",'&#039;');
+    }
+
+    function renderSkillList() {
+      const list = $('skill-list');
+      const q = $('q').value.trim().toLowerCase();
+      const tag = $('tag-filter').value;
+
+      const skills = Object.values(state.skillsById)
+        .filter(s => {
+          if (!q) return true;
+          return String(s.id || '').toLowerCase().includes(q) || String(s.name || '').toLowerCase().includes(q);
+        })
+        .filter(s => {
+          if (!tag) return true;
+          return getEffectiveTags(s).includes(tag);
+        })
+        .sort((a,b)=> String(a.id).localeCompare(String(b.id)));
+
+      list.innerHTML = '';
+      for (const s of skills) {
+        const div = document.createElement('div');
+        div.className = 'skill-item' + (s.id === state.selectedId ? ' active' : '');
+        const effTags = getEffectiveTags(s);
+        const shownTags = effTags.slice(0, 5);
+        div.innerHTML = `
+          <div class="name">${escapeHtml(s.name || '(noname)')}</div>
+          <div class="muted">${escapeHtml(s.id || '')}</div>
+          <div class="meta">
+            <span class="pill">type: ${escapeHtml(s.type || '(none)')}</span>
+            <span class="pill">cost: ${typeof s.cost === 'number' ? s.cost : '-'}</span>
+            <span class="pill">speed: ${typeof s.speed === 'number' ? s.speed : '-'}</span>
+            ${s.rarity ? `<span class="pill">${escapeHtml(s.rarity)}</span>` : ''}
+          </div>
+          <div class="meta">
+            ${shownTags.map(t=>`<span class="pill">${escapeHtml(t)}</span>`).join('')}
+            ${effTags.length > shownTags.length ? `<span class="muted">+${effTags.length - shownTags.length}</span>` : ''}
+          </div>
+        `;
+        div.addEventListener('click', ()=> selectSkill(s.id));
+        list.appendChild(div);
+      }
+
+      $('skill-count').textContent = `filtered: ${skills.length} / total: ${Object.keys(state.skillsById).length}`;
+    }
+
+    function renderAll() {
+      $('analysis-summary').textContent = state.loaded ? `skills: ${Object.keys(state.skillsById).length}` : '—';
+      renderTagDist();
+      renderBasicStatTable();
+      renderSkillList();
+      renderEditor();
+      updateButtons();
+    }
+
+    function updateButtons() {
+      $('btn-export').disabled = !state.loaded;
+      $('btn-reset').disabled = !state.loaded;
+      $('btn-save-json').disabled = !state.loaded || !state.selectedId;
+      $('btn-revert-json').disabled = !state.loaded || !state.selectedId;
+    }
+
+    function selectSkill(id) {
+      state.selectedId = id;
+      renderSkillList();
+      renderEditor();
+      updateButtons();
+    }
+
+    function getSelectedSkill() {
+      if (!state.selectedId) return null;
+      return state.skillsById[state.selectedId] || null;
+    }
+
+    function renderEditor() {
+      const s = getSelectedSkill();
+      if (!s) {
+        $('edit-title').textContent = '未选择';
+        $('edit-id').textContent = '—';
+        $('f-id').value = '';
+        $('f-name').value = '';
+        $('f-rarity').value = '';
+        $('f-cost').value = '';
+        $('f-speed').value = '';
+        $('f-type').value = '';
+        $('f-value').value = '';
+        $('f-valueType').value = '';
+        $('f-targetType').value = '';
+        $('f-requiredPart').value = '';
+        $('f-desc').value = '';
+        $('f-tags').value = '';
+        $('f-effects').value = '';
+        $('f-buffRefs').value = '';
+        $('err-tags').style.display = 'none';
+        $('err-json').style.display = 'none';
+        return;
+      }
+
+      $('edit-title').textContent = s.name || s.id;
+      $('edit-id').textContent = s.id;
+      $('f-id').value = s.id || '';
+      $('f-name').value = s.name || '';
+      $('f-rarity').value = s.rarity || '';
+      $('f-cost').value = typeof s.cost === 'number' ? s.cost : '';
+      $('f-speed').value = typeof s.speed === 'number' ? s.speed : '';
+      $('f-type').value = s.type || '';
+      $('f-value').value = typeof s.value === 'number' ? s.value : '';
+      $('f-valueType').value = s.valueType || '';
+      $('f-targetType').value = s.targetType || '';
+      $('f-requiredPart').value = s.requiredPart || '';
+      $('f-desc').value = s.description || '';
+
+      const tags = Array.isArray(s.tags) ? s.tags : [];
+      $('f-tags').value = JSON.stringify(tags, null, 2);
+
+      state.jsonDraft.effects = JSON.stringify(s.effects || [], null, 2);
+      state.jsonDraft.buffRefs = JSON.stringify(s.buffRefs || {}, null, 2);
+      $('f-effects').value = state.jsonDraft.effects;
+      $('f-buffRefs').value = state.jsonDraft.buffRefs;
+
+      $('err-tags').style.display = 'none';
+      $('err-json').style.display = 'none';
+    }
+
+    function bindEditorField(id, getter, setter) {
+      const el = $(id);
+      el.addEventListener('input', ()=> {
+        const s = getSelectedSkill();
+        if (!s) return;
+        setter(s, getter(el));
+        renderSkillList();
+        renderTagDist();
+        renderBasicStatTable();
+      });
+    }
+
+    function parseNumberOrEmpty(s) {
+      if (s === '' || s == null) return undefined;
+      const n = Number(s);
+      if (Number.isFinite(n)) return n;
+      return undefined;
+    }
+
+    async function loadSkillsFromProject() {
+      setStatus('加载中...');
+      const res = await fetch(DEFAULT_SKILLS_URL, { cache: 'no-store' });
+      if (!res.ok) throw new Error(`Load failed: ${res.status}`);
+      const raw = await res.json();
+
+      state.skillsById = normalizeSkillsJson(raw);
+      state.originalSkillsById = clone(state.skillsById);
+      state.loaded = true;
+      state.selectedId = null;
+      setStatus('已加载');
+
+      renderAll();
+    }
+
+    async function loadSkillsFromLocalFile(file) {
+      if (!file) return;
+      setStatus('读取本地文件...');
+
+      const text = await file.text();
+      let raw;
+      try {
+        raw = JSON.parse(text);
+      } catch (e) {
+        setStatus('解析失败');
+        alert(`JSON 不合法：${e.message}`);
+        return;
+      }
+
+      state.skillsById = normalizeSkillsJson(raw);
+      state.originalSkillsById = clone(state.skillsById);
+      state.loaded = true;
+      state.selectedId = null;
+      setStatus(`已加载：${file.name}`);
+
+      renderAll();
+    }
+
+    function exportJson() {
+      const data = JSON.stringify(state.skillsById, null, 2);
+      const blob = new Blob([data], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'skills.json';
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function resetChanges() {
+      state.skillsById = clone(state.originalSkillsById);
+      state.selectedId = null;
+      renderAll();
+    }
+
+    function saveTags() {
+      const s = getSelectedSkill();
+      if (!s) return;
+      const raw = $('f-tags').value.trim();
+      if (!raw) {
+        s.tags = [];
+        $('err-tags').style.display = 'none';
+        renderAll();
+        return;
+      }
+      try {
+        const parsed = JSON.parse(raw);
+        if (!Array.isArray(parsed)) throw new Error('tags 必须是数组');
+        // normalize strings
+        s.tags = parsed.map(x => String(x)).filter(x => x.length);
+        $('err-tags').style.display = 'none';
+        renderAll();
+      } catch (e) {
+        $('err-tags').textContent = `tags JSON 不合法：${e.message}`;
+        $('err-tags').style.display = 'block';
+      }
+    }
+
+    function saveJsonFields() {
+      const s = getSelectedSkill();
+      if (!s) return;
+      const effectsText = $('f-effects').value;
+      const buffRefsText = $('f-buffRefs').value;
+
+      try {
+        s.effects = effectsText.trim() ? JSON.parse(effectsText) : [];
+        s.buffRefs = buffRefsText.trim() ? JSON.parse(buffRefsText) : {};
+        $('err-json').style.display = 'none';
+        renderAll();
+      } catch (e) {
+        $('err-json').textContent = `effects/buffRefs JSON 不合法：${e.message}`;
+        $('err-json').style.display = 'block';
+      }
+    }
+
+    function revertJsonFields() {
+      const s = getSelectedSkill();
+      if (!s) return;
+      state.jsonDraft.effects = JSON.stringify(s.effects || [], null, 2);
+      state.jsonDraft.buffRefs = JSON.stringify(s.buffRefs || {}, null, 2);
+      $('f-effects').value = state.jsonDraft.effects;
+      $('f-buffRefs').value = state.jsonDraft.buffRefs;
+      $('err-json').style.display = 'none';
+    }
+
+    function wireEvents() {
+      $('btn-load').addEventListener('click', async ()=> {
+        try {
+          await loadSkillsFromProject();
+        } catch (e) {
+          console.error(e);
+          setStatus('加载失败（查看 console）');
+          alert(`加载失败：${e.message}\n\n提示：请使用本地服务器打开本页面（避免浏览器阻止 fetch 本地文件）。`);
+        }
+      });
+
+      $('btn-load-local').addEventListener('click', ()=> {
+        $('file-input').value = '';
+        $('file-input').click();
+      });
+
+      $('file-input').addEventListener('change', async (e)=> {
+        const file = e.target.files && e.target.files[0];
+        try {
+          await loadSkillsFromLocalFile(file);
+        } catch (err) {
+          console.error(err);
+          setStatus('读取失败（查看 console）');
+          alert(`读取失败：${err.message}`);
+        }
+      });
+
+      $('btn-export').addEventListener('click', exportJson);
+      $('btn-reset').addEventListener('click', resetChanges);
+
+      $('q').addEventListener('input', renderSkillList);
+      $('tag-filter').addEventListener('change', renderSkillList);
+
+      // Basic fields
+      bindEditorField('f-name', el => el.value, (s,v)=> s.name = v);
+      bindEditorField('f-rarity', el => el.value || undefined, (s,v)=> { if (v) s.rarity = v; else delete s.rarity; });
+      bindEditorField('f-cost', el => parseNumberOrEmpty(el.value), (s,v)=> { if (v == null) delete s.cost; else s.cost = v; });
+      bindEditorField('f-speed', el => parseNumberOrEmpty(el.value), (s,v)=> { if (v == null) delete s.speed; else s.speed = v; });
+      bindEditorField('f-type', el => el.value || undefined, (s,v)=> { if (v) s.type = v; else delete s.type; });
+      bindEditorField('f-value', el => parseNumberOrEmpty(el.value), (s,v)=> { if (v == null) delete s.value; else s.value = v; });
+      bindEditorField('f-valueType', el => el.value || undefined, (s,v)=> { if (v) s.valueType = v; else delete s.valueType; });
+      bindEditorField('f-targetType', el => el.value || undefined, (s,v)=> { if (v) s.targetType = v; else delete s.targetType; });
+      bindEditorField('f-requiredPart', el => el.value || undefined, (s,v)=> { if (v) s.requiredPart = v; else delete s.requiredPart; });
+      bindEditorField('f-desc', el => el.value, (s,v)=> s.description = v);
+
+      // tags: validate on blur
+      $('f-tags').addEventListener('blur', saveTags);
+
+      $('btn-save-json').addEventListener('click', saveJsonFields);
+      $('btn-revert-json').addEventListener('click', revertJsonFields);
+
+      // also allow Ctrl+Enter to save JSON fields
+      $('f-effects').addEventListener('keydown', (e)=> {
+        if (e.ctrlKey && e.key === 'Enter') saveJsonFields();
+      });
+      $('f-buffRefs').addEventListener('keydown', (e)=> {
+        if (e.ctrlKey && e.key === 'Enter') saveJsonFields();
+      });
+    }
+
+    wireEvents();
+  </script>
+</body>
+</html>
