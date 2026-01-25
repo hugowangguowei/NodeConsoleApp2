@@ -137,42 +137,394 @@
 
 ---
 
+## 1.3 标准技能数据对象模板（Schema Draft / v2）
+
+> 目的：提供一个可长期维护的 `skills.json` 技能对象结构模板。
+>
+> 说明：
+>
+> - 本模板以 `skill_balance_design.md` 的目标选择三段式（3.7 Subject/Scope/Selection）与“需求/消耗”模型（第5章）为基础。
+> - 当前你已移除“流派”概念，因此模板中不再强制包含 `ARCH_*`。如未来需要分类，可用 `groups/tags` 扩展。
+
+### 1.3.1 顶层字段（最小可用集合）
+
+推荐每个技能对象至少包含：
+
+- `id: string`：技能唯一 ID（稳定主键）
+- `name: string`
+- `description?: string`
+- `rarity?: "Common" | "Uncommon" | "Rare" | "Epic" | "Legendary"`
+
+- `speed?: number`：技能速度修正（用于行动排序）
+
+- `target: { subject, scope, selection? }`：目标定义（三段式）
+
+- `effects?: SkillEffect[]`：技能效果（建议强 schema，见 1.3.3）
+- `buffRefs?: { apply?, applySelf?, remove? }`：Buff 引用（数据驱动）
+
+- `requirements?: object`：门槛（必须满足但不一定消耗）
+- `costs?: object`：消耗（满足后会扣除资源/占槽）
+
+- `tags?: string[]`：用于统计/筛选/平衡校验
+- `tagMeta?: object`：标签参数（例如 parts、说明等）
+
+### 1.3.2 `target`（核心：目标选择三段式）
+
+```json
+{
+  "target": {
+    "subject": "SUBJECT_ENEMY",
+    "scope": "SCOPE_PART",
+    "selection": {
+      "mode": "single",
+      "candidateParts": ["head", "chest", "left_arm", "right_arm", "left_leg", "right_leg"],
+      "selectedParts": ["chest"],
+      "selectCount": 1
+    }
+  }
+}
+```
+
+字段说明：
+
+- `target.subject`（必填）
+  - `SUBJECT_SELF`：对自己
+  - `SUBJECT_ENEMY`：对敌人
+  - `SUBJECT_BOTH`：（可选）同时影响双方
+
+- `target.scope`（必填）
+  - `SCOPE_ENTITY`：角色整体（不绑定部位）
+  - `SCOPE_PART`：单个部位
+  - `SCOPE_MULTI_PARTS`：多个部位（1v1 的 AOE 等价物）
+
+- `target.selection`（可选，但当 `scope != SCOPE_ENTITY` 时必填）
+  
+  > **重要前提**：在战斗输入/释放机制里，“目标选择”最终会落到**某些槽位（部位）**。
+  > 因此 Selection 以“槽位选择”建模，而不是用 `part/parts` 这种互斥字段。
+
+  - `mode: "single" | "multiple" | "random_single" | "random_multiple"`
+    - `single`：指定单个槽位（玩家选择 1 个部位）
+    - `multiple`：指定多个槽位（玩家选择 N 个部位）
+    - `random_single`：随机单个槽位（从候选池随机 1 个部位）
+    - `random_multiple`：随机多个槽位（从候选池随机 N 个部位）
+
+  - `candidateParts: string[]`
+    - 候选部位池（该技能允许命中/影响的部位范围）。
+    - 例：只能攻击手臂 -> `["left_arm","right_arm"]`；攻击任意部位 -> 全部部位列表。
+    - 约束建议：`candidateParts` 不应包含抽象值（如 `arm/leg`），而应展开为具体部位。
+
+  - `selectedParts: string[]`
+    - 已选部位（主要用于：
+      - **静态技能**：技能写死目标（可直接预填，例如固定打胸）
+      - **技能配置阶段 UI**：玩家已经选定的部位结果
+      - **存档/回放**：记录当回合技能配置时的目标选择结果）
+    - 对于 `random_*`：
+      - 设计层面可留空，由引擎在执行阶段从 `candidateParts` 中生成；
+      - 或在“已配置待执行技能队列”里落地为具体结果（便于回放）。
+
+  - `selectCount: number`
+    - 允许选择/抽取的数量 N。
+    - 对 `single` / `random_single` 通常固定为 `1`。
+    - 对 `multiple` / `random_multiple` 表示 N。
+    - 约束建议：`selectCount <= candidateParts.length`。
+
+  > 一致性约束建议：
+  >
+  > - `mode` 为 `single | random_single` 时：`selectCount` 必须为 `1`。
+  > - `mode` 为 `multiple | random_multiple` 时：`selectCount >= 1`。
+  > - 若 `selectedParts` 非空：必须满足 `selectedParts.length == selectCount` 且 `selectedParts` 都属于 `candidateParts`。
+  > - `selectedParts` 不允许重复。
+
+> 约束建议：
+>
+> - `scope = SCOPE_ENTITY`：在数据层**显式表达“全选”**（例如用于统一 UI/统计/回放结构，让所有技能都有 selection 对象），约定：
+>     - `mode = "multiple"`
+>     - `candidateParts = 全部部位列表`
+>     - `selectedParts = 全部部位列表`
+>     - `selectCount = candidateParts.length`
+> - `scope = SCOPE_PART`：建议 `selection.mode` 仅使用 `single | random_single`（因为只允许落到一个槽位）。
+> - `scope = SCOPE_MULTI_PARTS`：建议 `selection.mode` 使用 `multiple | random_multiple`。
+> - `scope = SCOPE_MULTI_PARTS` 且你想表达“全身所有部位”：推荐约定 `selectCount = candidateParts.length`。
+
+### 1.3.2.1 常见目标选择模式示例
+
+#### (A) 玩家指定：攻击任意单部位
+
+```json
+{
+  "target": {
+    "subject": "SUBJECT_ENEMY",
+    "scope": "SCOPE_PART",
+    "selection": {
+      "mode": "single",
+      "candidateParts": ["head", "chest", "left_arm", "right_arm", "left_leg", "right_leg"],
+      "selectedParts": [],
+      "selectCount": 1
+    }
+  }
+}
+```
+
+#### (B) 写死部位：固定攻击躯干（无需玩家选择）
+
+```json
+{
+  "target": {
+    "subject": "SUBJECT_ENEMY",
+    "scope": "SCOPE_PART",
+    "selection": {
+      "mode": "single",
+      "candidateParts": ["chest"],
+      "selectedParts": ["chest"],
+      "selectCount": 1
+    }
+  }
+}
+```
+
+#### (C) 随机单部位：随机命中一个部位
+
+```json
+{
+  "target": {
+    "subject": "SUBJECT_ENEMY",
+    "scope": "SCOPE_PART",
+    "selection": {
+      "mode": "random_single",
+      "candidateParts": ["head", "chest", "left_arm", "right_arm", "left_leg", "right_leg"],
+      "selectedParts": [],
+      "selectCount": 1
+    }
+  }
+}
+```
+
+#### (D) 多部位：指定 N 个部位（例如修复 2 个部位护甲）
+
+```json
+{
+  "target": {
+    "subject": "SUBJECT_SELF",
+    "scope": "SCOPE_MULTI_PARTS",
+    "selection": {
+      "mode": "multiple",
+      "candidateParts": ["head", "chest", "left_arm", "right_arm", "left_leg", "right_leg"],
+      "selectedParts": [],
+      "selectCount": 2
+    }
+  }
+}
+```
+
+### 1.3.3 `effects`（技能效果，建议强 schema）
+
+> 目标：把“技能做了什么”从自由文本/散乱字段，收敛成可校验、可编辑、可统计的结构化效果列表。
+>
+> 设计原则：
+>
+> 1. `target` 负责回答“对谁、对哪些槽位”。
+> 2. `effects` 负责回答“产生什么数值/规则变化”。
+> 3. Buff/触发器优先走 `buffRefs`，`effects` 只承载 **即时结算** 与少量必须的规则开关。
+
+#### 1.3.3.1 `SkillEffect` 统一结构
+
+建议统一为数组：
+
+```json
+"effects": [
+  {
+    "effectType": "DAMAGE",
+    "amount": 20,
+    "amountType": "ABS",
+    "damageKind": "HP",
+    "hit": { "mode": "normal" }
+  }
+]
+```
+
+公共字段（所有 effect 推荐支持）：
+
+- `effectType: string`：效果类型（枚举）。**直接复用 1.2.3 中的“作用属性（What）”标签作为枚举集合**，以保证标签体系与 effect schema 不脱节。
+  - 例如：`DMG_HP` / `DMG_ARMOR` / `PIERCE` / `HEAL` / `ARMOR_ADD` / `AP_GAIN` / `SPEED` / `BUFF_APPLY` / `BUFF_REMOVE`
+- `note?: string`：纯说明（不参与结算，可用于编辑器提示）
+
+目标绑定规则（关键）：
+
+- `effects` 不再额外携带 `target=enemy/self`，默认 **继承技能的 `target.subject`**。
+- 若某个 effect 需要和 selection 的“槽位结果”解耦（例如“自伤 + 对敌伤害”），则该 effect 可显式声明：
+  - `subjectOverride?: "SUBJECT_SELF" | "SUBJECT_ENEMY"`
+- 若某个 effect 需要指定“具体部位/槽位”，则推荐两种方式（按复杂度选择其一）：
+  1) **复用最终选中的槽位**：默认即可（effect 不写 part）
+  2) **写死部位/部位集合覆盖**（仅在确实需要时）：
+     - `partOverride?: { mode: "fixed" | "listed", parts: string[] }`
+
+> 约束建议：不要在 effect 里再复制一份 selection 逻辑；selection 永远只在 `target.selection` 出现。
+
+#### 1.3.3.2 effectType / amountType 与标签体系的对齐（推荐）
+
+为避免 `effects` 与 `tags` 出现两套命名体系：
+
+- `effects[].effectType`：**直接使用 1.2.3 的“作用属性（What）”枚举**
+- `effects[].amountType`：**直接使用 1.2.3 的“数值类型（How）”枚举**
+
+也就是说，`effects` 中不再使用 `DAMAGE/HEAL/...` 这种另起炉灶的 type。
+
+**1) effectType（What）枚举来源**
+
+- `DMG_HP`：对 HP 造成伤害（默认作用于 `target.selection` 选中部位；若护甲>0 是否透传 HP 由引擎伤害规则决定）
+- `DMG_ARMOR`：对护甲造成伤害（破坏/削减某个或多个部位护甲）
+- `PIERCE`：穿透/真伤类（若你希望它直接等价 TRUE DAMAGE，也可以在引擎层映射；否则作为规则开关）
+- `HEAL`：治疗（通常用于 `SUBJECT_SELF`）
+- `ARMOR_ADD`：护甲增加/修复（通常用于 `SCOPE_PART` 或 `SCOPE_MULTI_PARTS`）
+- `AP_GAIN`：AP 变更
+- `SPEED`：速度变更
+- `BUFF_APPLY` / `BUFF_REMOVE`：原则上更建议用 `buffRefs`，但若你需要“即时施加/移除”且不想走 buffRefs，也可保留（后续建议收敛）
+
+**2) amountType（How）枚举来源**
+
+- `ABS`：绝对值
+- `PCT_MAX`：按最大值百分比（例如最大 HP）
+- `PCT_CURRENT`：按当前值百分比（例如当前 HP）
+- `SCALING`：按某个来源属性缩放（例如按 `atk`、或按武器伤害）
+
+> 说明：
+>
+> - 原先 `PERCENT` 这一类容易含混（到底是按 max 还是 current，还是按 atk 的百分比）。建议完全用 `PCT_MAX/PCT_CURRENT/SCALING` 三者覆盖。
+> - 当 `amountType=SCALING` 时，建议提供 `scaling` 参数：`{ stat, multiplier }`。
+
+
+---
+
+### 1.3.4 `requirements`（门槛）与 `costs`（消耗）
+
+#### (A) `requirements`：必须满足，但不一定扣除
+
+```json
+{
+  "requirements": {
+    "targetHpPercentBelow": 0.3,
+    "targetPart": { "armorZero": true },
+    "selfPart": { "mode": "ANY", "parts": ["left_arm"], "mustBeUsable": true }
+  }
+}
+```
+
+#### (B) `costs`：满足后扣除的资源/占槽
+
+```json
+{
+  "costs": {
+    "ap": 3,
+    "partSlot": { "part": "left_arm", "slotCost": 1 },
+    "perTurnLimit": 1
+  }
+}
+```
+
+> 约束建议：
+>
+> - `cost` 与 `costs.ap` 统一为 `costs.ap`。
+> - 若玩法采用“一回合配置多技能队列”，建议尽早让绝大多数技能显式写 `costs.partSlot`。
+
+### 1.3.4 `buffRefs`（技能引用 Buff，不写逻辑）
+
+```json
+{
+  "buffRefs": {
+    "apply": [
+      { "buffId": "buff_bleed", "target": "enemy", "chance": 1.0, "duration": 3 }
+    ],
+    "applySelf": [
+      { "buffId": "buff_block", "target": "self", "chance": 1.0, "duration": 1 }
+    ],
+    "remove": [
+      { "buffId": "buff_poison", "target": "self" }
+    ]
+  }
+}
+```
+
+### 1.3.5 `tags/tagMeta`（用于统计与校验，可选但推荐）
+
+```json
+{
+  "tags": [
+    "DMG_ARMOR",
+    "ABS",
+    "INSTANT",
+    "ONE_SHOT",
+    "UNCONDITIONAL",
+    "SUBJECT_ENEMY",
+    "SCOPE_PART",
+    "SELECT_FIXED_PART",
+    "RES_AP",
+    "RES_SLOT"
+  ],
+  "tagMeta": {
+    "parts": ["chest"],
+    "slot": { "part": "left_arm", "slotCost": 1 }
+  }
+}
+```
+
+### 1.3.6 完整模板示例（推荐你后续在数据文件中采用）
+
+```json
+{
+  "id": "skill_example_crush_armor",
+  "name": "破甲打击",
+  "rarity": "Common",
+  "description": "对单个部位造成护甲伤害。",
+
+  "speed": 0,
+  "costs": {
+    "ap": 3,
+    "partSlot": { "part": "right_arm", "slotCost": 1 },
+    "perTurnLimit": 1
+  },
+
+  "target": {
+    "subject": "SUBJECT_ENEMY",
+    "scope": "SCOPE_PART",
+    "selection": { "mode": "SELECT_FIXED_PART" }
+  },
+
+  "effects": [
+    { "type": "ARMOR_DAMAGE", "value": 20 }
+  ],
+
+  "requirements": {
+    "selfPart": { "mode": "ANY", "parts": ["right_arm"], "mustBeUsable": true }
+  },
+
+  "buffRefs": {
+    "apply": [
+      { "buffId": "debuff_weak", "target": "enemy", "chance": 0.25, "duration": 1 }
+    ]
+  },
+
+  "tags": [
+    "DMG_ARMOR",
+    "ABS",
+    "INSTANT",
+    "ONE_SHOT",
+    "UNCONDITIONAL",
+    "SUBJECT_ENEMY",
+    "SCOPE_PART",
+    "SELECT_FIXED_PART",
+    "RES_AP",
+    "RES_SLOT",
+    "REQ_SELF_PART"
+  ],
+  "tagMeta": {
+    "notes": "MVP：护甲伤害与 debuff 组合。"
+  }
+}
+```
+
+---
+
 ## 2. 技能体系架构 (Skill Architecture)
-
-技能体系主要分为三大主系，下设 7 个具体的战术流派。此外，技能根据获取难度和强度划分为 5 个稀有度等级。
-
-### 2.1 近战系 (Melee Arts) - 钢铁与肉体
-强调物理对抗，直接作用于敌人的护甲与肉体。
-
-*   **流派 A: 重装猛攻 (Juggernaut / Smasher)**
-    *   *特点*: 高伤害，高 AP 消耗，专注于破甲与控制（示例中主要使用 `buff_stun` / `buff_slow`）。
-    *   *核心逻辑*: 依靠蛮力摧毁敌人的防御，为后续攻击打开缺口。
-*   **流派 B: 铁壁守卫 (Guardian / Tank)**
-    *   *特点*: 护甲堆叠，反击，生存。
-    *   *核心逻辑*: 通过 **[护甲回复]** 和 **[格挡]** 承受伤害，利用反击造成伤害。
-*   **流派 C: 猩红剑术 (Duelist / Bleeder)**
-    *   *特点*: 暴击，流血，多段攻击。
-    *   *核心逻辑*: 绕过高护甲部位，或通过 **[流血 (Bleed)]** 造成持续真实伤害。
-
-### 2.2 远程系 (Ranged Arts) - 速度与精准
-强调技巧与灵动，擅长点杀特定部位和控制节奏。
-
-*   **流派 D: 极速游侠 (Ranger / Speedster)**
-    *   *特点*: 低 AP 消耗，行动力回复，攻速堆叠。
-    *   *核心逻辑*: "天下武功唯快不破"，单回合内打出多次攻击，触发多次特效。
-*   **流派 E: 精密狙击 (Sniper / Weakness)**
-    *   *特点*: 必中，穿透，弱点打击。
-    *   *核心逻辑*: 攻击具有 **[弱点 (Weakness)]** 属性的部位时伤害倍增，甚至无视护甲。
-
-### 2.3 魔法系 (Arcane Arts) - 元素与神圣
-强调超自然力量，擅长处理复杂战况和改变状态。
-
-*   **流派 F: 元素毁灭 (Elementalist / Nuker)**
-    *   *特点*: 属性伤害 (火/冰/雷)，状态异常。
-    *   *核心逻辑*: 用现有 `buffs.json` 中的状态近似实现：减速用 `buff_slow`，易伤用 `buff_vulnerable`。燃烧/冻结/感电等效果若未来补齐 Buff 再恢复。
-*   **流派 G: 神圣祝祷 (Cleric / Buffer)**
-    *   *特点*: 治疗，净化，强力 Buff。
-    *   *核心逻辑*: 维持自身健康状态，不仅是回血，更包括 **[净化 Debuff]** 和 **[属性增强]**。
 
 ### 2.4 技能稀有度 (Skill Rarity)
 
@@ -189,132 +541,7 @@
 *   **Tier 5: 传说 (Legendary)** - 金色
     *   终极技能，拥有扭转战局的能力（如无敌、全屏控制）。极其稀有，通常来自 Boss 战利品或隐藏事件。
 
----
 
-## 3. 详细技能示例 (Skill Examples)
-
-以下提供了完整的技能库示例，分为 **近战**、**远程**、**魔法** 三大系别，包含全部 7 个流派的各稀有度技能。
-*(注: AP = 行动点消耗, U = Uncommon, R = Rare, E = Epic, L = Legendary)*
-
-### 3.1 近战系 (Melee Arts)
-
-#### 流派 A: 重装猛攻 (Juggernaut)
-*以力破巧，专注于高伤害与硬控制。*
-
-| 技能名称 | 稀有度 | AP | 前置技能 | 效果描述 | 战术用途 |
-| :--- | :--- | :--- | :--- | :--- | :--- |
-| **重锤挥击 (Heavy Swing)** | 普通 | 3 | - | 对选中部位造成 120% 物理伤害。若目标该部位护甲 > 0，伤害修正为 130%。 | 基础破甲手段。 |
-| **盾牌猛击 (Shield Bash)** | 普通 | 3 | - | 攻击躯干：造成少量伤害，并有 40% 概率对目标施加 `buff_stun`（持续 1 回合）。 | 控制高威胁敌人，打断节奏。 |
-| **蛮牛头槌 (Headbutt)** | 普通 | 2 | - | 攻击头部：造成固定物理伤害；同时自身受到少量反噬伤害；并有 25% 概率对目标施加 `buff_stun`。 | 低费控制（有代价）。 |
-| **野蛮冲撞 (Savage Charge)** | 稀有 | 4 | 重锤挥击 | 对躯干造成中等伤害。如果此攻击令护甲归零，则额外施加 `buff_slow`（用减速近似“击退”效果）。 | 初始化战场节奏，压制高速敌人。 |
-| **碎颅重击 (Skull Cracker)** | 稀有 | 4 | 蛮牛头槌 | 对头部造成 150% 物理伤害。若头部有护甲，额外造成 30 点破甲伤害。 | 针对重头盔敌人的专项打击。 |
-| **震荡波 (Shockwave)** | 卓越 | 4 | 野蛮冲撞 | 猛击地面：对目标施加 `buff_slow`（速度 -5，持续 2 回合），并造成少量伤害（可仅作用于躯干或按“全身 AOE=全部位”规则处理）。 | 控制节奏，压制高速敌人。 |
-| **处决 (Execute)** | 卓越 | 3 | 碎颅重击 | 只能对 HP < 30% 的目标使用。造成 300% 的巨额真实伤害。 | 斩杀技能，快速结束战斗。 |
-| **大地震击 (Earthquake)** | 史诗 | 5 | 震荡波 | 强力打击：对目标造成高额伤害，并有 50% 概率施加 `buff_stun`（持续 1 回合）。 | 强力控制/终结回合。 |
-| **诸神黄昏 (Ragnarok)** | 传说 | 6 | 大地震击 | 对所有部位造成毁灭性打击 (200% ATK)，且该攻击具有 100% 的破甲效率。 | 终极毁灭技。 |
-
-#### 流派 B: 铁壁守卫 (Guardian)
-*不动如山，擅长防御反击与护甲恢复。*
-
-| 技能名称 | 稀有度 | AP | 前置技能 | 效果描述 | 战术用途 |
-| :--- | :--- | :--- | :--- | :--- | :--- |
-| **钢铁意志 (Iron Will)** | 普通 | 2 | - | 立刻恢复躯干和头部 15 点护甲值。 | 紧急维护关键部位。 |
-| **格挡 (Block)** | 普通 | 2 | - | 施加 Buff：`buff_block`（减少受到伤害的倍率，持续 1 回合）。 | 预判敌人的高伤单体技能。 |
-| **挑衅 (Taunt)** | 普通 | 1 | - | 施加 Debuff：`debuff_weak`（降低攻击力/输出，具体倍率以 `buffs.json` 为准）。 | 低费减伤，填充 AP 间隙。 |
-| **重整旗鼓 (Regroup)** | 稀有 | 3 | 钢铁意志 | 恢复所有肢体 (四肢) 10 点护甲值，并解除流血状态。 | 应对 AOE 磨血和 Dot 伤害。 |
-| **稳固防线 (Hold the Line)** | 卓越 | 3 | 格挡 | 对自身施加 `buff_shield`（一次性抵挡伤害）与 `buff_block`（持续 1 回合减伤）。 | 简化版的防守爆发。 |
-| **压制 (Suppress)** | 卓越 | 3 | 挑衅 | 攻击目标躯干：造成中等伤害，并施加 `debuff_weak`（刷新持续时间）。 | 用输出维持减益覆盖率。 |
-| **堡垒姿态 (Fortify)** | 史诗 | 4 | 稳固防线 | 对自身施加 `buff_shield`，并立刻恢复少量护甲值（纯数值效果）。 | 高压回合的生存手段。 |
-| **绝对防御 (Aegis)** | 传说 | 5 | 堡垒姿态 | 对自身施加 `buff_shield` + `buff_block`（本回合尽量不受伤）；不再包含“伤害转治疗”的复杂机制。 | 终极保命按钮（简化实现版）。 |
-
-#### 流派 C: 猩红剑术 (Duelist)
-*刀刀见血，依靠流血与精准暴击收割敌人。*
-
-| 技能名称 | 稀有度 | AP | 前置技能 | 效果描述 | 战术用途 |
-| :--- | :--- | :--- | :--- | :--- | :--- |
-| **血管切割 (Artery Slice)** | 普通 | 2 | - | 攻击四肢。命中后施加 Debuff：`buff_bleed`（DoT，持续/叠层见 `buffs.json`）。 | 基础叠 Dot 手段。 |
-| **二连刺 (Double Thrust)** | 普通 | 2 | - | 快速攻击两次，每次造成 60% 伤害。随机选择部位。 | 快速叠加攻击特效。 |
-| **佯攻 (Feint)** | 普通 | 1 | - | 对自身施加 `buff_armor_pen`（下一次攻击调整护甲减免系数）。 | 辅助高伤技能，对抗高护甲敌人。 |
-| **放血 (Bloodletting)** | 稀有 | 3 | 血管切割 | 攻击躯干。如果敌人已有流血状态，流血层数 +1，并刷新持续时间。 | 维持并加深伤口。 |
-| **剑舞 (Blade Dance)** | 稀有 | 3 | 二连刺 | 对随机部位发动 3 次攻击，每次造成 50% 伤害。若全部命中，自身速度 +3。 | 叠流血并提升自身机动性。 |
-| **弱点突刺 (Precision Thrust)** | 卓越 | 3 | 佯攻 | 必定暴击 (1.5x)。只能攻击护甲已破损的部位。 | 针对性收割。 |
-| **血腥收割 (Bloody Harvest)** | 史诗 | 3 | 放血 | 攻击敌人。若敌人处于流血状态，造成额外 50% 伤害，并结算其剩余流血伤害的 50%。 | 引爆 Dot 造成爆发伤害。 |
-| **猩红终结 (Crimson Finale)** | 史诗 | 4 | 剑舞 | 移除目标所有流血层数。每移除一层，造成 30 点真实伤害。 | Dot 流派的终结技。 |
-| **千刃风暴 (Thousand Cuts)** | 传说 | 5 | 血腥收割 | 多段攻击；每段命中有概率施加 Debuff：`buff_bleed`（叠层与刷新策略见 `buffs.json`）。 | 瞬间叠满流血层数。 |
-
----
-
-### 3.2 远程系 (Ranged Arts)
-
-#### 流派 D: 极速游侠 (Ranger)
-*天下武功唯快不破，利用高频攻击压制敌人。*
-
-| 技能名称 | 稀有度 | AP | 前置技能 | 效果描述 | 战术用途 |
-| :--- | :--- | :--- | :--- | :--- | :--- |
-| **连珠箭 (Quick Shot)** | 普通 | 1 | - | 造成 50% 伤害。不仅低费，而且不占用每回合“仅限一次攻击技能”的限制 (如有)。 | 倾泻多余 AP。 |
-| **快步 (Quick Step)** | 普通 | 0 | - | [CD: 3] 本回合速度 +10。 | 抢先手，或触发速度差增益。 |
-| **牵制射击 (Distract Shot)** | 普通 | 2 | - | 造成 80% 伤害，并有 25% 概率使目标下回合 AP -1。 | 骚扰敌人节奏。 |
-| **战术翻滚 (Tactical Roll)** | 稀有 | 2 | 快步 | 施加 `buff_bless`（用“命中/闪避小幅提升”代替“高闪避+减 AP 消耗”的复杂效果）。 | 低成本提高稳定性。 |
-| **疾风箭 (Wind Arrow)** | 稀有 | 3 | 连珠箭 | 必定先手 (Priority +1)。如果比敌人先行动，造成 180% 伤害。 | 利用高速度优势打爆发。 |
-| **毒箭 (Poison Arrow)** | 卓越 | 3 | 牵制射击 | 攻击任意部位：造成 80% 伤害，并对目标施加 `buff_poison`（模拟“涂层+后续攻击”的效果，改为一次性施加）。 | 易实现的持续压制。 |
-| **肾上腺素 (Adrenaline)** | 卓越 | 0 | 战术翻滚 | 立即获得 2 点 AP，但下回合 AP 上限 -2。 | 透支未来 AP 进行当前爆发。 |
-| **极速连击 (Rapid Fire)** | 史诗 | 4 | 疾风箭 | 射出 5 支箭，每支造成 40% 伤害，随机分配给未被破坏的部位。 | 类似于近战的千刃，针对远程。 |
-| **压制射击 (Suppressing Fire)** | 史诗 | 4 | 毒箭 | 攻击躯干：造成多段伤害（例如 3 段 40%），并对目标施加 `buff_slow`（刷新持续时间）。 | 通过多段打击稳定控速。 |
-| **时空扭曲 (Time Warp)** | 传说 | 6 | 肾上腺素 | 立即获得一个新的回合 (Extra Turn)，但该额外回合只有一半的 AP 上限。 | 极其强大的战术技能。 |
-
-#### 流派 E: 精密狙击 (Sniper)
-*一击必杀，专注于穿透与弱点打击。*
-
-| 技能名称 | 稀有度 | AP | 前置技能 | 效果描述 | 战术用途 |
-| :--- | :--- | :--- | :--- | :--- | :--- |
-| **弱点标记 (Mark Target)** | 普通 | 2 | - | 施加 `buff_vulnerable`（对象为目标；若未来扩展为“部位易伤”，再拆分为部位级 Buff）。 | 引导伤害，辅助集火。 |
-| **稳固瞄准 (Steady Aim)** | 普通 | 2 | - | 对自身施加 `buff_bless`（以现有 buff 近似“命中增益”；暴击增益暂作为纯数值效果或后续新增 Buff）。 | 提升稳定性。 |
-| **膝盖射击 (Knee Shot)** | 普通 | 2 | - | 攻击腿部。若造成 HP 伤害，敌人速度 -5 (持续 3 回合)。 | 限制敌人机动性。 |
-| **致残射击 (Crippling Shot)** | 稀有 | 3 | 膝盖射击 | 攻击四肢。造成伤害后，使该部位功能失效 (攻击力降低或移动受限)。 | 软控场。 |
-| **远程拆解 (Disarm)** | 稀有 | 3 | 弱点标记 | 对手臂造成 200% 的护甲伤害。若护甲被破，敌人攻击力 -30% (1回合)。 | 针对高攻敌人。 |
-| **穿甲射击 (Piercing Bolt)** | 卓越 | 3 | 稳固瞄准 | 无视目标 50% 的护甲值直接造成伤害。 | 对抗重甲单位的标准手段。 |
-| **爆头 (Headshot)** | 卓越 | 4 | 远程拆解 | 对头部造成 200% 伤害。命中率修正 -20%，但若命中必定暴击。 | 高风险高回报。 |
-| **幽灵狙击 (Ghost Snipe)** | 史诗 | 4 | 爆头 | [无法闪避] 且无视 100% 护甲，但也无法暴击。造成固定 150% 面板伤害。 | 稳定且致命的真实伤害。 |
-| **精准标记 (Precision Mark)** | 史诗 | 3 | 穿甲射击 | 对目标施加 `buff_vulnerable`（刷新持续时间），并立即对被标记部位造成一次小额伤害（纯数值效果）。 | 集火起手，降低随机性。 |
-| **致命一击 (One Shot One Kill)** | 传说 | 6 | 幽灵狙击 | [蓄力] 需要上一回合未使用攻击技能。对目标造成当前 HP 50% 的伤害 (Boss 效果减半)。 | 针对血牛型敌人的终极手段。 |
-
----
-
-### 3.3 魔法系 (Arcane Arts)
-
-#### 流派 F: 元素毁灭 (Elementalist)
-*掌控冰火雷电，大范围杀伤与状态控制。*
-
-| 技能名称 | 稀有度 | AP | 前置技能 | 效果描述 | 战术用途 |
-| :--- | :--- | :--- | :--- | :--- | :--- |
-| **奥术飞弹 (Arcane Missile)** | 普通 | 2 | - | 对目标造成魔法伤害（单次命中）。 | 法系基础输出。 |
-| **闪电箭 (Lightning Bolt)** | 普通 | 2 | - | 造成 1-30 点随机雷电伤害。若造成最大值，返还 1 AP。 | 赌狗技能，用于补刀。 |
-| **迟缓咒 (Slow Hex)** | 普通 | 2 | - | 对目标施加 `buff_slow`（不造成伤害）。 | 纯控制。 |
-| **冰锥术 (Ice Lance)** | 稀有 | 3 | 奥术飞弹 | 造成冰霜伤害，并有 50% 概率对目标施加 `buff_slow`。 | 兼顾输出与控速（简化版）。 |
-| **奥术弹幕 (Arcane Barrage)** | 稀有 | 3 | 奥术飞弹 | 对随机部位造成多段小额伤害（不施加额外状态）。 | 魔法侧的“多段磨甲”。 |
-| **冰霜新星 (Frost Nova)** | 卓越 | 3 | 冰锥术 | 对目标施加 `buff_slow`（刷新持续时间），并造成少量伤害。 | 控速与压制（简化版）。 |
-| **元素易伤 (Elemental Vulnerability)** | 卓越 | 2 | 迟缓咒 | 对目标施加 `buff_vulnerable`。 | 为高伤技能铺垫。 |
-| **闪电链 (Chain Lightning)** | 史诗 | 4 | 元素易伤 | 对目标随机 3 个部位造成雷电伤害（不再依赖“潮湿/金属盔甲”状态）。 | 稳定的多部位输出。 |
-| **雷霆轰击 (Thunder Strike)** | 史诗 | 4 | 元素易伤 | 对目标随机 3 个部位造成雷电伤害。 | 作为法系的“多部位”输出手段。 |
-| **陨石术 (Meteor Swarm)** | 传说 | 6 | 雷霆轰击 | 对目标所有部位造成毁灭性伤害（不包含延迟/燃烧/削甲等 Buff 依赖效果）。 | 法系终极多部位输出。 |
-
-#### 流派 G: 神圣祝祷 (Cleric)
-*光明的代言人，拥有最强的生存与恢复能力。*
-
-| 技能名称 | 稀有度 | AP | 前置技能 | 效果描述 | 战术用途 |
-| :--- | :--- | :--- | :--- | :--- | :--- |
-| **圣光术 (Holy Light)** | 普通 | 3 | - | 恢复自身 30 点 HP。 | 基础治疗。 |
-| **惩击 (Smite)** | 普通 | 2 | - | 对敌人造成神圣伤害。如果敌人是亡灵/恶魔，伤害翻倍。 | 针对特定种族的输出。 |
-| **祝福 (Bless)** | 普通 | 2 | - | 对自身施加 Buff：`buff_bless`（命中/闪避提升，持续时间见 `buffs.json`）。 | 润滑剂，提升稳定性。 |
-| **信仰之盾 (Shield of Faith)** | 稀有 | 3 | 圣光术 | 对自身施加 `buff_shield`，并立刻恢复少量 HP（不再依赖“回合结束护甲未破则回血”的触发机制）。 | 持续防御与缓回（简化版）。 |
-| **圣盾 (Holy Shield)** | 稀有 | 3 | 祝福 | 对自身施加 `buff_shield`，并立刻回复少量 HP。 | 易实现的强生存。 |
-| **净化之火 (Cleansing Fire)** | 卓越 | 3 | 惩击 | 解除自身所有 Debuff，每解除一个，回复 15 点 HP 并对敌人造成等量伤害。 | 攻守兼备的解控技。 |
-| **神圣震击 (Holy Shock)** | 卓越 | 3 | 信仰之盾 | 对敌人造成伤害，同时治疗自己等量的生命值。 | 瞬间拉开血量差。 |
-| **救赎祷言 (Prayer of Redemption)** | 史诗 | 4 | 圣盾 | 立即恢复大量 HP，并移除自身 `buff_poison` / `buff_bleed`（若引擎支持按 id 移除；否则视为“净化”纯技能效果）。 | 高压回合的重置技能。 |
-| **光辉复苏 (Radiant Revitalize)** | 史诗 | 4 | 净化之火 | 立即恢复大量 HP，并对自身施加 `buff_shield`。 | 高压回合的重置按钮。 |
-| **审判 (Judgement)** | 传说 | 5 | 光辉复苏 | 对目标造成高额神圣伤害，并施加 `debuff_weak` + `buff_vulnerable`（双 debuff 组合）。 | 神圣系终结技（易实现版）。 |
-
----
 
 ## 4. 技能设计约束 (Design Constraints)
 

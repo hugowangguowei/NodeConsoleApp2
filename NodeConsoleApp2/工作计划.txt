@@ -353,3 +353,13 @@ buff示例可以参照skill和item的设计文档。但是buff设计方案作为skill和item设计文档的
 我不能理解skill_balance_tool.html中，requiredPart 和 targetparts的区别，请你分析一下这两个字段的设计初衷，先不要修改代码。
 
 那么我认为 当前的目标选择（target)逻辑非常不合理，targetType按照skill_balance_design.md中的设计，按释放对象维度应该包含3个层面，请仔细阅读skill_balance_design.md文件第3.7节，重新设计skill_balance_tool.html中的目标选择逻辑，先不要修改代码。
+
+我觉得现在skills_近战.json文件经过多轮迭代，已经完全被整乱了，我希望你重新设计一套技能数据文件，命名为skills_melee_v2.json，放到assets/data目录下。请你基于skill_balance_design.md文件中的设计方案和skill_design.md文件中的技能设计，重新设计这套技能数据文件，确保技能数据符合新的设计方案。先不要修改代码。
+
+因为技能释放时目标只能选择一个槽位，所以Selection应该包括"mode"字段，包括指定单个槽位(single)，指定多个槽位(multiple)，随机单个槽位(random_single)，随机多个槽位(random_multiple)，四种模式。每个模式都包含了候选部位，已选部位，可选数量三个字段，这三个字段能够满足不同模式的需求。请你基于这个思路，修改skill_design.md文件中关于目标选择的设计方案，先不要修改代码。
+
+
+
+根据当前的skill_design.md方案，结合skills_近战.json的现有技能列表，帮我设计一套新的技能数据文件，命名为skills_melee_v3.json，放到assets/data目录下。请你基于skill_design.md文件中的设计方案，重新设计这套技能数据文件，确保技能数据符合新的设计方案。
+
+我希望在skills_melee_v3的meta字段中，不止提供defaultParts,还要提供其他各类枚举对象的全部列表，例如skillTypes, targetTypes, effectTypes等你认为有必要的枚举。这样我在使用技能数据文件的时候，可以直接引用这些枚举对象，避免硬编码。请你基于这个思路，修改skills_melee_v3.json文件。
