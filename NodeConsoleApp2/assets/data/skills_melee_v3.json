@@ -42,6 +42,9 @@
       "name": "斩击",
       "rarity": "Common",
       "description": "基础的挥砍攻击。",
+      "prerequisites": [],
+      "unlock": { "cost": { "kp": 1 }, "requirements": {}, "exclusives": [], "grants": { "type": "permanent" } },
+      "editorMeta": { "x": 0, "y": 0, "group": "melee", "locked": false },
       "speed": 0,
       "target": {
         "subject": "SUBJECT_ENEMY",
@@ -88,6 +91,9 @@
       "name": "治疗",
       "rarity": "Common",
       "description": "恢复少量生命值。",
+      "prerequisites": [],
+      "unlock": { "cost": { "kp": 1 }, "requirements": {}, "exclusives": [], "grants": { "type": "permanent" } },
+      "editorMeta": { "x": 1, "y": 0, "group": "melee", "locked": false },
       "speed": -2,
       "target": {
         "subject": "SUBJECT_SELF",
@@ -115,6 +121,9 @@
       "name": "重锤",
       "rarity": "Common",
       "description": "对选中部位造成较高伤害（按攻击力缩放）。",
+      "prerequisites": [],
+      "unlock": { "cost": { "kp": 1 }, "requirements": {}, "exclusives": [], "grants": { "type": "permanent" } },
+      "editorMeta": { "x": 0, "y": 1, "group": "melee", "locked": false },
       "speed": 0,
       "target": {
         "subject": "SUBJECT_ENEMY",
@@ -161,6 +170,9 @@
       "name": "盾牌猛击",
       "rarity": "Common",
       "description": "攻击躯干：造成少量伤害，并有概率眩晕。",
+      "prerequisites": [],
+      "unlock": { "cost": { "kp": 1 }, "requirements": {}, "exclusives": [], "grants": { "type": "permanent" } },
+      "editorMeta": { "x": 1, "y": 1, "group": "melee", "locked": false },
       "speed": 0,
       "target": {
         "subject": "SUBJECT_ENEMY",
@@ -208,6 +220,9 @@
       "name": "蛮牛头槌",
       "rarity": "Common",
       "description": "攻击头部：造成伤害；自身反噬；并有概率眩晕。",
+      "prerequisites": [],
+      "unlock": { "cost": { "kp": 1 }, "requirements": {}, "exclusives": [], "grants": { "type": "permanent" } },
+      "editorMeta": { "x": 2, "y": 1, "group": "melee", "locked": false },
       "speed": 0,
       "target": {
         "subject": "SUBJECT_ENEMY",
@@ -258,6 +273,8 @@
       "name": "冲撞",
       "rarity": "Uncommon",
       "description": "对躯干造成中等伤害，并施加短暂减速。",
+      "unlock": { "cost": { "kp": 2 }, "requirements": {}, "exclusives": [], "grants": { "type": "permanent" } },
+      "editorMeta": { "x": 0, "y": 2, "group": "melee", "locked": false },
       "speed": 2,
       "target": {
         "subject": "SUBJECT_ENEMY",
@@ -295,6 +312,8 @@
       "name": "裂颅一击",
       "rarity": "Uncommon",
       "description": "对头部造成伤害（按攻击力缩放），并额外削减头部护甲。",
+      "unlock": { "cost": { "kp": 2 }, "requirements": {}, "exclusives": [], "grants": { "type": "permanent" } },
+      "editorMeta": { "x": 1, "y": 2, "group": "melee", "locked": false },
       "speed": -3,
       "target": {
         "subject": "SUBJECT_ENEMY",
@@ -332,6 +351,8 @@
       "name": "震荡波",
       "rarity": "Rare",
       "description": "猛击地面：对敌方所有部位造成少量伤害并施加减速。",
+      "unlock": { "cost": { "kp": 3 }, "requirements": {}, "exclusives": [], "grants": { "type": "permanent" } },
+      "editorMeta": { "x": 0, "y": 3, "group": "melee", "locked": false },
       "speed": -2,
       "target": {
         "subject": "SUBJECT_ENEMY",
@@ -374,6 +395,8 @@
       "name": "斩首",
       "rarity": "Epic",
       "description": "只能对 HP < 30% 的目标使用，造成巨额伤害（按当前 HP 百分比计算）。",
+      "unlock": { "cost": { "kp": 5 }, "requirements": {}, "exclusives": [], "grants": { "type": "permanent" } },
+      "editorMeta": { "x": 1, "y": 3, "group": "melee", "locked": false },
       "speed": 1,
       "target": {
         "subject": "SUBJECT_ENEMY",
@@ -411,6 +434,8 @@
       "name": "大地震击",
       "rarity": "Epic",
       "description": "强力打击：造成高额伤害，并有概率眩晕。",
+      "unlock": { "cost": { "kp": 5 }, "requirements": {}, "exclusives": [], "grants": { "type": "permanent" } },
+      "editorMeta": { "x": 0, "y": 4, "group": "melee", "locked": false },
       "speed": -4,
       "target": {
         "subject": "SUBJECT_ENEMY",
@@ -446,6 +471,8 @@
       "name": "诸神黄昏",
       "rarity": "Legendary",
       "description": "对敌方所有部位造成毁灭性打击（按攻击力缩放）。",
+      "unlock": { "cost": { "kp": 8 }, "requirements": {}, "exclusives": [], "grants": { "type": "permanent" } },
+      "editorMeta": { "x": 0, "y": 5, "group": "melee", "locked": false },
       "speed": -5,
       "target": {
         "subject": "SUBJECT_ENEMY",
@@ -483,6 +510,9 @@
       "name": "钢铁意志",
       "rarity": "Common",
       "description": "立刻修复自身头部与躯干护甲。",
+      "prerequisites": [],
+      "unlock": { "cost": { "kp": 1 }, "requirements": {}, "exclusives": [], "grants": { "type": "permanent" } },
+      "editorMeta": { "x": 2, "y": 0, "group": "melee", "locked": false },
       "speed": 1,
       "target": {
         "subject": "SUBJECT_SELF",
@@ -510,8 +540,20 @@
       "name": "格挡",
       "rarity": "Common",
       "description": "对自身施加格挡 Buff。",
+      "prerequisites": [],
+      "unlock": { "cost": { "kp": 1 }, "requirements": {}, "exclusives": [], "grants": { "type": "permanent" } },
+      "editorMeta": { "x": 3, "y": 0, "group": "melee", "locked": false },
       "speed": 10,
-      "target": { "subject": "SUBJECT_SELF", "scope": "SCOPE_ENTITY" },
+      "target": {
+        "subject": "SUBJECT_SELF",
+        "scope": "SCOPE_ENTITY",
+        "selection": {
+          "mode": "multiple",
+          "candidateParts": ["head", "chest", "left_arm", "right_arm", "left_leg", "right_leg"],
+          "selectedParts": ["head", "chest", "left_arm", "right_arm", "left_leg", "right_leg"],
+          "selectCount": 6
+        }
+      },
       "requirements": { "selfPart": { "mode": "ANY", "parts": ["left_arm", "right_arm"], "mustBeUsable": true } },
       "costs": { "ap": 2, "partSlot": { "part": "left_arm", "slotCost": 1 }, "perTurnLimit": 1 },
       "effects": [],
@@ -539,6 +581,8 @@
       "name": "重整旗鼓",
       "rarity": "Uncommon",
       "description": "修复四肢护甲，并解除流血。",
+      "unlock": { "cost": { "kp": 2 }, "requirements": {}, "exclusives": [], "grants": { "type": "permanent" } },
+      "editorMeta": { "x": 2, "y": 1, "group": "melee", "locked": false },
       "speed": 2,
       "target": {
         "subject": "SUBJECT_SELF",
@@ -573,8 +617,19 @@
       "name": "稳固防线",
       "rarity": "Rare",
       "description": "对自身施加护盾与格挡。",
+      "unlock": { "cost": { "kp": 3 }, "requirements": {}, "exclusives": [], "grants": { "type": "permanent" } },
+      "editorMeta": { "x": 3, "y": 1, "group": "melee", "locked": false },
       "speed": 5,
-      "target": { "subject": "SUBJECT_SELF", "scope": "SCOPE_ENTITY" },
+      "target": {
+        "subject": "SUBJECT_SELF",
+        "scope": "SCOPE_ENTITY",
+        "selection": {
+          "mode": "multiple",
+          "candidateParts": ["head", "chest", "left_arm", "right_arm", "left_leg", "right_leg"],
+          "selectedParts": ["head", "chest", "left_arm", "right_arm", "left_leg", "right_leg"],
+          "selectCount": 6
+        }
+      },
       "requirements": { "selfPart": { "mode": "ANY", "parts": ["chest"], "mustBeUsable": true } },
       "costs": { "ap": 3, "partSlot": { "part": "chest", "slotCost": 2 }, "perTurnLimit": 1 },
       "effects": [],
@@ -606,6 +661,8 @@
       "name": "堡垒姿态",
       "rarity": "Epic",
       "description": "施加护盾，并立刻修复少量护甲。",
+      "unlock": { "cost": { "kp": 5 }, "requirements": {}, "exclusives": [], "grants": { "type": "permanent" } },
+      "editorMeta": { "x": 3, "y": 2, "group": "melee", "locked": false },
       "speed": 0,
       "target": { "subject": "SUBJECT_SELF", "scope": "SCOPE_PART", "selection": { "mode": "single", "candidateParts": ["chest"], "selectedParts": ["chest"], "selectCount": 1 } },
       "requirements": { "selfPart": { "mode": "ANY", "parts": ["chest"], "mustBeUsable": true } },
@@ -633,8 +690,19 @@
       "name": "绝对防御",
       "rarity": "Legendary",
       "description": "对自身施加护盾与格挡（简化版）。",
+      "unlock": { "cost": { "kp": 8 }, "requirements": {}, "exclusives": [], "grants": { "type": "permanent" } },
+      "editorMeta": { "x": 3, "y": 3, "group": "melee", "locked": false },
       "speed": 10,
-      "target": { "subject": "SUBJECT_SELF", "scope": "SCOPE_ENTITY" },
+      "target": {
+        "subject": "SUBJECT_SELF",
+        "scope": "SCOPE_ENTITY",
+        "selection": {
+          "mode": "multiple",
+          "candidateParts": ["head", "chest", "left_arm", "right_arm", "left_leg", "right_leg"],
+          "selectedParts": ["head", "chest", "left_arm", "right_arm", "left_leg", "right_leg"],
+          "selectCount": 6
+        }
+      },
       "requirements": { "selfPart": { "mode": "ANY", "parts": ["chest"], "mustBeUsable": true } },
       "costs": { "ap": 5, "partSlot": { "part": "chest", "slotCost": 3 }, "perTurnLimit": 1 },
       "effects": [],
@@ -666,6 +734,9 @@
       "name": "血管切割",
       "rarity": "Common",
       "description": "攻击四肢：命中后施加流血。",
+      "prerequisites": [],
+      "unlock": { "cost": { "kp": 1 }, "requirements": {}, "exclusives": [], "grants": { "type": "permanent" } },
+      "editorMeta": { "x": 4, "y": 0, "group": "melee", "locked": false },
       "speed": 2,
       "target": {
         "subject": "SUBJECT_ENEMY",
@@ -701,6 +772,9 @@
       "name": "二连刺",
       "rarity": "Common",
       "description": "快速攻击两次，每次造成按攻击力缩放的伤害，随机命中部位。",
+      "prerequisites": [],
+      "unlock": { "cost": { "kp": 1 }, "requirements": {}, "exclusives": [], "grants": { "type": "permanent" } },
+      "editorMeta": { "x": 5, "y": 0, "group": "melee", "locked": false },
       "speed": 4,
       "target": {
         "subject": "SUBJECT_ENEMY",
@@ -743,8 +817,20 @@
       "name": "佯攻",
       "rarity": "Common",
       "description": "对自身施加破甲增益（下一次攻击护甲减免修正）。",
+      "prerequisites": [],
+      "unlock": { "cost": { "kp": 1 }, "requirements": {}, "exclusives": [], "grants": { "type": "permanent" } },
+      "editorMeta": { "x": 6, "y": 0, "group": "melee", "locked": false },
       "speed": 8,
-      "target": { "subject": "SUBJECT_SELF", "scope": "SCOPE_ENTITY" },
+      "target": {
+        "subject": "SUBJECT_SELF",
+        "scope": "SCOPE_ENTITY",
+        "selection": {
+          "mode": "multiple",
+          "candidateParts": ["head", "chest", "left_arm", "right_arm", "left_leg", "right_leg"],
+          "selectedParts": ["head", "chest", "left_arm", "right_arm", "left_leg", "right_leg"],
+          "selectCount": 6
+        }
+      },
       "requirements": { "selfPart": { "mode": "ANY", "parts": ["left_arm", "right_arm"], "mustBeUsable": true } },
       "costs": { "ap": 1, "partSlot": { "part": "right_arm", "slotCost": 1 }, "perTurnLimit": 1 },
       "effects": [],
