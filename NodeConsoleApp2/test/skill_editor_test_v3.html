@@ -360,6 +360,33 @@
         .row-actions { display:flex; gap:6px; }
         .error { color: var(--danger-color); font-size: 12px; }
 
+        /* Effects editor */
+        .effect-row {
+            border: 1px solid #eee;
+            border-radius: 8px;
+            padding: 10px;
+            background: #fff;
+            margin-bottom: 10px;
+        }
+        .effect-row-head {
+            display:flex;
+            align-items:center;
+            justify-content: space-between;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+        .effect-grid {
+            display:grid;
+            grid-template-columns: 120px 1fr;
+            gap: 8px 10px;
+            align-items: center;
+        }
+        .effect-inline {
+            display:flex;
+            gap: 8px;
+            align-items:center;
+        }
+
         /* Utility */
         .debug-info {
             position: absolute;
@@ -453,7 +480,7 @@
                 </div>
 
                 <div class="panel">
-                    <div class="panel-h">Basic Info</div>
+                    <div class="panel-h">A. Basic</div>
                     <div class="grid2">
                         <div class="small">id</div>
                         <input class="input" type="text" id="prop-id" readonly>
@@ -478,49 +505,81 @@
                 </div>
 
                 <div class="panel">
-                    <div class="panel-h">Target & Timing</div>
+                    <div class="panel-h">B. Tree (Editor Meta)</div>
                     <div class="grid2">
-                        <div class="small">cost</div>
-                        <input class="input" type="number" id="prop-cost">
+                        <div class="small">editorMeta.x</div>
+                        <input class="input" type="number" id="meta-x" readonly>
 
+                        <div class="small">editorMeta.y</div>
+                        <input class="input" type="number" id="meta-y" readonly>
+
+                        <div class="small">editorMeta.group</div>
+                        <input class="input" type="text" id="meta-group" placeholder="e.g. melee" disabled>
+
+                        <div class="small">editorMeta.locked</div>
+                        <select class="select" id="meta-locked" disabled>
+                            <option value="false">false</option>
+                            <option value="true">true</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="panel">
+                    <div class="panel-h">C. Prerequisites</div>
+                    <div class="small" id="prop-prerequisites">—</div>
+                </div>
+
+                <div class="panel">
+                    <div class="panel-h">D. Unlock (JSON)</div>
+                    <div class="small" style="margin-bottom:6px;">`unlock` 推荐结构化编辑；MVP 使用 JSON。</div>
+                    <textarea class="textarea" id="prop-unlock" placeholder="{\n  \"cost\": { \"kp\": 1 },\n  \"requirements\": {},\n  \"exclusives\": [],\n  \"grants\": { \"type\": \"permanent\" }\n}"></textarea>
+                    <div class="error" id="err-unlock" style="display:none; margin-top:8px;"></div>
+                </div>
+
+                <div class="panel">
+                    <div class="panel-h">E. Target & Speed</div>
+                    <div class="grid2">
                         <div class="small">speed</div>
                         <input class="input" type="number" id="prop-speed">
 
-                        <div class="small">targetType</div>
-                        <select class="select" id="prop-targetType">
-                            <option value="SELF">SELF</option>
-                            <option value="ENEMY">ENEMY</option>
-                            <option value="SINGLE_PART">SINGLE_PART</option>
-                            <option value="ALL_PARTS">ALL_PARTS</option>
-                            <option value="RANDOM_PART">RANDOM_PART</option>
-                            <option value="SELF_PARTS">SELF_PARTS</option>
-                        </select>
+                        <div class="small">target.subject</div>
+                        <select class="select" id="prop-target-subject"></select>
 
-                        <div class="small">requiredPart</div>
-                        <select class="select" id="prop-requiredPart">
-                            <option value="">(none)</option>
-                            <option value="head">head</option>
-                            <option value="chest">chest</option>
-                            <option value="arm">arm</option>
-                            <option value="leg">leg</option>
-                        </select>
+                        <div class="small">target.scope</div>
+                        <select class="select" id="prop-target-scope"></select>
 
-                        <div class="small">targetParts</div>
+                        <div class="small">selection.mode</div>
+                        <select class="select" id="prop-target-mode"></select>
+
+                        <div class="small">selection.selectCount</div>
+                        <input class="input" type="number" id="prop-target-selectCount" min="1">
+
+                        <div class="small">candidateParts</div>
                         <div style="position:relative;">
-                            <button type="button" class="btn btn-dark btn-sm" id="targetPartsBtn" style="width:100%; text-align:left;">(none)</button>
-                            <div id="targetPartsDropdown" class="panel" style="position:absolute; top:36px; left:0; right:0; z-index:999; display:none; padding:10px;">
-                                <div class="small" style="margin-bottom:8px;">选择 `SELF_PARTS` 目标部位</div>
-                                <label class="small" style="display:flex; gap:8px; align-items:center;"><input type="checkbox" value="head">head</label>
-                                <label class="small" style="display:flex; gap:8px; align-items:center;"><input type="checkbox" value="chest">chest</label>
-                                <label class="small" style="display:flex; gap:8px; align-items:center;"><input type="checkbox" value="left_arm">left_arm</label>
-                                <label class="small" style="display:flex; gap:8px; align-items:center;"><input type="checkbox" value="right_arm">right_arm</label>
-                                <label class="small" style="display:flex; gap:8px; align-items:center;"><input type="checkbox" value="left_leg">left_leg</label>
-                                <label class="small" style="display:flex; gap:8px; align-items:center;"><input type="checkbox" value="right_leg">right_leg</label>
+                            <button type="button" class="btn btn-dark btn-sm" id="candidatePartsBtn" style="width:100%; text-align:left;">(none)</button>
+                            <div id="candidatePartsDropdown" class="panel" style="position:absolute; top:36px; left:0; right:0; z-index:999; display:none; padding:10px;">
+                                <div class="small" style="margin-bottom:8px;">选择候选部位（candidateParts）</div>
+                                <div id="candidatePartsList"></div>
                                 <div style="margin-top:10px; display:flex; gap:8px;">
-                                    <button type="button" class="btn btn-sm btn-dark" id="targetPartsAll">All</button>
-                                    <button type="button" class="btn btn-sm btn-dark" id="targetPartsNone">None</button>
+                                    <button type="button" class="btn btn-sm btn-dark" id="candidatePartsAll">All</button>
+                                    <button type="button" class="btn btn-sm btn-dark" id="candidatePartsNone">None</button>
                                     <span style="flex:1"></span>
-                                    <button type="button" class="btn btn-sm btn-primary" id="targetPartsClose">OK</button>
+                                    <button type="button" class="btn btn-sm btn-primary" id="candidatePartsClose">OK</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="small">selectedParts</div>
+                        <div style="position:relative;">
+                            <button type="button" class="btn btn-dark btn-sm" id="selectedPartsBtn" style="width:100%; text-align:left;">(none)</button>
+                            <div id="selectedPartsDropdown" class="panel" style="position:absolute; top:36px; left:0; right:0; z-index:999; display:none; padding:10px;">
+                                <div class="small" style="margin-bottom:8px;">选择已选部位（selectedParts）</div>
+                                <div id="selectedPartsList"></div>
+                                <div style="margin-top:10px; display:flex; gap:8px;">
+                                    <button type="button" class="btn btn-sm btn-dark" id="selectedPartsAll">All</button>
+                                    <button type="button" class="btn btn-sm btn-dark" id="selectedPartsNone">None</button>
+                                    <span style="flex:1"></span>
+                                    <button type="button" class="btn btn-sm btn-primary" id="selectedPartsClose">OK</button>
                                 </div>
                             </div>
                         </div>
@@ -529,22 +588,67 @@
                 </div>
 
                 <div class="panel">
-                    <div class="panel-h">Values (optional)</div>
+                    <div class="panel-h">F. Costs</div>
                     <div class="grid2">
-                        <div class="small">type</div>
-                        <input class="input" type="text" id="prop-type" placeholder="e.g. DAMAGE / HEAL">
+                        <div class="small">costs.ap</div>
+                        <input class="input" type="number" id="prop-costs-ap" min="0">
 
-                        <div class="small">value</div>
-                        <input class="input" type="text" id="prop-value" placeholder="number or string">
+                        <div class="small">costs.perTurnLimit</div>
+                        <input class="input" type="number" id="prop-costs-perTurnLimit" min="1">
 
-                        <div class="small">valueType</div>
-                        <input class="input" type="text" id="prop-valueType" placeholder="e.g. PERCENT">
+                        <div class="small">costs.partSlot.part</div>
+                        <select class="select" id="prop-costs-part"></select>
+
+                        <div class="small">costs.partSlot.slotCost</div>
+                        <input class="input" type="number" id="prop-costs-slotCost" min="0">
                     </div>
+                    <div class="error" id="err-costs" style="display:none; margin-top:8px;"></div>
+                </div>
+
+                <div class="panel">
+                    <div class="panel-h">G. Requirements (JSON)</div>
+                    <div class="small" style="margin-bottom:6px;">`requirements` 前期使用 JSON（后续可表单化）。</div>
+                    <textarea class="textarea" id="prop-requirements" placeholder="{}"></textarea>
+                    <div class="error" id="err-req" style="display:none; margin-top:8px;"></div>
                 </div>
 
                 <div class="panel">
                     <div class="panel-h">
-                        <span>Buff Refs</span>
+                        <span>H. Effects</span>
+                        <div class="row-actions">
+                            <button class="btn btn-sm btn-dark" type="button" onclick="editor.addEffectRow()" id="btn-add-effect" disabled>+ Effect</button>
+                            <button class="btn btn-sm btn-dark" type="button" onclick="editor.openEffectsJsonSync()" id="btn-open-effects-json" disabled>JSON</button>
+                        </div>
+                    </div>
+                    <div class="small" style="margin-bottom:10px;">
+                        结构化编辑（推荐）：`effectType/amountType/amount|scaling/subjectOverride/note`。高级字段可用 JSON。
+                    </div>
+
+                    <div id="effects-editor" class="panel" style="padding:10px; background:#fafafa;">
+                        <div id="effects-list" class="small" style="color:#888;">(no effects)</div>
+                    </div>
+
+                    <div id="effects-json-wrap" class="panel" style="margin-top:10px; display:none; padding:10px;">
+                        <div class="small" style="margin-bottom:6px;">高级 JSON（整段 effects[]），用于编辑扩展字段。点击 Apply 后才会写回。</div>
+                        <textarea class="textarea" id="prop-effects" placeholder="[]"></textarea>
+                        <div style="margin-top:8px; display:flex; gap:8px; align-items:center;">
+                            <button class="btn btn-dark btn-sm" type="button" onclick="editor.applyEffectsJsonToForm()" id="btn-apply-effects-json" disabled>Apply JSON</button>
+                            <button class="btn btn-dark btn-sm" type="button" onclick="editor.closeEffectsJsonSync()" id="btn-close-effects-json" disabled>Close</button>
+                            <span style="flex:1"></span>
+                            <button class="btn btn-primary btn-sm" type="button" onclick="editor.validateEffectsFromForm()" id="btn-validate-effects" disabled>Validate</button>
+                        </div>
+                    </div>
+
+                    <div style="margin-top:10px; display:flex; gap:8px; align-items:center;">
+                        <button class="btn btn-dark btn-sm" type="button" onclick="editor.saveEffectsFromForm()" id="btn-save-effects" disabled>Save Effects</button>
+                        <div class="small" id="effects-save-hint" style="color:#888;">effects 采用显式保存（避免中间态破坏数据）</div>
+                    </div>
+                    <div class="error" id="err-effects" style="display:none; margin-top:8px;"></div>
+                </div>
+
+                <div class="panel">
+                    <div class="panel-h">
+                        <span>I. Buff Refs</span>
                         <button class="btn btn-sm btn-dark" onclick="editor.addBuffRefRow('apply')" id="btn-add-apply" disabled>+ apply</button>
                     </div>
                     <div class="small" style="margin-bottom:8px;">编辑 `buffRefs.apply/applySelf/remove`。buffId 从 `buffs.json` 下拉选择。</div>
@@ -584,29 +688,12 @@
                 </div>
 
                 <div class="panel">
-                    <div class="panel-h">Effects (JSON)</div>
-                    <div class="small" style="margin-bottom:6px;">`effects[]` 目前使用 JSON 编辑（MVP）。</div>
-                    <textarea class="textarea" id="prop-effects" placeholder="[]"></textarea>
-                    <div style="margin-top:8px; display:flex; gap:8px; align-items:center;">
-                        <button class="btn btn-dark btn-sm" type="button" onclick="editor.saveEffectsJson()" id="btn-save-effects" disabled>Validate/Save Effects</button>
-                        <div class="small" id="effects-save-hint" style="color:#888;">编辑完成后点击保存（避免中间态 JSON 报错）</div>
-                    </div>
-                    <div class="error" id="err-effects" style="display:none; margin-top:8px;"></div>
-                </div>
-
-                <div class="panel">
-                    <div class="panel-h">Prerequisites</div>
-                    <div class="small" id="prop-prerequisites">—</div>
-                </div>
-
-                <div class="panel">
-                    <div class="panel-h">Editor Meta</div>
-                    <div class="grid2">
-                        <div class="small">x</div>
-                        <input class="input" type="number" id="meta-x" readonly>
-                        <div class="small">y</div>
-                        <input class="input" type="number" id="meta-y" readonly>
-                    </div>
+                    <div class="panel-h">J. Tags</div>
+                    <div class="small" style="margin-bottom:6px;">`tags[]` 与 `tagMeta`（用于平衡统计与校验）。</div>
+                    <textarea class="textarea" id="prop-tags" placeholder="[]"></textarea>
+                    <div class="small" style="margin:10px 0 6px;">tagMeta (JSON)</div>
+                    <textarea class="textarea" id="prop-tagMeta" placeholder="{}"></textarea>
+                    <div class="error" id="err-tags" style="display:none; margin-top:8px;"></div>
                 </div>
 
                 <div class="panel">
@@ -679,21 +766,47 @@ class SkillEditor {
         this.elPropId = document.getElementById('prop-id');
         this.elPropName = document.getElementById('prop-name');
         this.elPropRarity = document.getElementById('prop-rarity');
-        this.elPropCost = document.getElementById('prop-cost');
+        this.elPropCost = document.getElementById('prop-cost'); // legacy (may not exist)
         this.elPropSpeed = document.getElementById('prop-speed');
-        this.elPropTargetType = document.getElementById('prop-targetType');
-        this.elPropRequiredPart = document.getElementById('prop-requiredPart');
+        this.elPropTargetType = document.getElementById('prop-targetType'); // legacy (may not exist)
+        this.elPropRequiredPart = document.getElementById('prop-requiredPart'); // legacy (may not exist)
         // targetParts dropdown
-        this.elTargetPartsBtn = document.getElementById('targetPartsBtn');
-        this.elTargetPartsDropdown = document.getElementById('targetPartsDropdown');
-        this.elPropType = document.getElementById('prop-type');
-        this.elPropValue = document.getElementById('prop-value');
-        this.elPropValueType = document.getElementById('prop-valueType');
+        this.elTargetPartsBtn = document.getElementById('targetPartsBtn'); // legacy (may not exist)
+        this.elTargetPartsDropdown = document.getElementById('targetPartsDropdown'); // legacy (may not exist)
+        this.elPropType = document.getElementById('prop-type'); // legacy (may not exist)
+        this.elPropValue = document.getElementById('prop-value'); // legacy (may not exist)
+        this.elPropValueType = document.getElementById('prop-valueType'); // legacy (may not exist)
         this.elPropDesc = document.getElementById('prop-desc');
         this.elPropEffects = document.getElementById('prop-effects');
+        this.elEffectsEditor = document.getElementById('effects-editor');
+        this.elEffectsList = document.getElementById('effects-list');
+        this.elEffectsJsonWrap = document.getElementById('effects-json-wrap');
+        this.elBtnAddEffect = document.getElementById('btn-add-effect');
+        this.elBtnOpenEffectsJson = document.getElementById('btn-open-effects-json');
+        this.elBtnApplyEffectsJson = document.getElementById('btn-apply-effects-json');
+        this.elBtnCloseEffectsJson = document.getElementById('btn-close-effects-json');
+        this.elBtnValidateEffects = document.getElementById('btn-validate-effects');
         this.elPrereqText = document.getElementById('prop-prerequisites');
         this.elMetaX = document.getElementById('meta-x');
         this.elMetaY = document.getElementById('meta-y');
+
+        // v3 panel fields
+        this.elTargetSubject = document.getElementById('prop-target-subject');
+        this.elTargetScope = document.getElementById('prop-target-scope');
+        this.elSelectionMode = document.getElementById('prop-target-mode');
+        this.elSelectionSelectCount = document.getElementById('prop-target-selectCount');
+        this.elCostsAp = document.getElementById('prop-costs-ap');
+        this.elCostsPerTurnLimit = document.getElementById('prop-costs-perTurnLimit');
+        this.elCostsPart = document.getElementById('prop-costs-part');
+        this.elCostsSlotCost = document.getElementById('prop-costs-slotCost');
+        this.elUnlock = document.getElementById('prop-unlock');
+        this.elRequirements = document.getElementById('prop-requirements');
+        this.elTags = document.getElementById('prop-tags');
+        this.elTagMeta = document.getElementById('prop-tagMeta');
+        this.elErrUnlock = document.getElementById('err-unlock');
+        this.elErrCosts = document.getElementById('err-costs');
+        this.elErrReq = document.getElementById('err-req');
+        this.elErrTags = document.getElementById('err-tags');
 
         this.elErrId = document.getElementById('err-id');
         this.elErrTarget = document.getElementById('err-target');
@@ -729,45 +842,53 @@ class SkillEditor {
         // Apply meta-driven UI defaults (even before loading pack)
         this.applyMetaToUI();
 
-        // TargetParts dropdown interactions
-        this.elTargetPartsBtn.addEventListener('click', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            if (this.elTargetPartsDropdown.style.display === 'none') {
-                this.elTargetPartsDropdown.style.display = 'block';
-            } else {
-                this.elTargetPartsDropdown.style.display = 'none';
-            }
-        });
+        // v3 selection (candidateParts/selectedParts) dropdown interactions
+        this.elCandidatePartsBtn = document.getElementById('candidatePartsBtn');
+        this.elCandidatePartsDropdown = document.getElementById('candidatePartsDropdown');
+        this.elCandidatePartsList = document.getElementById('candidatePartsList');
+        this.elSelectedPartsBtn = document.getElementById('selectedPartsBtn');
+        this.elSelectedPartsDropdown = document.getElementById('selectedPartsDropdown');
+        this.elSelectedPartsList = document.getElementById('selectedPartsList');
 
-        document.getElementById('targetPartsClose').addEventListener('click', (e) => {
-            e.preventDefault();
-            this.elTargetPartsDropdown.style.display = 'none';
-            this.updateTargetPartsBtnText();
-        });
-        document.getElementById('targetPartsAll').addEventListener('click', (e) => {
-            e.preventDefault();
-            this.setTargetPartsSelection(['head','chest','left_arm','right_arm','left_leg','right_leg']);
-        });
-        document.getElementById('targetPartsNone').addEventListener('click', (e) => {
-            e.preventDefault();
-            this.setTargetPartsSelection([]);
-        });
+        const bindDropdown = (btn, dropdown, closeId, allId, noneId, onClose) => {
+            if (!btn || !dropdown) return;
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                dropdown.style.display = (dropdown.style.display === 'none' || !dropdown.style.display) ? 'block' : 'none';
+            });
+            const closeBtn = document.getElementById(closeId);
+            closeBtn?.addEventListener('click', (e) => {
+                e.preventDefault();
+                dropdown.style.display = 'none';
+                onClose?.();
+            });
+            document.getElementById(allId)?.addEventListener('click', (e) => {
+                e.preventDefault();
+                onClose?.({ action: 'all' });
+            });
+            document.getElementById(noneId)?.addEventListener('click', (e) => {
+                e.preventDefault();
+                onClose?.({ action: 'none' });
+            });
 
-        // Click outside closes
-        window.addEventListener('mousedown', (e) => {
-            if (!this.elTargetPartsDropdown) return;
-            if (this.elTargetPartsDropdown.style.display !== 'block') return;
-            const inside = this.elTargetPartsDropdown.contains(e.target) || this.elTargetPartsBtn.contains(e.target);
-            if (!inside) {
-                this.elTargetPartsDropdown.style.display = 'none';
-                this.updateTargetPartsBtnText();
-            }
-        });
+            window.addEventListener('mousedown', (e) => {
+                if (dropdown.style.display !== 'block') return;
+                const inside = dropdown.contains(e.target) || btn.contains(e.target);
+                if (!inside) {
+                    dropdown.style.display = 'none';
+                    onClose?.();
+                }
+            });
 
-        // Checkbox changes update button label
-        this.elTargetPartsDropdown.addEventListener('change', () => {
-            this.updateTargetPartsBtnText();
+            dropdown.addEventListener('change', () => onClose?.({ action: 'change' }));
+        };
+
+        bindDropdown(this.elCandidatePartsBtn, this.elCandidatePartsDropdown, 'candidatePartsClose', 'candidatePartsAll', 'candidatePartsNone', () => {
+            this.updateCandidatePartsBtnText?.();
+        });
+        bindDropdown(this.elSelectedPartsBtn, this.elSelectedPartsDropdown, 'selectedPartsClose', 'selectedPartsAll', 'selectedPartsNone', () => {
+            this.updateSelectedPartsBtnText?.();
         });
     }
 
@@ -796,6 +917,24 @@ class SkillEditor {
             this.elPropRarity.innerHTML = this.enums.rarities.map(r => `<option value="${r}">${r}</option>`).join('');
         }
 
+        // 1.1) v3 target enums
+        if (this.elTargetSubject && Array.isArray(this.enums?.targetSubjects)) {
+            this.elTargetSubject.innerHTML = this.enums.targetSubjects.map(v => `<option value="${v}">${v}</option>`).join('');
+        }
+        if (this.elTargetScope && Array.isArray(this.enums?.targetScopes)) {
+            this.elTargetScope.innerHTML = this.enums.targetScopes.map(v => `<option value="${v}">${v}</option>`).join('');
+        }
+        if (this.elSelectionMode && Array.isArray(this.enums?.selectionModes)) {
+            this.elSelectionMode.innerHTML = this.enums.selectionModes.map(v => `<option value="${v}">${v}</option>`).join('');
+        }
+
+        // 1.2) costs.partSlot.part dropdown driven by meta.defaultParts
+        if (this.elCostsPart && Array.isArray(this.defaultParts)) {
+            const opts = ['<option value="">(none)</option>']
+                .concat(this.defaultParts.map(p => `<option value="${p}">${p}</option>`));
+            this.elCostsPart.innerHTML = opts.join('');
+        }
+
         // 2) requiredPart dropdown (legacy UI) driven by meta.defaultParts
         if (this.elPropRequiredPart && Array.isArray(this.defaultParts)) {
             const opts = ['<option value="">(none)</option>']
@@ -820,6 +959,23 @@ class SkillEditor {
                 else box.appendChild(label);
             });
         }
+
+        // 4) v3 candidateParts / selectedParts checkbox lists driven by meta.defaultParts
+        const ensurePartsList = (container) => {
+            if (!container || !Array.isArray(this.defaultParts)) return;
+            container.innerHTML = '';
+            this.defaultParts.forEach((p) => {
+                const label = document.createElement('label');
+                label.className = 'small';
+                label.style.display = 'flex';
+                label.style.gap = '8px';
+                label.style.alignItems = 'center';
+                label.innerHTML = `<input type="checkbox" value="${p}">${p}`;
+                container.appendChild(label);
+            });
+        };
+        ensurePartsList(this.elCandidatePartsList);
+        ensurePartsList(this.elSelectedPartsList);
     }
 
     // v3 -> editor (legacy-friendly view)
@@ -828,10 +984,14 @@ class SkillEditor {
 
         // v3 editorMeta is in grid coords; editor uses pixel coords. Accept both.
         if (skill.editorMeta && typeof skill.editorMeta.x === 'number' && typeof skill.editorMeta.y === 'number') {
-            // If looks like small grid coords (0..N), convert to pixel.
-            if (skill.editorMeta.x <= 50 && skill.editorMeta.y <= 50) {
-                skill.editorMeta = { x: skill.editorMeta.x * this.GRID_SIZE + 14, y: skill.editorMeta.y * this.GRID_SIZE + 14, ...skill.editorMeta };
-            }
+            // v3 pack 约定：skills_melee_v3.json 的 editorMeta.x/y 为“网格坐标”。
+            // 导入到编辑器时需要转换为画布像素坐标（node top-left）。
+            // 注意：对象展开必须放在前面，避免覆盖计算出的 x/y。
+            const gx = skill.editorMeta.x;
+            const gy = skill.editorMeta.y;
+            const px = gx * this.GRID_SIZE + 14;
+            const py = gy * this.GRID_SIZE + 14;
+            skill.editorMeta = { ...skill.editorMeta, x: px, y: py };
         }
 
         // costs.ap -> legacy cost
@@ -1684,13 +1844,18 @@ class SkillEditor {
             document.getElementById('btn-add-remove').disabled = true;
             const btnSaveEffects = document.getElementById('btn-save-effects');
             if (btnSaveEffects) btnSaveEffects.disabled = true;
+            if (this.elBtnAddEffect) this.elBtnAddEffect.disabled = true;
+            if (this.elBtnOpenEffectsJson) this.elBtnOpenEffectsJson.disabled = true;
+            if (this.elBtnApplyEffectsJson) this.elBtnApplyEffectsJson.disabled = true;
+            if (this.elBtnCloseEffectsJson) this.elBtnCloseEffectsJson.disabled = true;
+            if (this.elBtnValidateEffects) this.elBtnValidateEffects.disabled = true;
 
-            this.elPropId.value = '';
-            this.elPropName.value = '';
-            this.elPropCost.value = '';
-            this.elPropSpeed.value = '';
-            this.elPropDesc.value = '';
-            this.elPropEffects.value = '';
+            if (this.elPropId) this.elPropId.value = '';
+            if (this.elPropName) this.elPropName.value = '';
+            if (this.elPropCost) this.elPropCost.value = '';
+            if (this.elPropSpeed) this.elPropSpeed.value = '';
+            if (this.elPropDesc) this.elPropDesc.value = '';
+            if (this.elPropEffects) this.elPropEffects.value = '';
             this.elPrereqText.textContent = '—';
             this.elMetaX.value = '';
             this.elMetaY.value = '';
@@ -1709,6 +1874,7 @@ class SkillEditor {
             this.setError(this.elErrTarget, null);
             this.setError(this.elErrBuffs, null);
             this.setError(this.elErrEffects, null);
+            if (this.elEffectsList) this.elEffectsList.innerHTML = '<span style="color:#888;">(no effects)</span>';
             return;
         }
 
@@ -1721,20 +1887,28 @@ class SkillEditor {
         document.getElementById('btn-add-remove').disabled = false;
         const btnSaveEffects = document.getElementById('btn-save-effects');
         if (btnSaveEffects) btnSaveEffects.disabled = false;
+        if (this.elBtnAddEffect) this.elBtnAddEffect.disabled = false;
+        if (this.elBtnOpenEffectsJson) this.elBtnOpenEffectsJson.disabled = false;
+        if (this.elBtnApplyEffectsJson) this.elBtnApplyEffectsJson.disabled = false;
+        if (this.elBtnCloseEffectsJson) this.elBtnCloseEffectsJson.disabled = false;
+        if (this.elBtnValidateEffects) this.elBtnValidateEffects.disabled = false;
 
-        this.elPropId.value = skill.id || '';
-        this.elPropName.value = skill.name || '';
-        this.elPropRarity.value = skill.rarity || 'Common';
-        this.elPropCost.value = skill.cost ?? 0;
-        this.elPropSpeed.value = skill.speed ?? 0;
-        this.elPropTargetType.value = skill.targetType || 'SINGLE_PART';
-        this.elPropRequiredPart.value = skill.requiredPart || '';
-        this.setTargetPartsSelection(Array.isArray(skill.targetParts) ? skill.targetParts : []);
-        this.elPropType.value = skill.type || '';
-        this.elPropValue.value = skill.value ?? '';
-        this.elPropValueType.value = skill.valueType || '';
-        this.elPropDesc.value = skill.description || '';
-        this.elPropEffects.value = JSON.stringify(skill.effects || [], null, 2);
+        if (this.elPropId) this.elPropId.value = skill.id || '';
+        if (this.elPropName) this.elPropName.value = skill.name || '';
+        if (this.elPropRarity) this.elPropRarity.value = skill.rarity || 'Common';
+        if (this.elPropCost) this.elPropCost.value = skill.cost ?? 0;
+        if (this.elPropSpeed) this.elPropSpeed.value = skill.speed ?? 0;
+        if (this.elPropTargetType) this.elPropTargetType.value = skill.targetType || 'SINGLE_PART';
+        if (this.elPropRequiredPart) this.elPropRequiredPart.value = skill.requiredPart || '';
+        if (this.elTargetPartsDropdown && typeof this.setTargetPartsSelection === 'function') {
+            this.setTargetPartsSelection(Array.isArray(skill.targetParts) ? skill.targetParts : []);
+        }
+        if (this.elPropType) this.elPropType.value = skill.type || '';
+        if (this.elPropValue) this.elPropValue.value = skill.value ?? '';
+        if (this.elPropValueType) this.elPropValueType.value = skill.valueType || '';
+        if (this.elPropDesc) this.elPropDesc.value = skill.description || '';
+        if (this.elPropEffects) this.elPropEffects.value = JSON.stringify(skill.effects || [], null, 2);
+        this.renderEffectsEditor(skill.effects || []);
         this.elPrereqText.textContent = (skill.prerequisites || []).join(', ') || '—';
         this.elMetaX.value = skill.editorMeta?.x ?? '';
         this.elMetaY.value = skill.editorMeta?.y ?? '';
@@ -1744,34 +1918,312 @@ class SkillEditor {
     }
 
     saveEffectsJson() {
-        if (!this.selectedNodeId) return;
-        const skill = this.getSkillById(this.selectedNodeId);
-        if (!skill) return;
+        // Backward-compatible entry: Save Effects button.
+        this.saveEffectsFromForm();
+    }
 
-        this.setError(this.elErrEffects, null);
+    ensureEffectDefaults(eff) {
+        const out = (eff && typeof eff === 'object' && !Array.isArray(eff)) ? JSON.parse(JSON.stringify(eff)) : {};
+        if (!out.effectType) out.effectType = (this.enums.effectTypes && this.enums.effectTypes[0]) || 'DMG_HP';
+        if (!out.amountType) out.amountType = (this.enums.amountTypes && this.enums.amountTypes[0]) || 'ABS';
 
-        let effects = [];
-        try {
-            effects = JSON.parse(this.elPropEffects.value || '[]');
-            if (!Array.isArray(effects)) throw new Error('effects 必须是数组');
-            // minimal schema:
-            // - legacy: effects[i].type
-            // - v3: effects[i].effectType
-            for (let i = 0; i < effects.length; i++) {
-                const eff = effects[i];
-                if (typeof eff !== 'object' || eff === null || Array.isArray(eff)) {
-                    throw new Error(`effects[${i}] 必须是对象`);
-                }
-                const ok = (typeof eff.type === 'string' && eff.type.trim()) || (typeof eff.effectType === 'string' && eff.effectType.trim());
-                if (!ok) throw new Error(`effects[${i}] 必须包含 type(legacy) 或 effectType(v3)`);
+        if (out.amountType === 'SCALING') {
+            if (!out.scaling) out.scaling = {};
+            if (typeof out.scaling.stat !== 'string') out.scaling.stat = '';
+            if (typeof out.scaling.multiplier !== 'number') out.scaling.multiplier = 1;
+            delete out.amount;
+        } else {
+            if (typeof out.amount !== 'number') out.amount = 0;
+            delete out.scaling;
+        }
+
+        if (out.subjectOverride === '') delete out.subjectOverride;
+        if (out.note === '') delete out.note;
+        return out;
+    }
+
+    getEffectsFromForm() {
+        if (!this.elEffectsList) return [];
+        const rows = Array.from(this.elEffectsList.querySelectorAll('.effect-row[data-effect-index]'));
+        const effects = [];
+        for (const row of rows) {
+            const idx = Number(row.getAttribute('data-effect-index'));
+            const q = (sel) => row.querySelector(sel);
+            const effectType = q('select[data-field="effectType"]')?.value;
+            const amountType = q('select[data-field="amountType"]')?.value || 'ABS';
+            const subjectOverride = q('select[data-field="subjectOverride"]')?.value;
+            const note = q('input[data-field="note"]')?.value;
+
+            const eff = {};
+            if (effectType) eff.effectType = effectType;
+            eff.amountType = amountType;
+            if (subjectOverride) eff.subjectOverride = subjectOverride;
+            if (note) eff.note = note;
+
+            if (amountType === 'SCALING') {
+                const scalingStat = q('input[data-field="scaling.stat"]')?.value || '';
+                const scalingMulStr = q('input[data-field="scaling.multiplier"]')?.value;
+                eff.scaling = {
+                    stat: scalingStat,
+                    multiplier: scalingMulStr === '' || scalingMulStr == null ? NaN : Number(scalingMulStr)
+                };
+            } else {
+                const amountStr = q('input[data-field="amount"]')?.value;
+                eff.amount = amountStr === '' || amountStr == null ? NaN : Number(amountStr);
             }
-        } catch (e) {
-            this.setError(this.elErrEffects, 'effects JSON 无法解析/校验失败：' + e.message);
-            this.updateSummary();
+
+            effects[idx] = eff;
+        }
+        return effects.filter(Boolean).map(e => this.ensureEffectDefaults(e));
+    }
+
+    validateEffects(effects) {
+        const errs = [];
+        if (!Array.isArray(effects)) return ['effects 必须是数组'];
+
+        for (let i = 0; i < effects.length; i++) {
+            const eff = effects[i];
+            if (!eff || typeof eff !== 'object' || Array.isArray(eff)) {
+                errs.push(`Effect #${i + 1}: 必须是对象`);
+                continue;
+            }
+
+            if (!eff.effectType) errs.push(`Effect #${i + 1}: 缺少 effectType`);
+            else if (Array.isArray(this.enums.effectTypes) && !this.enums.effectTypes.includes(eff.effectType)) {
+                errs.push(`Effect #${i + 1}: effectType=${eff.effectType} 不在 meta.enums.effectTypes 中`);
+            }
+
+            if (eff.amountType && Array.isArray(this.enums.amountTypes) && !this.enums.amountTypes.includes(eff.amountType)) {
+                errs.push(`Effect #${i + 1}: amountType=${eff.amountType} 不在 meta.enums.amountTypes 中`);
+            }
+
+            const at = eff.amountType || 'ABS';
+            if (at === 'SCALING') {
+                if (!eff.scaling || typeof eff.scaling !== 'object') errs.push(`Effect #${i + 1}: amountType=SCALING 需要 scaling 对象`);
+                else {
+                    if (!eff.scaling.stat || typeof eff.scaling.stat !== 'string') errs.push(`Effect #${i + 1}: scaling.stat 必填`);
+                    if (typeof eff.scaling.multiplier !== 'number' || Number.isNaN(eff.scaling.multiplier)) errs.push(`Effect #${i + 1}: scaling.multiplier 必须是数字`);
+                }
+            } else {
+                if (typeof eff.amount !== 'number' || Number.isNaN(eff.amount)) errs.push(`Effect #${i + 1}: amount 必须是数字`);
+            }
+
+            if (eff.subjectOverride) {
+                if (Array.isArray(this.enums.targetSubjects) && !this.enums.targetSubjects.includes(eff.subjectOverride)) {
+                    errs.push(`Effect #${i + 1}: subjectOverride=${eff.subjectOverride} 不在 meta.enums.targetSubjects 中`);
+                }
+            }
+        }
+
+        return errs;
+    }
+
+    renderEffectsEditor(effects) {
+        if (!this.elEffectsList) return;
+        const list = Array.isArray(effects) ? effects : [];
+        if (list.length === 0) {
+            this.elEffectsList.innerHTML = '<span style="color:#888;">(no effects)</span>';
             return;
         }
 
+        this.elEffectsList.innerHTML = '';
+        list.forEach((rawEff, index) => {
+            const eff = this.ensureEffectDefaults(rawEff);
+            const row = document.createElement('div');
+            row.className = 'effect-row';
+            row.setAttribute('data-effect-index', String(index));
+
+            const head = document.createElement('div');
+            head.className = 'effect-row-head';
+            head.innerHTML = `<div style="font-weight:800;">Effect #${index + 1}</div>`;
+            const actions = document.createElement('div');
+            actions.className = 'row-actions';
+            actions.innerHTML = `
+                <button class="btn btn-sm btn-dark" type="button" data-action="up">↑</button>
+                <button class="btn btn-sm btn-dark" type="button" data-action="down">↓</button>
+                <button class="btn btn-sm btn-dark" type="button" data-action="dup">Dup</button>
+                <button class="btn btn-sm btn-danger" type="button" data-action="del">Del</button>
+            `;
+            head.appendChild(actions);
+
+            const grid = document.createElement('div');
+            grid.className = 'effect-grid';
+
+            const mkSelect = (field, options, value, allowEmpty = false, emptyLabel = '(inherit)') => {
+                const sel = document.createElement('select');
+                sel.className = 'select';
+                sel.setAttribute('data-field', field);
+                const opts = [];
+                if (allowEmpty) opts.push(`<option value="">${emptyLabel}</option>`);
+                (options || []).forEach(o => opts.push(`<option value="${o}">${o}</option>`));
+                sel.innerHTML = opts.join('');
+                if (value != null) sel.value = value;
+                return sel;
+            };
+            const mkInput = (field, type, value, placeholder = '') => {
+                const input = document.createElement('input');
+                input.className = 'input';
+                input.type = type;
+                input.setAttribute('data-field', field);
+                input.placeholder = placeholder;
+                input.value = value == null ? '' : String(value);
+                return input;
+            };
+            const addRow = (label, el) => {
+                const l = document.createElement('div');
+                l.className = 'small';
+                l.textContent = label;
+                grid.appendChild(l);
+                grid.appendChild(el);
+            };
+
+            addRow('effectType', mkSelect('effectType', this.enums.effectTypes, eff.effectType));
+            addRow('amountType', mkSelect('amountType', this.enums.amountTypes, eff.amountType));
+
+            if (eff.amountType === 'SCALING') {
+                addRow('scaling.stat', mkInput('scaling.stat', 'text', eff.scaling?.stat || '', 'e.g. atk'));
+                addRow('scaling.multiplier', mkInput('scaling.multiplier', 'number', eff.scaling?.multiplier ?? 1, 'e.g. 1.2'));
+            } else {
+                addRow('amount', mkInput('amount', 'number', eff.amount ?? 0));
+                addRow('', document.createElement('div'));
+            }
+
+            addRow('subjectOverride', mkSelect('subjectOverride', this.enums.targetSubjects, eff.subjectOverride || '', true));
+            addRow('note', mkInput('note', 'text', eff.note || '', 'optional'));
+
+            row.appendChild(head);
+            row.appendChild(grid);
+            this.elEffectsList.appendChild(row);
+
+            actions.addEventListener('click', (e) => {
+                const btn = e.target.closest('button[data-action]');
+                if (!btn) return;
+                const action = btn.getAttribute('data-action');
+                if (action === 'up') this.moveEffectRow(index, -1);
+                if (action === 'down') this.moveEffectRow(index, +1);
+                if (action === 'dup') this.duplicateEffectRow(index);
+                if (action === 'del') this.deleteEffectRow(index);
+            });
+
+            grid.addEventListener('change', (e) => {
+                const field = e.target?.getAttribute?.('data-field');
+                if (field === 'amountType') {
+                    const current = this.getEffectsFromForm();
+                    this.renderEffectsEditor(current);
+                    this.syncEffectsJsonFromForm();
+                } else {
+                    this.syncEffectsJsonFromForm();
+                }
+            });
+            grid.addEventListener('input', () => this.syncEffectsJsonFromForm());
+        });
+    }
+
+    syncEffectsJsonFromForm() {
+        if (!this.elPropEffects) return;
+        const effects = this.getEffectsFromForm();
+        this.elPropEffects.value = JSON.stringify(effects, null, 2);
+    }
+
+    addEffectRow() {
+        if (!this.selectedNodeId) return;
+        const skill = this.getSkillById(this.selectedNodeId);
+        if (!skill) return;
+        if (!Array.isArray(skill.effects)) skill.effects = [];
+
+        const eff = this.ensureEffectDefaults({
+            effectType: (this.enums.effectTypes && this.enums.effectTypes[0]) || 'DMG_HP',
+            amountType: (this.enums.amountTypes && this.enums.amountTypes[0]) || 'ABS',
+            amount: 0
+        });
+        skill.effects.push(eff);
+        this.renderEffectsEditor(skill.effects);
+        this.syncEffectsJsonFromForm();
+    }
+
+    moveEffectRow(index, delta) {
+        if (!this.selectedNodeId) return;
+        const skill = this.getSkillById(this.selectedNodeId);
+        if (!skill || !Array.isArray(skill.effects)) return;
+        const to = index + delta;
+        if (to < 0 || to >= skill.effects.length) return;
+        const tmp = skill.effects[index];
+        skill.effects[index] = skill.effects[to];
+        skill.effects[to] = tmp;
+        this.renderEffectsEditor(skill.effects);
+        this.syncEffectsJsonFromForm();
+    }
+
+    duplicateEffectRow(index) {
+        if (!this.selectedNodeId) return;
+        const skill = this.getSkillById(this.selectedNodeId);
+        if (!skill || !Array.isArray(skill.effects)) return;
+        const src = skill.effects[index];
+        if (!src) return;
+        skill.effects.splice(index + 1, 0, JSON.parse(JSON.stringify(src)));
+        this.renderEffectsEditor(skill.effects);
+        this.syncEffectsJsonFromForm();
+    }
+
+    deleteEffectRow(index) {
+        if (!this.selectedNodeId) return;
+        const skill = this.getSkillById(this.selectedNodeId);
+        if (!skill || !Array.isArray(skill.effects)) return;
+        skill.effects.splice(index, 1);
+        this.renderEffectsEditor(skill.effects);
+        this.syncEffectsJsonFromForm();
+    }
+
+    openEffectsJsonSync() {
+        if (this.elEffectsJsonWrap) this.elEffectsJsonWrap.style.display = 'block';
+        this.syncEffectsJsonFromForm();
+    }
+
+    closeEffectsJsonSync() {
+        if (this.elEffectsJsonWrap) this.elEffectsJsonWrap.style.display = 'none';
+    }
+
+    applyEffectsJsonToForm() {
+        this.setError(this.elErrEffects, null);
+        let parsed;
+        try {
+            parsed = JSON.parse(this.elPropEffects?.value || '[]');
+            if (!Array.isArray(parsed)) throw new Error('effects 必须是数组');
+        } catch (e) {
+            this.setError(this.elErrEffects, e.message || String(e));
+            return;
+        }
+        if (!this.selectedNodeId) return;
+        const skill = this.getSkillById(this.selectedNodeId);
+        if (!skill) return;
+        skill.effects = parsed.map(e => this.ensureEffectDefaults(e));
+        this.renderEffectsEditor(skill.effects);
+        this.syncEffectsJsonFromForm();
+    }
+
+    validateEffectsFromForm() {
+        this.setError(this.elErrEffects, null);
+        const effects = this.getEffectsFromForm();
+        const errs = this.validateEffects(effects);
+        if (errs.length) {
+            this.setError(this.elErrEffects, errs.join('\n'));
+            return false;
+        }
+        return true;
+    }
+
+    saveEffectsFromForm() {
+        if (!this.selectedNodeId) return;
+        const skill = this.getSkillById(this.selectedNodeId);
+        if (!skill) return;
+        if (!this.validateEffectsFromForm()) {
+            this.updateSummary();
+            return;
+        }
+        const effects = this.getEffectsFromForm();
         skill.effects = effects;
+        if (this.elPropEffects) this.elPropEffects.value = JSON.stringify(effects, null, 2);
+        this.closeEffectsJsonSync();
         this.updateSummary();
     }
 

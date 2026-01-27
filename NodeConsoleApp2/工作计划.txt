@@ -383,3 +383,5 @@ skills_melee_v3.json版本的文件进行了较大的改动，我觉得当前的修改不能满足适配要求
 基于skill_design.md、skill_editor_design.md、skill_melee_v3.json等文件的设计方案，帮我更新skill_editor_test_v3.html文件，确保技能编辑器能够正确加载和使用新的技能数据文件。尤其要关注skill_editor_design.md件中2.3节的内容。
 
 我发现点击Export(dev)导出的json文件没有记录技能在canvas上的位置，请你检查一下代码，分析原因，先不要修改代码。
+
+当前的panel-scroll面板并没有根据skill_design.md顶层字段和细分的章节解释进行属性配置分组，还存在大量的硬编码项，请根据skill_design.md的6.3节，重新设计html文件的panel-scroll面板的属性配置分组。
