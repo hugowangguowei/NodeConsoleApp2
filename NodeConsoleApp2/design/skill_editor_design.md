@@ -1,428 +1,425 @@
-# 技能编辑器设计文档 (Skill Editor Design)
+# 技能编辑器设计方案 (Skill Editor Design)
 
-## 1. 概述 (Overview)
-
-为了满足日益复杂的技能系统设计需求，特别是技能树结构的可视化编辑，我们需要开发一款基于网页的 **技能编辑器 (Skill Editor)**。该编辑器将允许开发者在一个可视化的二维画布上创建、编辑、连接和管理技能节点，并最终将数据导出为游戏引擎可用的 JSON（目前为 `assets/data/skills.json`）。
-
-核心目标：
-*   **可视化编辑**：脱离纯文本编辑，通过节点连线直观地构建技能依赖图（DAG）。
-*   **结构化 Buff 引用**：技能只“引用 Buff”，使用 `buffRefs.apply/applySelf/remove`，避免自由文本式的 [Buff] 描述。
-*   **强校验**：在编辑阶段阻止无效数据（缺失 `buffId`、环依赖、非法目标/部位组合）。
-*   **数据一致性**：确保导出的数据与当前 `assets/data/skills.json` 的字段/层级完全一致，且可被引擎加载。
+> 本文档为 **v3 数据对齐版**：用于确保技能编辑器能够正确加载、编辑、校验并导出 `assets/data/skills_melee_v3.json`。
+>
+> 对齐来源：
+> - `design/skill_design.md`（技能系统规范与字段语义）
+> - `assets/data/skills_melee_v3.json`（实际样例与 `meta.enums` 枚举源）
 
 ---
 
-## 2. 编辑器功能 (Editor Capabilities)
+## 1. 构建目标
 
-### 2.1 技能管理
-*   **载入文件**：支持从本地加载 `assets/data/skills.json` 与 `assets/data/buffs.json`。技能数据以图谱形式展示在画布上。
-*   **创建技能**：支持通过工具栏新建技能节点。
-*   **编辑属性**：选中节点后，在侧边栏编辑技能详细属性（见第5章字段分组），其中 Buff 必须通过 `buffRefs` 结构编辑。
-*   **删除技能**：支持删除选中的节点（智能处理前置/后置关系的解绑）。
-*   **复制/粘贴**：快速复制已有技能配置，便于制作同流派的进阶技能。
+技能编辑器（Skill Editor）是一个基于网页（HTML/CSS/JS）的工具，目标是：
 
-### 2.2 技能树构建 (核心功能)
-*   **节点拖拽**：在二维画布上自由拖拽技能节点，调整布局。
-*   **连线关系**：通过从一个节点拖拽连线到另一个节点，建立 **前置依赖 (Prerequisite)** 关系（写入目标节点的 `prerequisites[]`）。
-    *   箭头的方向表示依赖方向（例如：`重锤挥击` -> `野蛮冲撞` 表示 `重锤挥击` 是 `野蛮冲撞` 的前置）。
-*   **关系解除**：选中连线并删除，解除依赖关系。
-*   **DAG 校验**：检测是否存在循环依赖；禁止创建会生成环的连线。
-
-### 2.3 数据输入/输出 (I/O)
-*   **导入 JSON**：支持上传或粘贴现有的 `skills.json` 内容（对象映射结构），还原为图谱结构。
-*   **导出 JSON**：一键生成符合引擎定义的 `skills.json`（对象映射结构：key 必须与 skill `id` 一致）。
-*   **导出模式**：
-    *   开发模式：保留 `editorMeta`（布局信息）。
-    *   运行模式：剥离 `editorMeta`（避免污染运行数据）。
-*   **本地缓存**：利用 `localStorage` 自动保存当前编辑进度，防止意外丢失。
+1. **加载/保存技能数据**：以 `skills_melee_v3.json` 为标准输入输出。
+2. **可视化编辑技能树**：在二维网格画布上拖拽技能节点；用连线表达前置依赖。
+3. **结构化编辑技能属性**：目标选择、消耗、需求、效果、Buff 引用、解锁体系、标签等。
+4. **严格校验**：导出前进行 schema/引用关系/循环依赖 等检查，降低数据写错的概率。
 
 ---
 
-## 3. 编辑器实现形式 (Implementation)
+## 2. 输入输出文件与数据源
 
-### 3.1 技术方案选型 (Technical Architecture)
-为了满足网格对齐和正交折线的需求，建议采用 **分层渲染 (Layered Rendering)** 架构：
+### 2.1 技能数据文件（v3）
 
-*   **Layer 1 (Bottom): 背景网格层 (Canvas)**
-    *   使用 HTML5 Canvas 绘制静态网格线。
-    *   **理由**: Canvas 绘制大量简单线条性能极佳，且作为背景无需交互，适合处理无限画布的视觉参考。
-*   **Layer 2 (Middle): 连线层 (SVG)**
-    *   使用全屏 SVG 覆盖在 Canvas 之上。
-    *   **连线对象**: 使用 `<polyline>` 或 `<path>` 元素绘制折线。
-    *   **理由**: SVG 元素是 DOM 的一部分，原生支持事件监听（如 `click` 选中连线、`hover` 高亮），这比在 Canvas 中手动实现点击检测要简单得多。
-    *   **路由算法**: 不需要引入重型库，只需实现一个简易的 **Manhattan Routing** (曼哈顿路由) 算法，确保线条只在 `Grid Lines` 上行走。
-*   **Layer 3 (Top): 节点交互层 (HTML DOM)**
-    *   使用 `absolute` 定位的 `div` 元素表示技能节点。
-    *   **理由**: 节点包含复杂的文本、图标和边框样式，HTML+CSS 是实现这些最灵活且开发成本最低的方式。
-*   **辅助库**: 
-    *   不建议使用大型图表库。推荐 **原生实现**，以保证对“网格吸附”和“正交走线”逻辑的绝对控制。
+标准技能文件：`assets/data/skills_melee_v3.json`
 
-### 3.2 界面布局 (UI Layout)
+顶层结构约束（必须保持）：
 
-编辑器界面分为四个主要区域：
+- `$schemaVersion: string`
+- `meta: { defaultParts, enums, ... }`
+- `skills: SkillV3[]`
 
-#### A. 顶部工具栏 (Toolbar)
-*   **文件操作**：[导入 JSON] [导出 JSON] [清空画布]
-*   **视图操作**：[重置缩放] [自动排列(可选)]
-*   **流派筛选**：下拉菜单选择当前显示的流派（例如：只显示“重装猛攻”），避免画布过于杂乱。
+编辑器导出时必须导出 **完整对象**，而不是只导出 `skills[]`。
 
-#### B. 技能列表 (SkillList)
-*   **形态：左侧可折叠抽屉 (Drawer / Collapsible Sidebar)**
-    *   **默认收起**，避免长期占用画布宽度；需要全局导航/搜索时再展开。
-    *   抽屉展开后覆盖在画布左侧。
-*   **展开/收起触发**
-    *   顶部工具栏提供 `Skills` 按钮（Toggle Drawer）。
-    *   画布左侧提供一个窄的“把手/边缘热区”（Edge Handle），点击或拖拽可展开。
-    *   快捷键建议：`Ctrl+B` 切换抽屉；`Ctrl+K` 打开“快速搜索/跳转”输入框（可直接定位技能）。
-*   **抽屉内容与能力（展开状态）**
-    *   显示当前加载的所有技能列表（按 `name/id` 展示，附带 `rarity`/流派徽标可选）。
-    *   支持搜索过滤（最小可用：`name` + `id`；增强：流派/稀有度/标签）。
-    *   支持“定位到画布”：点击列表项后，若该技能已在画布上，则执行 `Center on Canvas` 并高亮节点。
-    *   支持“未上画布技能”提示：
-        *   若技能缺少 `editorMeta` 或未生成节点，则在列表中显示“未布局”标记。
-        *   支持将该技能拖拽到画布上完成第一次放置（或提供 `Place on Canvas` 按钮）。
-*   **职责边界**
-    *   抽屉的定位：提供“全局导航/搜索/缺失布局发现”能力；不要求作为日常编辑主入口。
-    *   新增/复制/删除等全局操作可放在 Toolbar 或右侧属性面板；抽屉内可仅保留轻量入口（可选）。
+### 2.2 Buff 数据文件
 
-#### C. 中央画布区 (Canvas Workspace) - 核心设计
-为了更好地支持技能树的可视化编辑，该区域采用 **基于网格的混合渲染 (Grid-based Hybrid Rendering)** 方案。
+用于 `buffRefs` 下拉选择与校验：`assets/data/buffs.json`
 
-1.  **要素组成 (Composition)**
-    *   **背景网格 (Background Grid)**: 画布被划分为 `M * N` 的虚拟网格区域（例如 100x100px 单元格）。
-        *   **功能**: 对齐辅助，每个网格单元 (Cell) 作为一个布局插槽，通常只能容纳一个技能节点。
-        *   **实现**: 使用 HTML5 Canvas 绘制浅色线条，随缩放和平移更新。
-    *   **技能节点 (Skill Nodes)**: 浮动在网格之上的 DOM 元素。
-        *   **功能**: 显示技能图标、名称、ID 和消耗。
-        *   **对齐**: 拖拽释放时，节点会自动吸附 (Snap) 到最近的网格单元中心。
-        *   **端口**: 实际上节点不显示显式的端口，但在逻辑上，每个单元格的四条边中点因为连线机制而成为潜在的连接点。
-    *   **技能连线 (Skill Connections)**: 表示 `前置 -> 后续` 的依赖关系。
-        *   **视觉**: 带有箭头的折线 (Polylines)。
-        *   **方向**: 有向图，箭头指向依赖此技能的后续技能（或者反过来，视编辑器逻辑，通常 Parent -> Child）。
-
-2.  **连线绘制技术 (Routing Strategy)**
-    *   **正交路由 (Orthogonal Routing)**: 连线必须是水平或垂直的折线，禁止斜线。
-    *   **视觉优先策略：竖-横-竖 (V-H-V)**
-        *   默认采用三段式折线：先垂直、后水平、再垂直（类似流程图的正交连线风格），提升技能树的“规整感”。
-        *   该策略优先于“最短路径”与“自动寻路”，即：在大多数情况下不做复杂的 Manhattan Pathfinding，而是直接构造稳定、可预测的折线路径。
-    *   **连接点选择：基于上下关系的自适应锚点 (Adaptive Anchors)**
-        *   目标：避免出现“线先走反方向再折返”的不美观情况。
-        *   规则（以节点矩形中心点的 Y 值比较为准）：
-            *   若 `source.centerY <= target.centerY`（源节点在上）：
-                *   出发点取 `source.bottomCenter`（源节点正下方）
-                *   结束点取 `target.topCenter`（目标节点正上方）
-                *   路径为：竖↓ → 横 → 竖↓
-            *   若 `source.centerY > target.centerY`（源节点在下）：
-                *   出发点取 `source.topCenter`（源节点正上方）
-                *   结束点取 `target.bottomCenter`（目标节点正下方）
-                *   路径为：竖↑ → 横 → 竖↑
-        *   补充：当两个节点几乎同一水平（|ΔY| 很小）时，可退化为“横向优先”或保持既有锚点，避免频繁切换。
-    *   **折线中间层 (Midline) 的计算**
-        *   标准方案：使用 `midY = (p0.y + p3.y) / 2`（视觉对称）。
-        *   为避免折线贴边或压住节点边框，建议引入 `margin`：
-            *   先从锚点“离开”节点：`p1 = (p0.x, p0.y ± margin)`
-            *   再走到一条中间通道：`p2 = (p3.x, midY)`
-            *   最后进入目标锚点：`p3`
-        *   `margin` 可取 8~16px 或 0.2 个网格单位（按当前网格尺寸折算）。
-    *   **边缘行走 (Channel Routing)**: 作为增强项，折线应尽量沿着网格线（即单元格的边缘）绘制，而不是穿过单元格内部。
-        *   在 V-H-V 基础上进行“网格对齐”：将所有折点坐标吸附到最近的网格线坐标。
-    *   **连接点集合 (Anchor Points)**
-        *   逻辑上保留每个网格单元 **上/右/下/左** 四个边中点作为潜在锚点。
-        *   但“默认自动连线”优先使用 `top/bottom`（配合 V-H-V 与有向依赖更直观）；仅在后续需要绕行避障时，才考虑使用 `left/right` 作为辅助锚点。
-    *   **拖拽过程的稳定性（避免跳变）**
-        *   问题：节点拖动时一旦跨过目标节点的 `centerY`，锚点可能从 bottom 瞬间切到 top（或反之），导致连线抖动。
-        *   方案：引入“滞回阈值 (hysteresis)”：只有当 `|source.centerY - target.centerY|` 超过一定阈值（例如 10~20px 或 0.2 个网格单位）才允许切换锚点；或在创建连线时锁定连线方向，除非用户手动重连。
-
-#### D. 右侧属性面板 (Properties Panel)
-参考 `buff_editor_design.md` 与 `test/buff_editor_v3.html` 的样式，右侧属性面板建议采用 **卡片式分组（Panel + Section）**：每个区块有标题、可折叠（可选）、内部使用两列网格布局（label + input），复杂字段用“可增删列表/表格”。
-
-**整体结构（推荐）**
-
-* **Panel: Skill Editor（只读摘要）**
-  * 显示：`id` / `name` / `rarity` 徽标、校验状态（?/??/?）
-  * 操作：`Duplicate` / `Delete`（与左侧列表一致）
-
-* **Panel: Basic Info（基础信息）**
-  * `id`（Text）
-    * 导出规则：JSON key 必须与 `id` 一致；若不一致，导出时提供“自动修正 key/取消导出”选项。
-  * `name`（Text）
-  * `rarity`（Select：Common/Uncommon/Rare/Epic/Legendary）
-  * `description`（Textarea，建议等宽字体，参考 buff editor 的 monospace 输入框）
-
-* **Panel: Target & Timing（行动与目标）**
-  * `cost`（Number）
-  * `speed`（Number）
-  * `targetType`（Select：SELF / ENEMY / SINGLE_PART / ALL_PARTS / RANDOM_PART / SELF_PARTS）
-  * `requiredPart`（Select，可空；当 `targetType` 为部位相关时显示）
-  * `targetParts[]`（多选/Tag；仅当 `targetType=SELF_PARTS` 时显示）
-  * 组合校验提示：
-    * `targetType=SELF_PARTS` 时必须有 `targetParts[]`。
-    * `requiredPart` 仅在需要时启用，非法组合高亮提示。
-
-* **Panel: Values（数值字段，可选）**
-  * `type`（Select/自由输入，取决于引擎约束）
-  * `value`（Number/String）
-  * `valueType`（Select，可空）
-  * 校验提示：当 `valueType=PERCENT` 时 `value` 必须是 number。
-
-* **Panel: Buff Refs（Buff 引用，核心）**
-  * 分为三个子区块（与 `buffRefs` 对齐）：
-    * `apply`（对敌方施加）
-    * `applySelf`（对自身施加）
-    * `remove`（移除/净化）
-  * 每个子区块使用“可增删表格”（与 `buff_editor_v3.html` 的表格/列表风格一致）：
-    * 列：`buffId`（Select + 搜索，数据源来自 `assets/data/buffs.json`）
-    * 列：`target`（Select：self/enemy；默认与所在分组一致，例如 apply 默认 enemy）
-    * 列：`chance`（Number，0~1，默认 1.0）
-    * 列：`duration`（Number，可空，若不填则表示使用 Buff 默认）
-    * 列：`stacks`（Number，可空）
-    * 操作：`+ Add` / `Delete row`
-  * 即时校验：
-    * `buffId` 必须存在于 `buffs.json`，不存在时整行标红并在面板顶部汇总错误。
-    * `chance` 必须在 `[0,1]`。
-
-* **Panel: Effects（扩展 effects[]）**
-  * 采用“Accordion 列表”（参考 buff editor 的 Effects/Triggers 形态）：
-    * 每条 effect 展示：`type`（必填） + 关键参数（以 key/value 形式预览）
-    * 支持：`+ Add effect` / `Delete` / 上下移动（可选）
-  * 编辑方式：
-    * MVP：提供 JSON 子编辑器（textarea）+ 简单 schema 校验。
-    * 进阶：对常见 `effect.type` 提供模板化表单（如 AP 变化、忽略护甲、额外回合）。
-  * **保存策略（重要）**：
-    * `effects` 属于“自由文本 + 结构化数据”的特殊字段，中间态很容易不合法（JSON 断裂、未闭合括号）。
-    * 因此不建议对 `effects` 做“失焦即保存/回车即保存”的强制实时写回。
-    * 推荐在 `effects` 编辑框旁边提供 **专用按钮**：`Validate/Save Effects`。
-      * 点击时执行：JSON 解析校验（必须为数组）+ 最小 schema 校验（例如每项必须包含 `type: string`）。
-      * 校验通过才写回数据模型；校验失败仅提示错误，不污染上一版已保存的合法 `effects`。
-
-* **Panel: Prerequisites（前置依赖）**
-  * 只读展示 `prerequisites[]`（来自画布连线），但提供：
-    * 快捷跳转到该技能节点（点击定位画布）
-    * 一键移除某个前置（等价于删除对应连线）
-  * DAG 校验错误在此面板汇总（例如：检测到环时提示并定位到相关边）。
-
-* **Panel: Editor Meta（布局信息）**
-  * `editorMeta.x/y` 只读显示（或提供“重置位置/吸附网格”按钮）。
+如果未提供该文件，编辑器可以允许手动输入 `buffId`，但应在校验区提示“未加载 buffs.json，无法校验 buffId 是否存在”。
 
 ---
 
-## 4.x 属性编辑的保存策略（实时保存 vs 专用保存）
+### 2.3 `skills_melee_v3.json` 版本改动分析（v3 pack vs 旧 `skills.json`）
 
-为提升编辑效率与数据安全性，属性面板建议采用“**普通字段实时保存 + 特殊字段专用保存**”的混合策略。
+你当前的 `skills_melee_v3.json` 相比旧版 `skills.json`（常见为 key->skillObject 的 map 结构）属于“**数据结构升级**”。编辑器适配不能只做字段“兼容映射”，而需要将 v3 pack 视为**第一类输入输出**。
 
-### 4.x.1 普通字段：实时保存（推荐）
+#### 2.3.1 顶层结构的变化（Map -> Pack）
 
-适用范围：大多数标量字段与下拉选择字段，具有“校验简单、写回副作用小”的特点。
+- 旧：`skills.json` 通常是对象 map：`{ "skill_id": { ... }, ... }`
+- 新：`skills_melee_v3.json` 是 Pack：`{ $schemaVersion, meta, skills: [] }`
 
-* 触发时机：
-  * 输入框失去焦点（`blur`）自动保存
-  * 在 `input` 中按 `Enter` 自动保存（`textarea` 默认不使用 Enter 保存，以免影响换行）
-* 典型字段：
-  * `name`、`rarity`、`cost`、`speed`、`targetType`、`requiredPart`
-  * `type`、`value`、`valueType`
-  * `description`
-  * `buffRefs.*[]`（可采用“行内即时写回 + 即时校验提示”模式，而不是依赖全局 Save）
+Pack 的意义：
 
-### 4.x.2 特殊字段：专用保存按钮（推荐）
+1. 编辑器加载时不仅要读 `skills[]`，还要读 `meta`（枚举与默认部位），并将其作为 UI 的数据源。
+2. 编辑器导出时必须保留 `$schemaVersion` 与 `meta`，否则下游工具（skill editor / balance tool / 引擎）无法保证枚举一致。
 
-适用范围：存在“编辑中间态频繁不合法”或“保存副作用明显”的字段。
+#### 2.3.2 `meta` 新增职责：枚举与字段说明（Meta-driven UI）
 
-* `effects`：强烈建议提供 `Validate/Save Effects` 专用按钮（详见上节）。
-* （可选）未来若引入 JSON/DSL 类的扩展字段（例如脚本、表达式、复杂模板），同样应采用专用保存按钮。
+v3 将大量“硬编码常量”前置到 `meta`：
 
-### 4.x.3 `id` 字段策略：默认禁止编辑（推荐）
+- `meta.defaultParts`：默认部位列表（UI 的部位多选/下拉/约束都应以此为准）
+- `meta.enums.*`：所有关键枚举（例如 `rarities/targetSubjects/targetScopes/selectionModes/effectTypes/amountTypes/...`）
+- `meta.fieldNotes`：字段级说明（可作为编辑器 tooltip/help 的文案来源）
 
-由于 `id` 是技能数据的主键，并且会影响：导出 JSON 的 key、技能树依赖引用（`prerequisites[]`）、以及编辑器内部选中状态。
+结论：编辑器的下拉框/checkbox **必须**尽量由 `meta` 驱动，而不是写死。
 
-* 建议默认将 `id` 设为只读展示，不允许在编辑器中修改。
-* 新建技能时由编辑器自动生成唯一 `id`。
-* 若未来需要支持“改名”，建议提供专门的 `Rename Skill Id` 操作（带二次确认与全局引用更新），而不是作为普通输入框实时保存。
+#### 2.3.3 Skill 字段的关键变化（旧字段不应继续作为核心）
 
----
+1) 行动力消耗：`cost` -> `costs.ap`
 
-## 4. 关键交互设计 (Interaction Design)
+- 旧：`cost: number`
+- 新：`costs: { ap, partSlot?, perTurnLimit? }`
 
-### 4.1 节点连线逻辑 (Connection Logic)
-1.  **触发连线**: 
-    *   鼠标悬停在技能节点（或其边缘）时，显示四个方向的 **连接锚点 (Anchor)** (半透明圆点)。
-    *   从任一锚点按下鼠标左键开始拖拽。
-2.  **拖拽过程**:
-    *   显示一条跟随鼠标的虚线（此时可以是直线，作为预览）。
-    *   鼠标经过其他节点的可连接锚点时，锚点高亮吸附。
-3.  **建立连接**:
-    *   在目标锚点释放鼠标。
-    *   **系统计算路径**: 根据起点和终点的网格坐标，计算一条沿着网格线的正交路径 (Manhattan Path)。
-    *   **数据更新**: 将连接关系写入数据模型（目标节点的 `prerequisites[]` 数组）。
-4.  **删除连接**:
-    *   选中连线（高亮），按 Delete 键删除。
-    *   或右键与连线交互进行删除。
+2) 目标选择：`targetType/requiredPart/targetParts` -> `target.subject/scope/selection`
 
-### 4.2 节点样式的动态化
-*   **稀有度着色**：节点的头部颜色根据稀有度字段（Common: 灰, Uncommon: 绿, Rare: 蓝, Epic: 紫, Legendary: 金）自动变化，方便直观查看分布。
-*   **流派分组**：不同流派的节点背景色或图标略有不同。
+- 旧：`targetType`（SELF/ENEMY/SINGLE_PART/ALL_PARTS/...） + `requiredPart` + `targetParts`
+- 新：
+  - `target.subject`（释放对象维度）
+  - `target.scope`（作用范围维度）
+  - `target.selection`（选择模式与候选/已选/数量约束）
 
-### 4.4 多选与成组移动（Ctrl+点击，推荐优先实现）
+这意味着很多 v3 目标语义无法用旧三字段“无损表示”，因此编辑器 UI 应尽快切换到 v3 三层模型。
 
-当技能数量较多时，逐个移动节点成本过高。为提升布局效率，建议在画布区增加“多选 + 成组移动”的基础交互。
+3) 效果表达：`type/value/valueType` -> `effects[]`
 
-#### 4.4.1 选中规则（最小可用）
+v3 的核心是 `effects[]`：每个 effect 使用 `effectType/amountType` 描述 What/How，并可能出现 `scaling/repeat/partOverride/subjectOverride/note` 等扩展字段。编辑器不能再以“`effects[i].type` 必须存在”作为唯一校验。
 
-* **单选**（默认）：
-  * 普通点击某节点：清空其他选择，仅选中该节点。
-* **多选**（Ctrl+点击）：
-  * `Ctrl + 点击`：切换该节点的选中状态（Toggle）。
-  * 若点击的是未选中节点：加入选择集。
-  * 若点击的是已选中节点：从选择集中移除。
-* **清空选择**：
-  * 点击画布空白处：清空所有选中节点。
+4) 解锁体系：`unlock` 与 `prerequisites` 分工明确
 
-> 注：Shift 多选/框选可后续迭代；第一阶段建议优先实现 Ctrl+点击以满足高频需求。
+- `prerequisites`：结构依赖（技能树边）
+- `unlock`：KP 成本、额外门槛、互斥、授权方式
 
-#### 4.4.2 属性面板行为（多选时建议只读）
+5) 平衡标签：`tags` 与 `meta.enums.tags` 对齐
 
-为避免“批量编辑”带来的复杂合并逻辑，MVP 建议采用：
+`tags` 为工具侧统计/分布分析服务，编辑器即使不编辑，也必须**完整保留**。
 
-* **单选时**：属性面板正常显示并可编辑。
-* **多选时**：属性面板进入“多选只读模式”，显示：
-  * 选中数量
-  *（可选）主选中节点（最后一次点击的节点）的基础信息
-  * 支持的批量操作入口（如：Delete / Duplicate（可选）/ Group Move）
+#### 2.3.4 对 Skill Editor 的适配要求（建议按优先级实施）
 
-#### 4.4.3 拖拽移动规则（成组移动）
+必须做（否则“加载/保存”不可信）：
 
-* 当用户按下并拖拽一个“已选中节点”时：
-  * **移动整组选中节点**（保持相对位置不变）。
-* 当用户按下并拖拽一个“未选中节点”时：
-  * 先切换为单选该节点，再进行拖拽移动。
-* 释放鼠标时：
-  * 对组内所有节点执行 Snap To Grid。
+1. 导入/导出以 v3 pack 为主：保持 `$schemaVersion/meta/skills`。
+2. UI 枚举、部位列表由 `meta` 驱动（不再硬编码）。
+3. 内部数据模型以 v3 字段为主：`target/costs/effects`。
+4. 保存时不得丢弃 v3 扩展字段（例如 `costs.partSlot/perTurnLimit`、`effects.partOverride/repeat`）。
 
-#### 4.4.4 连线交互优先级（避免歧义）
+可后做（MVP 阶段允许先简化）：
 
-多选不应改变连线语义：
+- `effects[]` 表单化编辑（按 `effectType/amountType` 动态展示字段）；可先用 JSON textarea + Validate/Save 按钮。
+- `unlock.requirements` 结构化表单；可先用 JSON 编辑框。
+- `tags` 的辅助生成与自动校验；可先做“保留 + 枚举校验”。
 
-* 当用户从某个节点的 Anchor 开始拖拽连线时：
-  * 仅以该节点作为连线源。
-  * 不触发“成组移动”。
+## 3. v3 Schema 字段映射（编辑器 UI 必须遵循）
 
-#### 4.4.5 删除行为（建议）
+本章是“编辑器 UI <-> 数据文件”的**唯一标准**。工具内不应继续以旧字段（如 `targetType/requiredPart/targetParts/cost`）作为核心。
 
-* 若当前选中的是连线：Delete/Backspace 删除连线（保持现有优先级）。
-* 否则若存在多选节点：Delete/Backspace 触发“删除 N 个技能？”确认。
+### 3.1 `meta`：枚举与默认值来源
 
-#### 4.4.6 性能注意事项（当前渲染架构下的优化方向）
+编辑器页面中的下拉框、默认列表，应尽量来自 `skills_melee_v3.json` 自带的枚举与默认值：
 
-在 Layered Rendering 架构下，若实现“拖拽过程中全量重绘 nodes + connections”，当节点数量增多时可能产生卡顿。
+- `meta.defaultParts`: 默认部位列表
+- `meta.enums.*`: 全部枚举
 
-建议后续优化策略：
+典型映射：
 
-* 拖拽过程中仅更新被拖动节点（或选中组）对应 DOM 的 `left/top`，避免每帧重建所有节点 DOM。
-* 连线可采用节流/合帧（例如 `requestAnimationFrame`）策略降低重绘频率。
-* 鼠标释放时再做一次全量 `renderConnections()` 以保证最终状态一致。
+- 稀有度：`meta.enums.rarities`
+- 目标对象：`meta.enums.targetSubjects`
+- 目标范围：`meta.enums.targetScopes`
+- 选择模式：`meta.enums.selectionModes`
+- 效果类型：`meta.enums.effectTypes`
+- 数值类型：`meta.enums.amountTypes`
+- BuffRef target：`meta.enums.buffRefTargets`
+- requirements.selfPart.mode：`meta.enums.requirementSelfPartModes`
 
----
+目的：避免编辑器硬编码，确保未来只需要更新数据文件中的 `meta.enums` 也能驱动 UI。
 
-## 5. 数据结构与校验 (Data Model & Validation)
+### 3.2 Skill 基础字段（Basic）
 
-当前项目的 `assets/data/skills.json` 使用 **对象映射**（key 为 skillId），而不是数组。编辑器内部模型与导出结构都应保持一致。
+- `id: string`
+  - **只读**（不允许直接修改）
+  - 若确需“改 id”，使用“Duplicate as New（复制为新技能）”生成新 id
+- `name: string`
+- `rarity: string`（必须在 `meta.enums.rarities` 内）
+- `description?: string`
 
-```json
-{
-  "skill_heavy_swing": {
-    "id": "skill_heavy_swing",
-    "name": "重锤挥击",
-    "rarity": "Common",
-    "cost": 3,
-    "type": "DAMAGE",
-    "value": 1.2,
-    "valueType": "PERCENT",
-    "speed": 0,
-    "targetType": "SINGLE_PART",
-    "description": "...",
-    "buffRefs": {
-      "apply": [],
-      "applySelf": [],
-      "remove": []
-    },
-    "effects": [],
-    "prerequisites": [],
-    "editorMeta": { "x": 100, "y": 200 }
-  }
-}
-```
+### 3.3 技能树字段：`editorMeta` + `prerequisites`
 
-### 5.1 属性面板字段分组（建议）
+#### 3.3.1 `editorMeta`（二维坐标）
 
-#### A) 基础信息
-* `id`（唯一）
-* `name`
-* `rarity`（Common/Uncommon/Rare/Epic/Legendary）
+- `editorMeta.x/y: number`：节点网格坐标（与画布网格对齐/吸附一致）
+- `editorMeta.group?: string`：用于分组显示（如 `melee`）
+- `editorMeta.locked?: boolean`：锁定后不允许拖拽
 
-#### B) 行动与目标
-* `cost`
-* `speed`
-* `targetType`（`SELF` / `ENEMY` / `SINGLE_PART` / `ALL_PARTS` / `RANDOM_PART` / `SELF_PARTS`）
-* `requiredPart`（当技能要求特定部位时启用，例如 head/chest/arm/leg）
-* `targetParts[]`（当 `targetType=SELF_PARTS` 时启用）
+画布拖拽行为：
 
-#### C) 数值（可选）
-* `type`（例如 DAMAGE / HEAL / BUFF_SELF / DAMAGE_MULTI 等）
-* `value`
-* `valueType`（PERCENT / HP_PERCENT / CRIT_MULTIPLIER / PER_STACK 等）
+- 拖动节点 => 实时更新 `editorMeta.x/y`。
 
-#### D) Buff 引用（结构化）
-* `buffRefs.apply[]`：对敌方施加
-* `buffRefs.applySelf[]`：对自身施加
-* `buffRefs.remove[]`：移除（净化/驱散）
+#### 3.3.2 `prerequisites`（前置技能依赖）
 
-每个引用项支持：`buffId`、`target(self/enemy)`、`chance`、`duration`、`stacks`。
+- `prerequisites: string[]`
 
-#### E) 扩展效果（可选）
-* `effects[]`：作为“引擎扩展点”，编辑器应提供 JSON 子编辑器 + 常用模板（例如 AP 变化、忽略护甲、额外回合等）。
+同步规则：
 
-#### F) 前置关系
-* `prerequisites[]`：多前置数组（由画布连线生成）。
+- **画布连线新增**：`toSkill.prerequisites.push(fromSkillId)`（去重）
+- **画布连线删除**：从 `toSkill.prerequisites` 中移除 `fromSkillId`
+- **面板编辑 prerequisites**：画布连线重新渲染
 
-#### G) 编辑器元数据
-* `editorMeta.x / editorMeta.y`：节点布局。
+校验要求：
 
-### 5.2 编辑器必须实现的校验
+- 引用 id 必须存在于同文件 `skills[]`
+- 必须禁止循环依赖（DAG 校验）
 
-* `id` 唯一性：JSON key 必须与 skill `id` 一致（导出时自动修正或提示）。
-* `prerequisites[]`：引用必须存在，且必须保持 DAG（无环）。
-* `buffRefs.*[].buffId`：必须存在于 `assets/data/buffs.json`。
-* 目标合法性：`targetType` 与 `requiredPart/targetParts` 的组合校验。
-* 类型/数值校验（建议）：
-  - `valueType=PERCENT` 时 `value` 必须为 number。
-  - `chance` 范围为 `[0,1]`。
+### 3.4 解锁体系字段：`unlock`（来自 skill_design.md 4.5）
 
-### 5.3 关于 `editorMeta`
+- `unlock.cost.kp: number`：知识点消耗
+- `unlock.requirements: object`：扩展预留（前期可先做 JSON 文本框）
+- `unlock.exclusives: string[]`：互斥技能 id（可选）
+- `unlock.grants.type: string`：例如 `permanent`
 
-默认方案：保存在技能对象内（单文件携带布局）。
+说明：
 
-导出时建议提供两个模式：
-* 开发模式导出：保留 `editorMeta`。
-* 运行模式导出：剥离 `editorMeta`。
+- `prerequisites` 只表达“结构依赖”，`unlock` 才表达“解锁消耗/门槛/互斥/授予方式”。
+
+### 3.5 目标选择：`target` + `selection`
+
+v3 中目标选择统一为：
+
+- `target.subject`：`meta.enums.targetSubjects`（如 `SUBJECT_SELF/SUBJECT_ENEMY/SUBJECT_BOTH`）
+- `target.scope`：`meta.enums.targetScopes`（如 `SCOPE_ENTITY/SCOPE_PART/SCOPE_MULTI_PARTS`）
+- `target.selection.mode`：`meta.enums.selectionModes`
+- `target.selection.candidateParts: string[]`
+- `target.selection.selectedParts: string[]`
+- `target.selection.selectCount: number`
+
+建议 UI 设计：
+
+- `candidateParts`、`selectedParts` 使用多选控件（checkbox 或 tag 多选）
+- 对 `single` / `random_single` 强制 `selectCount=1`
+- `selectedParts` 必须是 `candidateParts` 子集
+
+### 3.6 消耗与需求：`costs` + `requirements`
+
+#### 3.6.1 `costs`
+
+- `costs.ap: number`
+- `costs.partSlot?: { part: string, slotCost: number }`
+- `costs.perTurnLimit?: number`
+
+#### 3.6.2 `requirements`
+
+当前 v3 样例定义了：
+
+- `requirements.selfPart?: { mode: string, parts: string[], mustBeUsable?: boolean }`
+
+其中：
+
+- `mode` 来自 `meta.enums.requirementSelfPartModes`（如 `ANY/ALL`）
+- `parts` 多选（默认来自 `meta.defaultParts`）
+- `mustBeUsable` 表示部位必须可用（未损坏/可行动）
 
 ---
 
-## 6. 开发路线图 (Roadmap)
+## 4. Effects 与 BuffRefs 的编辑策略
 
-1.  **Phase 1: 基础原型**
-    *   搭建 HTML 布局 (Left Canvas + Right Panel)。
-    *   实现节点的 DOM 渲染。
-    *   实现拖拽移动功能。
-    *   实现属性面板的双向绑定。
+### 4.1 `effects[]`（建议字段化表单）
 
-2.  **Phase 2: 连线与关系**
-    *   实现 SVG 连线绘制。
-    *   实现拖拽创建连线。
-    *   实现数据层面的父子关系绑定。
+v3 effect 的关键字段：
 
-3.  **Phase 3: 数据导入导出**
-    *   完成 JSON 解析与生成逻辑。
-    *   实现 LocalStorage 自动保存。
-    *   添加稀有度颜色等视觉优化。
+- `effectType`：枚举 `meta.enums.effectTypes`
+- `amountType`：枚举 `meta.enums.amountTypes`
+- `amount?: number`
+- `scaling?: { stat: string, multiplier: number }`（当 `amountType=SCALING`）
+- `subjectOverride?: string`（可选，用于自伤/反噬等）
+- `note?: string`（可选，编辑器备注）
 
-4.  **Phase 4: 整合**
-    *   将生成的 `skills.json` 放入 `assets/data/` 并在游戏中测试加载。
+实现策略建议：
+
+- MVP：允许 JSON textarea，但必须有 `Validate/Save Effects` 按钮（校验通过才写回 `effects`）
+- 进阶：做 schema 表单化编辑（根据 effectType/amountType 控制字段显示）
+
+### 4.2 `buffRefs`（需要联动 buffs.json）
+
+结构为：
+
+- `buffRefs.apply[]`
+- `buffRefs.applySelf[]`
+- `buffRefs.remove[]`
+
+每行建议字段：
+
+- `buffId`（下拉选择，来源 `buffs.json`）
+- `target`（枚举 `meta.enums.buffRefTargets`，当前为 `self/enemy`）
+- `chance`（0~1）
+- `duration`（回合数）
+- `stacks`（可选）
+
+---
+
+## 5. UI 模块拆分（低耦合）
+
+延续模块化与低耦合原则，整体采用三栏结构：
+
+1. 左侧：`SkillListDrawer`
+   - 负责索引/搜索/定位
+2. 中央：`CanvasWorkspace`
+   - 负责节点拖拽与连线
+3. 右侧：`SkillPropertiesPanel`
+   - 负责字段化编辑
+
+所有模块共享同一个“编辑器状态/数据模型”（Editor Store），模块之间不直接互相调用。
+
+---
+
+## 6. 保存策略与校验规则
+
+### 6.1 保存策略（建议）
+
+- 大多数字段：实时保存（`blur/change/Enter`）
+  - `name/rarity/description/speed/target/costs/requirements/prerequisites/editorMeta/unlock/buffRefs`
+- `effects`：显式保存（`Validate/Save Effects`）
+
+### 6.2 导出前必做校验清单
+
+1. 技能 `id` 唯一、非空。
+2. 枚举值校验：
+   - `rarity/target.subject/target.scope/selection.mode/effectType/amountType` 必须出现在 `meta.enums`。
+3. `target.selection`：
+   - `single/random_single` => `selectCount=1`
+   - `selectedParts` 是 `candidateParts` 子集
+   - `selectCount <= candidateParts.length`
+4. `prerequisites`：引用 id 存在，且无循环依赖。
+5. 数值合理性：`ap>=0`、`slotCost>=0`、`perTurnLimit>=1`（若存在）。
+6. `buffRefs`：
+   - `chance` 在 `[0,1]`
+   - `buffId` 存在于 `buffs.json`（若已加载）
+
+---
+
+## 6.3 UI 面板字段规范（表单分组 / 字段说明表）
+
+本节给出“右侧属性面板”的严格表单化规范：每个字段都明确 **数据路径、类型、必填性、默认值来源、校验规则**。
+
+说明约定：
+
+- **数据路径**：相对于单个 `skill` 对象（即 `skills[i]`）。
+- **必填**：指导出/运行所需；允许编辑器在创建新技能时用默认值补齐。
+- **默认值来源**：优先来自 `meta`（尤其 `meta.defaultParts` 与 `meta.enums.*`）。
+
+### A. Basic Panel（基础信息）
+
+| 字段名 | 数据路径 | 类型 | 必填 | 默认值来源 | 校验规则 |
+|---|---|---:|:---:|---|---|
+| 技能 ID | `id` | `string` | 是 | 创建时生成 | 唯一；只读不可编辑；非空 |
+| 名称 | `name` | `string` | 是 | `""` | 非空；建议长度 1~40 |
+| 稀有度 | `rarity` | `string` | 是 | `meta.enums.rarities[0]` | 必须在 `meta.enums.rarities` 内 |
+| 描述 | `description` | `string` | 否 | `""` | 建议长度 <= 200（可选约束） |
+
+### B. Tree Panel（技能树 / 编辑器元信息）
+
+| 字段名 | 数据路径 | 类型 | 必填 | 默认值来源 | 校验规则 |
+|---|---|---:|:---:|---|---|
+| 坐标 X | `editorMeta.x` | `number` | 否(建议) | `0` | 建议为整数；与网格大小匹配 |
+| 坐标 Y | `editorMeta.y` | `number` | 否(建议) | `0` | 建议为整数；与网格大小匹配 |
+| 分组 | `editorMeta.group` | `string` | 否 | 例如 `"melee"` | 可选；用于 UI 分组 |
+| 锁定 | `editorMeta.locked` | `boolean` | 否 | `false` | 锁定后禁止拖拽 |
+
+### C. Prerequisites Panel（前置技能）
+
+| 字段名 | 数据路径 | 类型 | 必填 | 默认值来源 | 校验规则 |
+|---|---|---:|:---:|---|---|
+| 前置技能 | `prerequisites` | `string[]` | 是 | `[]` | 引用的 skillId 必须存在；禁止循环依赖（DAG） |
+
+### D. Unlock Panel（技能解锁配置）
+
+| 字段名 | 数据路径 | 类型 | 必填 | 默认值来源 | 校验规则 |
+|---|---|---:|:---:|---|---|
+| KP 消耗 | `unlock.cost.kp` | `number` | 否(建议) | `0` 或按稀有度映射 | `>=0`，建议为整数 |
+| 解锁门槛 | `unlock.requirements` | `object` | 否 | `{}` | 允许空对象；如采用 JSON 编辑需做合法 JSON 校验 |
+| 互斥技能 | `unlock.exclusives` | `string[]` | 否 | `[]` | 引用 skillId 必须存在；建议不与自身重复 |
+| 授予方式 | `unlock.grants.type` | `string` | 否 | `"permanent"` | 如要枚举化，可由 `meta.enums` 未来补充 |
+
+> 备注：`unlock` 在 v3 文件中为可选字段；但从设计角度建议编辑器对新技能默认生成 `unlock` 结构，以便技能树工具链统一处理。
+
+### E. Target & Speed Panel（目标选择与速度）
+
+| 字段名 | 数据路径 | 类型 | 必填 | 默认值来源 | 校验规则 |
+|---|---|---:|:---:|---|---|
+| 速度 | `speed` | `number` | 否 | `0` | 允许负数；建议范围 -10~10（可选约束） |
+| 目标对象 | `target.subject` | `string` | 是 | `meta.enums.targetSubjects` 的默认值 | 必须在 `meta.enums.targetSubjects` 内 |
+| 目标范围 | `target.scope` | `string` | 是 | `meta.enums.targetScopes` 的默认值 | 必须在 `meta.enums.targetScopes` 内 |
+| 选择模式 | `target.selection.mode` | `string` | 是 | `meta.enums.selectionModes` 的默认值 | 必须在 `meta.enums.selectionModes` 内 |
+| 候选部位 | `target.selection.candidateParts` | `string[]` | 是 | `meta.defaultParts` | 非空；元素必须是合法部位 id |
+| 已选部位 | `target.selection.selectedParts` | `string[]` | 是 | `[]` 或按模式预设 | 必须是 `candidateParts` 子集 |
+| 可选数量 | `target.selection.selectCount` | `number` | 是 | 由 `mode` 推导（single->1） | `>=1` 且 `<=candidateParts.length`；`single/random_single` 必须为 1 |
+
+### F. Costs Panel（消耗）
+
+| 字段名 | 数据路径 | 类型 | 必填 | 默认值来源 | 校验规则 |
+|---|---|---:|:---:|---|---|
+| AP 消耗 | `costs.ap` | `number` | 否(建议) | `0` | `>=0`，建议整数 |
+| 槽位部位 | `costs.partSlot.part` | `string` | 否 | `""` 或 `right_arm` | 必须是合法部位；若 `partSlot` 存在则必填 |
+| 槽位消耗 | `costs.partSlot.slotCost` | `number` | 否 | `1` | `>=0`，建议整数 |
+| 每回合限制 | `costs.perTurnLimit` | `number` | 否 | `1` | `>=1`，建议整数 |
+
+### G. Requirements Panel（释放需求）
+
+| 字段名 | 数据路径 | 类型 | 必填 | 默认值来源 | 校验规则 |
+|---|---|---:|:---:|---|---|
+| 自身部位模式 | `requirements.selfPart.mode` | `string` | 否 | `meta.enums.requirementSelfPartModes[0]` | 必须在 `meta.enums.requirementSelfPartModes` 内 |
+| 自身部位列表 | `requirements.selfPart.parts` | `string[]` | 否 | `[]` | 元素必须是合法部位 id |
+| 部位必须可用 | `requirements.selfPart.mustBeUsable` | `boolean` | 否 | `false` | - |
+
+### H. Effects Panel（效果）
+
+> 推荐：`effects` 使用“显式保存”按钮（`Validate/Save Effects`），避免编辑过程中生成半成品结构。
+
+| 字段名 | 数据路径 | 类型 | 必填 | 默认值来源 | 校验规则 |
+|---|---|---:|:---:|---|---|
+| 效果列表 | `effects` | `Effect[]` | 是 | `[]`（但不建议为空） | 数组至少 1 条（建议约束）；每条 effect 校验见下 |
+
+单条 `Effect` 字段：
+
+| 字段名 | 数据路径 | 类型 | 必填 | 默认值来源 | 校验规则 |
+|---|---|---:|:---:|---|---|
+| 效果类型 | `effects[i].effectType` | `string` | 是 | `meta.enums.effectTypes[0]` | 必须在 `meta.enums.effectTypes` 内 |
+| 数值类型 | `effects[i].amountType` | `string` | 否(建议) | `meta.enums.amountTypes[0]` | 若存在必须在 `meta.enums.amountTypes` 内 |
+| 数值 | `effects[i].amount` | `number` | 条件 | `0` | `amountType!=SCALING` 时建议必填；可为 0，但需提示 |
+| Scaling.stat | `effects[i].scaling.stat` | `string` | 条件 | 无 | 仅当 `amountType=SCALING` 时必填 |
+| Scaling.multiplier | `effects[i].scaling.multiplier` | `number` | 条件 | `1` | 仅当 `amountType=SCALING` 时必填 |
+| 作用对象覆盖 | `effects[i].subjectOverride` | `string` | 否 | 无 | 若存在必须是 `meta.enums.targetSubjects` 中的值（建议约束） |
+| 备注 | `effects[i].note` | `string` | 否 | 无 | 可选；如追求严格 schema，可导出时剥离 |
+
+### I. BuffRefs Panel（Buff 引用）
+
+| 字段名 | 数据路径 | 类型 | 必填 | 默认值来源 | 校验规则 |
+|---|---|---:|:---:|---|---|
+| apply 列表 | `buffRefs.apply` | `BuffRef[]` | 否 | `[]` | 每条 BuffRef 校验见下 |
+| applySelf 列表 | `buffRefs.applySelf` | `BuffRef[]` | 否 | `[]` | 同上 |
+| remove 列表 | `buffRefs.remove` | `BuffRef[]` | 否 | `[]` | 同上 |
+
+单条 `BuffRef` 字段：
+
+| 字段名 | 数据路径 | 类型 | 必填 | 默认值来源 | 校验规则 |
+|---|---|---:|:---:|---|---|
+| buffId | `buffId` | `string` | 是 | 从 `buffs.json` 下拉 | 必须存在于 `buffs.json`（若已加载） |
+| 目标 | `target` | `string` | 是 | `meta.enums.buffRefTargets[0]` | 必须在 `meta.enums.buffRefTargets` 内 |
+| 概率 | `chance` | `number` | 否 | `1` | 若存在必须在 `[0,1]` |
+| 持续回合 | `duration` | `number` | 否 | `1` | 若存在建议 `>=1` |
+| 层数 | `stacks` | `number` | 否 | `1` | 若存在建议 `>=1` |
+
+---
+
+## 7. 与其他工具的对齐说明
+
+- `test/skill_editor_test.html`：应以本文档的 v3 字段为准，尤其是 `target.selection`、`costs/requirements`、`unlock`、`editorMeta`。
+- `test/skill_balance_tool.html`：加载 v3 时，应复用 `meta.enums` 做标签/枚举来源，避免硬编码。
+
+---
+
+## 8. 兼容性与迁移提示（非强制）
+
+编辑器可以提供“兼容旧数据”的提示逻辑：
+
+- 若导入文件不包含 `meta.enums` 或不包含 `target.selection`，则提示“这不是 v3 格式，需要迁移”。
+- 本阶段不要求自动迁移，但应避免 silent failure（加载成功但字段对不上导致编辑/导出错误）。

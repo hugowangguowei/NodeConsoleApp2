@@ -374,4 +374,12 @@ buff示例可以参照skill和item的设计文档。但是buff设计方案作为skill和item设计文档的
 
 在行动力消耗与策略 (AP & Strategy)后面，我希望增加技能组合与槽位分配策略的分析。
 
-基于新的skills_melee_v3.json文件，skill_balance_design.md文件中的设计方案，帮我修改skill_balance_tool.html文件，确保技能平衡性分析工具能够正确加载和使用新的技能数据文件。
+核对是否skill_design.md 样例数据中所有的字段都在skills_melee_v3.json的meta字段中有说明，如果没有，请在skills_melee_v3.json中补充说明。
+
+基于新的skill_design.md文件，skills_melee_v3.json，skill_editor_design.md文件，更新skill_editor_test_v2.html,确保技能编辑器能够正确加载和使用新的技能数据文件。尤其要关注skills_melee_v3.json文件中meta字段的描述。
+
+skills_melee_v3.json版本的文件进行了较大的改动，我觉得当前的修改不能满足适配要求，先不要着急立刻改代码，先分析v3版本的json，将改动的具体内容更新带skill_editor_design.md文件中，先不要修改代码。
+
+基于skill_design.md、skill_editor_design.md、skill_melee_v3.json等文件的设计方案，帮我更新skill_editor_test_v3.html文件，确保技能编辑器能够正确加载和使用新的技能数据文件。尤其要关注skill_editor_design.md件中2.3节的内容。
+
+我发现点击Export(dev)导出的json文件没有记录技能在canvas上的位置，请你检查一下代码，分析原因，先不要修改代码。
