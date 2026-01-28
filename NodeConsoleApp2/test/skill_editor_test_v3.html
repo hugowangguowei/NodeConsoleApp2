@@ -850,7 +850,7 @@ class SkillEditor {
         this.elSelectedPartsDropdown = document.getElementById('selectedPartsDropdown');
         this.elSelectedPartsList = document.getElementById('selectedPartsList');
 
-        const bindDropdown = (btn, dropdown, closeId, allId, noneId, onClose) => {
+        const bindDropdown = (btn, dropdown, listContainer, closeId, allId, noneId, onClose) => {
             if (!btn || !dropdown) return;
             btn.addEventListener('click', (e) => {
                 e.preventDefault();
@@ -861,14 +861,18 @@ class SkillEditor {
             closeBtn?.addEventListener('click', (e) => {
                 e.preventDefault();
                 dropdown.style.display = 'none';
-                onClose?.();
+                onClose?.({ action: 'close' });
             });
             document.getElementById(allId)?.addEventListener('click', (e) => {
                 e.preventDefault();
+                const boxes = Array.from((listContainer || dropdown).querySelectorAll('input[type="checkbox"]'));
+                boxes.forEach(b => b.checked = true);
                 onClose?.({ action: 'all' });
             });
             document.getElementById(noneId)?.addEventListener('click', (e) => {
                 e.preventDefault();
+                const boxes = Array.from((listContainer || dropdown).querySelectorAll('input[type="checkbox"]'));
+                boxes.forEach(b => b.checked = false);
                 onClose?.({ action: 'none' });
             });
 
@@ -877,19 +881,86 @@ class SkillEditor {
                 const inside = dropdown.contains(e.target) || btn.contains(e.target);
                 if (!inside) {
                     dropdown.style.display = 'none';
-                    onClose?.();
+                    onClose?.({ action: 'close' });
                 }
             });
 
             dropdown.addEventListener('change', () => onClose?.({ action: 'change' }));
         };
 
-        bindDropdown(this.elCandidatePartsBtn, this.elCandidatePartsDropdown, 'candidatePartsClose', 'candidatePartsAll', 'candidatePartsNone', () => {
+        bindDropdown(this.elCandidatePartsBtn, this.elCandidatePartsDropdown, this.elCandidatePartsList, 'candidatePartsClose', 'candidatePartsAll', 'candidatePartsNone', (_evt) => {
+            this.commitSelectionPartsFromUI?.();
             this.updateCandidatePartsBtnText?.();
+            this.updateSummary?.();
         });
-        bindDropdown(this.elSelectedPartsBtn, this.elSelectedPartsDropdown, 'selectedPartsClose', 'selectedPartsAll', 'selectedPartsNone', () => {
+        bindDropdown(this.elSelectedPartsBtn, this.elSelectedPartsDropdown, this.elSelectedPartsList, 'selectedPartsClose', 'selectedPartsAll', 'selectedPartsNone', (_evt) => {
+            this.commitSelectionPartsFromUI?.();
             this.updateSelectedPartsBtnText?.();
+            this.updateSummary?.();
         });
+    }
+
+    getCheckedPartsFrom(container) {
+        if (!container) return [];
+        return Array.from(container.querySelectorAll('input[type="checkbox"]'))
+            .filter(cb => cb.checked)
+            .map(cb => cb.value);
+    }
+
+    updateCandidatePartsBtnText() {
+        if (!this.elCandidatePartsBtn) return;
+        const parts = this.getCheckedPartsFrom(this.elCandidatePartsList);
+        this.elCandidatePartsBtn.textContent = parts.length ? parts.join(', ') : '(none)';
+    }
+
+    updateSelectedPartsBtnText() {
+        if (!this.elSelectedPartsBtn) return;
+        const parts = this.getCheckedPartsFrom(this.elSelectedPartsList);
+        this.elSelectedPartsBtn.textContent = parts.length ? parts.join(', ') : '(none)';
+    }
+
+    commitSelectionPartsFromUI() {
+        if (!this.selectedNodeId) return;
+        const skill = this.getSkillById(this.selectedNodeId);
+        if (!skill) return;
+
+        // Ensure v3 target structure exists on the legacy skill object
+        if (!skill.target || typeof skill.target !== 'object') {
+            skill.target = {
+                subject: this.elTargetSubject?.value || 'SUBJECT_ENEMY',
+                scope: this.elTargetScope?.value || 'SCOPE_PART',
+                selection: {
+                    mode: this.elSelectionMode?.value || 'single',
+                    candidateParts: (this.defaultParts || []).slice(),
+                    selectedParts: [],
+                    selectCount: Number(this.elSelectionSelectCount?.value || 1)
+                }
+            };
+        }
+        if (!skill.target.selection || typeof skill.target.selection !== 'object') {
+            skill.target.selection = {
+                mode: this.elSelectionMode?.value || 'single',
+                candidateParts: (this.defaultParts || []).slice(),
+                selectedParts: [],
+                selectCount: Number(this.elSelectionSelectCount?.value || 1)
+            };
+        }
+
+        const candidateParts = this.getCheckedPartsFrom(this.elCandidatePartsList);
+        const selectedParts = this.getCheckedPartsFrom(this.elSelectedPartsList);
+
+        skill.target.subject = this.elTargetSubject?.value || skill.target.subject || 'SUBJECT_ENEMY';
+        skill.target.scope = this.elTargetScope?.value || skill.target.scope || 'SCOPE_PART';
+        skill.target.selection.mode = this.elSelectionMode?.value || skill.target.selection.mode || 'single';
+        skill.target.selection.candidateParts = candidateParts;
+        skill.target.selection.selectedParts = selectedParts;
+
+        const sc = Number(this.elSelectionSelectCount?.value || 0);
+        if (!Number.isNaN(sc) && sc > 0) {
+            skill.target.selection.selectCount = sc;
+        } else {
+            skill.target.selection.selectCount = selectedParts.length || 1;
+        }
     }
 
     // --- Meta / Schema helpers (v3 pack focused; see design/skill_editor_design.md 2.3) ---

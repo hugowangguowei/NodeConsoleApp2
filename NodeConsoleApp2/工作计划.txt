@@ -385,3 +385,8 @@ skills_melee_v3.json版本的文件进行了较大的改动，我觉得当前的修改不能满足适配要求
 我发现点击Export(dev)导出的json文件没有记录技能在canvas上的位置，请你检查一下代码，分析原因，先不要修改代码。
 
 当前的panel-scroll面板并没有根据skill_design.md顶层字段和细分的章节解释进行属性配置分组，还存在大量的硬编码项，请根据skill_design.md的6.3节，重新设计html文件的panel-scroll面板的属性配置分组。
+
+skill_editor_test_v3.html中，candidateParts和SelectedParts的多选下拉框点击all的时候，没有正确地全选和反选，请你检查一下代码，分析原因，先不要修改代码。
+skill_editor_test_v3.html中，candidateParts和SelectedParts的多选下拉框点击all或者None，点击OK按钮后，没有正确地保存，请你检查一下代码，分析原因，先不要修改代码。
+
+修复完成后，依然存在问题：candidateParts选择并点击ok后，被选中的对象没有更新到candidateParts输入框中；在Export(dev）时，相应数据没有进行记录，请你检查一下代码，分析原因，先不要修改代码。
