@@ -766,16 +766,18 @@ class SkillEditor {
         this.elPropId = document.getElementById('prop-id');
         this.elPropName = document.getElementById('prop-name');
         this.elPropRarity = document.getElementById('prop-rarity');
-        this.elPropCost = document.getElementById('prop-cost'); // legacy (may not exist)
+        // legacy cost field removed (v3 only)
+        this.elPropCost = null;
         this.elPropSpeed = document.getElementById('prop-speed');
-        this.elPropTargetType = document.getElementById('prop-targetType'); // legacy (may not exist)
-        this.elPropRequiredPart = document.getElementById('prop-requiredPart'); // legacy (may not exist)
-        // targetParts dropdown
-        this.elTargetPartsBtn = document.getElementById('targetPartsBtn'); // legacy (may not exist)
-        this.elTargetPartsDropdown = document.getElementById('targetPartsDropdown'); // legacy (may not exist)
-        this.elPropType = document.getElementById('prop-type'); // legacy (may not exist)
-        this.elPropValue = document.getElementById('prop-value'); // legacy (may not exist)
-        this.elPropValueType = document.getElementById('prop-valueType'); // legacy (may not exist)
+        // legacy target fields removed (v3 only)
+        this.elPropTargetType = null;
+        this.elPropRequiredPart = null;
+        this.elTargetPartsBtn = null;
+        this.elTargetPartsDropdown = null;
+        // legacy type/value/valueType removed (effects[] is the canonical representation)
+        this.elPropType = null;
+        this.elPropValue = null;
+        this.elPropValueType = null;
         this.elPropDesc = document.getElementById('prop-desc');
         this.elPropEffects = document.getElementById('prop-effects');
         this.elEffectsEditor = document.getElementById('effects-editor');
@@ -830,8 +832,17 @@ class SkillEditor {
         
         // Seed minimal nodes
         this.addSkillNode({
-            id: 'skill_slash', name: '斩击', rarity: 'Common', cost: 2, speed: 0,
-            targetType: 'SINGLE_PART',
+            id: 'skill_slash', name: '斩击', rarity: 'Common', costs: { ap: 2, perTurnLimit: 1 }, speed: 0,
+            target: {
+                subject: 'SUBJECT_ENEMY',
+                scope: 'SCOPE_PART',
+                selection: {
+                    mode: 'single',
+                    candidateParts: (this.defaultParts || []).slice(),
+                    selectedParts: [],
+                    selectCount: 1
+                }
+            },
             description: '基础的挥砍攻击。',
             prerequisites: [],
             buffRefs: { apply: [], applySelf: [], remove: [] },
@@ -1072,32 +1083,29 @@ class SkillEditor {
             skill.cost = 0;
         }
 
-        // target (v3) -> legacy targetType/requiredPart/targetParts (for current UI)
-        const target = skill.target || {};
-        const subject = target.subject;
-        const scope = target.scope;
-        const selMode = target.selection?.mode;
-        const selectedParts = Array.isArray(target.selection?.selectedParts) ? target.selection.selectedParts : [];
-        const candidateParts = Array.isArray(target.selection?.candidateParts) ? target.selection.candidateParts : [];
-
-        let targetType = 'SINGLE_PART';
-        if (subject === 'SUBJECT_SELF' && scope === 'SCOPE_ENTITY') targetType = 'SELF';
-        else if (subject === 'SUBJECT_ENEMY' && scope === 'SCOPE_ENTITY') targetType = 'ENEMY';
-        else if (subject === 'SUBJECT_SELF' && scope === 'SCOPE_MULTI_PARTS') targetType = 'SELF_PARTS';
-        else if (subject === 'SUBJECT_ENEMY' && scope === 'SCOPE_MULTI_PARTS') targetType = 'ALL_PARTS';
-        else if (scope === 'SCOPE_PART') {
-            if (selMode === 'random_single' || selMode === 'random_multiple') targetType = 'RANDOM_PART';
-            else targetType = 'SINGLE_PART';
+        // Keep v3 target as single source of truth (no legacy mirrors)
+        if (!skill.target || typeof skill.target !== 'object') {
+            skill.target = {
+                subject: 'SUBJECT_ENEMY',
+                scope: 'SCOPE_PART',
+                selection: {
+                    mode: 'single',
+                    candidateParts: (this.defaultParts || []).slice(),
+                    selectedParts: [],
+                    selectCount: 1
+                }
+            };
         }
-        skill.targetType = targetType;
-
-        if (skill.targetType === 'SINGLE_PART') {
-            const fixed = selectedParts.length === 1 ? selectedParts[0] : (candidateParts.length === 1 ? candidateParts[0] : undefined);
-            if (fixed) skill.requiredPart = fixed;
+        if (!skill.target.selection || typeof skill.target.selection !== 'object') {
+            skill.target.selection = {
+                mode: 'single',
+                candidateParts: (this.defaultParts || []).slice(),
+                selectedParts: [],
+                selectCount: 1
+            };
         }
-        if (skill.targetType === 'SELF_PARTS') {
-            skill.targetParts = selectedParts.length ? selectedParts.slice() : candidateParts.slice();
-        }
+        if (!Array.isArray(skill.target.selection.candidateParts)) skill.target.selection.candidateParts = (this.defaultParts || []).slice();
+        if (!Array.isArray(skill.target.selection.selectedParts)) skill.target.selection.selectedParts = [];
 
         // prerequisites
         if (!Array.isArray(skill.prerequisites)) skill.prerequisites = [];
@@ -1118,92 +1126,81 @@ class SkillEditor {
     toV3Skill(legacy) {
         const s = JSON.parse(JSON.stringify(legacy || {}));
 
-        const targetType = s.targetType || 'SINGLE_PART';
-        const requiredPart = s.requiredPart;
-        const targetParts = Array.isArray(s.targetParts) ? s.targetParts : [];
-
-        let subject = 'SUBJECT_ENEMY';
-        let scope = 'SCOPE_PART';
-        let selection = {
-            mode: 'single',
-            candidateParts: (this.defaultParts || []).slice(),
-            selectedParts: [],
-            selectCount: 1,
-        };
-
-        if (targetType === 'SELF') {
-            subject = 'SUBJECT_SELF';
-            scope = 'SCOPE_ENTITY';
-            selection.mode = 'multiple';
-            selection.candidateParts = (this.defaultParts || []).slice();
-            selection.selectedParts = selection.candidateParts.slice();
-            selection.selectCount = selection.selectedParts.length;
-        } else if (targetType === 'ENEMY') {
-            subject = 'SUBJECT_ENEMY';
-            scope = 'SCOPE_ENTITY';
-            selection.mode = 'multiple';
-            selection.candidateParts = (this.defaultParts || []).slice();
-            selection.selectedParts = selection.candidateParts.slice();
-            selection.selectCount = selection.selectedParts.length;
-        } else if (targetType === 'SELF_PARTS') {
-            subject = 'SUBJECT_SELF';
-            scope = 'SCOPE_MULTI_PARTS';
-            selection.mode = 'multiple';
-            selection.candidateParts = (this.defaultParts || []).slice();
-            selection.selectedParts = targetParts.length ? targetParts.slice() : selection.candidateParts.slice();
-            selection.selectCount = selection.selectedParts.length;
-        } else if (targetType === 'ALL_PARTS') {
-            subject = 'SUBJECT_ENEMY';
-            scope = 'SCOPE_MULTI_PARTS';
-            selection.mode = 'multiple';
-            selection.candidateParts = (this.defaultParts || []).slice();
-            selection.selectedParts = selection.candidateParts.slice();
-            selection.selectCount = selection.selectedParts.length;
-        } else if (targetType === 'RANDOM_PART') {
-            subject = 'SUBJECT_ENEMY';
-            scope = 'SCOPE_PART';
-            selection.mode = 'random_single';
-            selection.candidateParts = (this.defaultParts || []).slice();
-            selection.selectedParts = [];
-            selection.selectCount = 1;
-        } else {
-            // SINGLE_PART
-            subject = 'SUBJECT_ENEMY';
-            scope = 'SCOPE_PART';
-            selection.mode = 'single';
-            selection.selectedParts = requiredPart ? [requiredPart] : [];
-            selection.candidateParts = requiredPart ? [requiredPart] : (this.defaultParts || []).slice();
-            selection.selectCount = 1;
+        // v3-only: export based on v3 target/selection
+        if (!s.target || typeof s.target !== 'object') {
+            s.target = {
+                subject: 'SUBJECT_ENEMY',
+                scope: 'SCOPE_PART',
+                selection: {
+                    mode: 'single',
+                    candidateParts: (this.defaultParts || []).slice(),
+                    selectedParts: [],
+                    selectCount: 1
+                }
+            };
+        }
+        if (!s.target.selection || typeof s.target.selection !== 'object') {
+            s.target.selection = {
+                mode: 'single',
+                candidateParts: (this.defaultParts || []).slice(),
+                selectedParts: [],
+                selectCount: 1
+            };
         }
 
-        // Convert editorMeta pixel coords -> v3 grid coords (to match skills_melee_v3.json style)
-        let editorMeta = s.editorMeta;
-        if (editorMeta && typeof editorMeta.x === 'number' && typeof editorMeta.y === 'number') {
-            const gx = Math.round((editorMeta.x - 14) / this.GRID_SIZE);
-            const gy = Math.round((editorMeta.y - 14) / this.GRID_SIZE);
-            editorMeta = { ...editorMeta, x: gx, y: gy };
-        }
+        {
+            const t = s.target;
 
-        return {
-            id: s.id,
-            name: s.name,
-            rarity: s.rarity || 'Common',
-            description: s.description || '',
-            prerequisites: Array.isArray(s.prerequisites) ? s.prerequisites.slice() : [],
-            unlock: s.unlock || { cost: { kp: 1 }, requirements: {}, exclusives: [], grants: { type: 'permanent' } },
-            editorMeta: editorMeta || { x: 0, y: 0, group: 'melee', locked: false },
-            speed: Number(s.speed || 0),
-            target: { subject, scope, selection },
-            requirements: s.requirements || {},
-            costs: {
-                ap: Number(s.cost ?? 0),
-                ...(s.costs && typeof s.costs === 'object' ? s.costs : {}),
-                perTurnLimit: (s.costs?.perTurnLimit ?? 1)
-            },
-            effects: Array.isArray(s.effects) ? s.effects : [],
-            buffRefs: s.buffRefs || { apply: [], applySelf: [], remove: [] },
-            tags: Array.isArray(s.tags) ? s.tags : []
-        };
+            const normMode = (m) => {
+                if (!m) return 'single';
+                const mm = String(m).toLowerCase();
+                if (mm === 'single' || mm === 'multiple' || mm === 'random_single' || mm === 'random_multiple') return mm;
+                if (mm === 'single_part' || mm === 'singlepart') return 'single';
+                if (mm === 'multiple_parts' || mm === 'multipleparts') return 'multiple';
+                return 'single';
+            };
+
+            const subject = t.subject || 'SUBJECT_ENEMY';
+            const scope = t.scope || 'SCOPE_PART';
+            const selection = {
+                mode: normMode(t.selection.mode),
+                candidateParts: Array.isArray(t.selection.candidateParts) ? t.selection.candidateParts.slice() : (this.defaultParts || []).slice(),
+                selectedParts: Array.isArray(t.selection.selectedParts) ? t.selection.selectedParts.slice() : [],
+                selectCount: (typeof t.selection.selectCount === 'number')
+                    ? t.selection.selectCount
+                    : Math.max(1, (Array.isArray(t.selection.selectedParts) ? t.selection.selectedParts.length : 0) || 1),
+            };
+
+            // Convert editorMeta pixel coords -> v3 grid coords (to match skills_melee_v3.json style)
+            let editorMeta = s.editorMeta;
+            if (editorMeta && typeof editorMeta.x === 'number' && typeof editorMeta.y === 'number') {
+                const gx = Math.round((editorMeta.x - 14) / this.GRID_SIZE);
+                const gy = Math.round((editorMeta.y - 14) / this.GRID_SIZE);
+                editorMeta = { ...editorMeta, x: gx, y: gy };
+            }
+
+            return {
+                id: s.id,
+                name: s.name,
+                rarity: s.rarity || 'Common',
+                description: s.description || '',
+                prerequisites: Array.isArray(s.prerequisites) ? s.prerequisites.slice() : [],
+                unlock: s.unlock || { cost: { kp: 1 }, requirements: {}, exclusives: [], grants: { type: 'permanent' } },
+                editorMeta: editorMeta || { x: 0, y: 0, group: 'melee', locked: false },
+                speed: Number(s.speed || 0),
+                target: { subject, scope, selection },
+                requirements: s.requirements || {},
+                costs: {
+                    ap: Number(s.costs?.ap ?? 0),
+                    ...(s.costs && typeof s.costs === 'object' ? s.costs : {}),
+                    perTurnLimit: (s.costs?.perTurnLimit ?? 1)
+                },
+                effects: Array.isArray(s.effects) ? s.effects : [],
+                buffRefs: s.buffRefs || { apply: [], applySelf: [], remove: [] },
+                tags: Array.isArray(s.tags) ? s.tags : [],
+                tagMeta: (s.tagMeta && typeof s.tagMeta === 'object') ? s.tagMeta : {}
+            };
+        }
     }
 
     initSkillDrawer() {
@@ -1967,13 +1964,39 @@ class SkillEditor {
         if (this.elPropId) this.elPropId.value = skill.id || '';
         if (this.elPropName) this.elPropName.value = skill.name || '';
         if (this.elPropRarity) this.elPropRarity.value = skill.rarity || 'Common';
-        if (this.elPropCost) this.elPropCost.value = skill.cost ?? 0;
+        // v3-only cost
         if (this.elPropSpeed) this.elPropSpeed.value = skill.speed ?? 0;
-        if (this.elPropTargetType) this.elPropTargetType.value = skill.targetType || 'SINGLE_PART';
-        if (this.elPropRequiredPart) this.elPropRequiredPart.value = skill.requiredPart || '';
-        if (this.elTargetPartsDropdown && typeof this.setTargetPartsSelection === 'function') {
-            this.setTargetPartsSelection(Array.isArray(skill.targetParts) ? skill.targetParts : []);
-        }
+
+        // v3 costs panel
+        if (this.elCostsAp) this.elCostsAp.value = String(skill.costs?.ap ?? 0);
+        if (this.elCostsPerTurnLimit) this.elCostsPerTurnLimit.value = String(skill.costs?.perTurnLimit ?? 1);
+        if (this.elCostsPart) this.elCostsPart.value = skill.costs?.partSlot?.part || '';
+        if (this.elCostsSlotCost) this.elCostsSlotCost.value = String(skill.costs?.partSlot?.slotCost ?? 0);
+
+        if (this.elTags) this.elTags.value = JSON.stringify(Array.isArray(skill.tags) ? skill.tags : [], null, 2);
+        if (this.elTagMeta) this.elTagMeta.value = JSON.stringify((skill.tagMeta && typeof skill.tagMeta === 'object') ? skill.tagMeta : {}, null, 2);
+
+        // v3 target panel
+        const target = (skill.target && typeof skill.target === 'object') ? skill.target : null;
+        const selection = target?.selection && typeof target.selection === 'object' ? target.selection : null;
+        if (this.elTargetSubject) this.elTargetSubject.value = target?.subject || 'SUBJECT_ENEMY';
+        if (this.elTargetScope) this.elTargetScope.value = target?.scope || 'SCOPE_PART';
+        if (this.elSelectionMode) this.elSelectionMode.value = selection?.mode || 'single';
+        if (this.elSelectionSelectCount) this.elSelectionSelectCount.value = (selection && typeof selection.selectCount === 'number') ? String(selection.selectCount) : '';
+
+        // Apply selection -> checkbox UI
+        const setCheckedByValues = (container, values) => {
+            if (!container) return;
+            const set = new Set(Array.isArray(values) ? values : []);
+            Array.from(container.querySelectorAll('input[type="checkbox"]')).forEach(cb => {
+                cb.checked = set.has(cb.value);
+            });
+        };
+        setCheckedByValues(this.elCandidatePartsList, selection?.candidateParts || (this.defaultParts || []));
+        setCheckedByValues(this.elSelectedPartsList, selection?.selectedParts || []);
+        this.updateCandidatePartsBtnText?.();
+        this.updateSelectedPartsBtnText?.();
+
         if (this.elPropType) this.elPropType.value = skill.type || '';
         if (this.elPropValue) this.elPropValue.value = skill.value ?? '';
         if (this.elPropValueType) this.elPropValueType.value = skill.valueType || '';
@@ -2308,16 +2331,23 @@ class SkillEditor {
         this.setError(this.elErrTarget, null);
         this.setError(this.elErrBuffs, null);
         this.setError(this.elErrEffects, null);
+        this.setError(this.elErrTags, null);
 
         // id is read-only (do not allow editing)
         const newId = skill.id;
 
-        // Target validation
-        const targetType = this.elPropTargetType.value;
-        const requiredPart = this.elPropRequiredPart.value || undefined;
-        const targetParts = this.getSelectedTargetParts();
-        if (targetType === 'SELF_PARTS' && targetParts.length === 0) {
-            this.setError(this.elErrTarget, 'targetType=SELF_PARTS 时必须填写 targetParts');
+        // Target validation (v3 only)
+        const subject = (this.elTargetSubject?.value || '').trim();
+        const scope = (this.elTargetScope?.value || '').trim();
+        const mode = (this.elSelectionMode?.value || '').trim();
+        const selectCountStr = (this.elSelectionSelectCount?.value || '').trim();
+        const selectCount = selectCountStr === '' ? NaN : Number(selectCountStr);
+
+        const subjectOk = subject && (this.enums?.targetSubjects || []).includes(subject);
+        const scopeOk = scope && (this.enums?.targetScopes || []).includes(scope);
+        const modeOk = mode && (this.enums?.selectionModes || []).includes(mode);
+        if (!subjectOk || !scopeOk || !modeOk) {
+            this.setError(this.elErrTarget, 'target(subject/scope/selection.mode) 不合法');
             this.updateSummary();
             return;
         }
@@ -2328,28 +2358,72 @@ class SkillEditor {
         skill.id = newId;
         skill.name = (this.elPropName.value || '').trim();
         skill.rarity = this.elPropRarity.value;
-        skill.cost = Number(this.elPropCost.value || 0);
+        // costs.ap is the primary AP cost in v3
+        const apCost = Number(this.elCostsAp?.value ?? 0);
+        if (!skill.costs || typeof skill.costs !== 'object') skill.costs = {};
+        skill.costs.ap = Number.isNaN(apCost) ? 0 : apCost;
+
+        const perTurnLimit = Number(this.elCostsPerTurnLimit?.value ?? 1);
+        if (!Number.isNaN(perTurnLimit) && perTurnLimit > 0) skill.costs.perTurnLimit = perTurnLimit;
+
+        const part = (this.elCostsPart?.value || '').trim();
+        const slotCost = Number(this.elCostsSlotCost?.value ?? 0);
+        if (part) {
+            if (!skill.costs.partSlot || typeof skill.costs.partSlot !== 'object') skill.costs.partSlot = {};
+            skill.costs.partSlot.part = part;
+            if (!Number.isNaN(slotCost) && slotCost >= 0) skill.costs.partSlot.slotCost = slotCost;
+        } else if (skill.costs.partSlot) {
+            delete skill.costs.partSlot;
+        }
         skill.speed = Number(this.elPropSpeed.value || 0);
-        skill.targetType = targetType;
 
-        if (requiredPart) skill.requiredPart = requiredPart; else delete skill.requiredPart;
-        if (targetParts.length > 0) skill.targetParts = targetParts; else delete skill.targetParts;
-
-        const type = (this.elPropType.value || '').trim();
-        if (type) skill.type = type; else delete skill.type;
-
-        const valueRaw = (this.elPropValue.value || '').trim();
-        if (valueRaw === '') {
-            delete skill.value;
+        // v3 target as single source of truth
+        if (!skill.target || typeof skill.target !== 'object') {
+            skill.target = { subject, scope, selection: { mode: 'single', candidateParts: (this.defaultParts || []).slice(), selectedParts: [], selectCount: 1 } };
+        }
+        if (!skill.target.selection || typeof skill.target.selection !== 'object') {
+            skill.target.selection = { mode: 'single', candidateParts: (this.defaultParts || []).slice(), selectedParts: [], selectCount: 1 };
+        }
+        skill.target.subject = subject;
+        skill.target.scope = scope;
+        skill.target.selection.mode = mode;
+        if (!Number.isNaN(selectCount) && selectCount > 0) {
+            skill.target.selection.selectCount = selectCount;
+        } else if (Array.isArray(skill.target.selection.selectedParts)) {
+            skill.target.selection.selectCount = Math.max(1, skill.target.selection.selectedParts.length || 1);
         } else {
-            const maybeNumber = Number(valueRaw);
-            skill.value = Number.isNaN(maybeNumber) ? valueRaw : maybeNumber;
+            skill.target.selection.selectCount = 1;
         }
 
-        const valueType = (this.elPropValueType.value || '').trim();
-        if (valueType) skill.valueType = valueType; else delete skill.valueType;
+        // Ensure parts arrays exist (candidate/selected are written by commitSelectionPartsFromUI during dropdown interactions)
+        if (!Array.isArray(skill.target.selection.candidateParts)) skill.target.selection.candidateParts = (this.defaultParts || []).slice();
+        if (!Array.isArray(skill.target.selection.selectedParts)) skill.target.selection.selectedParts = [];
+
+        // legacy type/value/valueType removed (effects[] is canonical)
 
         skill.description = this.elPropDesc.value || '';
+
+        // tags / tagMeta
+        let parsedTags = [];
+        let parsedTagMeta = {};
+        try {
+            parsedTags = JSON.parse(this.elTags?.value || '[]');
+            if (!Array.isArray(parsedTags)) throw new Error('tags 必须是数组');
+        } catch (e) {
+            this.setError(this.elErrTags, e.message || String(e));
+            this.updateSummary();
+            return;
+        }
+        try {
+            parsedTagMeta = JSON.parse(this.elTagMeta?.value || '{}');
+            if (!parsedTagMeta || typeof parsedTagMeta !== 'object' || Array.isArray(parsedTagMeta)) throw new Error('tagMeta 必须是对象');
+        } catch (e) {
+            this.setError(this.elErrTags, e.message || String(e));
+            this.updateSummary();
+            return;
+        }
+        skill.tags = parsedTags;
+        skill.tagMeta = parsedTagMeta;
 
         // Keep editorMeta in sync on UI
         this.elMetaX.value = skill.editorMeta?.x ?? '';
@@ -2406,9 +2480,18 @@ class SkillEditor {
             id: newId,
             name: '新技能',
             rarity: 'Common',
-            cost: 1,
+            costs: { ap: 1, perTurnLimit: 1 },
             speed: 0,
-            targetType: 'SINGLE_PART',
+            target: {
+                subject: 'SUBJECT_ENEMY',
+                scope: 'SCOPE_PART',
+                selection: {
+                    mode: 'single',
+                    candidateParts: (this.defaultParts || []).slice(),
+                    selectedParts: [],
+                    selectCount: 1
+                }
+            },
             prerequisites: [],
             buffRefs: { apply: [], applySelf: [], remove: [] },
             effects: [],
@@ -2434,23 +2517,17 @@ class SkillEditor {
 
             this.buffDict = buffsData || {};
 
-            // skills_melee_v3.json format: { meta, skills: [] }
-            const newSkills = [];
-            if (skillsData && typeof skillsData === 'object' && Array.isArray(skillsData.skills)) {
-                this.setSkillPackMeta(skillsData.meta || null, skillsData.$schemaVersion || null);
-                skillsData.skills.forEach((sk) => {
-                    if (!sk || typeof sk !== 'object') return;
-                    if (!sk.id) return;
-                    newSkills.push(this.fromV3Skill(sk));
-                });
-            } else {
-                // legacy object map fallback
-                Object.keys(skillsData || {}).forEach((key) => {
-                    const sk = skillsData[key];
-                    if (!sk.id) sk.id = key;
-                    newSkills.push(sk);
-                });
+            // v3 pack only: { meta, skills: [] }
+            if (!skillsData || typeof skillsData !== 'object' || !Array.isArray(skillsData.skills)) {
+                throw new Error('skills 数据格式不合法：必须是 v3 pack { meta, skills: [] }');
             }
+            const newSkills = [];
+            this.setSkillPackMeta(skillsData.meta || null, skillsData.$schemaVersion || null);
+            skillsData.skills.forEach((sk) => {
+                if (!sk || typeof sk !== 'object') return;
+                if (!sk.id) return;
+                newSkills.push(this.fromV3Skill(sk));
+            });
             this.normalizeImportedSkills(newSkills);
             this.skills = newSkills;
             this.selectedNodeId = null;
