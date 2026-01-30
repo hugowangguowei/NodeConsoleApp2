@@ -72,3 +72,9 @@ header .small{opacity:.8;font-size:12px}
 .effect-row{border:1px solid #eee;border-radius:8px;padding:8px;background:#fff;margin-bottom:8px}
 .effect-row-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
 .effect-grid{display:grid;grid-template-columns:140px 1fr;gap:8px;align-items:center}
+
+/* Tags editor */
+.tag-chip-wrap{display:flex;flex-wrap:wrap;gap:8px}
+.tag-chip{display:inline-flex;align-items:center;gap:8px;padding:4px 10px;border:1px solid #ddd;border-radius:999px;background:#fff;cursor:pointer;user-select:none}
+.tag-chip input{margin:0}
+.tag-chip:hover{border-color:#b0d4ff;background:#f0f8ff}

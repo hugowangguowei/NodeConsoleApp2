@@ -98,6 +98,8 @@ export class SkillEditor {
         this.elRequirements = document.getElementById('prop-requirements');
         this.elTags = document.getElementById('prop-tags');
         this.elTagMeta = document.getElementById('prop-tagMeta');
+        this.elTagsEditor = document.getElementById('tags-editor');
+        this.elTagsSearch = document.getElementById('tags-search');
         this.elErrUnlock = document.getElementById('err-unlock');
         this.elErrCosts = document.getElementById('err-costs');
         this.elErrReq = document.getElementById('err-req');
@@ -145,6 +147,9 @@ export class SkillEditor {
 
         // Apply meta-driven UI defaults (even before loading pack)
         this.applyMetaToUI();
+
+        // Tags editor (enumeration-driven)
+        this.initTagsEditor();
 
         // v3 selection (candidateParts/selectedParts) dropdown interactions
         this.elCandidatePartsBtn = document.getElementById('candidatePartsBtn');
@@ -213,6 +218,137 @@ export class SkillEditor {
         this.renderSkillLibrary();
         this.renderNodes();
         this.updateSummary();
+    }
+
+    initTagsEditor() {
+        if (this.elTagsSearch) {
+            this.elTagsSearch.addEventListener('input', () => this.renderTagsEditor());
+        }
+
+        // If user edits JSON directly, keep checkbox UI in sync.
+        this.elTags?.addEventListener('input', () => {
+            this.renderTagsEditor();
+        });
+
+        // Delegated checkbox change
+        if (!this._tagsDelegated && this.elTagsEditor) {
+            this._tagsDelegated = true;
+            this.elTagsEditor.addEventListener('change', (e) => {
+                const cb = e.target.closest('input[type="checkbox"][data-tag]');
+                if (!cb) return;
+                this.commitTagsFromUI();
+            });
+        }
+    }
+
+    getTagEnums() {
+        const tags = this.skillPackMeta?.enums?.tags;
+        if (tags && typeof tags === 'object' && !Array.isArray(tags)) return tags;
+        const fallback = this.enums?.tags;
+        if (fallback && typeof fallback === 'object' && !Array.isArray(fallback)) return fallback;
+        return null;
+    }
+
+    getTagFilter() {
+        return (this.elTagsSearch?.value || '').trim().toLowerCase();
+    }
+
+    getTagsFromTextarea() {
+        try {
+            const parsed = JSON.parse(this.elTags?.value || '[]');
+            return Array.isArray(parsed) ? parsed : [];
+        } catch {
+            return [];
+        }
+    }
+
+    setTagsToTextarea(tags) {
+        if (!this.elTags) return;
+        const clean = Array.from(new Set((Array.isArray(tags) ? tags : []).filter(Boolean)));
+        this.elTags.value = JSON.stringify(clean, null, 2);
+    }
+
+    renderTagsEditor() {
+        if (!this.elTagsEditor) return;
+        const enums = this.getTagEnums();
+        if (!enums) {
+            this.elTagsEditor.innerHTML = '<div class="small" style="color:#888;">(no tags enum in meta)</div>';
+            return;
+        }
+
+        const selected = new Set(this.getTagsFromTextarea());
+        const q = this.getTagFilter();
+
+        const escapeHtml = (s) => String(s ?? '')
+            .replaceAll('&', '&amp;')
+            .replaceAll('<', '&lt;')
+            .replaceAll('>', '&gt;')
+            .replaceAll('"', '&quot;')
+            .replaceAll("'", '&#39;');
+
+        const renderGroup = (key, values) => {
+            const list = Array.isArray(values) ? values : [];
+            const items = list
+                .filter(v => {
+                    if (!q) return true;
+                    return String(v).toLowerCase().includes(q) || String(key).toLowerCase().includes(q);
+                })
+                .map(v => {
+                    const checked = selected.has(v) ? 'checked' : '';
+                    return `
+                        <label class="tag-chip" title="${escapeHtml(key)}">
+                            <input type="checkbox" data-tag="${escapeHtml(v)}" ${checked} />
+                            <span>${escapeHtml(v)}</span>
+                        </label>
+                    `;
+                })
+                .join('');
+            if (!items) return '';
+            return `
+                <div class="tag-group" data-tag-group="${escapeHtml(key)}">
+                    <div class="small" style="font-weight:700; margin:8px 0 6px;">${escapeHtml(key)}</div>
+                    <div class="tag-chip-wrap">${items}</div>
+                </div>
+            `;
+        };
+
+        const blocks = Object.keys(enums)
+            .sort((a, b) => a.localeCompare(b))
+            .map(k => renderGroup(k, enums[k]))
+            .filter(Boolean)
+            .join('');
+
+        this.elTagsEditor.innerHTML = blocks || '<div class="small" style="color:#888;">(no tags matched)</div>';
+    }
+
+    commitTagsFromUI() {
+        if (!this.elTagsEditor) return;
+        const tags = Array.from(this.elTagsEditor.querySelectorAll('input[type="checkbox"][data-tag]'))
+            .filter(cb => cb.checked)
+            .map(cb => cb.getAttribute('data-tag'))
+            .filter(Boolean);
+        this.setTagsToTextarea(tags);
+        this.saveCurrentNode();
+    }
+
+    tagsSelectAllFiltered() {
+        if (!this.elTagsEditor) return;
+        const q = this.getTagFilter();
+        Array.from(this.elTagsEditor.querySelectorAll('input[type="checkbox"][data-tag]')).forEach(cb => {
+            const v = (cb.getAttribute('data-tag') || '').toLowerCase();
+            if (!q || v.includes(q)) cb.checked = true;
+        });
+        this.commitTagsFromUI();
+    }
+
+    tagsSelectNoneFiltered() {
+        if (!this.elTagsEditor) return;
+        const q = this.getTagFilter();
+        Array.from(this.elTagsEditor.querySelectorAll('input[type="checkbox"][data-tag]')).forEach(cb => {
+            const v = (cb.getAttribute('data-tag') || '').toLowerCase();
+            if (!q || v.includes(q)) cb.checked = false;
+        });
+        this.commitTagsFromUI();
     }
 
     initGrid() {
@@ -812,11 +948,32 @@ export class SkillEditor {
         if (meta && typeof meta === 'object') {
             this.skillPackMeta = meta;
             if (Array.isArray(meta.defaultParts) && meta.defaultParts.length) this.defaultParts = meta.defaultParts.slice();
-            if (meta.enums && typeof meta.enums === 'object') this.enums = { ...this.enums, ...meta.enums };
+            if (meta.enums && typeof meta.enums === 'object') {
+                // Merge enums carefully to keep nested objects (e.g. enums.tags)
+                const existing = (this.enums && typeof this.enums === 'object') ? this.enums : {};
+                const incoming = meta.enums;
+                const merged = { ...existing, ...incoming };
+                if (incoming.tags && typeof incoming.tags === 'object' && !Array.isArray(incoming.tags)) {
+                    merged.tags = {
+                        ...(existing.tags && typeof existing.tags === 'object' && !Array.isArray(existing.tags) ? existing.tags : {}),
+                        ...incoming.tags,
+                    };
+                }
+                this.enums = merged;
+            }
+
+            // Ensure meta.enums exists so callers can use this.skillPackMeta.enums.tags safely.
+            if (!this.skillPackMeta.enums || typeof this.skillPackMeta.enums !== 'object') {
+                this.skillPackMeta.enums = {};
+            }
+            if (!this.skillPackMeta.enums.tags && this.enums?.tags) {
+                this.skillPackMeta.enums.tags = this.enums.tags;
+            }
         }
         if (schemaVersion) this.skillPackSchemaVersion = schemaVersion;
         this.applyMetaToUI();
         this.renderPartsCheckboxesFromMeta();
+        this.renderTagsEditor();
     }
 
     renderPartsCheckboxesFromMeta() {
@@ -1081,6 +1238,8 @@ export class SkillEditor {
         if (this.elRequirements) this.elRequirements.value = JSON.stringify(skill.requirements || {}, null, 2);
         if (this.elTags) this.elTags.value = JSON.stringify(Array.isArray(skill.tags) ? skill.tags : [], null, 2);
         if (this.elTagMeta) this.elTagMeta.value = JSON.stringify((skill.tagMeta && typeof skill.tagMeta === 'object' && !Array.isArray(skill.tagMeta)) ? skill.tagMeta : {}, null, 2);
+
+        this.renderTagsEditor();
 
         this.renderBuffRefTables();
         this.renderEffectsList();

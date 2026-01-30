@@ -407,3 +407,10 @@ skill_editor_test_v3.htmlÖÐ£¬candidatePartsºÍSelectedPartsµÄ¶àÑ¡ÏÂÀ­¿òµã»÷all»òÕ
 µ±µã»÷+effect°´Å¥ºó£¬ÐÂÔöµÄeffectÃ»ÓÐÕýÈ·µØÏÔÊ¾ÔÚ¿É½»»¥µÄeffectsÁÐ±íÖÐ£¬¶øÊÇ¸üÐÂµ½ÁËjsonÃèÊöÀï¡£Çë·ÖÎöÔ­Òò£¬ÏÈ²»ÒªÐÞ¸Ä´úÂë¡£
 
 ÐÞ¸ÄF.CostµÄcosts.ap×Ö¶Î£¬µ±ÍË³ö±à¼­×´Ì¬µÄÊ±ºò£¬Ã»ÓÐÕýÈ·µØ±£´æ£¬Çë·ÖÎöÔ­Òò£¬ÏÈ²»ÒªÐÞ¸Ä´úÂë¡£
+
+¸øÎÒÌá¹©Ò»Ð©½¨Òé£¬Ö÷ÒªÊÇ»¤¼×Ïà¹ØµÄ¼¼ÄÜ£¬ÓÐÃ»ÓÐºÃµÄÉè¼Æµã×Ó£¿ÄÜÈÃ½¨Á¢Ò»¸ö±È½ÏÍêÉÆµÄÑ­»·£¬°üÀ¨£º
+¶àÖÖ»ñÈ¡»¤¼×µÄ·½Ê½£¬¶àÖÖÏûºÄ»¤¼×µÄ·½Ê½£¬»¤¼×µÄÊ¹ÓÃ·½Ê½µÈµÈ¡£Ìá¹©Ò»Ð©Ë¼Â·¹©ÎÒ²Î¿¼£¬ÏÈ²»ÓÃÐ´´úÂë¡£
+
+ÔÚdesignÎÄ¼þ¼ÓÏÂ´´½¨Ò»¸öskill_design_brainStorm.mdÎÄ¼þ,½«µ±Ç°µÄ»¤¼×Ïà¹ØµÄ¼¼ÄÜÉè¼ÆË¼Â·¼ÇÂ¼ÏÂÀ´£¬·½±ãºóÐø²Î¿¼¡£
+
+µ±Ç°µÄJ.Tags²¿·ÖÃ»ÓÐÊµÏÖ½»»¥Ê½±êÇ©ÅäÖÃ£¬ÇëÄã¼ì²éÒ»ÏÂ´úÂë£¬·ÖÎöÔ­Òò£¬ÏÈ²»ÒªÐÞ¸Ä´úÂë¡£

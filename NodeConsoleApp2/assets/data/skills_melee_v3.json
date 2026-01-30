@@ -86,10 +86,8 @@
         "lifetime": ["ONE_SHOT", "ONE_TURN", "MULTI_TURN", "BATTLE", "PERMANENT"],
         "subject": ["SUBJECT_SELF", "SUBJECT_ENEMY", "SUBJECT_BOTH"],
         "scope": ["SCOPE_ENTITY", "SCOPE_PART", "SCOPE_MULTI_PARTS"],
-        "selectionLegacy": ["SELECT_FIXED_PART", "SELECT_RANDOM_PART", "SELECT_ALL_PARTS"],
         "resources": ["RES_AP", "RES_SLOT"],
         "requirements": ["REQ_SELF_PART"],
-        "distance": ["MELEE", "RANGED", "MAGIC"],
         "conditions": ["UNCONDITIONAL", "CONDITIONAL"]
       }
     }
