@@ -514,7 +514,16 @@ export class SkillEditor {
         }, { passive: false });
 
         // Property Inputs: save on blur / Enter (exclude JSON textareas)
-        const autoSaveInputs = [this.elPropName, this.elPropSpeed, this.elPropDesc].filter(Boolean);
+        // NOTE: keep auto-save for atomic fields; JSON areas remain explicit-save.
+        const autoSaveInputs = [
+            this.elPropName,
+            this.elPropSpeed,
+            this.elPropDesc,
+            // costs
+            this.elCostsAp,
+            this.elCostsPerTurnLimit,
+            this.elCostsSlotCost,
+        ].filter(Boolean);
         autoSaveInputs.forEach((el) => {
             el.addEventListener('blur', () => this.saveCurrentNode());
             if (el.tagName && el.tagName.toLowerCase() === 'textarea') return;
@@ -530,6 +539,9 @@ export class SkillEditor {
         this.elTargetSubject?.addEventListener('change', () => this.saveCurrentNode());
         this.elTargetScope?.addEventListener('change', () => this.saveCurrentNode());
         this.elSelectionMode?.addEventListener('change', () => this.saveCurrentNode());
+
+        // Select fields should save on change
+        this.elCostsPart?.addEventListener('change', () => this.saveCurrentNode());
 
         window.addEventListener('keydown', (e) => {
             const tag = (e.target && e.target.tagName) ? e.target.tagName.toLowerCase() : '';
@@ -1071,6 +1083,7 @@ export class SkillEditor {
         if (this.elTagMeta) this.elTagMeta.value = JSON.stringify((skill.tagMeta && typeof skill.tagMeta === 'object' && !Array.isArray(skill.tagMeta)) ? skill.tagMeta : {}, null, 2);
 
         this.renderBuffRefTables();
+        this.renderEffectsList();
         this.updateSummary();
     }
 
@@ -1235,6 +1248,7 @@ export class SkillEditor {
             return;
         }
         this.closeEffectsJsonSync();
+        this.renderEffectsList();
         this.updateSummary();
     }
 
@@ -1245,6 +1259,98 @@ export class SkillEditor {
         if (!Array.isArray(skill.effects)) skill.effects = [];
         skill.effects.push({ effectType: (this.enums.effectTypes && this.enums.effectTypes[0]) || 'DMG_HP', amountType: 'ABS', amount: 0 });
         if (this.elPropEffects) this.elPropEffects.value = JSON.stringify(skill.effects, null, 2);
+
+        this.renderEffectsList();
+        this.updateSummary?.();
+    }
+
+    renderEffectsList() {
+        if (!this.elEffectsList) return;
+        const skill = this.selectedNodeId ? this.getSkillById(this.selectedNodeId) : null;
+        if (!skill || !Array.isArray(skill.effects)) {
+            this.elEffectsList.innerHTML = '<span style="color:#888;">(no effects)</span>';
+            return;
+        }
+        if (skill.effects.length === 0) {
+            this.elEffectsList.innerHTML = '<span style="color:#888;">(no effects)</span>';
+            return;
+        }
+
+        const opt = (values, current, placeholder = '') => {
+            const list = Array.isArray(values) ? values : [];
+            const head = placeholder ? [`<option value="">${placeholder}</option>`] : [];
+            return head.concat(list.map(v => `<option value="${v}" ${v === current ? 'selected' : ''}>${v}</option>`)).join('');
+        };
+
+        const escapeHtml = (s) => String(s ?? '')
+            .replaceAll('&', '&amp;')
+            .replaceAll('<', '&lt;')
+            .replaceAll('>', '&gt;')
+            .replaceAll('"', '&quot;')
+            .replaceAll("'", '&#39;');
+
+        this.elEffectsList.innerHTML = skill.effects.map((eff, idx) => {
+            const effectType = eff?.effectType || '';
+            const amountType = eff?.amountType || '';
+            const amount = (typeof eff?.amount === 'number' || typeof eff?.amount === 'string') ? eff.amount : '';
+            const note = eff?.note || '';
+            return `
+                <div class="effect-row" data-index="${idx}">
+                    <div class="effect-row-head">
+                        <div class="small" style="font-weight:800;">#${idx}</div>
+                        <button class="btn btn-sm btn-danger" type="button" data-action="del">Del</button>
+                    </div>
+                    <div class="effect-grid">
+                        <div class="small">effectType</div>
+                        <select class="select" data-field="effectType">${opt(this.enums?.effectTypes, effectType, '(select)')}</select>
+
+                        <div class="small">amountType</div>
+                        <select class="select" data-field="amountType">${opt(this.enums?.amountTypes, amountType, '(select)')}</select>
+
+                        <div class="small">amount</div>
+                        <input class="input" data-field="amount" type="number" value="${escapeHtml(amount)}" />
+
+                        <div class="small">note</div>
+                        <input class="input" data-field="note" type="text" value="${escapeHtml(note)}" placeholder="(optional)" />
+                    </div>
+                </div>
+            `;
+        }).join('');
+
+        if (!this._effectsDelegated) {
+            this._effectsDelegated = true;
+            const container = this.elEffectsList;
+            container.addEventListener('change', (e) => {
+                const row = e.target.closest('.effect-row');
+                if (!row) return;
+                const index = Number(row.dataset.index);
+                const field = e.target.dataset.field;
+                if (!field) return;
+                const sk = this.getSkillById(this.selectedNodeId);
+                if (!sk || !Array.isArray(sk.effects) || !sk.effects[index]) return;
+
+                let v = e.target.value;
+                if (field === 'amount') v = v === '' ? undefined : Number(v);
+                sk.effects[index][field] = v;
+
+                if (this.elPropEffects) this.elPropEffects.value = JSON.stringify(sk.effects, null, 2);
+                this.updateSummary();
+            });
+
+            container.addEventListener('click', (e) => {
+                const btn = e.target.closest('button[data-action="del"]');
+                if (!btn) return;
+                const row = e.target.closest('.effect-row');
+                if (!row) return;
+                const index = Number(row.dataset.index);
+                const sk = this.getSkillById(this.selectedNodeId);
+                if (!sk || !Array.isArray(sk.effects)) return;
+                sk.effects.splice(index, 1);
+                if (this.elPropEffects) this.elPropEffects.value = JSON.stringify(sk.effects, null, 2);
+                this.renderEffectsList();
+                this.updateSummary();
+            });
+        }
     }
 
     renderBuffRefTables() {
