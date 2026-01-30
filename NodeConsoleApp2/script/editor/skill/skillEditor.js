@@ -235,6 +235,13 @@ export class SkillEditor {
             ctx.lineTo(this.CANVAS_WIDTH, y);
             ctx.stroke();
         }
+
+        // Draw thick boundary for the grid workspace
+        ctx.save();
+        ctx.strokeStyle = '#2c3e50';
+        ctx.lineWidth = 6;
+        ctx.strokeRect(0, 0, this.CANVAS_WIDTH, this.CANVAS_HEIGHT);
+        ctx.restore();
     }
 
     updateTransform() {
