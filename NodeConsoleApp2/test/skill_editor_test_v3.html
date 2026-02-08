@@ -222,36 +222,36 @@
 
                 <div class="panel">
                     <div class="panel-h">
-                        <span>H. Effects</span>
+                        <span>H. Actions</span>
                         <div class="row-actions">
-                            <button class="btn btn-sm btn-dark" type="button" onclick="editor.addEffectRow()" id="btn-add-effect" disabled>+ Effect</button>
-                            <button class="btn btn-sm btn-dark" type="button" onclick="editor.openEffectsJsonSync()" id="btn-open-effects-json" disabled>JSON</button>
+                            <button class="btn btn-sm btn-dark" type="button" onclick="editor.addActionRow()" id="btn-add-action" disabled>+ Action</button>
+                            <button class="btn btn-sm btn-dark" type="button" onclick="editor.openActionsJsonSync()" id="btn-open-actions-json" disabled>JSON</button>
                         </div>
                     </div>
                     <div class="small" style="margin-bottom:10px;">
-                        结构化编辑（推荐）：`effectType/amountType/amount|scaling/subjectOverride/note`。高级字段可用 JSON。
+                        v4：技能使用 `actions[]`。每个 action 拥有独立 `target`，以及单个 `effect`（多效果通过多个 action 表达）。
                     </div>
 
-                    <div id="effects-editor" class="panel" style="padding:10px; background:#fafafa;">
-                        <div id="effects-list" class="small" style="color:#888;">(no effects)</div>
+                    <div id="actions-editor" class="panel" style="padding:10px; background:#fafafa;">
+                        <div id="actions-list" class="small" style="color:#888;">(no actions)</div>
                     </div>
 
-                    <div id="effects-json-wrap" class="panel" style="margin-top:10px; display:none; padding:10px;">
-                        <div class="small" style="margin-bottom:6px;">高级 JSON（整段 effects[]），用于编辑扩展字段。点击 Apply 后才会写回。</div>
-                        <textarea class="textarea" id="prop-effects" placeholder="[]"></textarea>
+                    <div id="actions-json-wrap" class="panel" style="margin-top:10px; display:none; padding:10px;">
+                        <div class="small" style="margin-bottom:6px;">高级 JSON（整段 actions[]）。点击 Apply 后才会写回。</div>
+                        <textarea class="textarea" id="prop-actions" placeholder="[]"></textarea>
                         <div style="margin-top:8px; display:flex; gap:8px; align-items:center;">
-                            <button class="btn btn-dark btn-sm" type="button" onclick="editor.applyEffectsJsonToForm()" id="btn-apply-effects-json" disabled>Apply JSON</button>
-                            <button class="btn btn-dark btn-sm" type="button" onclick="editor.closeEffectsJsonSync()" id="btn-close-effects-json" disabled>Close</button>
+                            <button class="btn btn-dark btn-sm" type="button" onclick="editor.applyActionsJsonToForm()" id="btn-apply-actions-json" disabled>Apply JSON</button>
+                            <button class="btn btn-dark btn-sm" type="button" onclick="editor.closeActionsJsonSync()" id="btn-close-actions-json" disabled>Close</button>
                             <span style="flex:1"></span>
-                            <button class="btn btn-primary btn-sm" type="button" onclick="editor.validateEffectsFromForm()" id="btn-validate-effects" disabled>Validate</button>
+                            <button class="btn btn-primary btn-sm" type="button" onclick="editor.validateActionsFromForm()" id="btn-validate-actions" disabled>Validate</button>
                         </div>
                     </div>
 
                     <div style="margin-top:10px; display:flex; gap:8px; align-items:center;">
-                        <button class="btn btn-dark btn-sm" type="button" onclick="editor.saveEffectsFromForm()" id="btn-save-effects" disabled>Save Effects</button>
-                        <div class="small" id="effects-save-hint" style="color:#888;">effects 采用显式保存（避免中间态破坏数据）</div>
+                        <button class="btn btn-dark btn-sm" type="button" onclick="editor.saveActionsFromForm()" id="btn-save-actions" disabled>Save Actions</button>
+                        <div class="small" id="actions-save-hint" style="color:#888;">actions 采用显式保存（避免中间态破坏数据）</div>
                     </div>
-                    <div class="error" id="err-effects" style="display:none; margin-top:8px;"></div>
+                    <div class="error" id="err-actions" style="display:none; margin-top:8px;"></div>
                 </div>
 
                 <div class="panel">

@@ -29,7 +29,9 @@ export class SkillEditor {
             amountTypes: ['ABS','PCT_MAX','PCT_CURRENT','SCALING'],
             requirementSelfPartModes: ['ANY','ALL'],
             partOverrideModes: ['fixed','listed'],
-            hitModes: ['normal','cannot_dodge','always_crit']
+            hitModes: ['normal','cannot_dodge','always_crit'],
+            actionTargetBindingModes: ['follow','explicit'],
+            actionTargetBindingRefs: ['skillTarget','source']
         };
         // Selection (single + multi)
         this.selectedNodeId = null; // backward compat: primary selected
@@ -72,15 +74,16 @@ export class SkillEditor {
         this.elPropValue = null;
         this.elPropValueType = null;
         this.elPropDesc = document.getElementById('prop-desc');
-        this.elPropEffects = document.getElementById('prop-effects');
-        this.elEffectsEditor = document.getElementById('effects-editor');
-        this.elEffectsList = document.getElementById('effects-list');
-        this.elEffectsJsonWrap = document.getElementById('effects-json-wrap');
-        this.elBtnAddEffect = document.getElementById('btn-add-effect');
-        this.elBtnOpenEffectsJson = document.getElementById('btn-open-effects-json');
-        this.elBtnApplyEffectsJson = document.getElementById('btn-apply-effects-json');
-        this.elBtnCloseEffectsJson = document.getElementById('btn-close-effects-json');
-        this.elBtnValidateEffects = document.getElementById('btn-validate-effects');
+        // v4 actions editor (replaces top-level effects[])
+        this.elPropActions = document.getElementById('prop-actions');
+        this.elActionsEditor = document.getElementById('actions-editor');
+        this.elActionsList = document.getElementById('actions-list');
+        this.elActionsJsonWrap = document.getElementById('actions-json-wrap');
+        this.elBtnAddAction = document.getElementById('btn-add-action');
+        this.elBtnOpenActionsJson = document.getElementById('btn-open-actions-json');
+        this.elBtnApplyActionsJson = document.getElementById('btn-apply-actions-json');
+        this.elBtnCloseActionsJson = document.getElementById('btn-close-actions-json');
+        this.elBtnValidateActions = document.getElementById('btn-validate-actions');
         this.elPrereqText = document.getElementById('prop-prerequisites');
         this.elMetaX = document.getElementById('meta-x');
         this.elMetaY = document.getElementById('meta-y');
@@ -108,7 +111,7 @@ export class SkillEditor {
         this.elErrId = document.getElementById('err-id');
         this.elErrTarget = document.getElementById('err-target');
         this.elErrBuffs = document.getElementById('err-buffs');
-        this.elErrEffects = document.getElementById('err-effects');
+        this.elErrActions = document.getElementById('err-actions');
         this.elValidateSummary = document.getElementById('prop-validate-summary');
         this.elSummaryText = document.getElementById('prop-summary-text');
         this.elSummaryBadge = document.getElementById('prop-summary-badge');
@@ -121,6 +124,7 @@ export class SkillEditor {
 
         // Initialize
         this.initGrid();
+        // attachEvents() is defined later in this file (single source of truth)
         this.attachEvents();
 
         this.initSkillDrawer();
@@ -141,7 +145,7 @@ export class SkillEditor {
             description: '基础的挥砍攻击。',
             prerequisites: [],
             buffRefs: { apply: [], applySelf: [], remove: [] },
-            effects: [],
+            actions: [],
             editorMeta: { x: 100, y: 100 }
         });
 
@@ -383,44 +387,6 @@ export class SkillEditor {
     updateTransform() {
         if (!this.elTransformLayer) return;
         this.elTransformLayer.style.transform = `translate(${this.pan.x}px, ${this.pan.y}px) scale(${this.zoom})`;
-    }
-
-    attachEvents() {
-        const wrapper = document.getElementById('canvas-wrapper');
-        if (!wrapper) return;
-
-        wrapper.addEventListener('mousedown', (e) => {
-            if (e.target === wrapper || e.target.id === 'connection-layer' || e.target.id === 'node-layer') {
-                this.isPanning = true;
-                this.lastMousePos = { x: e.clientX, y: e.clientY };
-                wrapper.style.cursor = 'grabbing';
-            }
-        });
-
-        window.addEventListener('mousemove', (e) => {
-            if (!this.isPanning) return;
-            const dx = e.clientX - this.lastMousePos.x;
-            const dy = e.clientY - this.lastMousePos.y;
-            this.pan.x += dx;
-            this.pan.y += dy;
-            this.lastMousePos = { x: e.clientX, y: e.clientY };
-            this.updateTransform();
-        });
-
-        window.addEventListener('mouseup', () => {
-            if (!this.isPanning) return;
-            this.isPanning = false;
-            wrapper.style.cursor = 'grab';
-        });
-
-        wrapper.addEventListener('wheel', (e) => {
-            e.preventDefault();
-            const scaleAmount = 0.1;
-            this.zoom += (e.deltaY < 0 ? scaleAmount : -scaleAmount);
-            if (this.zoom < 0.2) this.zoom = 0.2;
-            if (this.zoom > 3) this.zoom = 3;
-            this.updateTransform();
-        }, { passive: false });
     }
 
     initSkillDrawer() {
@@ -900,7 +866,7 @@ export class SkillEditor {
             },
             prerequisites: [],
             buffRefs: { apply: [], applySelf: [], remove: [] },
-            effects: [],
+            actions: [],
             editorMeta: { x: vX, y: vY }
         });
     }
@@ -1003,7 +969,13 @@ export class SkillEditor {
             if (!skill.buffRefs.apply) skill.buffRefs.apply = [];
             if (!skill.buffRefs.applySelf) skill.buffRefs.applySelf = [];
             if (!skill.buffRefs.remove) skill.buffRefs.remove = [];
-            if (!Array.isArray(skill.effects)) skill.effects = [];
+
+            // v4: actions[] is canonical.
+            // Support legacy imports:
+            // - v3: top-level effects[] -> actions[] (inherit skill.target)
+            // - v3: actions[].effects[] -> actions[].effect (take first, keep remainder as extra actions)
+            this.migrateSkillToV4Actions(skill);
+
             if (!skill.editorMeta) {
                 const col = index % 10;
                 const row = Math.floor(index / 10);
@@ -1018,20 +990,130 @@ export class SkillEditor {
             if (!skill.target.selection) {
                 skill.target.selection = { mode: 'single', candidateParts: (this.defaultParts || []).slice(), selectedParts: [], selectCount: 1 };
             }
+
+            // If we synthesized actions before target existed, ensure action->follow binding is correct now.
+            this.ensureActionsHaveDefaults(skill);
+        });
+    }
+
+    migrateSkillToV4Actions(skill) {
+        if (!skill || typeof skill !== 'object') return;
+
+        // If already v4-shaped, still normalize.
+        if (Array.isArray(skill.actions)) {
+            // v3 intermediate: actions[].effects[]
+            const flattened = [];
+            skill.actions.forEach((a, idx) => {
+                if (!a || typeof a !== 'object') return;
+                const base = { ...a };
+                const effArr = Array.isArray(base.effects) ? base.effects : null;
+                if (effArr) delete base.effects;
+                if (base.effect && typeof base.effect === 'object' && !Array.isArray(base.effect)) {
+                    flattened.push(base);
+                    return;
+                }
+                if (effArr && effArr.length) {
+                    // first effect stays in this action
+                    flattened.push({ ...base, effect: effArr[0] });
+                    // remaining effects become additional actions
+                    for (let i = 1; i < effArr.length; i++) {
+                        flattened.push({
+                            id: `${base.id || 'action'}_${idx}_${i}`,
+                            name: base.name ? `${base.name} (${i + 1})` : undefined,
+                            target: base.target,
+                            effect: effArr[i]
+                        });
+                    }
+                    return;
+                }
+                // No effect/effects present
+                flattened.push({ ...base, effect: base.effect || null });
+            });
+            skill.actions = flattened;
+            return;
+        }
+
+        // Legacy v3: top-level effects[]
+        if (Array.isArray(skill.effects)) {
+            const effects = skill.effects;
+            delete skill.effects;
+            const actions = [];
+            effects.forEach((eff, i) => {
+                actions.push({
+                    id: `action_${i + 1}`,
+                    name: `Effect ${i + 1}`,
+                    target: {
+                        binding: { mode: 'follow', ref: 'skillTarget' }
+                    },
+                    effect: eff
+                });
+            });
+            skill.actions = actions;
+            return;
+        }
+
+        // No actions/effects: initialize empty.
+        skill.actions = [];
+    }
+
+    ensureActionsHaveDefaults(skill) {
+        if (!skill || typeof skill !== 'object') return;
+        if (!Array.isArray(skill.actions)) skill.actions = [];
+        skill.actions = skill.actions.map((a, idx) => {
+            const action = (a && typeof a === 'object') ? a : {};
+            if (!action.id) action.id = `action_${idx + 1}`;
+            if (!action.target || typeof action.target !== 'object') {
+                action.target = { binding: { mode: 'follow', ref: 'skillTarget' } };
+            }
+            if (action.target && typeof action.target === 'object') {
+                if (!action.target.binding || typeof action.target.binding !== 'object') {
+                    action.target.binding = { mode: 'follow', ref: 'skillTarget' };
+                }
+                if (!action.target.binding.mode) action.target.binding.mode = 'follow';
+                if (action.target.binding.mode === 'follow' && !action.target.binding.ref) action.target.binding.ref = 'skillTarget';
+                if (action.target.binding.mode === 'explicit' && action.target.binding.ref) delete action.target.binding.ref;
+                if (action.target.binding.mode === 'explicit') {
+                    if (!action.target.spec || typeof action.target.spec !== 'object') action.target.spec = {};
+                    if (!action.target.spec.subject) action.target.spec.subject = (this.enums?.targetSubjects?.[0]) || 'SUBJECT_SELF';
+                    if (!action.target.spec.scope) action.target.spec.scope = (this.enums?.targetScopes?.[0]) || 'SCOPE_ENTITY';
+                    if (!action.target.spec.selection || typeof action.target.spec.selection !== 'object') {
+                        action.target.spec.selection = {
+                            mode: (this.enums?.selectionModes?.[0]) || 'single',
+                            candidateParts: (this.defaultParts || []).slice(),
+                            selectedParts: [],
+                            selectCount: 1
+                        };
+                    }
+                    if (!action.target.spec.selection.mode) action.target.spec.selection.mode = (this.enums?.selectionModes?.[0]) || 'single';
+                    if (!Array.isArray(action.target.spec.selection.candidateParts)) action.target.spec.selection.candidateParts = (this.defaultParts || []).slice();
+                    if (!Array.isArray(action.target.spec.selection.selectedParts)) action.target.spec.selection.selectedParts = [];
+                    if (!action.target.spec.selection.selectCount) action.target.spec.selection.selectCount = 1;
+                } else {
+                    if (action.target.spec) delete action.target.spec;
+                }
+            }
+            if (!action.effect || typeof action.effect !== 'object' || Array.isArray(action.effect)) {
+                action.effect = {
+                    effectType: (this.enums.effectTypes && this.enums.effectTypes[0]) || 'DMG_HP',
+                    amountType: (this.enums.amountTypes && this.enums.amountTypes[0]) || 'ABS',
+                    amount: 0
+                };
+            }
+            return action;
         });
     }
 
     async loadProjectData() {
         try {
             const [skillsResp, buffsResp] = await Promise.all([
-                fetch('../assets/data/skills_melee_v3.json'),
+                fetch('../assets/data/skills_melee_v4.json'),
                 fetch('../assets/data/buffs.json')
             ]);
             const skillsData = await skillsResp.json();
             const buffsData = await buffsResp.json();
             this.buffDict = buffsData || {};
             if (!skillsData || typeof skillsData !== 'object' || !Array.isArray(skillsData.skills)) {
-                throw new Error('skills 数据格式不合法：必须是 v3 pack { meta, skills: [] }');
+                throw new Error('skills 数据格式不合法：必须是 pack { meta, skills: [] }');
             }
             this.setSkillPackMeta(skillsData.meta || null, skillsData.$schemaVersion || null);
             const newSkills = [];
@@ -1106,7 +1188,7 @@ export class SkillEditor {
             return clone;
         });
         const pack = {
-            $schemaVersion: this.skillPackSchemaVersion || 'skills_melee_v3',
+            $schemaVersion: this.skillPackSchemaVersion || 'skills_melee_v4',
             meta: this.skillPackMeta || {
                 title: 'Skills Export',
                 source: 'skill_editor_test_v3',
@@ -1121,7 +1203,7 @@ export class SkillEditor {
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = includeEditorMeta ? 'skills_melee_v3_export.dev.json' : 'skills_melee_v3_export.runtime.json';
+        a.download = includeEditorMeta ? 'skills_melee_v4_export.dev.json' : 'skills_melee_v4_export.runtime.json';
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
@@ -1148,20 +1230,20 @@ export class SkillEditor {
             document.getElementById('btn-add-apply').disabled = true;
             document.getElementById('btn-add-applySelf').disabled = true;
             document.getElementById('btn-add-remove').disabled = true;
-            if (this.elBtnAddEffect) this.elBtnAddEffect.disabled = true;
-            if (this.elBtnOpenEffectsJson) this.elBtnOpenEffectsJson.disabled = true;
-            if (this.elBtnApplyEffectsJson) this.elBtnApplyEffectsJson.disabled = true;
-            if (this.elBtnCloseEffectsJson) this.elBtnCloseEffectsJson.disabled = true;
-            if (this.elBtnValidateEffects) this.elBtnValidateEffects.disabled = true;
-            const btnSaveEffects = document.getElementById('btn-save-effects');
-            if (btnSaveEffects) btnSaveEffects.disabled = true;
+            if (this.elBtnAddAction) this.elBtnAddAction.disabled = true;
+            if (this.elBtnOpenActionsJson) this.elBtnOpenActionsJson.disabled = true;
+            if (this.elBtnApplyActionsJson) this.elBtnApplyActionsJson.disabled = true;
+            if (this.elBtnCloseActionsJson) this.elBtnCloseActionsJson.disabled = true;
+            if (this.elBtnValidateActions) this.elBtnValidateActions.disabled = true;
+            const btnSaveActions = document.getElementById('btn-save-actions');
+            if (btnSaveActions) btnSaveActions.disabled = true;
 
             this.elPropId.value = '';
             this.elPropName.value = '';
             this.elPropSpeed.value = '';
             this.elPropDesc.value = '';
-            if (this.elPropEffects) this.elPropEffects.value = '[]';
-            if (this.elEffectsList) this.elEffectsList.innerHTML = '<span style="color:#888;">(no effects)</span>';
+            if (this.elPropActions) this.elPropActions.value = '[]';
+            if (this.elActionsList) this.elActionsList.innerHTML = '<span style="color:#888;">(no actions)</span>';
             this.elPrereqText.textContent = '—';
             this.elMetaX.value = '';
             this.elMetaY.value = '';
@@ -1179,7 +1261,7 @@ export class SkillEditor {
             this.setError(this.elErrId, null);
             this.setError(this.elErrTarget, null);
             this.setError(this.elErrBuffs, null);
-            this.setError(this.elErrEffects, null);
+            this.setError(this.elErrActions, null);
             this.setError(this.elErrTags, null);
             return;
         }
@@ -1190,13 +1272,13 @@ export class SkillEditor {
         document.getElementById('btn-add-apply').disabled = false;
         document.getElementById('btn-add-applySelf').disabled = false;
         document.getElementById('btn-add-remove').disabled = false;
-        if (this.elBtnAddEffect) this.elBtnAddEffect.disabled = false;
-        if (this.elBtnOpenEffectsJson) this.elBtnOpenEffectsJson.disabled = false;
-        if (this.elBtnApplyEffectsJson) this.elBtnApplyEffectsJson.disabled = false;
-        if (this.elBtnCloseEffectsJson) this.elBtnCloseEffectsJson.disabled = false;
-        if (this.elBtnValidateEffects) this.elBtnValidateEffects.disabled = false;
-        const btnSaveEffects = document.getElementById('btn-save-effects');
-        if (btnSaveEffects) btnSaveEffects.disabled = false;
+        if (this.elBtnAddAction) this.elBtnAddAction.disabled = false;
+        if (this.elBtnOpenActionsJson) this.elBtnOpenActionsJson.disabled = false;
+        if (this.elBtnApplyActionsJson) this.elBtnApplyActionsJson.disabled = false;
+        if (this.elBtnCloseActionsJson) this.elBtnCloseActionsJson.disabled = false;
+        if (this.elBtnValidateActions) this.elBtnValidateActions.disabled = false;
+        const btnSaveActions = document.getElementById('btn-save-actions');
+        if (btnSaveActions) btnSaveActions.disabled = false;
 
         this.elPropId.value = skill.id || '';
         this.elPropName.value = skill.name || '';
@@ -1228,7 +1310,9 @@ export class SkillEditor {
         this.updateSelectedPartsBtnText?.();
 
         this.elPropDesc.value = skill.description || '';
-        if (this.elPropEffects) this.elPropEffects.value = JSON.stringify(skill.effects || [], null, 2);
+        this.migrateSkillToV4Actions(skill);
+        this.ensureActionsHaveDefaults(skill);
+        if (this.elPropActions) this.elPropActions.value = JSON.stringify(skill.actions || [], null, 2);
         this.elPrereqText.textContent = (skill.prerequisites || []).join(', ') || '—';
         this.elMetaX.value = skill.editorMeta?.x ?? '';
         this.elMetaY.value = skill.editorMeta?.y ?? '';
@@ -1242,7 +1326,7 @@ export class SkillEditor {
         this.renderTagsEditor();
 
         this.renderBuffRefTables();
-        this.renderEffectsList();
+        this.renderActionsList();
         this.updateSummary();
     }
 
@@ -1358,80 +1442,110 @@ export class SkillEditor {
         this.updateSummary();
     }
 
-    openEffectsJsonSync() {
-        if (this.elEffectsJsonWrap) this.elEffectsJsonWrap.style.display = 'block';
+    openActionsJsonSync() {
+        if (this.elActionsJsonWrap) this.elActionsJsonWrap.style.display = 'block';
     }
 
-    closeEffectsJsonSync() {
-        if (this.elEffectsJsonWrap) this.elEffectsJsonWrap.style.display = 'none';
+    closeActionsJsonSync() {
+        if (this.elActionsJsonWrap) this.elActionsJsonWrap.style.display = 'none';
     }
 
-    validateEffectsFromForm() {
-        this.setError(this.elErrEffects, null);
+    validateActionsFromForm() {
+        this.setError(this.elErrActions, null);
         let parsed;
         try {
-            parsed = JSON.parse(this.elPropEffects?.value || '[]');
-            if (!Array.isArray(parsed)) throw new Error('effects 必须是数组');
+            parsed = JSON.parse(this.elPropActions?.value || '[]');
+            if (!Array.isArray(parsed)) throw new Error('actions 必须是数组');
         } catch (e) {
-            this.setError(this.elErrEffects, e.message || String(e));
+            this.setError(this.elErrActions, e.message || String(e));
             return false;
         }
-        // minimal
         const errs = [];
-        parsed.forEach((eff, i) => {
-            if (!eff || typeof eff !== 'object' || Array.isArray(eff)) errs.push(`effects[${i}] 必须是对象`);
-            else if (!eff.effectType) errs.push(`effects[${i}] 缺少 effectType`);
+        parsed.forEach((a, i) => {
+            if (!a || typeof a !== 'object' || Array.isArray(a)) {
+                errs.push(`actions[${i}] 必须是对象`);
+                return;
+            }
+            if (!a.effect || typeof a.effect !== 'object' || Array.isArray(a.effect)) {
+                errs.push(`actions[${i}].effect 必须是对象`);
+                return;
+            }
+            if (!a.effect.effectType) errs.push(`actions[${i}].effect 缺少 effectType`);
         });
         if (errs.length) {
-            this.setError(this.elErrEffects, errs.join('\n'));
+            this.setError(this.elErrActions, errs.join('\n'));
             return false;
         }
         return true;
     }
 
-    applyEffectsJsonToForm() {
-        // For current MVP, JSON textarea is the form.
-        this.validateEffectsFromForm();
-    }
-
-    saveEffectsFromForm() {
+    applyActionsJsonToForm() {
         if (!this.selectedNodeId) return;
         const skill = this.getSkillById(this.selectedNodeId);
         if (!skill) return;
-        if (!this.validateEffectsFromForm()) return;
+
+        this.setError(this.elErrActions, null);
+        let parsed;
         try {
-            const effects = JSON.parse(this.elPropEffects?.value || '[]');
-            skill.effects = effects;
+            parsed = JSON.parse(this.elPropActions?.value || '[]');
+            if (!Array.isArray(parsed)) throw new Error('actions 必须是数组');
         } catch (e) {
-            this.setError(this.elErrEffects, e.message || String(e));
+            this.setError(this.elErrActions, e.message || String(e));
             return;
         }
-        this.closeEffectsJsonSync();
-        this.renderEffectsList();
+
+        skill.actions = parsed;
+        this.ensureActionsHaveDefaults(skill);
+        if (this.elPropActions) this.elPropActions.value = JSON.stringify(skill.actions, null, 2);
+        this.renderActionsList();
         this.updateSummary();
     }
 
-    addEffectRow() {
+    saveActionsFromForm() {
         if (!this.selectedNodeId) return;
         const skill = this.getSkillById(this.selectedNodeId);
         if (!skill) return;
-        if (!Array.isArray(skill.effects)) skill.effects = [];
-        skill.effects.push({ effectType: (this.enums.effectTypes && this.enums.effectTypes[0]) || 'DMG_HP', amountType: 'ABS', amount: 0 });
-        if (this.elPropEffects) this.elPropEffects.value = JSON.stringify(skill.effects, null, 2);
+        if (!this.validateActionsFromForm()) return;
+        try {
+            const actions = JSON.parse(this.elPropActions?.value || '[]');
+            skill.actions = actions;
+            this.ensureActionsHaveDefaults(skill);
+        } catch (e) {
+            this.setError(this.elErrActions, e.message || String(e));
+            return;
+        }
+        this.closeActionsJsonSync();
+        this.renderActionsList();
+        this.updateSummary();
+    }
 
-        this.renderEffectsList();
+    addActionRow() {
+        if (!this.selectedNodeId) return;
+        const skill = this.getSkillById(this.selectedNodeId);
+        if (!skill) return;
+        this.migrateSkillToV4Actions(skill);
+        this.ensureActionsHaveDefaults(skill);
+        const idx = (skill.actions?.length || 0) + 1;
+        skill.actions.push({
+            id: `action_${idx}`,
+            name: `Action ${idx}`,
+            target: { binding: { mode: 'follow', ref: 'skillTarget' } },
+            effect: { effectType: (this.enums.effectTypes && this.enums.effectTypes[0]) || 'DMG_HP', amountType: 'ABS', amount: 0 }
+        });
+        if (this.elPropActions) this.elPropActions.value = JSON.stringify(skill.actions, null, 2);
+        this.renderActionsList();
         this.updateSummary?.();
     }
 
-    renderEffectsList() {
-        if (!this.elEffectsList) return;
+    renderActionsList() {
+        if (!this.elActionsList) return;
         const skill = this.selectedNodeId ? this.getSkillById(this.selectedNodeId) : null;
-        if (!skill || !Array.isArray(skill.effects)) {
-            this.elEffectsList.innerHTML = '<span style="color:#888;">(no effects)</span>';
+        if (!skill || !Array.isArray(skill.actions)) {
+            this.elActionsList.innerHTML = '<span style="color:#888;">(no actions)</span>';
             return;
         }
-        if (skill.effects.length === 0) {
-            this.elEffectsList.innerHTML = '<span style="color:#888;">(no effects)</span>';
+        if (skill.actions.length === 0) {
+            this.elActionsList.innerHTML = '<span style="color:#888;">(no actions)</span>';
             return;
         }
 
@@ -1448,37 +1562,109 @@ export class SkillEditor {
             .replaceAll('"', '&quot;')
             .replaceAll("'", '&#39;');
 
-        this.elEffectsList.innerHTML = skill.effects.map((eff, idx) => {
-            const effectType = eff?.effectType || '';
-            const amountType = eff?.amountType || '';
-            const amount = (typeof eff?.amount === 'number' || typeof eff?.amount === 'string') ? eff.amount : '';
-            const note = eff?.note || '';
+        this.elActionsList.innerHTML = skill.actions.map((action, idx) => {
+            const actionId = action?.id || '';
+            const actionName = action?.name || '';
+            const bindMode = action?.target?.binding?.mode || 'follow';
+            const bindRef = action?.target?.binding?.ref || 'skillTarget';
+
+            const specSubject = action?.target?.spec?.subject || (this.enums?.targetSubjects?.[0] || 'SUBJECT_SELF');
+            const specScope = action?.target?.spec?.scope || (this.enums?.targetScopes?.[0] || 'SCOPE_ENTITY');
+            const specSelMode = action?.target?.spec?.selection?.mode || (this.enums?.selectionModes?.[0] || 'single');
+            const specSelCount = (typeof action?.target?.spec?.selection?.selectCount === 'number') ? action.target.spec.selection.selectCount : 1;
+
+            const specCandidate = Array.isArray(action?.target?.spec?.selection?.candidateParts) ? action.target.spec.selection.candidateParts : (this.defaultParts || []);
+            const specSelected = Array.isArray(action?.target?.spec?.selection?.selectedParts) ? action.target.spec.selection.selectedParts : [];
+            const specCandidateStr = specCandidate.join(',');
+            const specSelectedStr = specSelected.join(',');
+
+            const effectType = action?.effect?.effectType || '';
+            const amountType = action?.effect?.amountType || '';
+            const amount = (typeof action?.effect?.amount === 'number' || typeof action?.effect?.amount === 'string') ? action.effect.amount : '';
+            const note = action?.effect?.note || '';
+
             return `
                 <div class="effect-row" data-index="${idx}">
                     <div class="effect-row-head">
-                        <div class="small" style="font-weight:800;">#${idx}</div>
+                        <div class="small" style="font-weight:800;">#${idx + 1}</div>
                         <button class="btn btn-sm btn-danger" type="button" data-action="del">Del</button>
                     </div>
                     <div class="effect-grid">
+                        <div class="small">action.id</div>
+                        <input class="input" data-field="id" type="text" value="${escapeHtml(actionId)}" />
+
+                        <div class="small">action.name</div>
+                        <input class="input" data-field="name" type="text" value="${escapeHtml(actionName)}" placeholder="(optional)" />
+
+                        <div class="small">target.binding.mode</div>
+                        <select class="select" data-field="target.binding.mode">${opt(this.enums?.actionTargetBindingModes, bindMode)}</select>
+
+                        <div class="small">target.binding.ref</div>
+                        <select class="select" data-field="target.binding.ref">${opt(this.enums?.actionTargetBindingRefs, bindRef)}</select>
+
+                        <div class="small">target.spec.subject</div>
+                        <select class="select" data-field="target.spec.subject">${opt(this.enums?.targetSubjects, specSubject)}</select>
+
+                        <div class="small">target.spec.scope</div>
+                        <select class="select" data-field="target.spec.scope">${opt(this.enums?.targetScopes, specScope)}</select>
+
+                        <div class="small">target.spec.selection.mode</div>
+                        <select class="select" data-field="target.spec.selection.mode">${opt(this.enums?.selectionModes, specSelMode)}</select>
+
+                        <div class="small">target.spec.selection.selectCount</div>
+                        <input class="input" data-field="target.spec.selection.selectCount" type="number" min="1" value="${escapeHtml(specSelCount)}" />
+
+                        <div class="small">target.spec.selection.candidateParts</div>
+                        <input class="input" data-field="target.spec.selection.candidateParts" type="text" value="${escapeHtml(specCandidateStr)}" placeholder="comma-separated" />
+
+                        <div class="small">target.spec.selection.selectedParts</div>
+                        <input class="input" data-field="target.spec.selection.selectedParts" type="text" value="${escapeHtml(specSelectedStr)}" placeholder="comma-separated" />
+
                         <div class="small">effectType</div>
-                        <select class="select" data-field="effectType">${opt(this.enums?.effectTypes, effectType, '(select)')}</select>
+                        <select class="select" data-field="effect.effectType">${opt(this.enums?.effectTypes, effectType, '(select)')}</select>
 
                         <div class="small">amountType</div>
-                        <select class="select" data-field="amountType">${opt(this.enums?.amountTypes, amountType, '(select)')}</select>
+                        <select class="select" data-field="effect.amountType">${opt(this.enums?.amountTypes, amountType, '(select)')}</select>
 
                         <div class="small">amount</div>
-                        <input class="input" data-field="amount" type="number" value="${escapeHtml(amount)}" />
+                        <input class="input" data-field="effect.amount" type="number" value="${escapeHtml(amount)}" />
 
                         <div class="small">note</div>
-                        <input class="input" data-field="note" type="text" value="${escapeHtml(note)}" placeholder="(optional)" />
+                        <input class="input" data-field="effect.note" type="text" value="${escapeHtml(note)}" placeholder="(optional)" />
                     </div>
                 </div>
             `;
         }).join('');
 
-        if (!this._effectsDelegated) {
-            this._effectsDelegated = true;
-            const container = this.elEffectsList;
+        // show/hide follow vs explicit fields (grid2 layout: [label, control] pairs)
+        const hidePairByField = (rowEl, field, hide) => {
+            const control = rowEl.querySelector(`[data-field="${field}"]`);
+            if (!control) return;
+            const label = control.previousElementSibling;
+            if (label && label.classList?.contains('small')) label.style.display = hide ? 'none' : '';
+            control.style.display = hide ? 'none' : '';
+        };
+        Array.from(this.elActionsList.querySelectorAll('.effect-row')).forEach((rowEl) => {
+            const index = Number(rowEl.dataset.index);
+            const a = skill.actions[index];
+            const mode = a?.target?.binding?.mode || 'follow';
+
+            hidePairByField(rowEl, 'target.binding.ref', mode !== 'follow');
+
+            const specFields = [
+                'target.spec.subject',
+                'target.spec.scope',
+                'target.spec.selection.mode',
+                'target.spec.selection.selectCount',
+                'target.spec.selection.candidateParts',
+                'target.spec.selection.selectedParts',
+            ];
+            specFields.forEach(f => hidePairByField(rowEl, f, mode !== 'explicit'));
+        });
+
+        if (!this._actionsDelegated) {
+            this._actionsDelegated = true;
+            const container = this.elActionsList;
             container.addEventListener('change', (e) => {
                 const row = e.target.closest('.effect-row');
                 if (!row) return;
@@ -1486,13 +1672,37 @@ export class SkillEditor {
                 const field = e.target.dataset.field;
                 if (!field) return;
                 const sk = this.getSkillById(this.selectedNodeId);
-                if (!sk || !Array.isArray(sk.effects) || !sk.effects[index]) return;
+                if (!sk || !Array.isArray(sk.actions) || !sk.actions[index]) return;
 
                 let v = e.target.value;
-                if (field === 'amount') v = v === '' ? undefined : Number(v);
-                sk.effects[index][field] = v;
+                if (field === 'effect.amount') v = v === '' ? undefined : Number(v);
+                if (field === 'target.spec.selection.selectCount') v = v === '' ? undefined : Number(v);
+                if (field === 'target.spec.selection.candidateParts' || field === 'target.spec.selection.selectedParts') {
+                    v = String(v || '')
+                        .split(',')
+                        .map(s => s.trim())
+                        .filter(Boolean);
+                }
+                // path set
+                const path = field.split('.');
+                let cur = sk.actions[index];
+                for (let i = 0; i < path.length - 1; i++) {
+                    const k = path[i];
+                    if (!cur[k] || typeof cur[k] !== 'object') cur[k] = {};
+                    cur = cur[k];
+                }
+                cur[path[path.length - 1]] = v;
 
-                if (this.elPropEffects) this.elPropEffects.value = JSON.stringify(sk.effects, null, 2);
+                // normalize binding when switching mode
+                if (field === 'target.binding.mode') {
+                    this.ensureActionsHaveDefaults(sk);
+                    this.renderActionsList();
+                } else if (field.startsWith('target.spec.')) {
+                    // ensure explicit spec shape exists
+                    this.ensureActionsHaveDefaults(sk);
+                }
+
+                if (this.elPropActions) this.elPropActions.value = JSON.stringify(sk.actions, null, 2);
                 this.updateSummary();
             });
 
@@ -1503,10 +1713,10 @@ export class SkillEditor {
                 if (!row) return;
                 const index = Number(row.dataset.index);
                 const sk = this.getSkillById(this.selectedNodeId);
-                if (!sk || !Array.isArray(sk.effects)) return;
-                sk.effects.splice(index, 1);
-                if (this.elPropEffects) this.elPropEffects.value = JSON.stringify(sk.effects, null, 2);
-                this.renderEffectsList();
+                if (!sk || !Array.isArray(sk.actions)) return;
+                sk.actions.splice(index, 1);
+                if (this.elPropActions) this.elPropActions.value = JSON.stringify(sk.actions, null, 2);
+                this.renderActionsList();
                 this.updateSummary();
             });
         }

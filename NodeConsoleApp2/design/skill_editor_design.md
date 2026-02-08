@@ -1,10 +1,10 @@
 # ¼¼ÄÜ±à¼­Æ÷Éè¼Æ·½°¸ (Skill Editor Design)
 
-> ±¾ÎÄµµÎª **v3 Êı¾İ¶ÔÆë°æ**£ºÓÃÓÚÈ·±£¼¼ÄÜ±à¼­Æ÷ÄÜ¹»ÕıÈ·¼ÓÔØ¡¢±à¼­¡¢Ğ£Ñé²¢µ¼³ö `assets/data/skills_melee_v3.json`¡£
+> ±¾ÎÄµµÎª **v4 Êı¾İ¶ÔÆë°æ**£ºÓÃÓÚÈ·±£¼¼ÄÜ±à¼­Æ÷ÄÜ¹»ÕıÈ·¼ÓÔØ¡¢±à¼­¡¢Ğ£Ñé²¢µ¼³ö `assets/data/skills_melee_v4.json`¡£
 >
 > ¶ÔÆëÀ´Ô´£º
 > - `design/skill_design.md`£¨¼¼ÄÜÏµÍ³¹æ·¶Óë×Ö¶ÎÓïÒå£©
-> - `assets/data/skills_melee_v3.json`£¨Êµ¼ÊÑùÀıÓë `meta.enums` Ã¶¾ÙÔ´£©
+> - `assets/data/skills_melee_v4.json`£¨Êµ¼ÊÑùÀıÓë `meta.enums` Ã¶¾ÙÔ´£©
 
 ---
 
@@ -12,7 +12,7 @@
 
 ¼¼ÄÜ±à¼­Æ÷£¨Skill Editor£©ÊÇÒ»¸ö»ùÓÚÍøÒ³£¨HTML/CSS/JS£©µÄ¹¤¾ß£¬Ä¿±êÊÇ£º
 
-1. **¼ÓÔØ/±£´æ¼¼ÄÜÊı¾İ**£ºÒÔ `skills_melee_v3.json` Îª±ê×¼ÊäÈëÊä³ö¡£
+1. **¼ÓÔØ/±£´æ¼¼ÄÜÊı¾İ**£ºÒÔ `skills_melee_v4.json` Îª±ê×¼ÊäÈëÊä³ö¡£
 2. **¿ÉÊÓ»¯±à¼­¼¼ÄÜÊ÷**£ºÔÚ¶şÎ¬Íø¸ñ»­²¼ÉÏÍÏ×§¼¼ÄÜ½Úµã£»ÓÃÁ¬Ïß±í´ïÇ°ÖÃÒÀÀµ¡£
 3. **½á¹¹»¯±à¼­¼¼ÄÜÊôĞÔ**£ºÄ¿±êÑ¡Ôñ¡¢ÏûºÄ¡¢ĞèÇó¡¢Ğ§¹û¡¢Buff ÒıÓÃ¡¢½âËøÌåÏµ¡¢±êÇ©µÈ¡£
 4. **ÑÏ¸ñĞ£Ñé**£ºµ¼³öÇ°½øĞĞ schema/ÒıÓÃ¹ØÏµ/Ñ­»·ÒÀÀµ µÈ¼ì²é£¬½µµÍÊı¾İĞ´´íµÄ¸ÅÂÊ¡£
@@ -21,15 +21,15 @@
 
 ## 2. ÊäÈëÊä³öÎÄ¼şÓëÊı¾İÔ´
 
-### 2.1 ¼¼ÄÜÊı¾İÎÄ¼ş£¨v3£©
+### 2.1 ¼¼ÄÜÊı¾İÎÄ¼ş£¨v4£©
 
-±ê×¼¼¼ÄÜÎÄ¼ş£º`assets/data/skills_melee_v3.json`
+±ê×¼¼¼ÄÜÎÄ¼ş£º`assets/data/skills_melee_v4.json`
 
 ¶¥²ã½á¹¹Ô¼Êø£¨±ØĞë±£³Ö£©£º
 
 - `$schemaVersion: string`
 - `meta: { defaultParts, enums, ... }`
-- `skills: SkillV3[]`
+- `skills: SkillV4[]`
 
 ±à¼­Æ÷µ¼³öÊ±±ØĞëµ¼³ö **ÍêÕû¶ÔÏó**£¬¶ø²»ÊÇÖ»µ¼³ö `skills[]`¡£
 
@@ -41,14 +41,14 @@
 
 ---
 
-### 2.3 `skills_melee_v3.json` °æ±¾¸Ä¶¯·ÖÎö£¨v3 pack vs ¾É `skills.json`£©
+### 2.3 `skills_melee_v4.json` °æ±¾¸Ä¶¯·ÖÎö£¨v4 pack vs ¾É `skills.json`£©
 
-Äãµ±Ç°µÄ `skills_melee_v3.json` Ïà±È¾É°æ `skills.json`£¨³£¼ûÎª key->skillObject µÄ map ½á¹¹£©ÊôÓÚ¡°**Êı¾İ½á¹¹Éı¼¶**¡±¡£±à¼­Æ÷ÊÊÅä²»ÄÜÖ»×ö×Ö¶Î¡°¼æÈİÓ³Éä¡±£¬¶øĞèÒª½« v3 pack ÊÓÎª**µÚÒ»ÀàÊäÈëÊä³ö**¡£
+Äãµ±Ç°µÄ `skills_melee_v4.json` Ïà±È¾É°æ `skills.json`£¨³£¼ûÎª key->skillObject µÄ map ½á¹¹£©ÊôÓÚ¡°**Êı¾İ½á¹¹Éı¼¶**¡±¡£±à¼­Æ÷ÊÊÅä²»ÄÜÖ»×ö×Ö¶Î¡°¼æÈİÓ³Éä¡±£¬¶øĞèÒª½« v4 pack ÊÓÎª**µÚÒ»ÀàÊäÈëÊä³ö**¡£
 
 #### 2.3.1 ¶¥²ã½á¹¹µÄ±ä»¯£¨Map -> Pack£©
 
 - ¾É£º`skills.json` Í¨³£ÊÇ¶ÔÏó map£º`{ "skill_id": { ... }, ... }`
-- ĞÂ£º`skills_melee_v3.json` ÊÇ Pack£º`{ $schemaVersion, meta, skills: [] }`
+- ĞÂ£º`skills_melee_v4.json` ÊÇ Pack£º`{ $schemaVersion, meta, skills: [] }`
 
 Pack µÄÒâÒå£º
 
@@ -57,7 +57,7 @@ Pack µÄÒâÒå£º
 
 #### 2.3.2 `meta` ĞÂÔöÖ°Ôğ£ºÃ¶¾ÙÓë×Ö¶ÎËµÃ÷£¨Meta-driven UI£©
 
-v3 ½«´óÁ¿¡°Ó²±àÂë³£Á¿¡±Ç°ÖÃµ½ `meta`£º
+v4 ½«´óÁ¿¡°Ó²±àÂë³£Á¿¡±Ç°ÖÃµ½ `meta`£º
 
 - `meta.defaultParts`£ºÄ¬ÈÏ²¿Î»ÁĞ±í£¨UI µÄ²¿Î»¶àÑ¡/ÏÂÀ­/Ô¼Êø¶¼Ó¦ÒÔ´ËÎª×¼£©
 - `meta.enums.*`£ºËùÓĞ¹Ø¼üÃ¶¾Ù£¨ÀıÈç `rarities/targetSubjects/targetScopes/selectionModes/effectTypes/amountTypes/...`£©
@@ -80,11 +80,17 @@ v3 ½«´óÁ¿¡°Ó²±àÂë³£Á¿¡±Ç°ÖÃµ½ `meta`£º
   - `target.scope`£¨×÷ÓÃ·¶Î§Î¬¶È£©
   - `target.selection`£¨Ñ¡ÔñÄ£Ê½ÓëºòÑ¡/ÒÑÑ¡/ÊıÁ¿Ô¼Êø£©
 
-ÕâÒâÎ¶×ÅºÜ¶à v3 Ä¿±êÓïÒåÎŞ·¨ÓÃ¾ÉÈı×Ö¶Î¡°ÎŞËğ±íÊ¾¡±£¬Òò´Ë±à¼­Æ÷ UI Ó¦¾¡¿ìÇĞ»»µ½ v3 Èı²ãÄ£ĞÍ¡£
+ÕâÒâÎ¶×ÅºÜ¶à¾ÉÄ¿±êÓïÒåÎŞ·¨ÓÃ¾ÉÈı×Ö¶Î¡°ÎŞËğ±íÊ¾¡±£¬Òò´Ë±à¼­Æ÷ UI Ó¦¾¡¿ìÇĞ»»µ½ `target.subject/scope/selection` Èı²ãÄ£ĞÍ¡£
 
-3) Ğ§¹û±í´ï£º`type/value/valueType` -> `effects[]`
+3) Ğ§¹û±í´ï£º`type/value/valueType` -> `actions[]`
 
-v3 µÄºËĞÄÊÇ `effects[]`£ºÃ¿¸ö effect Ê¹ÓÃ `effectType/amountType` ÃèÊö What/How£¬²¢¿ÉÄÜ³öÏÖ `scaling/repeat/partOverride/subjectOverride/note` µÈÀ©Õ¹×Ö¶Î¡£±à¼­Æ÷²»ÄÜÔÙÒÔ¡°`effects[i].type` ±ØĞë´æÔÚ¡±×÷ÎªÎ¨Ò»Ğ£Ñé¡£
+v4 µÄºËĞÄÊÇ `actions[]`£º
+
+- `skill.actions: Action[]`
+- Ã¿¸ö `action` ÓµÓĞ¶ÀÁ¢ `target`£¨Í¨³£ follow ¼¼ÄÜµÄ `skill.target`£©
+- Ã¿¸ö `action` **Ö»ÓĞÒ»¸ö** `effect`£¨¶àĞ§¹ûÍ¨¹ı¶à¸ö action ±í´ï£©
+
+±à¼­Æ÷²»ÄÜÔÙÒÔ¡°¶¥²ã `effects[]`¡±×÷ÎªºËĞÄ×Ö¶Î£¨µ«¿ÉÒÔÔÚµ¼Èë¾ÉÊı¾İÊ±Ç¨ÒÆ£©¡£
 
 4) ½âËøÌåÏµ£º`unlock` Óë `prerequisites` ·Ö¹¤Ã÷È·
 
@@ -99,24 +105,24 @@ v3 µÄºËĞÄÊÇ `effects[]`£ºÃ¿¸ö effect Ê¹ÓÃ `effectType/amountType` ÃèÊö What/How£
 
 ±ØĞë×ö£¨·ñÔò¡°¼ÓÔØ/±£´æ¡±²»¿ÉĞÅ£©£º
 
-1. µ¼Èë/µ¼³öÒÔ v3 pack ÎªÖ÷£º±£³Ö `$schemaVersion/meta/skills`¡£
+1. µ¼Èë/µ¼³öÒÔ v4 pack ÎªÖ÷£º±£³Ö `$schemaVersion/meta/skills`¡£
 2. UI Ã¶¾Ù¡¢²¿Î»ÁĞ±íÓÉ `meta` Çı¶¯£¨²»ÔÙÓ²±àÂë£©¡£
-3. ÄÚ²¿Êı¾İÄ£ĞÍÒÔ v3 ×Ö¶ÎÎªÖ÷£º`target/costs/effects`¡£
-4. ±£´æÊ±²»µÃ¶ªÆú v3 À©Õ¹×Ö¶Î£¨ÀıÈç `costs.partSlot/perTurnLimit`¡¢`effects.partOverride/repeat`£©¡£
+3. ÄÚ²¿Êı¾İÄ£ĞÍÒÔ v4 ×Ö¶ÎÎªÖ÷£º`target/costs/actions`¡£
+4. ±£´æÊ±²»µÃ¶ªÆú effect À©Õ¹×Ö¶Î£¨ÀıÈç `repeat/partOverride/subjectOverride/scaling/...`£©¡£
 
 ¿Éºó×ö£¨MVP ½×¶ÎÔÊĞíÏÈ¼ò»¯£©£º
 
-- `effects[]` ±íµ¥»¯±à¼­£¨°´ `effectType/amountType` ¶¯Ì¬Õ¹Ê¾×Ö¶Î£©£»¿ÉÏÈÓÃ JSON textarea + Validate/Save °´Å¥¡£
+- `actions[]` ¸üÍêÕûµÄ±íµ¥»¯±à¼­£¨°üÀ¨ action-level target£©£»Ä¿Ç° MVP ÔÊĞíÏÈ²»×ö¡£
 - `unlock.requirements` ½á¹¹»¯±íµ¥£»¿ÉÏÈÓÃ JSON ±à¼­¿ò¡£
 - `tags` µÄ¸¨ÖúÉú³ÉÓë×Ô¶¯Ğ£Ñé£»¿ÉÏÈ×ö¡°±£Áô + Ã¶¾ÙĞ£Ñé¡±¡£
 
-## 3. v3 Schema ×Ö¶ÎÓ³Éä£¨±à¼­Æ÷ UI ±ØĞë×ñÑ­£©
+## 3. v4 Schema ×Ö¶ÎÓ³Éä£¨±à¼­Æ÷ UI ±ØĞë×ñÑ­£©
 
 ±¾ÕÂÊÇ¡°±à¼­Æ÷ UI <-> Êı¾İÎÄ¼ş¡±µÄ**Î¨Ò»±ê×¼**¡£¹¤¾ßÄÚ²»Ó¦¼ÌĞøÒÔ¾É×Ö¶Î£¨Èç `targetType/requiredPart/targetParts/cost`£©×÷ÎªºËĞÄ¡£
 
 ### 3.1 `meta`£ºÃ¶¾ÙÓëÄ¬ÈÏÖµÀ´Ô´
 
-±à¼­Æ÷Ò³ÃæÖĞµÄÏÂÀ­¿ò¡¢Ä¬ÈÏÁĞ±í£¬Ó¦¾¡Á¿À´×Ô `skills_melee_v3.json` ×Ô´øµÄÃ¶¾ÙÓëÄ¬ÈÏÖµ£º
+±à¼­Æ÷Ò³ÃæÖĞµÄÏÂÀ­¿ò¡¢Ä¬ÈÏÁĞ±í£¬Ó¦¾¡Á¿À´×Ô `skills_melee_v4.json` ×Ô´øµÄÃ¶¾ÙÓëÄ¬ÈÏÖµ£º
 
 - `meta.defaultParts`: Ä¬ÈÏ²¿Î»ÁĞ±í
 - `meta.enums.*`: È«²¿Ã¶¾Ù
@@ -183,7 +189,7 @@ v3 µÄºËĞÄÊÇ `effects[]`£ºÃ¿¸ö effect Ê¹ÓÃ `effectType/amountType` ÃèÊö What/How£
 
 ### 3.5 Ä¿±êÑ¡Ôñ£º`target` + `selection`
 
-v3 ÖĞÄ¿±êÑ¡ÔñÍ³Ò»Îª£º
+v4 ÖĞ¼¼ÄÜ¼¶Ä¿±êÑ¡ÔñÈÔÍ³Ò»Îª£º
 
 - `target.subject`£º`meta.enums.targetSubjects`£¨Èç `SUBJECT_SELF/SUBJECT_ENEMY/SUBJECT_BOTH`£©
 - `target.scope`£º`meta.enums.targetScopes`£¨Èç `SCOPE_ENTITY/SCOPE_PART/SCOPE_MULTI_PARTS`£©
@@ -208,7 +214,7 @@ v3 ÖĞÄ¿±êÑ¡ÔñÍ³Ò»Îª£º
 
 #### 3.6.2 `requirements`
 
-µ±Ç° v3 ÑùÀı¶¨ÒåÁË£º
+µ±Ç°ÑùÀı¶¨ÒåÁË£º
 
 - `requirements.selfPart?: { mode: string, parts: string[], mustBeUsable?: boolean }`
 
@@ -220,23 +226,30 @@ v3 ÖĞÄ¿±êÑ¡ÔñÍ³Ò»Îª£º
 
 ---
 
-## 4. Effects Óë BuffRefs µÄ±à¼­²ßÂÔ
+## 4. Actions Óë BuffRefs µÄ±à¼­²ßÂÔ
 
-### 4.1 `effects[]`£¨½¨Òé×Ö¶Î»¯±íµ¥£©
+### 4.1 `actions[]`£¨½¨Òé¡°±íµ¥ + JSON¡±Ë«Í¨µÀ£©
 
-v3 effect µÄ¹Ø¼ü×Ö¶Î£º
+v4 action µÄ¹Ø¼ü×Ö¶Î£º
 
-- `effectType`£ºÃ¶¾Ù `meta.enums.effectTypes`
-- `amountType`£ºÃ¶¾Ù `meta.enums.amountTypes`
-- `amount?: number`
-- `scaling?: { stat: string, multiplier: number }`£¨µ± `amountType=SCALING`£©
-- `subjectOverride?: string`£¨¿ÉÑ¡£¬ÓÃÓÚ×ÔÉË/·´ÊÉµÈ£©
-- `note?: string`£¨¿ÉÑ¡£¬±à¼­Æ÷±¸×¢£©
+- `actions[i].id: string`
+- `actions[i].name?: string`
+- `actions[i].target`: action ¼¶Ä¿±ê£¨³£¼ûÎª follow ¼¼ÄÜ `target`£©
+  - ÍÆ¼öÄ¬ÈÏ£º`{ binding: { mode: 'follow', ref: 'skillTarget' } }`
+- `actions[i].effect: Effect`
+  - `effectType`£ºÃ¶¾Ù `meta.enums.effectTypes`
+  - `amountType`£ºÃ¶¾Ù `meta.enums.amountTypes`
+  - `amount?: number`
+  - ÒÔ¼° v3 Ê±´ú effect µÄÀ©Õ¹×Ö¶Î£¨Èç `scaling/repeat/partOverride/subjectOverride/note` µÈ£©Ó¦ **Ô­Ñù±£Áô**
 
 ÊµÏÖ²ßÂÔ½¨Òé£º
 
-- MVP£ºÔÊĞí JSON textarea£¬µ«±ØĞëÓĞ `Validate/Save Effects` °´Å¥£¨Ğ£ÑéÍ¨¹ı²ÅĞ´»Ø `effects`£©
-- ½ø½×£º×ö schema ±íµ¥»¯±à¼­£¨¸ù¾İ effectType/amountType ¿ØÖÆ×Ö¶ÎÏÔÊ¾£©
+- MVP£º
+  - ÁĞ±íÇøÌá¹© effect µÄ³£ÓÃ×Ö¶Î¿ìËÙ±à¼­£¨`effectType/amountType/amount/note`£©
+  - JSON textarea ÔÊĞí±à¼­Õû¶Î `actions[]`£¬µ«±ØĞëÏÔÊ½ Apply/Save£¨±ÜÃâ°ë³ÉÆ·½á¹¹ÆÆ»µÊı¾İ£©
+- µ¼Èë¼æÈİ£º
+  - Èôµ¼Èë v3 ¶¥²ã `effects[]`£¬Ç¨ÒÆÎª `actions[]`£¨Ã¿¸ö effect -> Ò»¸ö action£©£¬²¢Ä¬ÈÏ follow `skillTarget`
+  - Èôµ¼Èë³öÏÖ `actions[].effects[]`£¨ÀúÊ·ÖĞ¼ä½á¹¹£©£¬²ğ·ÖÎª¶à¸ö action£¬²¢Âäµ½ v4 µ¥ `effect`
 
 ### 4.2 `buffRefs`£¨ĞèÒªÁª¶¯ buffs.json£©
 
@@ -276,14 +289,14 @@ v3 effect µÄ¹Ø¼ü×Ö¶Î£º
 ### 6.1 ±£´æ²ßÂÔ£¨½¨Òé£©
 
 - ´ó¶àÊı×Ö¶Î£ºÊµÊ±±£´æ£¨`blur/change/Enter`£©
-  - `name/rarity/description/speed/target/costs/requirements/prerequisites/editorMeta/unlock/buffRefs`
-- `effects`£ºÏÔÊ½±£´æ£¨`Validate/Save Effects`£©
+  - `name/rarity/description/speed/target/costs/requirements/prerequisites/editorMeta/unlock/buffRefs/tags/tagMeta`
+- `actions`£ºÏÔÊ½±£´æ£¨`Validate / Apply JSON / Save Actions`£©
 
 ### 6.2 µ¼³öÇ°±Ø×öĞ£ÑéÇåµ¥
 
 1. ¼¼ÄÜ `id` Î¨Ò»¡¢·Ç¿Õ¡£
 2. Ã¶¾ÙÖµĞ£Ñé£º
-   - `rarity/target.subject/target.scope/selection.mode/effectType/amountType` ±ØĞë³öÏÖÔÚ `meta.enums`¡£
+   - `rarity/target.subject/target.scope/selection.mode/actions[i].effect.effectType/actions[i].effect.amountType` ±ØĞë³öÏÖÔÚ `meta.enums`¡£
 3. `target.selection`£º
    - `single/random_single` => `selectCount=1`
    - `selectedParts` ÊÇ `candidateParts` ×Ó¼¯
@@ -339,7 +352,7 @@ v3 effect µÄ¹Ø¼ü×Ö¶Î£º
 | »¥³â¼¼ÄÜ | `unlock.exclusives` | `string[]` | ·ñ | `[]` | ÒıÓÃ skillId ±ØĞë´æÔÚ£»½¨Òé²»Óë×ÔÉíÖØ¸´ |
 | ÊÚÓè·½Ê½ | `unlock.grants.type` | `string` | ·ñ | `"permanent"` | ÈçÒªÃ¶¾Ù»¯£¬¿ÉÓÉ `meta.enums` Î´À´²¹³ä |
 
-> ±¸×¢£º`unlock` ÔÚ v3 ÎÄ¼şÖĞÎª¿ÉÑ¡×Ö¶Î£»µ«´ÓÉè¼Æ½Ç¶È½¨Òé±à¼­Æ÷¶ÔĞÂ¼¼ÄÜÄ¬ÈÏÉú³É `unlock` ½á¹¹£¬ÒÔ±ã¼¼ÄÜÊ÷¹¤¾ßÁ´Í³Ò»´¦Àí¡£
+> ±¸×¢£º`unlock` ÔÚ v4 ÎÄ¼şÖĞÎª¿ÉÑ¡×Ö¶Î£»µ«´ÓÉè¼Æ½Ç¶È½¨Òé±à¼­Æ÷¶ÔĞÂ¼¼ÄÜÄ¬ÈÏÉú³É `unlock` ½á¹¹£¬ÒÔ±ã¼¼ÄÜÊ÷¹¤¾ßÁ´Í³Ò»´¦Àí¡£
 
 ### E. Target & Speed Panel£¨Ä¿±êÑ¡ÔñÓëËÙ¶È£©
 
@@ -370,25 +383,25 @@ v3 effect µÄ¹Ø¼ü×Ö¶Î£º
 | ×ÔÉí²¿Î»ÁĞ±í | `requirements.selfPart.parts` | `string[]` | ·ñ | `[]` | ÔªËØ±ØĞëÊÇºÏ·¨²¿Î» id |
 | ²¿Î»±ØĞë¿ÉÓÃ | `requirements.selfPart.mustBeUsable` | `boolean` | ·ñ | `false` | - |
 
-### H. Effects Panel£¨Ğ§¹û£©
+### H. Actions Panel£¨Ğ§¹û / ĞĞÎª£©
 
-> ÍÆ¼ö£º`effects` Ê¹ÓÃ¡°ÏÔÊ½±£´æ¡±°´Å¥£¨`Validate/Save Effects`£©£¬±ÜÃâ±à¼­¹ı³ÌÖĞÉú³É°ë³ÉÆ·½á¹¹¡£
-
-| ×Ö¶ÎÃû | Êı¾İÂ·¾¶ | ÀàĞÍ | ±ØÌî | Ä¬ÈÏÖµÀ´Ô´ | Ğ£Ñé¹æÔò |
-|---|---|---:|:---:|---|---|
-| Ğ§¹ûÁĞ±í | `effects` | `Effect[]` | ÊÇ | `[]`£¨µ«²»½¨ÒéÎª¿Õ£© | Êı×éÖÁÉÙ 1 Ìõ£¨½¨ÒéÔ¼Êø£©£»Ã¿Ìõ effect Ğ£Ñé¼ûÏÂ |
-
-µ¥Ìõ `Effect` ×Ö¶Î£º
+> ÍÆ¼ö£º`actions` Ê¹ÓÃ¡°ÏÔÊ½±£´æ¡±°´Å¥£¨`Save Actions`£©£¬±ÜÃâ±à¼­¹ı³ÌÖĞÉú³É°ë³ÉÆ·½á¹¹¡£
 
 | ×Ö¶ÎÃû | Êı¾İÂ·¾¶ | ÀàĞÍ | ±ØÌî | Ä¬ÈÏÖµÀ´Ô´ | Ğ£Ñé¹æÔò |
 |---|---|---:|:---:|---|---|
-| Ğ§¹ûÀàĞÍ | `effects[i].effectType` | `string` | ÊÇ | `meta.enums.effectTypes[0]` | ±ØĞëÔÚ `meta.enums.effectTypes` ÄÚ |
-| ÊıÖµÀàĞÍ | `effects[i].amountType` | `string` | ·ñ(½¨Òé) | `meta.enums.amountTypes[0]` | Èô´æÔÚ±ØĞëÔÚ `meta.enums.amountTypes` ÄÚ |
-| ÊıÖµ | `effects[i].amount` | `number` | Ìõ¼ş | `0` | `amountType!=SCALING` Ê±½¨Òé±ØÌî£»¿ÉÎª 0£¬µ«ĞèÌáÊ¾ |
-| Scaling.stat | `effects[i].scaling.stat` | `string` | Ìõ¼ş | ÎŞ | ½öµ± `amountType=SCALING` Ê±±ØÌî |
-| Scaling.multiplier | `effects[i].scaling.multiplier` | `number` | Ìõ¼ş | `1` | ½öµ± `amountType=SCALING` Ê±±ØÌî |
-| ×÷ÓÃ¶ÔÏó¸²¸Ç | `effects[i].subjectOverride` | `string` | ·ñ | ÎŞ | Èô´æÔÚ±ØĞëÊÇ `meta.enums.targetSubjects` ÖĞµÄÖµ£¨½¨ÒéÔ¼Êø£© |
-| ±¸×¢ | `effects[i].note` | `string` | ·ñ | ÎŞ | ¿ÉÑ¡£»Èç×·ÇóÑÏ¸ñ schema£¬¿Éµ¼³öÊ±°şÀë |
+| ĞĞÎªÁĞ±í | `actions` | `Action[]` | ÊÇ | `[]`£¨µ«²»½¨ÒéÎª¿Õ£© | Êı×éÖÁÉÙ 1 Ìõ£¨½¨ÒéÔ¼Êø£©£»Ã¿Ìõ action Ğ£Ñé¼ûÏÂ |
+
+µ¥Ìõ `Action` ×Ö¶Î£¨MVP ×îĞ¡¼¯£©£º
+
+| ×Ö¶ÎÃû | Êı¾İÂ·¾¶ | ÀàĞÍ | ±ØÌî | Ä¬ÈÏÖµÀ´Ô´ | Ğ£Ñé¹æÔò |
+|---|---|---:|:---:|---|---|
+| Action ID | `actions[i].id` | `string` | ÊÇ | `action_{i+1}` | ·Ç¿Õ£»½¨ÒéÎ¨Ò» |
+| Ä¿±ê°ó¶¨ | `actions[i].target.binding` | `object` | ·ñ(½¨Òé) | `{mode:'follow', ref:'skillTarget'}` | `mode=follow` Ê± `ref` ±ØÌî |
+| Ğ§¹û¶ÔÏó | `actions[i].effect` | `object` | ÊÇ | `{effectType, amountType, amount}` | ±ØĞëÊÇ object |
+| Ğ§¹ûÀàĞÍ | `actions[i].effect.effectType` | `string` | ÊÇ | `meta.enums.effectTypes[0]` | ±ØĞëÔÚ `meta.enums.effectTypes` ÄÚ |
+| ÊıÖµÀàĞÍ | `actions[i].effect.amountType` | `string` | ·ñ(½¨Òé) | `meta.enums.amountTypes[0]` | Èô´æÔÚ±ØĞëÔÚ `meta.enums.amountTypes` ÄÚ |
+| ÊıÖµ | `actions[i].effect.amount` | `number` | Ìõ¼ş | `0` | `amountType!=SCALING` Ê±½¨Òé±ØÌî |
+| ±¸×¢ | `actions[i].effect.note` | `string` | ·ñ | ÎŞ | ¿ÉÑ¡ |
 
 ### I. BuffRefs Panel£¨Buff ÒıÓÃ£©
 
@@ -412,8 +425,8 @@ v3 effect µÄ¹Ø¼ü×Ö¶Î£º
 
 ## 7. ÓëÆäËû¹¤¾ßµÄ¶ÔÆëËµÃ÷
 
-- `test/skill_editor_test.html`£ºÓ¦ÒÔ±¾ÎÄµµµÄ v3 ×Ö¶ÎÎª×¼£¬ÓÈÆäÊÇ `target.selection`¡¢`costs/requirements`¡¢`unlock`¡¢`editorMeta`¡£
-- `test/skill_balance_tool.html`£º¼ÓÔØ v3 Ê±£¬Ó¦¸´ÓÃ `meta.enums` ×ö±êÇ©/Ã¶¾ÙÀ´Ô´£¬±ÜÃâÓ²±àÂë¡£
+- `test/skill_editor_test_v3.html`£ºÓ¦ÒÔ±¾ÎÄµµµÄ v4 ×Ö¶ÎÎª×¼£¬ÓÈÆäÊÇ `target.selection`¡¢`costs/requirements`¡¢`unlock`¡¢`editorMeta`¡¢`actions`¡£
+- `test/skill_balance_tool.html`£º¼ÓÔØ v4 Ê±£¬Ó¦¸´ÓÃ `meta.enums` ×ö±êÇ©/Ã¶¾ÙÀ´Ô´£¬±ÜÃâÓ²±àÂë¡£
 
 ---
 
@@ -421,5 +434,5 @@ v3 effect µÄ¹Ø¼ü×Ö¶Î£º
 
 ±à¼­Æ÷¿ÉÒÔÌá¹©¡°¼æÈİ¾ÉÊı¾İ¡±µÄÌáÊ¾Âß¼­£º
 
-- Èôµ¼ÈëÎÄ¼ş²»°üº¬ `meta.enums` »ò²»°üº¬ `target.selection`£¬ÔòÌáÊ¾¡°Õâ²»ÊÇ v3 ¸ñÊ½£¬ĞèÒªÇ¨ÒÆ¡±¡£
+- Èôµ¼ÈëÎÄ¼ş²»°üº¬ `meta.enums` »ò²»°üº¬ `target.selection`£¬ÔòÌáÊ¾¡°Õâ²»ÊÇ v4 ¸ñÊ½£¬ĞèÒªÇ¨ÒÆ¡±¡£
 - ±¾½×¶Î²»ÒªÇó×Ô¶¯Ç¨ÒÆ£¬µ«Ó¦±ÜÃâ silent failure£¨¼ÓÔØ³É¹¦µ«×Ö¶Î¶Ô²»ÉÏµ¼ÖÂ±à¼­/µ¼³ö´íÎó£©¡£
