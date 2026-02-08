@@ -429,9 +429,9 @@
 
 - `speed?: number`：技能速度修正（用于行动排序）
 
-- `target: { subject, scope, selection? }`：目标定义（三段式）
+- `target: { subject, scope, selection? }`：默认目标锚点（三段式）。主要服务于 UI 的拖拽/点击选择、待执行队列记录与回放；在执行阶段可被 action 通过 `follow: skillTarget` 引用。
 
-- `effects?: SkillEffect[]`：技能效果（建议强 schema，见 5.3.3）
+- `actions: SkillAction[]`：技能执行步骤数组（Skill v4 核心）。技能的所有结算逻辑都必须落在 `actions[]` 中。
 - `buffRefs?: { apply?, applySelf?, remove? }`：Buff 引用（数据驱动）
 
 - `requirements?: object`：门槛（必须满足但不一定消耗）
@@ -533,7 +533,22 @@ Skill Editor / Balance Tool 在“保存/导出（Export(dev)）”时，必须保证：
 
 两者必须解耦：编辑器允许只调整 `editorMeta` 而不改变 `prerequisites`。
 
-#### 5.3.2 `target`（核心：目标选择三段式）
+#### 5.3.2 `target`（核心：目标选择三段式 / 默认目标锚点）
+
+> **Skill v4：默认 Target + Actions[]（解决多效果/多目标）**
+>
+> 为了同时满足：
+>
+> 1) **交互输入**：玩家在 UI 中可以拖拽/点击快速指定目标（默认目标）；
+> 2) **技能表达力**：同一个技能可以包含多个效果（例如“自伤 + 攻击”）且每个效果可能作用于不同对象；
+>
+> 设计上保留 Skill 级 `target` 作为**默认目标锚点 (Default Target Anchor)**，并新增 `actions[]` 作为**执行步骤 (Execution Steps)**。
+>
+> - Skill 级 `target`：主要服务于“配置阶段/待执行队列/存档回放”，是技能的默认目标选择结果。
+> - `actions[]`：负责描述技能真实执行逻辑；每个 action 自带独立的 target + effects。
+> - action 的 target 支持两类模式：
+>   - **跟随指定目标**：复用 Skill 默认 `target`（或其他引用）
+>   - **指定目标**：action 内显式定义自己的目标（例如对自己扣血）
 
 ```json
 {
@@ -550,7 +565,7 @@ Skill Editor / Balance Tool 在“保存/导出（Export(dev)）”时，必须保证：
 }
 ```
 
-字段说明：
+##### 5.3.2.1 字段说明（默认目标 `target`）
 
 - `target.subject`（必填）
   - `SUBJECT_SELF`：对自己
@@ -611,9 +626,38 @@ Skill Editor / Balance Tool 在“保存/导出（Export(dev)）”时，必须保证：
 > - `scope = SCOPE_MULTI_PARTS`：建议 `selection.mode` 使用 `multiple | random_multiple`。
 > - `scope = SCOPE_MULTI_PARTS` 且你想表达“全身所有部位”：推荐约定 `selectCount = candidateParts.length`。
 
-##### 5.3.2.1 常见目标选择模式示例
+##### 5.3.2.2 常见目标选择模式示例
 
-#### (A) 玩家指定：攻击任意单部位
+###### (A) 玩家指定：攻击任意单部位
+
+```json
+{
+  "target": {
+    "subject": "SUBJECT_ENEMY",
+    "scope": "SCOPE_PART",
+    "selection": {
+      "mode": "single",
+      "candidateParts": ["head", "chest", "left_arm", "right_arm", "left_leg", "right_leg"],
+      "selectedParts": [],
+      "selectCount": 1
+    }
+  }
+}
+```
+
+#### 5.3.3 `actions[]`（Skill v4：执行步骤）
+
+`actions[]` 用于描述“一个技能由多个步骤组成”，每个步骤包含：
+
+- `action.target`：该步骤作用的目标（可跟随默认目标，或显式指定）
+- `action.effect`：该步骤对目标产生的**单个效果**（复用 5.3.3 的 `SkillEffect` schema）
+
+**推荐约束**：
+
+- 结算顺序严格按 `actions[]` 从前到后执行（序列语义）；
+- 需要并行/分组时再扩展（例如 `phase/group`），MVP 不引入。
+
+##### 5.3.3.1 `SkillAction` 示例：自伤 + 攻击（复合技能）
 
 ```json
 {
@@ -626,62 +670,68 @@ Skill Editor / Balance Tool 在“保存/导出（Export(dev)）”时，必须保证：
       "selectedParts": [],
       "selectCount": 1
     }
-  }
-}
-```
-
-#### (B) 写死部位：固定攻击躯干（无需玩家选择）
-
-```json
-{
-  "target": {
-    "subject": "SUBJECT_ENEMY",
-    "scope": "SCOPE_PART",
-    "selection": {
-      "mode": "single",
-      "candidateParts": ["chest"],
-      "selectedParts": ["chest"],
-      "selectCount": 1
+  },
+  "actions": [
+    {
+      "id": "a1",
+      "name": "self_cost",
+      "target": {
+        "binding": { "mode": "explicit" },
+        "spec": { "subject": "SUBJECT_SELF", "scope": "SCOPE_ENTITY" }
+      },
+      "effect": { "effectType": "DMG_HP", "amount": 2, "amountType": "ABS" }
+    },
+    {
+      "id": "a2",
+      "name": "strike",
+      "target": {
+        "binding": { "mode": "follow", "ref": "skillTarget" }
+      },
+      "effect": { "effectType": "DMG_HP", "amount": 10, "amountType": "ABS" }
     }
-  }
+  ]
 }
 ```
 
-#### (C) 随机单部位：随机命中一个部位
+##### 5.3.3.2 `action.target`：binding（跟随/指定）
 
-```json
-{
-  "target": {
-    "subject": "SUBJECT_ENEMY",
-    "scope": "SCOPE_PART",
-    "selection": {
-      "mode": "random_single",
-      "candidateParts": ["head", "chest", "left_arm", "right_arm", "left_leg", "right_leg"],
-      "selectedParts": [],
-      "selectCount": 1
-    }
-  }
-}
-```
+为避免 action 目标与 Skill 默认目标“职责混淆”，action 目标分为两层：
 
-#### (D) 多部位：指定 N 个部位（例如修复 2 个部位护甲）
+- `binding`：描述 action 的目标如何解析
+- `spec`：仅当显式指定目标时，提供目标结构（复用 Skill 级 `target` 的三段式结构）
 
-```json
-{
-  "target": {
-    "subject": "SUBJECT_SELF",
-    "scope": "SCOPE_MULTI_PARTS",
-    "selection": {
-      "mode": "multiple",
-      "candidateParts": ["head", "chest", "left_arm", "right_arm", "left_leg", "right_leg"],
-      "selectedParts": [],
-      "selectCount": 2
-    }
-  }
-}
-```
+字段定义建议：
 
-#### 5.3.3 `effects`（技能效果，建议强 schema）
+- `action.target.binding.mode: "follow" | "explicit"`
+  - `follow`：跟随某个引用目标，不在 action 内写死目标
+    - `action.target.binding.ref: "skillTarget" | "source" | "lastActionTarget"`
+      - `skillTarget`：跟随 Skill 的默认 `target`（UI 配置/拖拽选择的结果）
+      - `source`：跟随释放者（等价“对自己”，但语义更明确）
+      - `lastActionTarget`：（可选）跟随上一 action 解析出的目标（用于链式技能；MVP 可不实现）
+  - `explicit`：action 指定自己的目标
+    - `action.target.spec: { subject, scope, selection? }`
+
+##### 5.3.3.3 解析优先级与“默认目标缺失”策略
+
+1) 若 action 使用 `binding.mode = explicit`：直接使用 `spec` 解析目标。
+
+2) 若 action 使用 `binding.mode = follow`：
+
+- `ref = skillTarget`：必须存在 Skill 级 `target`（通常来自 UI 配置结果）
+- `ref = source`：由引擎上下文提供 source（无需 Skill 默认 target）
+
+3) 当 `ref = skillTarget` 且 Skill 默认 `target` 缺失时，建议在设计层引入如下约束二选一：
+
+- **强约束（推荐）**：技能声明 `requiresTarget = true`，UI 若未完成目标配置则禁止进入执行阶段。
+- **弱约束**：允许引擎在执行时回退到 `target.selection` 的默认策略（如 `random_single` 或固定 `selectedParts`），但必须在数据中显式配置。
+
+##### 5.3.3.4 `effects`（action 子效果 / 建议强 schema）
+
+> **重要：本方案已完成重构，不再支持“技能顶层 effects”。**
+>
+> - 技能对象不再包含 `effects` 顶层字段。
+> - 所有效果必须写在 `actions[].effect` 中。
+> - 因此本节的 `effects` 默认指 **`action.effect`**。
 
 > 目标：把“技能做了什么”从自由文本/散乱字段，收敛成可校验、可编辑、可统计的结构化效果列表。
 >
@@ -691,20 +741,18 @@ Skill Editor / Balance Tool 在“保存/导出（Export(dev)）”时，必须保证：
 > 2. `effects` 负责回答“产生什么数值/规则变化”。
 > 3. Buff/触发器优先走 `buffRefs`，`effects` 只承载 **即时结算** 与少量必须的规则开关。
 
-##### 5.3.3.1 `SkillEffect` 统一结构
+###### 5.3.3.4.1 `SkillEffect` 统一结构
 
-建议统一为数组：
+建议统一为对象（位于 `actions[].effect`）：
 
 ```json
-"effects": [
-  {
-    "effectType": "DAMAGE",
-    "amount": 20,
-    "amountType": "ABS",
-    "damageKind": "HP",
-    "hit": { "mode": "normal" }
-  }
-]
+"effect": {
+  "effectType": "DAMAGE",
+  "amount": 20,
+  "amountType": "ABS",
+  "damageKind": "HP",
+  "hit": { "mode": "normal" }
+}
 ```
 
 公共字段（所有 effect 推荐支持）：
@@ -715,22 +763,23 @@ Skill Editor / Balance Tool 在“保存/导出（Export(dev)）”时，必须保证：
 
 目标绑定规则（关键）：
 
-- `effects` 不再额外携带 `target=enemy/self`，默认 **继承技能的 `target.subject`**。
-- 若某个 effect 需要和 selection 的“槽位结果”解耦（例如“自伤 + 对敌伤害”），则该 effect 可显式声明：
+- `action.effect` 默认继承 **该 action 解析出来的目标**（即 `action.target` 解析结果），而不是继承 Skill 顶层 `target`。
+- effect 本身不再携带 `target=enemy/self`。
+- 若某个 effect 需要在同一 action 内“临时改 subject”（不推荐，尽量用拆 action 解决），才使用：
   - `subjectOverride?: "SUBJECT_SELF" | "SUBJECT_ENEMY"`
-- 若某个 effect 需要指定“具体部位/槽位”，则推荐两种方式（按复杂度选择其一）：
-  1) **复用最终选中的槽位**：默认即可（effect 不写 part）
+- 若某个 effect 需要指定“具体部位/槽位”，则优先两种方式（按复杂度选择其一）：
+  1) **复用 action 最终选中的槽位**：默认即可（effect 不写 part）
   2) **写死部位/部位集合覆盖**（仅在确实需要时）：
      - `partOverride?: { mode: "fixed" | "listed", parts: string[] }`
 
 > 约束建议：不要在 effect 里再复制一份 selection 逻辑；selection 永远只在 `target.selection` 出现。
 
-##### 5.3.3.2 effectType / amountType 与标签体系的对齐（推荐）
+###### 5.3.3.4.2 effectType / amountType 与标签体系的对齐（推荐）
 
 为避免 `effects` 与 `tags` 出现两套命名体系：
 
-- `effects[].effectType`：**直接使用 5.2.3 的“作用属性（What）”枚举**
-- `effects[].amountType`：**直接使用 5.2.3 的“数值类型（How）”枚举**
+- `effect.effectType`：**直接使用 5.2.3 的“作用属性（What）”枚举**
+- `effect.amountType`：**直接使用 5.2.3 的“数值类型（How）”枚举**
 
 也就是说，`effects` 中不再使用 `DAMAGE/HEAL/...` 这种另起炉灶的 type。
 
@@ -869,8 +918,17 @@ Skill Editor / Balance Tool 在“保存/导出（Export(dev)）”时，必须保证：
     "selection": { "mode": "SELECT_FIXED_PART" }
   },
 
-  "effects": [
-    { "type": "ARMOR_DAMAGE", "value": 20 }
+  "actions": [
+    {
+      "id": "a1",
+      "name": "crush_armor",
+      "target": {
+        "binding": { "mode": "follow", "ref": "skillTarget" }
+      },
+      "effects": [
+        { "effectType": "DMG_ARMOR", "amount": 20, "amountType": "ABS" }
+      ]
+    }
   ],
 
   "requirements": {

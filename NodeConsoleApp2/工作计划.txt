@@ -420,3 +420,7 @@ skill_editor_test_v3.htmlÖÐ£¬candidatePartsºÍSelectedPartsµÄ¶àÑ¡ÏÂÀ­¿òµã»÷all»òÕ
 ÎÒÔÚ½øÐÐ¼¼ÄÜÉè¼ÆµÄÊ±ºò£¬·¢ÏÖÓÐÐ©¼¼ÄÜÓÐ¶à¸öÐ§¹û£¬ÀýÈç×Ô¼º¿Û2µãÑª£¬¶ÔµÐÈËÔì³É10µãÉËº¦£¬ÕâÖÖ¼¼ÄÜÉè¼ÆÓëµ±Ç°µÄTargetÊôÐÔ£¬EffectÊôÐÔµÄÉè¼Æ²»Ì«Æ¥Åä¡£ÒòÎªµ±Ç°µÄÉè¼ÆÊÇÒ»¸ö¼¼ÄÜ¶ÔÓ¦Ò»¸öÄ¿±êºÍÒ»¸öÐ§¹û£¬ÄÇÃ´¶ÔÓÚÕâÖÖ¶àÐ§¹ûµÄ¼¼ÄÜÉè¼Æ¾Í²»Ì«ÓÑºÃ¡£ÎÒÏ£ÍûÄã·ÖÎöÒ»ÏÂÕâ¸öÎÊÌâ£¬È·ÈÏµ±Ç°µÄÉè¼ÆÊÇ·ñºÏÀí£¿ÓÐÃ»ÓÐ¸üºÃµÄÉè¼Æ·½°¸£¿ÏÈ²»ÒªÐÞ¸Ä´úÂë¡£
 
 ¸ù¾ÝÄãµÄÒâ¼û£¬ÎÒÏ£ÍûÄÜ¹»¸ü¸ÄskillµÄÉè¼Æ·½°¸£¬Ê×ÏÈ£¬ÎÒÏ£ÍûÈÔÈ»±£ÁôTargetµÄ¸ÅÄî£¬Target×÷ÎªÄ¬ÈÏµÄÄ¿±ê¶ÔÏó£¬ÔÚ½»»¥Ê½ÊäÈëÖÐÄÜ¹»Ö±½Ó½øÐÐÍÏ×§Ñ¡Ôñ¡£Æä´Î£¬ÎÒÏ£Íû²ÉÓÃÄãÌá¹©µÄAction[]Éè¼Æ·½°¸£¬Ã¿¸öation°üº¬¶ÀÁ¢µÄtargetºÍeffectÊôÐÔ£¬ÔÚactionµÄtarget£¬Ìá¹©¡°¸úËæÖ¸¶¨Ä¿±ê¡±¡¢¡°Ö¸¶¨Ä¿±ê¡±µÈÑ¡Ïî¡£ÇëÄã·ÖÎöÕâ¸ö·½°¸µÄ¿ÉÐÐÐÔ£¬ÏÈ²»ÒªÐÞ¸Ä´úÂë¡£
+
+2026.02.08 22:15£¨±à¼­£©
+ÎÒ¸üÐÂÁËskill_design.mdÖÐµÄ5.3.2ÕÂ½Ú£¬Ôö¼ÓÁËActionÊý×éµÄÉè¼Æ·½°¸¡£ÇëÄã»ùÓÚÕâ¸öÐÂµÄÉè¼Æ·½°¸£¬¸üÐÂskills_melee_v4.jsonÎÄ¼þÖÐµÄ¼¼ÄÜÉè¼Æ£¬È·±£¼¼ÄÜÊý¾Ý·ûºÏÐÂµÄÉè¼Æ·½°¸¡£
+ÎÒ·¢ÏÖÔÚskill_design.mdÖÐ£¬action×Ö¶Î°üº¬targetºÍeffectsÊôÐÔ£¬¼ÈÈ»actionsÊÇÊý×éÁË£¬ÄÇÃ´action.effect¾Í²»Ó¦¸ÃÊÇÊý×é£¬Ò»¸öactionÓ¦¸Ã¶ÔÓ¦Ò»¸öeffect£¬Èç¹ûÐèÒª¶à¸öeffect£¬¿ÉÒÔÍ¨¹ý¶à¸öactionÀ´ÊµÏÖ¡£ÇëÄã·ÖÎöÕâ¸öÎÊÌâ£¬È·ÈÏµ±Ç°µÄÉè¼ÆÊÇ·ñºÏÀí£¿ÓÐÃ»ÓÐ¸üºÃµÄÉè¼Æ·½°¸£¿ÏÈ²»ÒªÐÞ¸Ä´úÂë¡£

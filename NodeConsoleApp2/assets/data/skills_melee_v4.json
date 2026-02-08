@@ -6,7 +6,9 @@
     "notes": [
       "本文件是基于 skill_design.md(v2) 的 schema 重设计版。",
       "effectType 与 amountType 已对齐 skill_design.md 1.2.3 标签体系：effectType=What, amountType=How。",
-      "兼容性提示：当前引擎/编辑器可能仍依赖旧字段（type/targetType/requiredPart/castParts/slotCost）。本文件主要用于新版本数据迁移与后续工具适配。"
+      "已按 skill_design.md(v4) 重构：技能不再使用顶层 effects，改为 actions[]（每个 action 自带 target + effects）。",
+      "补充：已进一步简化为 actions[].effect（一个 action 对应一个 effect，多效果用多 action 表达），以降低编辑器交互复杂度。",
+      "兼容性提示：当前引擎/编辑器可能仍依赖旧字段或旧的 effects 结构。本文件主要用于新版本数据迁移与后续工具适配。"
     ],
     "fieldNotes": {
       "$schemaVersion": "本数据文件采用的 schema 版本标识，用于工具/引擎做兼容分支。",
@@ -34,6 +36,26 @@
       "skills[].target.selection.candidateParts": "候选攻击部位列表（UI 可用作选项来源）。",
       "skills[].target.selection.selectedParts": "默认已选部位（主要用于 self/multi 的快捷配置，也可为空）。",
       "skills[].target.selection.selectCount": "需要（或最多）选择的部位数量；single/random_single 通常为 1。",
+      "skills[].actions": "技能执行步骤数组（Skill v4 核心）。结算顺序严格按 actions[] 从前到后执行。约定：一个 action 对应一个 effect；多效果通过多个 action 表达。",
+      "skills[].actions[].id": "action 唯一 ID（仅 action 内唯一即可）。",
+      "skills[].actions[].name": "action 名称（用于调试/日志）。",
+      "skills[].actions[].target": "action 的目标绑定/目标声明。",
+      "skills[].actions[].target.binding.mode": "follow/explicit：follow 表示引用某个目标（skillTarget/source），explicit 表示 action 自己定义 spec。",
+      "skills[].actions[].target.binding.ref": "当 mode=follow 时的引用目标：skillTarget/source。",
+      "skills[].actions[].target.spec": "当 mode=explicit 时的 target 三段式结构（subject/scope/selection）。",
+      "skills[].actions[].effect": "该 action 的单个效果（effectType/amountType/amount/scaling 等）。",
+      "skills[].actions[].effect.effectType": "效果类型（What），取值来自 meta.enums.effectTypes。",
+      "skills[].actions[].effect.amountType": "数值类型（How），取值来自 meta.enums.amountTypes。",
+      "skills[].actions[].effect.amount": "数值（ABS/PCT_* 时使用）。",
+      "skills[].actions[].effect.scaling": "缩放配置（amountType=SCALING 时使用）。",
+      "skills[].actions[].effect.scaling.stat": "缩放来源属性名（示例：atk；具体可用属性由引擎/角色属性表定义）。",
+      "skills[].actions[].effect.scaling.multiplier": "缩放倍率（浮点）。",
+      "skills[].actions[].effect.repeat": "重复执行配置（预留：用于多段伤害/多次命中）。",
+      "skills[].actions[].effect.repeat.count": "重复次数（1~meta.enums.repeat.maxCount）。",
+      "skills[].actions[].effect.partOverride": "部位覆盖（用于强制作用在指定部位，如裂颅一击固定削减 head 护甲）。",
+      "skills[].actions[].effect.partOverride.mode": "fixed/listed（预留），取值来自 meta.enums.partOverrideModes。",
+      "skills[].actions[].effect.partOverride.parts": "覆盖部位列表（示例：[\"head\"]）。",
+      "skills[].actions[].effect.note": "注释说明（仅用于 UI/日志；不参与计算）。",
       "skills[].requirements": "释放条件（战斗期约束）。",
       "skills[].requirements.selfPart": "自身部位可用性约束（例如必须双臂可用）。",
       "skills[].requirements.selfPart.mode": "ANY/ALL，取值来自 meta.enums.requirementSelfPartModes。",
@@ -46,20 +68,6 @@
       "skills[].costs.partSlot.part": "消耗槽位的自身部位（例如 right_arm）。",
       "skills[].costs.partSlot.slotCost": "槽位消耗数量（整数）。",
       "skills[].costs.perTurnLimit": "每回合使用次数上限（当前设计默认为 1）。",
-      "skills[].effects": "效果数组（引擎按顺序执行；用于伤害/治疗/护甲/施加或移除 buff 等）。",
-      "skills[].effects[].effectType": "效果类型（What），取值来自 meta.enums.effectTypes。",
-      "skills[].effects[].amountType": "数值类型（How），取值来自 meta.enums.amountTypes。",
-      "skills[].effects[].amount": "数值（ABS/PCT_* 时使用）。",
-      "skills[].effects[].scaling": "缩放配置（amountType=SCALING 时使用）。",
-      "skills[].effects[].scaling.stat": "缩放来源属性名（示例：atk；具体可用属性由引擎/角色属性表定义）。",
-      "skills[].effects[].scaling.multiplier": "缩放倍率（浮点）。",
-      "skills[].effects[].repeat": "重复执行配置（预留：用于多段伤害/多次命中）。",
-      "skills[].effects[].repeat.count": "重复次数（1~meta.enums.repeat.maxCount）。",
-      "skills[].effects[].partOverride": "部位覆盖（用于强制作用在指定部位，如裂颅一击固定削减 head 护甲）。",
-      "skills[].effects[].partOverride.mode": "fixed/listed（预留），取值来自 meta.enums.partOverrideModes。",
-      "skills[].effects[].partOverride.parts": "覆盖部位列表（示例：[\"head\"]）。",
-      "skills[].effects[].subjectOverride": "覆盖目标主体（用于副作用：例如对自己造成反噬伤害）。",
-      "skills[].effects[].note": "注释说明（仅用于 UI/日志；不参与计算）。",
       "skills[].buffRefs": "与 Buff 系统的轻耦合引用（技能只引用 buffId，不内嵌 buff 逻辑）。",
       "skills[].buffRefs.apply": "对 enemy 施加的 buff 列表（每项包含 buffId/target/chance/duration 等）。",
       "skills[].buffRefs.applySelf": "对 self 施加的 buff 列表。",
@@ -253,11 +261,18 @@
         "ap": 3,
         "perTurnLimit": 1
       },
-      "effects": [
+      "actions": [
         {
-          "effectType": "HEAL",
-          "amount": 30,
-          "amountType": "ABS"
+          "id": "a1",
+          "name": "heal",
+          "target": {
+            "binding": { "mode": "follow", "ref": "skillTarget" }
+          },
+          "effect": {
+            "effectType": "HEAL",
+            "amount": 30,
+            "amountType": "ABS"
+          }
         }
       ],
       "buffRefs": {
@@ -334,13 +349,20 @@
         },
         "perTurnLimit": 1
       },
-      "effects": [
+      "actions": [
         {
-          "effectType": "DMG_HP",
-          "amountType": "SCALING",
-          "scaling": {
-            "stat": "atk",
-            "multiplier": 1.2
+          "id": "a1",
+          "name": "heavy_swing",
+          "target": {
+            "binding": { "mode": "follow", "ref": "skillTarget" }
+          },
+          "effect": {
+            "effectType": "DMG_HP",
+            "amountType": "SCALING",
+            "scaling": {
+              "stat": "atk",
+              "multiplier": 1.2
+            }
           }
         }
       ],
@@ -418,18 +440,32 @@
         },
         "perTurnLimit": 1
       },
-      "effects": [
+      "actions": [
         {
-          "effectType": "DMG_HP",
-          "amount": 15,
-          "amountType": "ABS"
+          "id": "a1",
+          "name": "headbutt_hit",
+          "target": {
+            "binding": { "mode": "follow", "ref": "skillTarget" }
+          },
+          "effect": {
+            "effectType": "DMG_HP",
+            "amount": 15,
+            "amountType": "ABS"
+          }
         },
         {
-          "effectType": "DMG_HP",
-          "subjectOverride": "SUBJECT_SELF",
-          "amount": 5,
-          "amountType": "ABS",
-          "note": "反噬"
+          "id": "a2",
+          "name": "headbutt_backlash",
+          "target": {
+            "binding": { "mode": "explicit" },
+            "spec": { "subject": "SUBJECT_SELF", "scope": "SCOPE_ENTITY" }
+          },
+          "effect": {
+            "effectType": "DMG_HP",
+            "amount": 5,
+            "amountType": "ABS",
+            "note": "反噬"
+          }
         }
       ],
       "buffRefs": {
@@ -514,11 +550,18 @@
         },
         "perTurnLimit": 1
       },
-      "effects": [
+      "actions": [
         {
-          "effectType": "DMG_HP",
-          "amount": 30,
-          "amountType": "ABS"
+          "id": "a1",
+          "name": "main",
+          "target": {
+            "binding": { "mode": "follow", "ref": "skillTarget" }
+          },
+          "effect": {
+            "effectType": "DMG_HP",
+            "amount": 30,
+            "amountType": "ABS"
+          }
         }
       ],
       "buffRefs": {
@@ -606,24 +649,38 @@
         },
         "perTurnLimit": 1
       },
-      "effects": [
+      "actions": [
         {
-          "effectType": "DMG_HP",
-          "amountType": "SCALING",
-          "scaling": {
-            "stat": "atk",
-            "multiplier": 1.5
+          "id": "a1",
+          "name": "hit",
+          "target": {
+            "binding": { "mode": "follow", "ref": "skillTarget" }
+          },
+          "effect": {
+            "effectType": "DMG_HP",
+            "amountType": "SCALING",
+            "scaling": {
+              "stat": "atk",
+              "multiplier": 1.5
+            }
           }
         },
         {
-          "effectType": "DMG_ARMOR",
-          "amount": 30,
-          "amountType": "ABS",
-          "partOverride": {
-            "mode": "fixed",
-            "parts": [
-              "head"
-            ]
+          "id": "a2",
+          "name": "crack_armor",
+          "target": {
+            "binding": { "mode": "follow", "ref": "skillTarget" }
+          },
+          "effect": {
+            "effectType": "DMG_ARMOR",
+            "amount": 30,
+            "amountType": "ABS",
+            "partOverride": {
+              "mode": "fixed",
+              "parts": [
+                "head"
+              ]
+            }
           }
         }
       ],
@@ -714,11 +771,18 @@
         },
         "perTurnLimit": 1
       },
-      "effects": [
+      "actions": [
         {
-          "effectType": "DMG_ARMOR",
-          "amount": 100,
-          "amountType": "PCT_MAX"
+          "id": "a1",
+          "name": "shockwave",
+          "target": {
+            "binding": { "mode": "follow", "ref": "skillTarget" }
+          },
+          "effect": {
+            "effectType": "DMG_ARMOR",
+            "amount": 100,
+            "amountType": "PCT_MAX"
+          }
         }
       ],
       "buffRefs": {
@@ -802,12 +866,19 @@
         },
         "perTurnLimit": 1
       },
-      "effects": [
+      "actions": [
         {
-          "effectType": "DMG_HP",
-          "amount": 3,
-          "amountType": "PCT_CURRENT",
-          "note": "按当前 HP 百分比造成伤害；引擎实现时可映射为 TRUE/PIERCE 以避免护甲干扰。"
+          "id": "a1",
+          "name": "execute",
+          "target": {
+            "binding": { "mode": "follow", "ref": "skillTarget" }
+          },
+          "effect": {
+            "effectType": "DMG_HP",
+            "amount": 3,
+            "amountType": "PCT_CURRENT",
+            "note": "按当前 HP 百分比造成伤害；引擎实现时可映射为 TRUE/PIERCE 以避免护甲干扰。"
+          }
         }
       ],
       "buffRefs": {
@@ -889,11 +960,18 @@
         },
         "perTurnLimit": 1
       },
-      "effects": [
+      "actions": [
         {
-          "effectType": "DMG_HP",
-          "amount": 50,
-          "amountType": "ABS"
+          "id": "a1",
+          "name": "earthquake",
+          "target": {
+            "binding": { "mode": "follow", "ref": "skillTarget" }
+          },
+          "effect": {
+            "effectType": "DMG_HP",
+            "amount": 50,
+            "amountType": "ABS"
+          }
         }
       ],
       "buffRefs": {
@@ -990,16 +1068,23 @@
         },
         "perTurnLimit": 1
       },
-      "effects": [
+      "actions": [
         {
-          "effectType": "DMG_HP",
-          "amountType": "SCALING",
-          "scaling": {
-            "stat": "atk",
-            "multiplier": 2
+          "id": "a1",
+          "name": "ragnarok",
+          "target": {
+            "binding": { "mode": "follow", "ref": "skillTarget" }
           },
-          "repeat": {
-            "count": 6
+          "effect": {
+            "effectType": "DMG_HP",
+            "amountType": "SCALING",
+            "scaling": {
+              "stat": "atk",
+              "multiplier": 2
+            },
+            "repeat": {
+              "count": 6
+            }
           }
         }
       ],
@@ -1074,11 +1159,18 @@
         },
         "perTurnLimit": 1
       },
-      "effects": [
+      "actions": [
         {
-          "effectType": "ARMOR_ADD",
-          "amount": 15,
-          "amountType": "ABS"
+          "id": "a1",
+          "name": "repair",
+          "target": {
+            "binding": { "mode": "follow", "ref": "skillTarget" }
+          },
+          "effect": {
+            "effectType": "ARMOR_ADD",
+            "amount": 15,
+            "amountType": "ABS"
+          }
         }
       ],
       "buffRefs": {
@@ -1157,11 +1249,18 @@
         },
         "perTurnLimit": 1
       },
-      "effects": [
+      "actions": [
         {
-          "effectType": "DMG_HP",
-          "amountType": "ABS",
-          "amount": 0
+          "id": "a1",
+          "name": "block",
+          "target": {
+            "binding": { "mode": "follow", "ref": "skillTarget" }
+          },
+          "effect": {
+            "effectType": "DMG_HP",
+            "amountType": "ABS",
+            "amount": 0
+          }
         }
       ],
       "buffRefs": {
@@ -1249,7 +1348,7 @@
         },
         "perTurnLimit": 1
       },
-      "effects": [],
+      "actions": [],
       "buffRefs": {
         "remove": [
           {
@@ -1332,11 +1431,18 @@
         },
         "perTurnLimit": 1
       },
-      "effects": [
+      "actions": [
         {
-          "effectType": "DMG_ARMOR",
-          "amountType": "ABS",
-          "amount": 20
+          "id": "a1",
+          "name": "punch",
+          "target": {
+            "binding": { "mode": "follow", "ref": "skillTarget" }
+          },
+          "effect": {
+            "effectType": "DMG_ARMOR",
+            "amountType": "ABS",
+            "amount": 20
+          }
         }
       ],
       "buffRefs": {
@@ -1431,11 +1537,18 @@
         },
         "perTurnLimit": 1
       },
-      "effects": [
+      "actions": [
         {
-          "effectType": "ARMOR_ADD",
-          "amount": 40,
-          "amountType": "ABS"
+          "id": "a1",
+          "name": "fortify",
+          "target": {
+            "binding": { "mode": "follow", "ref": "skillTarget" }
+          },
+          "effect": {
+            "effectType": "ARMOR_ADD",
+            "amount": 40,
+            "amountType": "ABS"
+          }
         }
       ],
       "buffRefs": {
@@ -1532,7 +1645,7 @@
         },
         "perTurnLimit": 1
       },
-      "effects": [],
+      "actions": [],
       "buffRefs": {
         "applySelf": [
           {
@@ -1622,11 +1735,18 @@
         },
         "perTurnLimit": 1
       },
-      "effects": [
+      "actions": [
         {
-          "effectType": "ARMOR_ADD",
-          "amount": 20,
-          "amountType": "ABS"
+          "id": "a1",
+          "name": "iron_head",
+          "target": {
+            "binding": { "mode": "follow", "ref": "skillTarget" }
+          },
+          "effect": {
+            "effectType": "ARMOR_ADD",
+            "amount": 20,
+            "amountType": "ABS"
+          }
         }
       ],
       "buffRefs": {
@@ -1715,16 +1835,23 @@
         },
         "perTurnLimit": 1
       },
-      "effects": [
+      "actions": [
         {
-          "effectType": "DMG_HP",
-          "amountType": "SCALING",
-          "scaling": {
-            "stat": "atk",
-            "multiplier": 0.6
+          "id": "a1",
+          "name": "double_thrust",
+          "target": {
+            "binding": { "mode": "follow", "ref": "skillTarget" }
           },
-          "repeat": {
-            "count": 2
+          "effect": {
+            "effectType": "DMG_HP",
+            "amountType": "SCALING",
+            "scaling": {
+              "stat": "atk",
+              "multiplier": 0.6
+            },
+            "repeat": {
+              "count": 2
+            }
           }
         }
       ],
@@ -1803,11 +1930,18 @@
         },
         "perTurnLimit": 1
       },
-      "effects": [
+      "actions": [
         {
-          "effectType": "ARMOR_ADD",
-          "amount": 15,
-          "amountType": "ABS"
+          "id": "a1",
+          "name": "iron_hand",
+          "target": {
+            "binding": { "mode": "follow", "ref": "skillTarget" }
+          },
+          "effect": {
+            "effectType": "ARMOR_ADD",
+            "amount": 15,
+            "amountType": "ABS"
+          }
         }
       ],
       "buffRefs": {
@@ -1892,11 +2026,18 @@
         },
         "perTurnLimit": 1
       },
-      "effects": [
+      "actions": [
         {
-          "effectType": "ARMOR_ADD",
-          "amount": 20,
-          "amountType": "ABS"
+          "id": "a1",
+          "name": "iron_leg",
+          "target": {
+            "binding": { "mode": "follow", "ref": "skillTarget" }
+          },
+          "effect": {
+            "effectType": "ARMOR_ADD",
+            "amount": 20,
+            "amountType": "ABS"
+          }
         }
       ],
       "buffRefs": {
@@ -1982,11 +2123,18 @@
         },
         "perTurnLimit": 1
       },
-      "effects": [
+      "actions": [
         {
-          "effectType": "DMG_ARMOR",
-          "amountType": "ABS",
-          "amount": 20
+          "id": "a1",
+          "name": "pickup",
+          "target": {
+            "binding": { "mode": "follow", "ref": "skillTarget" }
+          },
+          "effect": {
+            "effectType": "DMG_ARMOR",
+            "amountType": "ABS",
+            "amount": 20
+          }
         }
       ],
       "buffRefs": {
@@ -2086,16 +2234,31 @@
         },
         "perTurnLimit": 1
       },
-      "effects": [
+      "actions": [
         {
-          "effectType": "DMG_ARMOR",
-          "amount": 100,
-          "amountType": "PCT_CURRENT"
+          "id": "a1",
+          "name": "remove_armor",
+          "target": {
+            "binding": { "mode": "follow", "ref": "skillTarget" }
+          },
+          "effect": {
+            "effectType": "DMG_ARMOR",
+            "amount": 100,
+            "amountType": "PCT_CURRENT"
+          }
         },
         {
-          "effectType": "AP_GAIN",
-          "amountType": "ABS",
-          "amount": 3
+          "id": "a2",
+          "name": "gain_ap",
+          "target": {
+            "binding": { "mode": "explicit" },
+            "spec": { "subject": "SUBJECT_SELF", "scope": "SCOPE_ENTITY" }
+          },
+          "effect": {
+            "effectType": "AP_GAIN",
+            "amountType": "ABS",
+            "amount": 3
+          }
         }
       ],
       "buffRefs": {
@@ -2184,11 +2347,18 @@
         },
         "perTurnLimit": 1
       },
-      "effects": [
+      "actions": [
         {
-          "effectType": "ARMOR_ADD",
-          "amount": 40,
-          "amountType": "ABS"
+          "id": "a1",
+          "name": "west_coast",
+          "target": {
+            "binding": { "mode": "follow", "ref": "skillTarget" }
+          },
+          "effect": {
+            "effectType": "ARMOR_ADD",
+            "amount": 40,
+            "amountType": "ABS"
+          }
         }
       ],
       "buffRefs": {
@@ -2283,11 +2453,18 @@
         },
         "perTurnLimit": 1
       },
-      "effects": [
+      "actions": [
         {
-          "effectType": "DMG_ARMOR",
-          "amountType": "ABS",
-          "amount": 20
+          "id": "a1",
+          "name": "mud_armor",
+          "target": {
+            "binding": { "mode": "follow", "ref": "skillTarget" }
+          },
+          "effect": {
+            "effectType": "DMG_ARMOR",
+            "amountType": "ABS",
+            "amount": 20
+          }
         }
       ],
       "buffRefs": {
@@ -2387,16 +2564,31 @@
         },
         "perTurnLimit": 1
       },
-      "effects": [
+      "actions": [
         {
-          "effectType": "DMG_ARMOR",
-          "amount": 100,
-          "amountType": "PCT_CURRENT"
+          "id": "a1",
+          "name": "flatten_remove_armor",
+          "target": {
+            "binding": { "mode": "follow", "ref": "skillTarget" }
+          },
+          "effect": {
+            "effectType": "DMG_ARMOR",
+            "amount": 100,
+            "amountType": "PCT_CURRENT"
+          }
         },
         {
-          "effectType": "AP_GAIN",
-          "amountType": "ABS",
-          "amount": 3
+          "id": "a2",
+          "name": "flatten_gain_ap",
+          "target": {
+            "binding": { "mode": "explicit" },
+            "spec": { "subject": "SUBJECT_SELF", "scope": "SCOPE_ENTITY" }
+          },
+          "effect": {
+            "effectType": "AP_GAIN",
+            "amountType": "ABS",
+            "amount": 3
+          }
         }
       ],
       "buffRefs": {
@@ -2480,24 +2672,38 @@
         },
         "perTurnLimit": 1
       },
-      "effects": [
+      "actions": [
         {
-          "effectType": "DMG_HP",
-          "amountType": "SCALING",
-          "scaling": {
-            "stat": "atk",
-            "multiplier": 1.5
+          "id": "a1",
+          "name": "hit",
+          "target": {
+            "binding": { "mode": "follow", "ref": "skillTarget" }
+          },
+          "effect": {
+            "effectType": "DMG_HP",
+            "amountType": "SCALING",
+            "scaling": {
+              "stat": "atk",
+              "multiplier": 1.5
+            }
           }
         },
         {
-          "effectType": "DMG_ARMOR",
-          "amount": 30,
-          "amountType": "ABS",
-          "partOverride": {
-            "mode": "fixed",
-            "parts": [
-              "head"
-            ]
+          "id": "a2",
+          "name": "armor",
+          "target": {
+            "binding": { "mode": "follow", "ref": "skillTarget" }
+          },
+          "effect": {
+            "effectType": "DMG_ARMOR",
+            "amount": 30,
+            "amountType": "ABS",
+            "partOverride": {
+              "mode": "fixed",
+              "parts": [
+                "head"
+              ]
+            }
           }
         }
       ],
@@ -2578,24 +2784,38 @@
         },
         "perTurnLimit": 1
       },
-      "effects": [
+      "actions": [
         {
-          "effectType": "DMG_HP",
-          "amountType": "SCALING",
-          "scaling": {
-            "stat": "atk",
-            "multiplier": 1.5
+          "id": "a1",
+          "name": "hit",
+          "target": {
+            "binding": { "mode": "follow", "ref": "skillTarget" }
+          },
+          "effect": {
+            "effectType": "DMG_HP",
+            "amountType": "SCALING",
+            "scaling": {
+              "stat": "atk",
+              "multiplier": 1.5
+            }
           }
         },
         {
-          "effectType": "DMG_ARMOR",
-          "amount": 30,
-          "amountType": "ABS",
-          "partOverride": {
-            "mode": "fixed",
-            "parts": [
-              "head"
-            ]
+          "id": "a2",
+          "name": "armor",
+          "target": {
+            "binding": { "mode": "follow", "ref": "skillTarget" }
+          },
+          "effect": {
+            "effectType": "DMG_ARMOR",
+            "amount": 30,
+            "amountType": "ABS",
+            "partOverride": {
+              "mode": "fixed",
+              "parts": [
+                "head"
+              ]
+            }
           }
         }
       ],
@@ -2672,12 +2892,19 @@
         },
         "perTurnLimit": 1
       },
-      "effects": [
+      "actions": [
         {
-          "effectType": "DMG_HP",
-          "amount": 3,
-          "amountType": "PCT_CURRENT",
-          "note": "按当前 HP 百分比造成伤害；引擎实现时可映射为 TRUE/PIERCE 以避免护甲干扰。"
+          "id": "a1",
+          "name": "unbind",
+          "target": {
+            "binding": { "mode": "follow", "ref": "skillTarget" }
+          },
+          "effect": {
+            "effectType": "DMG_HP",
+            "amount": 3,
+            "amountType": "PCT_CURRENT",
+            "note": "按当前 HP 百分比造成伤害；引擎实现时可映射为 TRUE/PIERCE 以避免护甲干扰。"
+          }
         }
       ],
       "buffRefs": {
@@ -2764,11 +2991,18 @@
         },
         "perTurnLimit": 1
       },
-      "effects": [
+      "actions": [
         {
-          "effectType": "DMG_ARMOR",
-          "amount": 5,
-          "amountType": "ABS"
+          "id": "a1",
+          "name": "backstep",
+          "target": {
+            "binding": { "mode": "follow", "ref": "skillTarget" }
+          },
+          "effect": {
+            "effectType": "DMG_ARMOR",
+            "amount": 5,
+            "amountType": "ABS"
+          }
         }
       ],
       "buffRefs": {
@@ -2863,7 +3097,7 @@
         },
         "perTurnLimit": 1
       },
-      "effects": [],
+      "actions": [],
       "buffRefs": {
         "applySelf": [
           {
@@ -2952,24 +3186,38 @@
         },
         "perTurnLimit": 1
       },
-      "effects": [
+      "actions": [
         {
-          "effectType": "DMG_HP",
-          "amountType": "SCALING",
-          "scaling": {
-            "stat": "atk",
-            "multiplier": 1.5
+          "id": "a1",
+          "name": "hit",
+          "target": {
+            "binding": { "mode": "follow", "ref": "skillTarget" }
+          },
+          "effect": {
+            "effectType": "DMG_HP",
+            "amountType": "SCALING",
+            "scaling": {
+              "stat": "atk",
+              "multiplier": 1.5
+            }
           }
         },
         {
-          "effectType": "DMG_ARMOR",
-          "amount": 30,
-          "amountType": "ABS",
-          "partOverride": {
-            "mode": "fixed",
-            "parts": [
-              "head"
-            ]
+          "id": "a2",
+          "name": "armor",
+          "target": {
+            "binding": { "mode": "follow", "ref": "skillTarget" }
+          },
+          "effect": {
+            "effectType": "DMG_ARMOR",
+            "amount": 30,
+            "amountType": "ABS",
+            "partOverride": {
+              "mode": "fixed",
+              "parts": [
+                "head"
+              ]
+            }
           }
         }
       ],
@@ -3059,11 +3307,18 @@
         },
         "perTurnLimit": 1
       },
-      "effects": [
+      "actions": [
         {
-          "effectType": "DMG_ARMOR",
-          "amount": 5,
-          "amountType": "ABS"
+          "id": "a1",
+          "name": "tear",
+          "target": {
+            "binding": { "mode": "follow", "ref": "skillTarget" }
+          },
+          "effect": {
+            "effectType": "DMG_ARMOR",
+            "amount": 5,
+            "amountType": "ABS"
+          }
         }
       ],
       "buffRefs": {
@@ -3145,12 +3400,19 @@
         },
         "perTurnLimit": 1
       },
-      "effects": [
+      "actions": [
         {
-          "effectType": "DMG_HP",
-          "amount": 3,
-          "amountType": "PCT_CURRENT",
-          "note": "按当前 HP 百分比造成伤害；引擎实现时可映射为 TRUE/PIERCE 以避免护甲干扰。"
+          "id": "a1",
+          "name": "burst",
+          "target": {
+            "binding": { "mode": "follow", "ref": "skillTarget" }
+          },
+          "effect": {
+            "effectType": "DMG_HP",
+            "amount": 3,
+            "amountType": "PCT_CURRENT",
+            "note": "按当前 HP 百分比造成伤害；引擎实现时可映射为 TRUE/PIERCE 以避免护甲干扰。"
+          }
         }
       ],
       "buffRefs": {
@@ -3224,12 +3486,19 @@
         },
         "perTurnLimit": 1
       },
-      "effects": [
+      "actions": [
         {
-          "effectType": "DMG_HP",
-          "amount": 3,
-          "amountType": "PCT_CURRENT",
-          "note": "按当前 HP 百分比造成伤害；引擎实现时可映射为 TRUE/PIERCE 以避免护甲干扰。"
+          "id": "a1",
+          "name": "vampire",
+          "target": {
+            "binding": { "mode": "follow", "ref": "skillTarget" }
+          },
+          "effect": {
+            "effectType": "DMG_HP",
+            "amount": 3,
+            "amountType": "PCT_CURRENT",
+            "note": "按当前 HP 百分比造成伤害；引擎实现时可映射为 TRUE/PIERCE 以避免护甲干扰。"
+          }
         }
       ],
       "buffRefs": {
@@ -3310,23 +3579,38 @@
         },
         "perTurnLimit": 1
       },
-      "effects": [
+      "actions": [
         {
-          "effectType": "DMG_ARMOR",
-          "amountType": "PCT_CURRENT",
-          "scaling": {
-            "stat": "atk",
-            "multiplier": 0.6
+          "id": "a1",
+          "name": "dump_armor",
+          "target": {
+            "binding": { "mode": "follow", "ref": "skillTarget" }
           },
-          "repeat": {
-            "count": 2
-          },
-          "amount": 100
+          "effect": {
+            "effectType": "DMG_ARMOR",
+            "amountType": "PCT_CURRENT",
+            "scaling": {
+              "stat": "atk",
+              "multiplier": 0.6
+            },
+            "repeat": {
+              "count": 2
+            },
+            "amount": 100
+          }
         },
         {
-          "effectType": "HEAL",
-          "amountType": "ABS",
-          "amount": 10
+          "id": "a2",
+          "name": "heal",
+          "target": {
+            "binding": { "mode": "explicit" },
+            "spec": { "subject": "SUBJECT_SELF", "scope": "SCOPE_ENTITY" }
+          },
+          "effect": {
+            "effectType": "HEAL",
+            "amountType": "ABS",
+            "amount": 10
+          }
         }
       ],
       "buffRefs": {
@@ -3384,7 +3668,7 @@
         "applySelf": [],
         "remove": []
       },
-      "effects": [],
+      "actions": [],
       "editorMeta": {
         "x": 1314,
         "y": 914
@@ -3429,11 +3713,18 @@
         "applySelf": [],
         "remove": []
       },
-      "effects": [
+      "actions": [
         {
-          "effectType": "DMG_HP",
-          "amountType": "ABS",
-          "amount": 0
+          "id": "a1",
+          "name": "blood_strike",
+          "target": {
+            "binding": { "mode": "follow", "ref": "skillTarget" }
+          },
+          "effect": {
+            "effectType": "DMG_HP",
+            "amountType": "ABS",
+            "amount": 0
+          }
         }
       ],
       "editorMeta": {
