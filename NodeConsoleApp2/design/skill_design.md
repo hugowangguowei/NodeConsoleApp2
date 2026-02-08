@@ -447,6 +447,9 @@
 - `tags?: string[]`：用于统计/筛选/平衡校验
 - `tagMeta?: object`：标签参数（例如 parts、说明等）
 
+- `devNote?: string`：开发/策划注记（仅编辑器/工具使用，不参与引擎结算）
+- `notes?: object[]`：结构化注记列表（可选，用于更强的筛选与流程管理）
+
 ##### 5.3.1.1 `editorMeta`（Skill Editor 可视化布局元数据）
 
 为支持 `Skill_editor_test` 进行技能树的二维可视化编辑，需要在技能数据中保存“节点在画布/网格中的位置”。
@@ -456,6 +459,47 @@
 1. **只服务编辑器**：引擎战斗结算不读取该字段；它不应影响技能逻辑。
 2. **可稳定保存/加载**：编辑器拖拽位置后可写回 json，下一次打开仍能保持布局。
 3. **可兼容网格系统**：若编辑器采用网格（M*N）布局，`x/y` 可视为网格坐标；若采用自由拖拽，也可视为像素坐标。
+
+##### 5.3.1.2 `devNote/notes`（技能编制注记：仅编辑/策划用途）
+
+为支持技能在长期迭代过程中的“设计决策可追溯”和“问题记录”，引入 `devNote/notes` 字段用于记录：
+
+- 该技能当前存在的问题、待验证点、平衡性风险
+- 为什么采用当前的数值/标签/目标选择方案
+- 与其它技能/Buff/装备的联动、冲突或测试结论
+
+**定位与边界**
+
+1. `devNote/notes` 是“设计/开发元信息”，**不参与战斗结算**；引擎（CoreEngine）应忽略该字段。
+2. 该字段主要服务于 Skill Editor / Balance Tool / 文档追踪；可以被导出、被搜索、被筛选，但不应影响 runtime。
+
+**推荐格式**
+
+1) MVP 版本（最简单、最快落地）：
+
+- `devNote?: string`
+
+2) 结构化版本（便于后续 UI 表单化/过滤/统计）：
+
+- `notes?: Array<{
+    tag?: string,
+    text: string,
+    status?: "todo" | "verified" | "blocked",
+    createdAt?: string
+  }>`
+
+字段约束建议：
+
+- `notes[].createdAt`：建议使用 ISO 8601 格式字符串（例如 `2026-01-31T12:34:56Z`）
+- `notes[].status`：枚举值固定为 `todo | verified | blocked`
+- `notes[].tag`：建议用于粗分类（例如 `balance` / `bug` / `design` / `ui` / `data`），不做强制枚举，以便扩展
+
+**Editor / Tool 保存约束（重要）**
+
+Skill Editor / Balance Tool 在“保存/导出（Export(dev)）”时，必须保证：
+
+- 不丢失 `devNote/notes` 以及其他未被当前 UI 表单覆盖的字段
+- 推荐策略：以“内存中的 skill 完整对象”为基准，仅对被编辑的字段做局部更新（merge/patch），而不是用字段白名单重建对象
 
 推荐结构：
 

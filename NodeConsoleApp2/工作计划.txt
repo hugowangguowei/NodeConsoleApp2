@@ -414,3 +414,9 @@ skill_editor_test_v3.htmlÖÐ£¬candidatePartsºÍSelectedPartsµÄ¶àÑ¡ÏÂÀ­¿òµã»÷all»òÕ
 ÔÚdesignÎÄ¼þ¼ÓÏÂ´´½¨Ò»¸öskill_design_brainStorm.mdÎÄ¼þ,½«µ±Ç°µÄ»¤¼×Ïà¹ØµÄ¼¼ÄÜÉè¼ÆË¼Â·¼ÇÂ¼ÏÂÀ´£¬·½±ãºóÐø²Î¿¼¡£
 
 µ±Ç°µÄJ.Tags²¿·ÖÃ»ÓÐÊµÏÖ½»»¥Ê½±êÇ©ÅäÖÃ£¬ÇëÄã¼ì²éÒ»ÏÂ´úÂë£¬·ÖÎöÔ­Òò£¬ÏÈ²»ÒªÐÞ¸Ä´úÂë¡£
+
+ÎÒÏ£Íû¸ø¼¼ÄÜÔö¼ÓÒ»¸ö¡°×¢¼Ç¡±×Ö¶Î£¬ÓÃÀ´¼ÇÂ¼ÔÚ±àÖÆ¼¼ÄÜ¹ý³ÌÖÐÓöµ½µÄÎÊÌâ¡£ÇëÄã·ÖÎöÕâ¸ö·½°¸µÄ¿ÉÐÐÐÔ£¬ÏÈ²»ÒªÐÞ¸Ä´úÂë¡£
+
+ÎÒÔÚ½øÐÐ¼¼ÄÜÉè¼ÆµÄÊ±ºò£¬·¢ÏÖÓÐÐ©¼¼ÄÜÓÐ¶à¸öÐ§¹û£¬ÀýÈç×Ô¼º¿Û2µãÑª£¬¶ÔµÐÈËÔì³É10µãÉËº¦£¬ÕâÖÖ¼¼ÄÜÉè¼ÆÓëµ±Ç°µÄTargetÊôÐÔ£¬EffectÊôÐÔµÄÉè¼Æ²»Ì«Æ¥Åä¡£ÒòÎªµ±Ç°µÄÉè¼ÆÊÇÒ»¸ö¼¼ÄÜ¶ÔÓ¦Ò»¸öÄ¿±êºÍÒ»¸öÐ§¹û£¬ÄÇÃ´¶ÔÓÚÕâÖÖ¶àÐ§¹ûµÄ¼¼ÄÜÉè¼Æ¾Í²»Ì«ÓÑºÃ¡£ÎÒÏ£ÍûÄã·ÖÎöÒ»ÏÂÕâ¸öÎÊÌâ£¬È·ÈÏµ±Ç°µÄÉè¼ÆÊÇ·ñºÏÀí£¿ÓÐÃ»ÓÐ¸üºÃµÄÉè¼Æ·½°¸£¿ÏÈ²»ÒªÐÞ¸Ä´úÂë¡£
+
+¸ù¾ÝÄãµÄÒâ¼û£¬ÎÒÏ£ÍûÄÜ¹»¸ü¸ÄskillµÄÉè¼Æ·½°¸£¬Ê×ÏÈ£¬ÎÒÏ£ÍûÈÔÈ»±£ÁôTargetµÄ¸ÅÄî£¬Target×÷ÎªÄ¬ÈÏµÄÄ¿±ê¶ÔÏó£¬ÔÚ½»»¥Ê½ÊäÈëÖÐÄÜ¹»Ö±½Ó½øÐÐÍÏ×§Ñ¡Ôñ¡£Æä´Î£¬ÎÒÏ£Íû²ÉÓÃÄãÌá¹©µÄAction[]Éè¼Æ·½°¸£¬Ã¿¸öation°üº¬¶ÀÁ¢µÄtargetºÍeffectÊôÐÔ£¬ÔÚactionµÄtarget£¬Ìá¹©¡°¸úËæÖ¸¶¨Ä¿±ê¡±¡¢¡°Ö¸¶¨Ä¿±ê¡±µÈÑ¡Ïî¡£ÇëÄã·ÖÎöÕâ¸ö·½°¸µÄ¿ÉÐÐÐÔ£¬ÏÈ²»ÒªÐÞ¸Ä´úÂë¡£
