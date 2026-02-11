@@ -1,3 +1,9 @@
 26-02-11-22:22
 
 在action-editor中，每个effect-row,当选择target.binding.mode为“explicit",会显示target.spec.selection.mode,target.spec.selection.slectCount，target.spec.selection.selectCndidateParts这些选项，实际上在手动配置界面中，这些并不需要，因为我会在配置界面中直接选择部位，选择部位后自动会生成单选还是多选，多选选几个的结论，所以在手动配置界面中，这些选项是冗余的，应该隐藏掉。在Target面板中存在候选，是因为要为交互做约束，但是在action界面中，行为是确定的。请确认我的意见是否正确，并给出修改意见，先不要写代码。
+
+请基于skills_melee_v4_2.json，分析当前的buff列表，并确认是否存在冗余的buff选项，并分析缺少的buff。根据分析结果，提出修改建议，以优化buff列表的结构和使用体验。
+
+在effectType中，如果选择buff_apply,应当显示buff名称选项，而不是amountType等内容，请分析当前effectType的设计逻辑，确认是否存在不合理之处，并提出改进建议。
+
+我选择方案B，但是当前方案B有两个问题：1，applySelf和 buff的target有冗余，如果taget可以选择enemy可self，那么就不需要applyself选项；2.buffId应该是读取buffs.json读取列表，而不是手动输入，而且我不希望选择buffId,因为不好选择，最好用name作为交互标识。

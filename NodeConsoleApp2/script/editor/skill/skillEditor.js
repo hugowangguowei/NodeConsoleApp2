@@ -116,6 +116,8 @@ export class SkillEditor {
         this.elSummaryText = document.getElementById('prop-summary-text');
         this.elSummaryBadge = document.getElementById('prop-summary-badge');
 
+        this.ensureBuffNameIndex();
+
         // Skill Drawer
         this.elSkillDrawer = document.getElementById('skill-drawer');
         this.elSkillDrawerHandle = document.getElementById('skill-drawer-handle');
@@ -144,7 +146,7 @@ export class SkillEditor {
             },
             description: '基础的挥砍攻击。',
             prerequisites: [],
-            buffRefs: { apply: [], applySelf: [], remove: [] },
+            buffRefs: { apply: [], remove: [] },
             actions: [],
             editorMeta: { x: 100, y: 100 }
         });
@@ -865,10 +867,30 @@ export class SkillEditor {
                 selection: { mode: 'single', candidateParts: (this.defaultParts || []).slice(), selectedParts: [], selectCount: 1 }
             },
             prerequisites: [],
-            buffRefs: { apply: [], applySelf: [], remove: [] },
+            buffRefs: { apply: [], remove: [] },
             actions: [],
             editorMeta: { x: vX, y: vY }
         });
+    }
+
+    ensureBuffNameIndex() {
+        const dict = (this.buffDict && typeof this.buffDict === 'object') ? this.buffDict : {};
+        const ids = Object.keys(dict);
+        const byName = {};
+        ids.forEach(id => {
+            const b = dict[id];
+            const name = (b && typeof b === 'object') ? String(b.name || '') : '';
+            if (!name) return;
+            if (!byName[name]) byName[name] = [];
+            byName[name].push(id);
+        });
+        this._buffIndex = { ids, byName };
+    }
+
+    getBuffDisplayName(buffId) {
+        const b = (this.buffDict && this.buffDict[buffId]) ? this.buffDict[buffId] : null;
+        const name = (b && typeof b === 'object') ? (b.name || '') : '';
+        return name ? String(name) : (buffId || '');
     }
 
     clearCanvas() {
@@ -965,10 +987,19 @@ export class SkillEditor {
                 delete skill.preRequisites;
             }
             if (!Array.isArray(skill.prerequisites)) skill.prerequisites = [];
-            if (!skill.buffRefs) skill.buffRefs = { apply: [], applySelf: [], remove: [] };
+            if (!skill.buffRefs) skill.buffRefs = { apply: [], remove: [] };
             if (!skill.buffRefs.apply) skill.buffRefs.apply = [];
-            if (!skill.buffRefs.applySelf) skill.buffRefs.applySelf = [];
             if (!skill.buffRefs.remove) skill.buffRefs.remove = [];
+
+            // Migrate legacy applySelf -> apply(target=self)
+            if (Array.isArray(skill.buffRefs.applySelf) && skill.buffRefs.applySelf.length) {
+                const migrated = skill.buffRefs.applySelf.map(r => ({
+                    ...r,
+                    target: 'self'
+                }));
+                skill.buffRefs.apply = (skill.buffRefs.apply || []).concat(migrated);
+            }
+            if (skill.buffRefs.applySelf) delete skill.buffRefs.applySelf;
 
             // v4: actions[] is canonical.
             // Support legacy imports:
@@ -1112,6 +1143,7 @@ export class SkillEditor {
             const skillsData = await skillsResp.json();
             const buffsData = await buffsResp.json();
             this.buffDict = buffsData || {};
+            this.ensureBuffNameIndex();
             if (!skillsData || typeof skillsData !== 'object' || !Array.isArray(skillsData.skills)) {
                 throw new Error('skills 数据格式不合法：必须是 pack { meta, skills: [] }');
             }
@@ -1228,7 +1260,8 @@ export class SkillEditor {
             document.getElementById('btn-dup').disabled = count !== 1;
             document.getElementById('btn-del').disabled = count === 0;
             document.getElementById('btn-add-apply').disabled = true;
-            document.getElementById('btn-add-applySelf').disabled = true;
+            const btnAddApplySelf0 = document.getElementById('btn-add-applySelf');
+            if (btnAddApplySelf0) btnAddApplySelf0.disabled = true;
             document.getElementById('btn-add-remove').disabled = true;
             if (this.elBtnAddAction) this.elBtnAddAction.disabled = true;
             if (this.elBtnOpenActionsJson) this.elBtnOpenActionsJson.disabled = true;
@@ -1270,7 +1303,8 @@ export class SkillEditor {
         document.getElementById('btn-del').disabled = false;
         document.getElementById('btn-dup').disabled = false;
         document.getElementById('btn-add-apply').disabled = false;
-        document.getElementById('btn-add-applySelf').disabled = false;
+        const btnAddApplySelf1 = document.getElementById('btn-add-applySelf');
+        if (btnAddApplySelf1) btnAddApplySelf1.disabled = true;
         document.getElementById('btn-add-remove').disabled = false;
         if (this.elBtnAddAction) this.elBtnAddAction.disabled = false;
         if (this.elBtnOpenActionsJson) this.elBtnOpenActionsJson.disabled = false;
@@ -1570,12 +1604,7 @@ export class SkillEditor {
 
             const specSubject = action?.target?.spec?.subject || (this.enums?.targetSubjects?.[0] || 'SUBJECT_SELF');
             const specScope = action?.target?.spec?.scope || (this.enums?.targetScopes?.[0] || 'SCOPE_ENTITY');
-            const specSelMode = action?.target?.spec?.selection?.mode || (this.enums?.selectionModes?.[0] || 'single');
-            const specSelCount = (typeof action?.target?.spec?.selection?.selectCount === 'number') ? action.target.spec.selection.selectCount : 1;
-
-            const specCandidate = Array.isArray(action?.target?.spec?.selection?.candidateParts) ? action.target.spec.selection.candidateParts : (this.defaultParts || []);
             const specSelected = Array.isArray(action?.target?.spec?.selection?.selectedParts) ? action.target.spec.selection.selectedParts : [];
-            const specCandidateStr = specCandidate.join(',');
             const specSelectedStr = specSelected.join(',');
 
             const effectType = action?.effect?.effectType || '';
@@ -1608,17 +1637,20 @@ export class SkillEditor {
                         <div class="small">target.spec.scope</div>
                         <select class="select" data-field="target.spec.scope">${opt(this.enums?.targetScopes, specScope)}</select>
 
-                        <div class="small">target.spec.selection.mode</div>
-                        <select class="select" data-field="target.spec.selection.mode">${opt(this.enums?.selectionModes, specSelMode)}</select>
-
-                        <div class="small">target.spec.selection.selectCount</div>
-                        <input class="input" data-field="target.spec.selection.selectCount" type="number" min="1" value="${escapeHtml(specSelCount)}" />
-
-                        <div class="small">target.spec.selection.candidateParts</div>
-                        <input class="input" data-field="target.spec.selection.candidateParts" type="text" value="${escapeHtml(specCandidateStr)}" placeholder="comma-separated" />
-
                         <div class="small">target.spec.selection.selectedParts</div>
-                        <input class="input" data-field="target.spec.selection.selectedParts" type="text" value="${escapeHtml(specSelectedStr)}" placeholder="comma-separated" />
+                        <div style="position:relative; min-width:0;">
+                            <button type="button" class="btn btn-dark btn-sm" data-field="target.spec.selection.selectedParts" data-action="pickParts" style="width:100%; text-align:left; white-space:normal; overflow-wrap:anywhere; word-break:break-word;">${escapeHtml(specSelectedStr || '(none)')}</button>
+                            <div class="panel" data-role="actionsPartsDropdown" style="position:absolute; top:36px; left:0; right:0; z-index:999; display:none; padding:10px;">
+                                <div class="small" style="margin-bottom:8px;">选择 explicit 目标部位（selectedParts）</div>
+                                <div data-role="actionsPartsList"></div>
+                                <div style="margin-top:10px; display:flex; gap:8px;">
+                                    <button type="button" class="btn btn-sm btn-dark" data-action="partsAll">All</button>
+                                    <button type="button" class="btn btn-sm btn-dark" data-action="partsNone">None</button>
+                                    <span style="flex:1"></span>
+                                    <button type="button" class="btn btn-sm btn-primary" data-action="partsOk">OK</button>
+                                </div>
+                            </div>
+                        </div>
 
                         <div class="small">effectType</div>
                         <select class="select" data-field="effect.effectType">${opt(this.enums?.effectTypes, effectType, '(select)')}</select>
@@ -1654,12 +1686,28 @@ export class SkillEditor {
             const specFields = [
                 'target.spec.subject',
                 'target.spec.scope',
-                'target.spec.selection.mode',
-                'target.spec.selection.selectCount',
-                'target.spec.selection.candidateParts',
                 'target.spec.selection.selectedParts',
             ];
             specFields.forEach(f => hidePairByField(rowEl, f, mode !== 'explicit'));
+
+            // These fields are derived from selecting parts in explicit mode; hide to reduce redundancy.
+            const redundantFields = [
+                'target.spec.selection.mode',
+                'target.spec.selection.selectCount',
+                'target.spec.selection.candidateParts',
+            ];
+            redundantFields.forEach(f => hidePairByField(rowEl, f, true));
+
+            // populate explicit parts dropdown (if present)
+            const listEl = rowEl.querySelector('[data-role="actionsPartsList"]');
+            if (listEl) {
+                const parts = Array.isArray(this.defaultParts) ? this.defaultParts : [];
+                const selected = new Set(Array.isArray(a?.target?.spec?.selection?.selectedParts) ? a.target.spec.selection.selectedParts : []);
+                listEl.innerHTML = parts.map(p => {
+                    const checked = selected.has(p) ? 'checked' : '';
+                    return `<label style="display:flex; gap:8px; align-items:center; margin:4px 0;"><input type="checkbox" value="${p}" ${checked}> <span>${p}</span></label>`;
+                }).join('');
+            }
         });
 
         if (!this._actionsDelegated) {
@@ -1676,13 +1724,7 @@ export class SkillEditor {
 
                 let v = e.target.value;
                 if (field === 'effect.amount') v = v === '' ? undefined : Number(v);
-                if (field === 'target.spec.selection.selectCount') v = v === '' ? undefined : Number(v);
-                if (field === 'target.spec.selection.candidateParts' || field === 'target.spec.selection.selectedParts') {
-                    v = String(v || '')
-                        .split(',')
-                        .map(s => s.trim())
-                        .filter(Boolean);
-                }
+                // selectedParts is edited via dropdown (checkboxes), not direct input.
                 // path set
                 const path = field.split('.');
                 let cur = sk.actions[index];
@@ -1707,6 +1749,77 @@ export class SkillEditor {
             });
 
             container.addEventListener('click', (e) => {
+                const row = e.target.closest('.effect-row');
+                if (!row) return;
+                const index = Number(row.dataset.index);
+                const sk = this.getSkillById(this.selectedNodeId);
+                if (!sk || !Array.isArray(sk.actions) || !sk.actions[index]) return;
+
+                const dropdown = row.querySelector('[data-role="actionsPartsDropdown"]');
+                const listEl = row.querySelector('[data-role="actionsPartsList"]');
+                if (!dropdown || !listEl) return;
+
+                const btnPick = e.target.closest('button[data-action="pickParts"]');
+                if (btnPick) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    dropdown.style.display = (dropdown.style.display === 'none' || !dropdown.style.display) ? 'block' : 'none';
+                    return;
+                }
+
+                const btnAll = e.target.closest('button[data-action="partsAll"]');
+                if (btnAll) {
+                    e.preventDefault();
+                    Array.from(listEl.querySelectorAll('input[type="checkbox"]')).forEach(cb => cb.checked = true);
+                    return;
+                }
+                const btnNone = e.target.closest('button[data-action="partsNone"]');
+                if (btnNone) {
+                    e.preventDefault();
+                    Array.from(listEl.querySelectorAll('input[type="checkbox"]')).forEach(cb => cb.checked = false);
+                    return;
+                }
+
+                const btnOk = e.target.closest('button[data-action="partsOk"]');
+                if (btnOk) {
+                    e.preventDefault();
+                    const picked = Array.from(listEl.querySelectorAll('input[type="checkbox"]'))
+                        .filter(cb => cb.checked)
+                        .map(cb => cb.value);
+
+                    // write back
+                    const act = sk.actions[index];
+                    if (!act.target) act.target = { binding: { mode: 'explicit' } };
+                    if (!act.target.binding) act.target.binding = { mode: 'explicit' };
+                    act.target.binding.mode = 'explicit';
+                    if (act.target.binding.ref) delete act.target.binding.ref;
+                    if (!act.target.spec) act.target.spec = {};
+                    if (!act.target.spec.selection || typeof act.target.spec.selection !== 'object') act.target.spec.selection = {};
+                    act.target.spec.selection.selectedParts = picked;
+                    // Keep derived fields in data for compatibility, but do not expose them in manual UI.
+                    act.target.spec.selection.candidateParts = picked.slice();
+                    act.target.spec.selection.mode = (picked.length <= 1) ? 'single' : 'multiple';
+                    act.target.spec.selection.selectCount = Math.max(1, picked.length || 1);
+
+                    this.ensureActionsHaveDefaults(sk);
+                    if (this.elPropActions) this.elPropActions.value = JSON.stringify(sk.actions, null, 2);
+                    dropdown.style.display = 'none';
+                    this.renderActionsList();
+                    this.updateSummary();
+                }
+            });
+
+            // close dropdown when click outside
+            window.addEventListener('mousedown', (e) => {
+                const row = e.target.closest?.('.effect-row');
+                // if click is within actions list, allow per-row handler
+                if (this.elActionsList && this.elActionsList.contains(e.target)) return;
+                Array.from(this.elActionsList?.querySelectorAll('[data-role="actionsPartsDropdown"]') || []).forEach(dd => {
+                    dd.style.display = 'none';
+                });
+            });
+
+            container.addEventListener('click', (e) => {
                 const btn = e.target.closest('button[data-action="del"]');
                 if (!btn) return;
                 const row = e.target.closest('.effect-row');
@@ -1726,49 +1839,85 @@ export class SkillEditor {
         const skill = this.selectedNodeId ? this.getSkillById(this.selectedNodeId) : null;
         const tables = {
             apply: document.querySelector('#table-apply tbody'),
-            applySelf: document.querySelector('#table-applySelf tbody'),
             remove: document.querySelector('#table-remove tbody'),
         };
         Object.values(tables).forEach(t => { if (t) t.innerHTML = ''; });
         if (!skill) return;
-        const renderBuffIdSelect = (value) => {
-            const buffIds = Object.keys(this.buffDict || {});
-            if (buffIds.length === 0) return `<input class="input" data-field="buffId" value="${value || ''}" placeholder="buffId"/>`;
-            const options = ['<option value="">(select)</option>'].concat(buffIds.map(id => `<option value="${id}" ${id===value?'selected':''}>${id}</option>`));
+        const escapeAttr = (s) => String(s ?? '')
+            .replaceAll('&', '&amp;')
+            .replaceAll('"', '&quot;')
+            .replaceAll('<', '&lt;')
+            .replaceAll('>', '&gt;');
+
+        const renderBuffPicker = (buffId) => {
+            const ids = Object.keys(this.buffDict || {});
+            if (ids.length === 0) {
+                return `<input class="input" data-field="buffId" value="${escapeAttr(buffId || '')}" placeholder="buffId"/>`;
+            }
+
+            const items = ids
+                .map(id => ({ id, name: this.getBuffDisplayName(id) }))
+                .sort((a, b) => String(a.name).localeCompare(String(b.name), 'zh-CN'));
+
+            const options = ['<option value="">(select)</option>'].concat(
+                items.map(({ id, name }) => {
+                    const label = `${name} (${id})`;
+                    return `<option value="${escapeAttr(id)}" ${id === buffId ? 'selected' : ''}>${escapeAttr(label)}</option>`;
+                })
+            );
+
             return `<select class="select" data-field="buffId">${options.join('')}</select>`;
         };
         const renderRow = (kind, row, index) => {
             if (kind === 'remove') {
                 return `
                     <tr data-kind="${kind}" data-index="${index}">
-                        <td>${renderBuffIdSelect(row.buffId)}</td>
                         <td>
-                            <select class="select" data-field="target">
-                                <option value="self" ${(row.target||'self')==='self'?'selected':''}>self</option>
-                                <option value="enemy" ${(row.target||'self')==='enemy'?'selected':''}>enemy</option>
-                            </select>
+                            <div class="buffref-row2">
+                                <div class="buffref-line1">
+                                    <div class="buffref-buff">${renderBuffPicker(row.buffId)}</div>
+                                    <button class="btn btn-sm btn-danger" data-action="del">Del</button>
+                                </div>
+                                <div class="buffref-line2">
+                                    <label class="small">target</label>
+                                    <select class="select" data-field="target">
+                                        <option value="self" ${(row.target||'self')==='self'?'selected':''}>self</option>
+                                        <option value="enemy" ${(row.target||'self')==='enemy'?'selected':''}>enemy</option>
+                                    </select>
+                                </div>
+                            </div>
                         </td>
-                        <td><button class="btn btn-sm btn-danger" data-action="del">Del</button></td>
                     </tr>
                 `;
             }
             return `
                 <tr data-kind="${kind}" data-index="${index}">
-                    <td>${renderBuffIdSelect(row.buffId)}</td>
                     <td>
-                        <select class="select" data-field="target">
-                            <option value="enemy" ${(row.target||'enemy')==='enemy'?'selected':''}>enemy</option>
-                            <option value="self" ${(row.target||'enemy')==='self'?'selected':''}>self</option>
-                        </select>
+                        <div class="buffref-row2">
+                            <div class="buffref-line1">
+                                <div class="buffref-buff">${renderBuffPicker(row.buffId)}</div>
+                                <button class="btn btn-sm btn-danger" data-action="del">Del</button>
+                            </div>
+                            <div class="buffref-line2">
+                                <label class="small">target</label>
+                                <select class="select" data-field="target">
+                                    <option value="enemy" ${(row.target||'enemy')==='enemy'?'selected':''}>enemy</option>
+                                    <option value="self" ${(row.target||'enemy')==='self'?'selected':''}>self</option>
+                                </select>
+                                <label class="small">chance</label>
+                                <input class="input" data-field="chance" type="number" step="0.01" value="${row.chance ?? 1}"/>
+                                <label class="small">duration</label>
+                                <input class="input" data-field="duration" type="number" value="${row.duration ?? ''}"/>
+                                <label class="small">stacks</label>
+                                <input class="input" data-field="stacks" type="number" value="${row.stacks ?? ''}"/>
+                            </div>
+                        </div>
                     </td>
-                    <td><input class="input" data-field="chance" type="number" step="0.01" value="${row.chance ?? 1}"/></td>
-                    <td><input class="input" data-field="duration" type="number" value="${row.duration ?? ''}"/></td>
-                    <td><input class="input" data-field="stacks" type="number" value="${row.stacks ?? ''}"/></td>
-                    <td><button class="btn btn-sm btn-danger" data-action="del">Del</button></td>
                 </tr>
             `;
         };
-        ['apply','applySelf','remove'].forEach(kind => {
+
+        ['apply','remove'].forEach(kind => {
             const arr = skill.buffRefs?.[kind] || [];
             arr.forEach((row, idx) => {
                 tables[kind].insertAdjacentHTML('beforeend', renderRow(kind, row, idx));
@@ -1789,7 +1938,7 @@ export class SkillEditor {
                 const row = sk.buffRefs[kind][index];
                 let v = e.target.value;
                 if (field === 'chance' || field === 'duration' || field === 'stacks') v = v === '' ? undefined : Number(v);
-                row[field] = v;
+                if (field !== 'buffId') row[field] = v;
                 this.updateSummary();
             });
             container.addEventListener('click', (e) => {
@@ -1812,10 +1961,10 @@ export class SkillEditor {
         if (!this.selectedNodeId) return;
         const sk = this.getSkillById(this.selectedNodeId);
         if (!sk) return;
-        if (!sk.buffRefs) sk.buffRefs = { apply: [], applySelf: [], remove: [] };
+        if (!sk.buffRefs) sk.buffRefs = { apply: [], remove: [] };
         if (!Array.isArray(sk.buffRefs[kind])) sk.buffRefs[kind] = [];
         if (kind === 'remove') sk.buffRefs[kind].push({ buffId: '', target: 'self' });
-        else sk.buffRefs[kind].push({ buffId: '', target: kind === 'applySelf' ? 'self' : 'enemy', chance: 1.0 });
+        else sk.buffRefs[kind].push({ buffId: '', target: 'enemy', chance: 1.0 });
         this.renderBuffRefTables();
         this.updateSummary();
     }

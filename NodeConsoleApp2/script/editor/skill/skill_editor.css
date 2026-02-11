@@ -69,6 +69,45 @@ header .small{opacity:.8;font-size:12px}
 .table{width:100%;border-collapse:collapse}
 .table th,.table td{border-top:1px solid #eee;padding:6px;text-align:left;font-size:12px}
 
+/* Buff Refs table layout: avoid overly crowded rows */
+#table-apply th,
+#table-apply td,
+#table-remove th,
+#table-remove td{padding:6px 4px;vertical-align:top}
+
+/* Two-line row layout in a single column */
+#table-apply thead,
+#table-remove thead{display:none}
+
+#table-apply td,
+#table-remove td{border-top:1px solid #eee}
+
+/* Allow long buff labels to wrap inside select */
+#table-apply select[data-field="buffId"],
+#table-remove select[data-field="buffId"]{white-space:normal}
+
+/* Stacked controls */
+.buffref-row2{display:flex;flex-direction:column;gap:8px}
+.buffref-line1{display:flex;gap:8px;align-items:center}
+.buffref-buff{flex:1;min-width:0}
+
+.buffref-line2{display:grid;grid-template-columns:auto 1fr;gap:6px 8px;align-items:center}
+.buffref-line2 .small{color:#666}
+
+@media (min-width: 980px){
+  .buffref-line2{grid-template-columns:auto 1fr auto 1fr;}
+}
+
+/* Slightly tighter inputs inside buff tables */
+#table-apply .input,
+#table-apply .select,
+#table-remove .input,
+#table-remove .select{padding:6px;border-radius:7px}
+
+@media (max-width: 1100px){
+  #properties-panel{width:420px}
+}
+
 .effect-row{border:1px solid #eee;border-radius:8px;padding:8px;background:#fff;margin-bottom:8px}
 .effect-row-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
 .effect-grid{display:grid;grid-template-columns:140px 1fr;gap:8px;align-items:center}
