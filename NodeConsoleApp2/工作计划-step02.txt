@@ -1,0 +1,3 @@
+26-02-11-22:22
+
+在action-editor中，每个effect-row,当选择target.binding.mode为“explicit",会显示target.spec.selection.mode,target.spec.selection.slectCount，target.spec.selection.selectCndidateParts这些选项，实际上在手动配置界面中，这些并不需要，因为我会在配置界面中直接选择部位，选择部位后自动会生成单选还是多选，多选选几个的结论，所以在手动配置界面中，这些选项是冗余的，应该隐藏掉。在Target面板中存在候选，是因为要为交互做约束，但是在action界面中，行为是确定的。请确认我的意见是否正确，并给出修改意见，先不要写代码。
