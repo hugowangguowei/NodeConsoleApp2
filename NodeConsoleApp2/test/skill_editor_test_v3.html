@@ -15,7 +15,7 @@
     <!-- A. Toolbar -->
     <div id="toolbar">
         <input type="file" id="file-input" accept=".json" style="display: none;" onchange="editor.importJsonFile(this)">
-        <button class="btn btn-dark" onclick="editor.loadProjectData()">Load Project Data</button>
+        <button class="btn btn-dark" onclick="editor.loadProjectData()">Load Buffs</button>
         <button class="btn btn-dark" onclick="editor.toggleSkillDrawer()">Skills</button>
         <button class="btn btn-primary" onclick="document.getElementById('file-input').click()">Import skills (v1/v3)</button>
         <button class="btn btn-primary" onclick="editor.createNewSkill()">+ New Skill</button>
@@ -261,7 +261,7 @@
                     </div>
                     <div class="small" style="margin-bottom:8px;">编辑 `buffRefs.apply/remove`。apply 通过 target 区分 self/enemy；buff 从 `buffs.json` 按 name 搜索选择（保存为 buffId）。</div>
 
-                    <div class="small" style="font-weight:700; margin:8px 0 4px;">apply (enemy)</div>
+                    <div class="small" style="font-weight:700; margin:8px 0 4px;">apply</div>
                     <table class="table" id="table-apply">
                         <thead>
                             <tr>

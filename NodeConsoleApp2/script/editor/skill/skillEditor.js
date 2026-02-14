@@ -1135,38 +1135,24 @@ export class SkillEditor {
     }
 
     async loadProjectData() {
+        return this.loadBuffsOnly();
+    }
+
+    async loadBuffsOnly() {
         try {
-            const [skillsResp, buffsResp] = await Promise.all([
-                fetch('../assets/data/skills_melee_v4.json'),
-                fetch('../assets/data/buffs.json')
-            ]);
-            const skillsData = await skillsResp.json();
+            const buffsResp = await fetch('../assets/data/buffs.json');
             const buffsData = await buffsResp.json();
             this.buffDict = buffsData || {};
             this.ensureBuffNameIndex();
-            if (!skillsData || typeof skillsData !== 'object' || !Array.isArray(skillsData.skills)) {
-                throw new Error('skills 数据格式不合法：必须是 pack { meta, skills: [] }');
-            }
-            this.setSkillPackMeta(skillsData.meta || null, skillsData.$schemaVersion || null);
-            const newSkills = [];
-            skillsData.skills.forEach((sk) => {
-                if (!sk || typeof sk !== 'object') return;
-                if (!sk.id) return;
-                newSkills.push(JSON.parse(JSON.stringify(sk)));
-            });
-            this.normalizeImportedSkills(newSkills);
-            this.skills = newSkills;
-            this.clearSelection();
-            this.renderNodes();
-            this.renderSkillLibrary();
-            this.pan = { x: 0, y: 0 };
-            this.zoom = 1;
-            this.updateTransform();
-            this.loadProperties(null);
-            alert(`Loaded skills: ${this.skills.length}, buffs: ${Object.keys(this.buffDict).length}`);
+
+            // Re-render buff UI if a skill is selected so the dropdown switches from input->select.
+            this.renderBuffRefTables();
+            this.updateSummary();
+
+            alert(`Loaded buffs: ${Object.keys(this.buffDict).length}`);
         } catch (e) {
             console.error(e);
-            alert('Load Project Data failed: ' + (e.message || String(e)));
+            alert('Load Buffs failed: ' + (e.message || String(e)));
         }
     }
 
@@ -1938,7 +1924,7 @@ export class SkillEditor {
                 const row = sk.buffRefs[kind][index];
                 let v = e.target.value;
                 if (field === 'chance' || field === 'duration' || field === 'stacks') v = v === '' ? undefined : Number(v);
-                if (field !== 'buffId') row[field] = v;
+                row[field] = v;
                 this.updateSummary();
             });
             container.addEventListener('click', (e) => {
