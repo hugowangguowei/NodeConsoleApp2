@@ -27,6 +27,7 @@ export class SkillEditor {
             selectionModes: ['single','multiple','random_single','random_multiple'],
             effectTypes: ['DMG_HP','DMG_ARMOR','PIERCE','HEAL','ARMOR_ADD','AP_GAIN','SPEED','BUFF_APPLY','BUFF_REMOVE'],
             amountTypes: ['ABS','PCT_MAX','PCT_CURRENT','SCALING'],
+            editStates: ['done','editing','deprecated'],
             requirementSelfPartModes: ['ANY','ALL'],
             partOverrideModes: ['fixed','listed'],
             hitModes: ['normal','cannot_dodge','always_crit'],
@@ -87,6 +88,7 @@ export class SkillEditor {
         this.elPrereqText = document.getElementById('prop-prerequisites');
         this.elMetaX = document.getElementById('meta-x');
         this.elMetaY = document.getElementById('meta-y');
+        this.elMetaEditState = document.getElementById('meta-editState');
 
         // v3 panel fields
         this.elTargetSubject = document.getElementById('prop-target-subject');
@@ -117,6 +119,19 @@ export class SkillEditor {
         this.elSummaryBadge = document.getElementById('prop-summary-badge');
 
         this.ensureBuffNameIndex();
+
+        if (this.elMetaEditState && !this._bindMetaEditState) {
+            this._bindMetaEditState = true;
+            // Use change (not input) to avoid excessive re-renders while interacting.
+            this.elMetaEditState.addEventListener('change', () => {
+                const s = this.skills.find(x => x.id === this.selectedNodeId);
+                if (!s) return;
+                s.editorMeta = s.editorMeta || {};
+                s.editorMeta.editState = this.elMetaEditState.value;
+                this.renderSkillLibrary?.();
+                this.updateSummary?.();
+            });
+        }
 
         // Skill Drawer
         this.elSkillDrawer = document.getElementById('skill-drawer');
@@ -430,9 +445,11 @@ export class SkillEditor {
             const el = document.createElement('div');
             el.className = 'skill-list-item';
             el.dataset.id = skill.id;
+            const editState = skill?.editorMeta?.editState || 'done';
             el.innerHTML = `
                 <div style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
                     <div style="font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${skill.name || '(unnamed)'}</div>
+                    <span class="badge badge-editState" data-state="${editState}">${editState}</span>
                 </div>
                 <div class="meta">${skill.id || ''}</div>
             `;
@@ -1266,6 +1283,10 @@ export class SkillEditor {
             this.elPrereqText.textContent = '—';
             this.elMetaX.value = '';
             this.elMetaY.value = '';
+            if (this.elMetaEditState) {
+                this.elMetaEditState.value = (this.enums?.editStates?.[0] || 'done');
+                this.elMetaEditState.disabled = true;
+            }
 
             if (count > 1) {
                 this.elValidateSummary.textContent = `Multi-select: ${count} nodes`;
@@ -1336,6 +1357,10 @@ export class SkillEditor {
         this.elPrereqText.textContent = (skill.prerequisites || []).join(', ') || '—';
         this.elMetaX.value = skill.editorMeta?.x ?? '';
         this.elMetaY.value = skill.editorMeta?.y ?? '';
+        if (this.elMetaEditState) {
+            this.elMetaEditState.disabled = false;
+            this.elMetaEditState.value = skill.editorMeta?.editState || (this.enums?.editStates?.[0] || 'done');
+        }
 
         // JSON fields (v3)
         if (this.elUnlock) this.elUnlock.value = JSON.stringify(skill.unlock || {}, null, 2);
@@ -1975,6 +2000,12 @@ export class SkillEditor {
         if (this.elCostsPart && Array.isArray(this.defaultParts)) {
             const opts = ['<option value="">(none)</option>'].concat(this.defaultParts.map(p => `<option value="${p}">${p}</option>`));
             this.elCostsPart.innerHTML = opts.join('');
+        }
+
+        if (this.elMetaEditState) {
+            const list = this.skillPackMeta?.enums?.editStates || this.enums?.editStates || ['done','editing','deprecated'];
+            this.elMetaEditState.innerHTML = (Array.isArray(list) ? list : ['done','editing','deprecated'])
+                .map(v => `<option value="${v}">${v}</option>`).join('');
         }
     }
 

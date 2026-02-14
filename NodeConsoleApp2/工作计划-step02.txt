@@ -13,4 +13,4 @@
 
 我希望在skill的属性editorMeta中增加一个属性，叫editState，用来标记当前技能是否已经完成配置，还是在编辑中，还是已经废弃的版本，请分析可行性，先不要修改代码。
 
-请在skills_melee_v4_3.json中补充editorMeta.editState属性，将所有技能的editState默认值设置为"done",。
+1：请在skills_melee_v4_3.json中补充editorMeta.editState属性，2：将所有技能的editState默认值设置为"done",3：在json一开始的枚举列表中补充editState的枚举，4.修改html的UI，以满足新的editState显示和交互需求。

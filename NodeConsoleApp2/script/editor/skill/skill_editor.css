@@ -51,6 +51,12 @@ header .small{opacity:.8;font-size:12px}
 .small{font-size:12px;color:#666}
 .badge{display:inline-block;padding:3px 8px;border-radius:999px;background:#eee;font-size:12px;font-weight:800}
 
+/* Skill editState badge */
+.badge-editState{font-size:11px; padding:3px 8px; border-radius:999px; border:1px solid #ddd; background:#f4f4f4; color:#444}
+.badge-editState[data-state="done"]{background:#e9f7ef;border-color:#bfe5cf;color:#1f7a3a}
+.badge-editState[data-state="editing"]{background:#fff7e6;border-color:#ffe0a3;color:#8a5b00}
+.badge-editState[data-state="deprecated"]{background:#fdeaea;border-color:#f0b0b0;color:#a12626}
+
 .grid2{display:grid;grid-template-columns:140px 1fr;gap:8px;align-items:center}
 .input,.select,.textarea{width:100%;padding:8px;border:1px solid var(--border);border-radius:8px;background:#fff}
 .textarea{min-height:90px;resize:vertical;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px}

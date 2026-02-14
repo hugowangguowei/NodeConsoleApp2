@@ -197,7 +197,12 @@
           "UNCONDITIONAL",
           "CONDITIONAL"
         ]
-      }
+      },
+      "editStates": [
+        "done",
+        "editing",
+        "deprecated"
+      ]
     }
   },
   "skills": [
@@ -221,7 +226,8 @@
         "x": 14,
         "y": 314,
         "group": "melee",
-        "locked": false
+        "locked": false,
+        "editState": "done"
       },
       "speed": -2,
       "target": {
@@ -306,7 +312,8 @@
         "x": 1814,
         "y": 314,
         "group": "melee",
-        "locked": false
+        "locked": false,
+        "editState": "done"
       },
       "speed": 0,
       "target": {
@@ -403,7 +410,8 @@
         "x": 714,
         "y": 514,
         "group": "melee",
-        "locked": false
+        "locked": false,
+        "editState": "done"
       },
       "speed": 2,
       "target": {
@@ -504,7 +512,8 @@
         "x": 1814,
         "y": 514,
         "group": "melee",
-        "locked": false
+        "locked": false,
+        "editState": "done"
       },
       "speed": -3,
       "target": {
@@ -622,7 +631,8 @@
         "x": 614,
         "y": 714,
         "group": "melee",
-        "locked": false
+        "locked": false,
+        "editState": "done"
       },
       "speed": -2,
       "target": {
@@ -732,7 +742,8 @@
         "x": 1814,
         "y": 914,
         "group": "melee",
-        "locked": false
+        "locked": false,
+        "editState": "done"
       },
       "speed": 1,
       "target": {
@@ -821,7 +832,8 @@
         "x": 1714,
         "y": 914,
         "group": "melee",
-        "locked": false
+        "locked": false,
+        "editState": "done"
       },
       "speed": -4,
       "target": {
@@ -924,7 +936,8 @@
         "x": 1714,
         "y": 1114,
         "group": "melee",
-        "locked": false
+        "locked": false,
+        "editState": "done"
       },
       "speed": -5,
       "target": {
@@ -1030,7 +1043,8 @@
         "x": 414,
         "y": 314,
         "group": "melee",
-        "locked": false
+        "locked": false,
+        "editState": "done"
       },
       "speed": 9,
       "target": {
@@ -1122,7 +1136,8 @@
         "x": 714,
         "y": 914,
         "group": "melee",
-        "locked": false
+        "locked": false,
+        "editState": "done"
       },
       "speed": 10,
       "target": {
@@ -1205,7 +1220,8 @@
         "x": 414,
         "y": 714,
         "group": "melee",
-        "locked": false
+        "locked": false,
+        "editState": "done"
       },
       "speed": 2,
       "target": {
@@ -1319,7 +1335,8 @@
         "x": 414,
         "y": 914,
         "group": "melee",
-        "locked": false
+        "locked": false,
+        "editState": "done"
       },
       "speed": 0,
       "target": {
@@ -1422,7 +1439,8 @@
         "x": 414,
         "y": 1114,
         "group": "melee",
-        "locked": false
+        "locked": false,
+        "editState": "done"
       },
       "speed": 10,
       "target": {
@@ -1521,7 +1539,8 @@
         "x": 214,
         "y": 514,
         "group": "melee",
-        "locked": false
+        "locked": false,
+        "editState": "done"
       },
       "speed": 2,
       "target": {
@@ -1613,7 +1632,8 @@
         "x": 1214,
         "y": 314,
         "group": "melee",
-        "locked": false
+        "locked": false,
+        "editState": "done"
       },
       "speed": 4,
       "target": {
@@ -1714,7 +1734,8 @@
       },
       "editorMeta": {
         "x": 414,
-        "y": 514
+        "y": 514,
+        "editState": "done"
       },
       "speed": 2,
       "target": {
@@ -1805,7 +1826,8 @@
       },
       "editorMeta": {
         "x": 614,
-        "y": 514
+        "y": 514,
+        "editState": "done"
       },
       "speed": 2,
       "target": {
@@ -1903,7 +1925,8 @@
       },
       "editorMeta": {
         "x": 514,
-        "y": 714
+        "y": 714,
+        "editState": "done"
       },
       "speed": 2,
       "target": {
@@ -2007,7 +2030,8 @@
       },
       "editorMeta": {
         "x": 214,
-        "y": 714
+        "y": 714,
+        "editState": "done"
       },
       "speed": 2,
       "target": {
@@ -2112,7 +2136,8 @@
       },
       "editorMeta": {
         "x": 514,
-        "y": 914
+        "y": 914,
+        "editState": "done"
       },
       "speed": 0,
       "target": {
@@ -2213,7 +2238,8 @@
       },
       "editorMeta": {
         "x": 614,
-        "y": 914
+        "y": 914,
+        "editState": "done"
       },
       "speed": 2,
       "target": {
@@ -2326,7 +2352,8 @@
       },
       "editorMeta": {
         "x": 314,
-        "y": 714
+        "y": 714,
+        "editState": "done"
       },
       "speed": 2,
       "target": {
@@ -2435,7 +2462,8 @@
       },
       "editorMeta": {
         "x": 2014,
-        "y": 514
+        "y": 514,
+        "editState": "done"
       },
       "speed": -3,
       "target": {
@@ -2552,7 +2580,8 @@
       },
       "editorMeta": {
         "x": 1114,
-        "y": 514
+        "y": 514,
+        "editState": "done"
       },
       "speed": -3,
       "target": {
@@ -2669,7 +2698,8 @@
       },
       "editorMeta": {
         "x": 1014,
-        "y": 914
+        "y": 914,
+        "editState": "done"
       },
       "speed": 1,
       "target": {
@@ -2757,7 +2787,8 @@
       },
       "editorMeta": {
         "x": 1014,
-        "y": 714
+        "y": 714,
+        "editState": "done"
       },
       "speed": 8,
       "target": {
@@ -2865,7 +2896,8 @@
       },
       "editorMeta": {
         "x": 1014,
-        "y": 1114
+        "y": 1114,
+        "editState": "done"
       },
       "speed": 10,
       "target": {
@@ -2962,7 +2994,8 @@
       },
       "editorMeta": {
         "x": 1314,
-        "y": 514
+        "y": 514,
+        "editState": "done"
       },
       "speed": -3,
       "target": {
@@ -3079,7 +3112,8 @@
       },
       "editorMeta": {
         "x": 1114,
-        "y": 714
+        "y": 714,
+        "editState": "done"
       },
       "speed": 8,
       "target": {
@@ -3187,7 +3221,8 @@
       },
       "editorMeta": {
         "x": 1114,
-        "y": 914
+        "y": 914,
+        "editState": "done"
       },
       "speed": 1,
       "target": {
@@ -3275,7 +3310,8 @@
       },
       "editorMeta": {
         "x": 1214,
-        "y": 914
+        "y": 914,
+        "editState": "done"
       },
       "speed": 1,
       "target": {
@@ -3363,7 +3399,8 @@
       },
       "editorMeta": {
         "x": 1314,
-        "y": 714
+        "y": 714,
+        "editState": "done"
       },
       "speed": 4,
       "target": {
@@ -3511,7 +3548,8 @@
       },
       "editorMeta": {
         "x": 1314,
-        "y": 914
+        "y": 914,
+        "editState": "done"
       },
       "description": "获得buff，每当扣除hp，获得攻击加成",
       "tags": [],
@@ -3555,7 +3593,8 @@
       },
       "editorMeta": {
         "x": 1314,
-        "y": 1114
+        "y": 1114,
+        "editState": "done"
       },
       "description": "消耗2点血，对指定部位造成20点伤害",
       "tags": [],
