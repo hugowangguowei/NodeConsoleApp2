@@ -121,7 +121,6 @@
             }
         ]
     },
-    
     "buff_slow": {
         "id": "buff_slow",
         "name": "减速",
@@ -186,7 +185,6 @@
             }
         }
     },
-    
     "buff_armor_pen": {
         "id": "buff_armor_pen",
         "name": "破甲",
@@ -245,7 +243,6 @@
             }
         }
     },
-    
     "buff_block": {
         "id": "buff_block",
         "name": "格挡",

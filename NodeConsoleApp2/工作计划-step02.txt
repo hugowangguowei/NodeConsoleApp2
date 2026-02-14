@@ -14,3 +14,14 @@
 我希望在skill的属性editorMeta中增加一个属性，叫editState，用来标记当前技能是否已经完成配置，还是在编辑中，还是已经废弃的版本，请分析可行性，先不要修改代码。
 
 1：请在skills_melee_v4_3.json中补充editorMeta.editState属性，2：将所有技能的editState默认值设置为"done",3：在json一开始的枚举列表中补充editState的枚举，4.修改html的UI，以满足新的editState显示和交互需求。
+
+buff_editor_v3中的 statModifiers是什么意思？
+
+Effects中的action不是枚举值，请分析原因，并提出改进建议，不要修改代码。
+
+当前buff的设计方案和buffs.json文件设计相对于skills.json和design略有些粗糙，尤其是关于skills.json前面的meta属性等内容，请分析当前buff设计方案的不足之处，并提出改进建议，以提升buff设计的规范性和可维护性，先不要修改代码。
+请先基于这个理念，基于skill_design.md升级buff_design.md
+
+根据新版本的buff_v2_1.json，修改buff_editor_v3的UI，以适应新的buff设计方案。请分析新版本buff设计方案的特点和变化，并提出具体的UI修改建议，以提升buff编辑器的用户体验和功能性，先不要修改代码。
+
+我希望对buff_editor_v3进行彻底的修改，不需要考虑兼容性问题，请分析当前buff_editor_v3的设计和功能，确认存在的不足之处，并提出全面的修改建议，以打造一个更高效、易用的buff编辑器，先不要修改代码。

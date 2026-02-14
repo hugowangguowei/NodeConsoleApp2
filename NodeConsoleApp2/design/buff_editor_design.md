@@ -1,327 +1,178 @@
-# Buff ±à¼­Æ÷/²âÊÔÆ÷Éè¼ÆÎÄµµ (Buff Editor & Tester Design)
+# Buff ç¼–è¾‘å™¨ï¼ˆBuff Editorï¼‰é‡åšæ–¹æ¡ˆï¼ˆvNextï¼Œä¸è€ƒè™‘å…¼å®¹ï¼‰
 
-## 1. ¸ÅÊö (Overview)
+æœ¬æ–‡ä»¶æè¿° `buff_editor_v3` çš„**å½»åº•é‡åš**æ–¹æ¡ˆï¼šä»¥ `assets/data/buffs_v2_1.json` ä¸ºå”¯ä¸€æ•°æ®æºï¼Œå¹¶ä»¥å…¶ `meta.enums` ä¸è§„èŒƒåŒ–åçš„ `effects[].payload` ç»“æ„é©±åŠ¨ UIã€‚ç›®æ ‡æ˜¯æ‰“é€ ä¸€ä¸ªâ€œé¢å‘æ•°æ®è§„èŒƒã€é¢å‘æ‰¹é‡ç”Ÿäº§ã€é¢å‘å¼ºæ ¡éªŒä¸é‡æ„â€çš„ Buff ç¼–è¾‘å™¨ã€‚
 
-ÎªÁËÖ§³Å Buff ÏµÍ³µÄµÍñîºÏÓëÊı¾İÇı¶¯Éè¼Æ£¬ÎÒÃÇĞèÒªÒ»¸ö¿ÉÊÓ»¯µÄ **Buff ±à¼­Æ÷ + Ö´ĞĞÑéÖ¤²âÊÔÆ÷** À´¹ÜÀí Buff µÄ JSON Êı¾İ£¬²¢ÑéÖ¤ËüÔÚµ±Ç°ÒıÇæÊµÏÖÖĞµÄÕæÊµÉúĞ§Çé¿ö¡£
+å…³è”æ–‡æ¡£ï¼š
 
-±¾²Ö¿âµ±Ç°ÒÑ¾­ÊµÏÖÁË Buff Ïà¹ØºËĞÄÄ£¿é£º
-
-* `script/engine/buff/BuffRegistry.js`£º¼ÓÔØ `assets/data/buffs.json`£¬²¢Ö§³Ö `aliasOf`
-* `script/engine/buff/BuffManager.js`£º½ÇÉ«³ÖÓĞ Buff µÄÈİÆ÷£¨add/remove/tick¡¢toJSON/fromJSON¡¢getEffectiveStat£©
-* `script/engine/buff/BuffSystem.js`£º¶©ÔÄ `EventBus` ²¢°´ `effects[].trigger` Ö´ĞĞ `action`
-* `script/engine/CoreEngine.js`£ºÔÚÉËº¦¹ÜÏßÖĞ¹¹Ôì²¢´«µİ¿É±ä `context`£¬²¢·¢³öÊÂ¼ş
-
-Òò´Ë±¾Éè¼ÆÎÄµµ»á½« Buff Editor µÄÖØµã´Ó¡°½ö±à¼­ JSON¡±µ÷ÕûÎª¡°±à¼­ + ¿É¸´ÏÖ´¥·¢Á´Â· + ¿É¹Û²ìÉÏÏÂÎÄ±ä»¯¡±¡£
-
-*   **±à¼­¶ÔÏó**: ·ûºÏ `buff_design.md` ÖĞ¶¨ÒåµÄ Buff JSON ½á¹¹¡£
-*   **ÔËĞĞ»·¾³**: ä¯ÀÀÆ÷ (Web Browser)¡£
-*   **ºËĞÄ¹¦ÄÜ**: ¼ÓÔØ JSON, ¿ÉÊÓ»¯±à¼­±íµ¥, µ¼³ö JSON¡£
-
-## 2. ¹¦ÄÜĞèÇó (Functional Requirements)
-
-### 2.1 ÎÄ¼ş¹ÜÀíÓëÊı¾İÀ´Ô´
-
-Buff Editor ĞèÒªÖ§³ÖÁ½ÖÖÊı¾İÀ´Ô´£¨ÓÃÓÚ²»Í¬½×¶ÎµÄ¹¤×÷Á÷£©£º
-
-1) **ÏîÄ¿Êı¾İÖ±Á¬£¨ÍÆ¼ö£©**
-   * Ö±½Ó¶ÁÈ¡ `assets/data/buffs.json`£¨Í¨¹ı HTTP ·şÎñÔËĞĞÒ³Ãæ£©
-   * ºÃ´¦£ºÓëÒıÇæÒ»ÖÂ£¬Ö§³Ö `aliasOf`
-2) **±¾µØÎÄ¼şµ¼Èë**
-   * Ö§³Öµã»÷°´Å¥ÉÏ´«±¾µØ JSON ÎÄ¼ş£¬»òÕß½« JSON ÎÄ±¾Õ³Ìùµ½ÊäÈë¿ò
-   * ÓÃÓÚ¿ìËÙÊÔÑé / Íâ²¿Ğ­×÷
-
-µ¼³ö·½Ê½£º
-
-*   **µ¼³ö¿â (Output Library)**£º±£´æ/µ¼³öÍêÕûµÄ `buffs.json`
-*   **µ¼³öµ¥Ìõ (Output Single)**£º½öµ¼³öµ±Ç°Ñ¡ÖĞµÄ Buff ¶¨Òå£¨±ãÓÚ PR/ÉóÔÄ£©
-
-### 2.2 »ù´¡ÊôĞÔ±à¼­
-*   **ID**: Î¨Ò»±êÊ¶·ûÊäÈë (Text)¡£
-*   **Ãû³Æ (Name)**: ÏÔÊ¾Ãû³ÆÊäÈë (Text)¡£
-*   **ÃèÊö (Description)**: ÎÄ±¾ÃèÊöÊäÈë (Text Area)¡£
-*   **Í¼±ê (Icon)**: Í¼±ê×ÊÔ´ ID ÊäÈë (Text)¡£
-*   **ÀàĞÍ (Type)**: ÏÂÀ­Ñ¡Ôñ (Select: `buff` | `debuff` | `hidden`)¡£
-*   **±êÇ© (Tags)**: ±êÇ©¹ÜÀí (Tag Input)£¬Ö§³ÖÌí¼Ó/É¾³ı±êÇ©×Ö·û´® (e.g. `physical`, `fire`)¡£
-
-### 2.3 ÉúÃüÖÜÆÚÅäÖÃ (Lifecycle)
-*   **³ÖĞøÊ±¼ä (Duration)**: Êı×ÖÊäÈë (Number)£¬Ö§³Ö -1 (ÓÀ¾Ã)¡£
-*   **×î´ó²ãÊı (Max Stacks)**: Êı×ÖÊäÈë (Number)¡£
-*   **µş¼Ó²ßÂÔ (Stack Strategy)**: ÏÂÀ­Ñ¡Ôñ¡£
-
-> ĞèÒªÓëµ±Ç°ÊµÏÖ¶ÔÆë£º`BuffManager` µ±Ç°ÊµÏÖ²¢Ê¹ÓÃ£º`refresh` / `add` / `extend` / `replace`¡£
-*   **Õ½¶·½áÊøÇå³ı (Remove on Battle End)**: ¸´Ñ¡¿ò (Checkbox)¡£
-
-### 2.4 ÊôĞÔĞŞÕıÅäÖÃ (Stat Modifiers)
-*   **Õ¹Ê¾ĞÎÊ½**: ¼´Ê¹Ô¤ÀÀÁĞ±í£¬Ö§³ÖÌí¼Ó/É¾³ıÊôĞÔĞŞÕıÌõÄ¿¡£
-*   **±à¼­Ïî**:
-    *   **ÊôĞÔÃû**: ÏÂÀ­Ñ¡Ôñ (e.g., `atk`, `def`, `speed`, `maxHp`, `critRate` µÈ)¡£
-    *   **ÊıÖµ**: Êı×ÖÊäÈë¡£
-    *   **ÀàĞÍ**: ÏÂÀ­Ñ¡Ôñ (`flat` | `percent`)¡£
-
-### 2.5 ¶¯Ì¬Ğ§¹ûÅäÖÃ (Effects & Triggers)
-ÕâÊÇ±à¼­Æ÷µÄºËĞÄÄÑµã£¬ĞèÒªÖ§³Ö¸´ÔÓµÄ¶¯Ì¬²ÎÊı¡£
-*   **Õ¹Ê¾ĞÎÊ½**: ¿ÉÕÛµşµÄ¿¨Æ¬ÁĞ±í (Accordion List)¡£
-*   **±à¼­Ïî**£¨ĞèÒªÓë `BuffSystem` µ±Ç°¿ÉÖ´ĞĞ¶¯×÷¶ÔÆë£©£º
-    *   **´¥·¢Ê±»ú (Trigger)**: `onTurnStart`, `onTurnEnd`, `onAttackPre`, `onAttackPost`, `onTakeDamagePre`, `onTakeDamage`, `onDefendPost`
-    *   **¶¯×÷ (Action)**£¨µ±Ç°ÒÑÊµÏÖ×îĞ¡¼¯£©£º
-        * `damage`, `heal`, `applyBuff`, `skipTurn`, `modifyAP`, `absorbDamage`, `modifyDamageTaken`, `REMOVE_SELF`, `MODIFY_STAT_TEMP`
-        * ÆäËü¶¯×÷¿ÉÔÊĞíÊäÈë£¬µ«Ó¦Ã÷È·±ê×¢¡°ÒıÇæÎ´Ö§³Ö¡±²¢ÔÚÄ£ÄâÊ±Êä³ö `BUFF:WARN`
-    *   **Ä¿±ê (Target)**: `self` / `target` / `attacker`
-    *   **²ÎÊıÅäÖÃ (Params / value)**:
-        *   ÕâÊÇÒ»¸ö¶¯Ì¬¼üÖµ¶Ô±à¼­Æ÷¡£
-        *   Ö§³ÖÌí¼Ó Key-Value ¶Ô¡£
-        *   **Value ÊäÈë**: Ö§³ÖÆÕÍ¨ÎÄ±¾£¬Ò²Ö§³Ö¼òµ¥µÄÓï·¨¸ßÁÁÌáÊ¾ (Èç¹û¿ÉÄÜ)£¬ÓÃÓÚÊäÈë¶¯Ì¬±í´ïÊ½ (Èç `{context.damageDealt} * 0.2`)¡£
-
-> ×¢Òâ£ºµ±Ç° `buffs.json` ÀïÓĞÁ½ÖÖ²ÎÊı·ç¸ñ£º
-> 1) ¶¥²ã `value/valueType`£¨ÀıÈç `damage` / `heal`£©
-> 2) `params: { stat, value, type }`£¨ÀıÈç `MODIFY_STAT_TEMP`£©
-> Editor ĞèÒªÍ¬Ê±Ö§³ÖÁ½ÖÖ½á¹¹¡£
-
-## 3. UI ½çÃæÉè¼Æ (UI Layout)
-
-²ÉÓÃ **ÈıÀ¸Ê½²¼¾Ö (Three-Column Layout)**£º
-
-* ×ó£ºBuff ¿â£¨´Ó `buffs.json` ¼ÓÔØµÄÁĞ±í + ËÑË÷£©
-* ÖĞ£ºµ±Ç° Buff µÄ±à¼­Óë JSON Ô¤ÀÀ£¨°üº¬ alias Õ¹¿ªÊÓÍ¼£©
-* ÓÒ£ºÄ£Äâµ÷ÊÔÇø£¨ÓÃÓÚÇı¶¯ `EventBus` Óë `context` ¹ÜÏß£¬ÑéÖ¤ÕæÊµÉúĞ§£©
-
-### 3.1 ²¼¾Ö½á¹¹
-
-½¨Òé±ÈÀı: `20% : 40% : 40%`
-
-```text
-+-----------------------------------------------------------------------------------+
-|  [Header]  Buff Editor v1.0   [Load JSON]  [Save JSON]                            |
-+----------------------+--------------------------------------+---------------------+
-|  [Column 1: List]    |  [Column 2: Editor]                  | [Column 3: Sim]     |
-|                      |                                      |                     |
-|  [Search Box]        |  +--- Basic Info ----------------+   | +--- Target -------+|
-|                      |  | ID: [________]  Type: [v]     |   | | Enemy: [Orc v]   ||
-|  [Buff List]         |  | Name: [_______] Tags: [x][x]  |   | | Part: [Chest v]  ||
-|  - buff_bleed_01     |  +-------------------------------+   | +------------------+|
-|  - buff_stun         |                                      |                     |
-|  - passive_armor     |  +--- Lifecycle -----------------+   | +--- Inspector ----+|
-|  [+ New Buff]        |  | Duration: [3]  Strategy: [v]  |   | | HP: 100/100      ||
-|                      |  +-------------------------------+   | | Armor: 50        ||
-|                      |                                      | | Buffs: [x] [x]   ||
-|                      |  +--- Stat Modifiers (-/+) ------+   | +------------------+|
-|                      |  | [atk]  [10] [%]  [x]          |   |                     |
-|                      |  +-------------------------------+   | +--- Control ------+|
-|                      |                                      | | [Start Turn]     ||
-|                      |  +--- Effects (Triggers) (-/+) --+   | | [Apply Buff]     ||
-|                      |  | [v] onAttackPost              |   | | [Take Dmg]       ||
-|                      |  |     Action: [HEAL]            |   | +------------------+|
-|                      |  |     Target: [self]            |   |                     |
-|                      |  +-------------------------------+   | +--- Logs ---------+|
-|                      |                                      | | > Turn 1 start   ||
-|                      |                                      | | > Bleed: -5      ||
-|                      |                                      | +------------------+|
-+----------------------+--------------------------------------+---------------------+
-```
-
-### 3.2 ½»»¥Âß¼­Ï¸½Ú
-
-1.  **ĞÂ½¨**: µã»÷ "+ New Buff"£¬ÖĞ¼ä±íµ¥Çå¿Õ£¬×Ô¶¯Éú³ÉÒ»¸öÄ¬ÈÏÄ£°å¡£
-2.  **±£´æ**: ĞŞ¸Ä±íµ¥Ê±ÊµÊ±¸üĞÂÄÚ´æ¶ÔÏó¡£
-3.  **Ä£ÄâÆ÷Áª¶¯£¨±¾´Î¸Ä°æÖØµã£©**:
-    *   ÓÒ²àÄ£Äâµ÷ÊÔÇø½«°üº¬ËÄ¿é£º
-        1) Player Êı¾İ£¨´Ó `player.json` ¼ÓÔØ£©
-        2) Enemy Êı¾İ£¨´Ó `enemies.json` ¼ÓÔØ²¢¿ÉÑ¡Ôñ£©
-        3) ²Ù×÷°´Å¥£¨Çı¶¯»ØºÏ¡¢Ê©¼Ó Buff¡¢Ä£Äâ¹¥»÷/ÊÜ»÷£©
-        4) ÈÕÖ¾ÇøÓò£¨¶©ÔÄ `BATTLE_LOG` / `BUFF:*` Êä³ö£©
-    *   µã»÷ "Ê©¼Ó Buff"£ºÊµ¼Êµ÷ÓÃ `BuffManager.add(buffId)`£¬²¢Õ¹Ê¾ add ºó buff ÁĞ±í±ä»¯¡£
-    *   µã»÷ "Ä£Äâ¹¥»÷"£º¹¹Ôì `context` ²¢°´Ã÷È·Ë³Ğò emit ÊÂ¼ş£¬¹Û²ì `context` ÊÇ·ñ±» Buff ĞŞ¸Ä¡£
-
-## 4. ¼¼ÊõÊµÏÖ·½°¸ (Technical Implementation)
-
-### 4.1 ¼¼ÊõÕ»
-*   **HTML5/CSS3**: Flexbox ²¼¾Ö£¬¼ò½à·ç¸ñ¡£
-*   **JavaScript (ES6+)**: Ô­Éú JS£¬»òÕßÊ¹ÓÃÇáÁ¿¼¶¿ò¼Ü **Vue.js (CDNÄ£Ê½)** ÒÔ±ãÓÚË«ÏòÊı¾İ°ó¶¨ºÍÁĞ±íäÖÈ¾¡£¿¼ÂÇµ½Î¬»¤ĞÔºÍ¿ª·¢Ğ§ÂÊ£¬ÍÆ¼öÊ¹ÓÃ Vue.js¡£
-
-### 4.2 Êı¾İ½á¹¹ (Model)
-±à¼­Æ÷ÄÚ²¿ĞèÒªÇø·ÖÁ½Ì×Êı¾İ£º
-
-1) **Buff ¶¨Òå¿â**£ºÀ´×Ô `buffs.json`£¨×Öµä½á¹¹£©
-2) **Ä£ÄâÔËĞĞÊ±¶ÔÏó**£º`BuffRegistry` / `BuffManager` / `BuffSystem` / `EventBus`
-
-½¨ÒéµÄÊı¾İĞÎÌ¬£º
-
-```javascript
-// ¢Ù Buff ¶¨Òå£¨ÀàËÆ buffs.json£©
-let buffDefinitions = {
-	"buff_poison": { /* ... */ },
-	// ...
-};
-
-// ¢Ú ÔËĞĞÊ±£¨ÓëÒıÇæÒ»ÖÂµÄÀà£©
-const registry = new BuffRegistry(buffDefinitions);
-const buffSystem = new BuffSystem(EventBus, registry);
-
-const simulatedPlayer = createRuntimeActorFromPlayerJson();
-simulatedPlayer.buffs = new BuffManager(simulatedPlayer, registry, EventBus);
-buffSystem.registerManager(simulatedPlayer.buffs);
-
-const simulatedEnemy = createRuntimeActorFromEnemyTemplate();
-simulatedEnemy.buffs = new BuffManager(simulatedEnemy, registry, EventBus);
-buffSystem.registerManager(simulatedEnemy.buffs);
-```
-
-### 4.3 ÎÄ¼ş I/O
-*   Ê¹ÓÃ `<input type="file" accept=".json" />` ¶ÁÈ¡ÎÄ¼ş¡£
-*   Ê¹ÓÃ `FileReader.readAsText()` ½âÎöÄÚÈİ¡£
-*   Ê¹ÓÃ `URL.createObjectURL(new Blob(...))` Éú³ÉÏÂÔØÁ´½Ó¡£
-
-## 5. Ä£ÄâÓëµ÷ÊÔ (Simulation & Debugging)
-
-±à¼­Æ÷²»Ó¦½öÊÇ¾²Ì¬Êı¾İµÄÊäÈë¹¤¾ß£¬¸üÓ¦³äµ±Âß¼­ÑéÖ¤µÄÉ³ºĞ¡£
-
-### 5.1 Ä¿±ê¶ÔÏóÅäÖÃ (Target Context)
-
-ÎªÁË²âÊÔ Buff ÔÚ²»Í¬ÊµÌåÉÏµÄ±íÏÖ£¬ĞèÌá¹©Ä£Äâ¶ÔÏóµÄÅäÖÃ¹¦ÄÜ¡£
-
-*   **Êı¾İÔ´£¨¶ÔÆë DataManagerV2 µÄ¼ÓÔØ·½Ê½£©**:
-    *   Player£º´Ó `assets/data/player.json` ¼ÓÔØ£¨¾¡Á¿Óëµ±Ç°ÒıÇæÒ»ÖÂ£©
-    *   Enemies£º´Ó `assets/data/enemies.json` ¼ÓÔØ£¬²¢ÔÚ UI ÉÏÑ¡ÔñÒ»¸öÄ£°å×÷ÎªÄ£ÄâµĞÈË
-    *   Buffs£º´Ó `assets/data/buffs.json` ¼ÓÔØ£¨Ö§³Ö `aliasOf` Õ¹¿ª£©
-*   **²¿Î»Ñ¡Ôñ (Body Parts)**£¨¶ÔÆëµ±Ç° `CoreEngine` µÄÉËº¦½áËãÂß¼­£©£º
-    *   Ä£Äâ¹¥»÷±ØĞëÑ¡ÔñÒ»¸ö `bodyPart`
-    *   ²¿Î»ÁĞ±íÀ´×Ô `actor.bodyParts` µÄ key
-*   **×´Ì¬¿ìÕÕ (State Inspector)**:
-    *   ÔÚ½çÃæÓÒ²à»òµ×²¿Ìá¹©¡°Ä¿±ê×´Ì¬¼àÊÓÇø¡±£¬ÊµÊ±Õ¹Ê¾µ±Ç°¶ÔÏóµÄ HP, AP, Attributes, ÒÔ¼°ËùÓĞ²¿Î»µÄ»¤¼×Öµ¡£
-    *   **Ó¦ÓÃ²âÊÔ**: µã»÷ [Apply Buff] °´Å¥£¬½«µ±Ç°±à¼­Æ÷ÖĞµÄ Buff ÁÙÊ±×¢Èëµ½Ä£Äâ¶ÔÏóµÄ `BuffManager` ÖĞ¡£
-
-### 5.2 Ä£Äâ×´Ì¬»ú (Simulation FSM)
-
-Í¨¹ıÄ£ÄâÓÎÏ·ºËĞÄÁ÷³ÌµÄ¹Ø¼ü½Úµã£¬ÑéÖ¤ Buff µÄ `trigger` ÊÇ·ñÕıÈ·¹¤×÷¡£
-
-*   **»ØºÏ¿ØÖÆÆ÷ (Turn Control)**£¨¶ÔÆë `BuffSystem` µ±Ç°¶©ÔÄµÄÊÂ¼ş£©£º
-    *   `[Start Turn]`: `EventBus.emit('TURN_START', { turn })` -> ¶ÔÓ¦ trigger `onTurnStart`
-    *   `[End Turn]`: `EventBus.emit('TURN_END', { turn })` -> ¶ÔÓ¦ trigger `onTurnEnd` + `tickTurn()`£¨³ÖĞøÊ±¼äµİ¼õ/¹ıÆÚÒÆ³ı£©
-*   **Õ½¶·ÊÂ¼şÄ£Äâ (Event Simulator)**£¨¶ÔÆëµ±Ç° `CoreEngine` µÄ×îĞ¡Õ½¶·¹ÜÏß£©:
-    *   **Ä£Äâ·¢Æğ¹¥»÷ (Cast Skill / Attack)**£¨Ç¿ÖÆÃ÷È· source/target£¬¼õÉÙ»ìÏı£©:
-        *   ÊäÈë£º
-            * Source£ºPlayer / Enemy£¨¶şÑ¡Ò»£©
-            * Target£ºEnemy / Player£¨¶şÑ¡Ò»£©
-            * rawDamage£ºÊıÖµÊäÈë
-            * bodyPart£ºÏÂÀ­Ñ¡Ôñ£¨À´×Ô Target µÄ `bodyParts`£©
-        *   Á÷³Ì£¨½¨ÒéÔÚÈÕÖ¾ÖĞÖğ²½´òÓ¡ context µÄ±ä»¯£©£º
-            1) ¹¹Ôì `context = { attacker, target, rawDamage, bodyPart, tempModifiers, damageTaken, damageDealt }`
-            2) `EventBus.emit('BATTLE_ATTACK_PRE', context)`
-               * Ô¤ÆÚ£º`MODIFY_STAT_TEMP` Ğ´Èë `context.tempModifiers`£¨ÀıÈç `armorMitigationMult`£©
-            3) »¤¼×½áËã£¨ÓÉÄ£ÄâÆ÷ÊµÏÖ£¬Óë CoreEngine µ±Ç°Âß¼­Ò»ÖÂ£©£º
-               * ¶ÁÈ¡ `context.tempModifiers.armorMitigationMult` Ó¦ÓÃµ½»¤¼×ÎüÊÕ½×¶Î
-            4) `context.damageTaken = pendingDamage`£¬Ö´ĞĞ `EventBus.emit('BATTLE_TAKE_DAMAGE_PRE', context)`
-               * Ô¤ÆÚ£º»¤¶Ü/¼õÉËÏà¹Ø action Ğ´Èë `context.shieldPool` / `context.damageTakenMult`
-            5) Ó¦ÓÃ `damageTakenMult/shieldPool`£¬¿Û³ı hp
-            6) `context.damageDealt = finalDamage`£¬Ö´ĞĞ `EventBus.emit('BATTLE_ATTACK_POST', context)`
-               * Ô¤ÆÚ£ºÎüÑªµÈ»ùÓÚ `damageDealt` µÄ buff ÉúĞ§
-    *   **Ä£ÄâËÀÍö (Death)**:
-        *   ÊÖ¶¯½« HP ÉèÎª 0£¬´¥·¢ `onDeath` (²âÊÔ¸´»îÀà Buff)¡£
-
-#### 5.2.1 ĞĞ¶¯³¢ÊÔÈë¿Ú£¨ÓÃÓÚ¿ØÖÆÀà Buff ¿É²âĞÔ£©
-
-¶ÔÓ¦ `buff_editor_test_doc.md` µÄ½áÂÛ£¨B-02 / R-03£©£ºµ±Ç°¹¤¾ßÈ±ÉÙ¡°µĞ·½³¢ÊÔĞĞ¶¯¡±µÄÄ£ÄâÈë¿Ú£¬µ¼ÖÂ `buff_stun/buff_freeze`£¨`skipTurn`£©Ö»ÄÜ´ò±ê¼Ç¶øÎŞ·¨ÑéÖ¤ÊÇ·ñÕæÕıÀ¹½ØĞĞ¶¯¡£
-
-**ĞèÇó**£ºÔÚÄ£ÄâÇøÔö¼Ó¡°ĞĞ¶¯³¢ÊÔ¡±°´Å¥£¬ÓÃÓÚÇı¶¯¿ØÖÆÀà Buff µÄ»Ø¹éÑéÖ¤¡£
-
-- UI£¨½¨Òé£©£º
-  - `[Enemy Try Action]` / `[Player Try Action]`
-  - »òÍ¨ÓÃ£º`[Try Action]` + Ñ¡Ôñ actor£¨player/enemy£©+ actionType£¨attack/skill/defend£©
-
-- ÊÂ¼ş£¨½¨ÒéÍ³Ò»ÃüÃû£©£º
-  - `BATTLE_ACTION_INTENT`
-  - `BATTLE_ACTION_PRE`
-  - `BATTLE_ACTION_POST`
-
-- payload£¨×îĞ¡¼¯£©£º
-  - `{ actor, actionType, skillId?, target?, bodyPart?, cancelled?: false, cancelReason?: string }`
-
-**»Ø¹éÑéÊÕ¿Ú¾¶**£º
-
-- µ± actor ³ÖÓĞ `skipTurn` ¿ØÖÆ£¨ÀıÈç `buff_stun`£©Ê±£¬`BATTLE_ACTION_PRE` ½×¶ÎÓ¦°Ñ£º
-  - `context.cancelled = true`
-  - `context.cancelReason = 'control:skipTurn[:buffId]'`
-- Sim UI ĞèÒª°Ñ¡°ĞĞ¶¯±»È¡Ïû¡±ÒÔÈÕÖ¾·½Ê½Õ¹Ê¾³öÀ´£¨¶ø²»ÊÇ½öÒÀÀµ»ØºÏ¿ªÊ¼/½áÊø£©¡£
-
-### 5.3 ·´À¡ÓëÈÕÖ¾ (Feedback & Logs)
-
-*   **¿ÉÊÓ»¯·´À¡**: µ±Ä£ÄâÊÂ¼ş´¥·¢µ¼ÖÂÊôĞÔ±ä¸üÊ±£¬×´Ì¬¼àÊÓÇøÓ¦ÓĞÉÁË¸»òÆ¯¸¡ÎÄ×Ö¶¯»­ (e.g., HP -5)¡£
-*   **¿ØÖÆÌ¨ÈÕÖ¾ (Console)**:
-    *   ÏÔÊ¾ÏêÏ¸µÄÖ´ĞĞÁ÷:
-        > `[Simulate]` Turn 1 Start
-        > `[Trigger]` buff_bleed_01 matched event "onTurnStart"
-        > `[Action]` Execute "DAMAGE": 5 (Source: Self)
-        > `[Result]` Target HP: 50 -> 45
-    *   **±¨´íÌáÊ¾**: Èç¹û `action` ²»±» `BuffSystem` Ö§³Ö£¬Ó¦Êä³ö `BUFF:WARN` ÇÒÔÚ UI ¸ßÁÁ¡£
-
-### 5.4 ±ØĞë¸²¸ÇµÄ²âÊÔÓÃÀı£¨ÓÃÓÚÑéÖ¤¡°ÕæµÄÉúĞ§¡±£©
-
-±¾±à¼­Æ÷µÄ Simulation ²»½öÊÇ UI£¬¶øÊÇÒªÄÜ¸´ÏÖ²¢ÑéÖ¤ Buff µÄ¹Ø¼üÄÜÁ¦£º
-
-1) **aliasOf**£ºÑ¡Ôñ `buff_lifesteal` Ê±£¬Ó¦ÔÚ¡°Õ¹¿ª¶¨ÒåÊÓÍ¼¡±ÖĞÏÔÊ¾ÆäÊµ¼ÊÊ¹ÓÃµÄ `passive_vampire` Âß¼­
-2) **DoT**£º¶Ô Target Ê©¼Ó `buff_poison`£¬µã»÷ `[End Turn]` Ó¦¿ÛÑª²¢ tick duration
-3) **ÆÆ¼×£¨armorMitigationMult£©**£º
-   * ¶Ô¹¥»÷ÕßÊ©¼Ó `buff_armor_pen`
-   * ½øĞĞÒ»´Î `Cast Skill`£¨rawDamage > 0£¬Ä¿±ê²¿Î»»¤¼× > 0£©
-   * ¹Û²ì»¤¼×¿Û¼õÊÇ·ñ±ÈÎŞ Buff ¸ü¿ì£¨ÈÕÖ¾Ğè´òÓ¡ armorMitMult Óë»¤¼×±ä»¯£©
-4) **»¤¶Ü£¨shieldPool£©**£º
-   * ¶ÔÊÜ»÷ÕßÊ©¼Ó `buff_shield`
-   * ÊÜ»÷Ê± `damageTaken` ÏÈ±» shield ÎüÊÕ£¬ÔÙ¿Û hp
-5) **ÎüÑª£¨damageDealt£©**£º
-   * ¶Ô¹¥»÷ÕßÊ©¼Ó `buff_lifesteal` »ò `passive_vampire`
-   * ¹¥»÷ºó `BATTLE_ATTACK_POST` Ó¦´¥·¢ heal£¬»ØÑª²»³¬¹ı maxHp
+- `design/buff_design.md`ï¼šBuff æ•°æ®è§„èŒƒï¼ˆSchema / Data Specï¼‰ã€‚
+- `assets/data/buffs_v2_1.json`ï¼šåŒ…å« `$schemaVersion`ã€`meta.enums`ã€`meta.fieldNotes`ã€ä»¥åŠ `buffs` æ•°æ®åº“ã€‚
 
 ---
 
-## 5.5 »ùÓÚ Per-Buff ½áÂÛµÄ¹¤¾ß¿Ú¾¶ÓëÊı¾İ²ßÂÔ£¨v3£©
+## 1. é‡åšç›®æ ‡ï¼ˆGoalsï¼‰
 
-> À´Ô´£º`test/test_doc/buff_editor_test_doc_v2.md` µÚÈıÕÂÖĞµÄ¡°½áÂÛ¡±ÌõÄ¿¡£
+### 1.1 ä¸»è¦ç›®æ ‡
 
-### 5.5.1 »Ø¹é·¶Î§ÊÕÁ²£¨MVP£©
+1. ä»¥æ•°æ®è§„èŒƒé©±åŠ¨ UIï¼šä¸‹æ‹‰é€‰é¡¹ã€é»˜è®¤å€¼ã€å­—æ®µè¯´æ˜æ¥è‡ª `buffs_v2_1.json.meta`ï¼Œé¿å… UI å†…éƒ¨ç¡¬ç¼–ç æšä¸¾ã€‚
+2. ç»Ÿä¸€ç¼–è¾‘ä½“éªŒï¼šæ‰€æœ‰ `effects[]` ä½¿ç”¨ `{ trigger, action, target, payload }`ï¼ŒUI æ ¹æ® `action` æ¸²æŸ“ `payload` è¡¨å•ã€‚
+3. å¼ºæ ¡éªŒ + å¿«é€Ÿå®šä½é—®é¢˜ï¼šç»“æ„æ ¡éªŒã€æšä¸¾æ ¡éªŒã€è·¨å¼•ç”¨æ ¡éªŒï¼ˆ`aliasOf`ã€id å”¯ä¸€æ€§ç­‰ï¼‰ï¼Œå¹¶å¯è·³è½¬åˆ°å­—æ®µã€‚
+4. æ‰¹é‡ç”Ÿäº§/é‡æ„å‹å¥½ï¼šæ¨¡æ¿ã€ä¸€é”®å¤åˆ¶ã€æ‰¹é‡æ›¿æ¢ã€æ‰¹é‡é‡å‘½åã€å­—æ®µè¿ç§»å·¥å…·ä¼˜å…ˆã€‚
+5. ç¼–è¾‘å™¨ä¸æ¨¡æ‹Ÿå™¨è§£è€¦ï¼šç¼–è¾‘å™¨æ˜¯â€œæ•°æ®ç”Ÿäº§å·¥å…·â€ï¼Œæ¨¡æ‹Ÿå™¨æ˜¯â€œéªŒè¯å·¥å…·â€ï¼ˆå¯é€‰/å¯æŠ˜å /å¯ç‹¬ç«‹é¡µé¢ï¼‰ã€‚
 
-v3 ²âÊÔÆ÷ÓÅÏÈ±£Ö¤ÒÔÏÂÁ´Â·¿ÉÎÈ¶¨»Ø¹é£º
+### 1.2 éç›®æ ‡
 
-- alias£º`buff_lifesteal` -> `passive_vampire`
-- DoT£º`buff_poison`£¨±£Áô£©
-- ÆÆ¼×£º`buff_armor_pen`£¨±£Áô£©
-- »¤¶Ü£º`buff_shield`£¨°´¡°Ò»´ÎĞÔµÖµ²Ò»´ÎÉËº¦¡±ÓïÒå£©
-- ÎüÑª£º`buff_lifesteal/passive_vampire`£¨±£Áô£©
+- ä¸è¿½æ±‚å¯¹æ—§ç‰ˆ `buffs.json`/æ—§ effect ç»“æ„çš„å…¼å®¹ã€‚
+- ä¸æŠŠç¼–è¾‘å™¨åšæˆå®Œæ•´æˆ˜æ–—ç³»ç»Ÿå¤åˆ»ï¼›éªŒè¯ä»¥â€œæœ€å°å¯ç”¨ã€å¯è§£é‡Šâ€ä¼˜å…ˆã€‚
 
-### 5.5.2 Êı¾İÉ¾¸Ä/¹ıÂË²ßÂÔ£¨±à¼­Æ÷²ã£©
+---
 
-- **É¾³ı**£¨¶ÌÆÚ²»ÄÉÈë»Ø¹é£¬±ÜÃâÔëÉù£©£º
-  - `buff_burn`£¨Óë `buff_bleed` ¸ß¶ÈÖØ¸´£©
-  - `buff_silence_limb`£¨½ö tbd£¬ÎŞ¿ÉÖ´ĞĞ×Ö¶Î£©
-  - `buff_berserk` / `buff_focus` / `buff_magic_surge` / `buff_poison_coat` / `buff_eagle_eye` / `buff_iron_will`£¨ÒÀÀµÎ´ÂäµØÌåÏµ»ò»Ø¹é½×¶Î²»¹Ø×¢£©
-  - `buff_immortality_hp` / `buff_revive`£¨ÒÀÀµ death ¹ÜÏß£¬µ±Ç°»Ø¹é½×¶ÎÒÆ³ı£©
-  - ×°±¸±»¶¯Àà£ºÄ¬ÈÏ²»×÷Îª Buff »Ø¹é·¶Î§£¬¿ÉÓÃ tag ¹ıÂË
+## 2. ç¼–è¾‘å™¨å·¥ä½œåŒºæ¨¡å‹ï¼ˆWorkspace Modelï¼‰
 
-- **ºÏ²¢/½µ¼¶**£º
-  - `buff_freeze`£º½µ¼¶Îªµ¥Ò»Ğ§¹û¡°¼õËÙ¡±£¬²¢Óë `buff_slow` ºÏ²¢£¨»ò¸ÄÎª aliasOf£©¡£
+### 2.1 é¡¶å±‚æ–‡æ¡£ï¼ˆDocï¼‰
 
-### 5.5.3 »¤¶ÜÓïÒå£¨·½°¸ B£ºµÖµ²Ò»´Î£©
+ç¼–è¾‘å™¨å†…å­˜æ¨¡å‹å»ºè®®ç›´æ¥å¯¹åº”ï¼š
 
-±à¼­Æ÷Óë²âÊÔÆ÷¶Ô `buff_shield` µÄÑéÖ¤¿Ú¾¶Í³Ò»Îª£º
+- `doc.$schemaVersion`
+- `doc.meta`ï¼ˆè‡³å°‘åŒ…å«ï¼š`enums`ã€`fieldNotes`ï¼Œå¯é€‰ `defaults`/`title`/`notes`ï¼‰
+- `doc.buffs: Record<buffId, BuffDef>`
 
-- ÔÚ `onTakeDamagePre` ½×¶Î½«±¾´Î `context.damageTaken` ÖÃ 0
-- ´¥·¢Ò»´ÎºóÁ¢¼´ÏûºÄ×ÔÉí£¨`REMOVE_SELF`£©
+### 2.2 BuffDefï¼ˆç¼–è¾‘å™¨å…³æ³¨å­—æ®µï¼‰
 
-¶ÔÓ¦²âÊÔÓÃÀı£ºR-06£¨ĞèÍ¬²½¸üĞÂÔ¤ÆÚÎÄ±¾£¬±ÜÃâÈÔÒÔ shieldPool ÊıÖµ¿Ú¾¶ÑéÊÕ£©¡£
+å¸¸ç”¨å­—æ®µï¼ˆä¸» UI å¿…é¡»è¦†ç›–ï¼‰ï¼š
 
-### 5.5.4 Inspector ±ØĞëÌá¹©¡°¿ÉÑéÖ¤¿Ú¾¶¡±
+- `id`, `name`, `description`
+- `type`ï¼ˆæ¥è‡ª `meta.enums.buffTypes`ï¼‰
+- `tags: string[]`
+- `lifecycle: { duration, maxStacks, stackStrategy, removeOnBattleEnd }`
+- `statModifiers: StatModifier[]`
+- `effects: Effect[]`
 
-Îª±ÜÃâ³öÏÖ¡°buff ÉúĞ§µ« UI ²»Õ¹Ê¾¡±µÄ¼ÙÊ§°Ü£¬v3 Inspector ÖÁÉÙĞèÒªÕ¹Ê¾£º
+å·¥ç¨‹å­—æ®µï¼ˆå»ºè®®ä¿ç•™åœ¨â€œé«˜çº§/æŠ˜å åŒºâ€ï¼‰ï¼š
 
-- `effectiveSpeed`£¨ÓÃÓÚÑéÖ¤ `buff_slow`£©
-- `effectiveMaxAp`£¨ÓÃÓÚÑéÖ¤ `buff_shield_wall` µÄ½áÂÛ£©
-- £¨¿ÉÑ¡£©`effectiveAtk`£¨ÓÃÓÚÑéÖ¤ strength/weak µÄºóĞøÀ©Õ¹£©
+- `status`ï¼ˆä¾‹å¦‚ active/deprecatedï¼‰
+- `version`, `icon`
+- `aliasOf`
 
-> ×¢£ºÉÏÊö `effective*` µÄ¼ÆËã¿Ú¾¶ÒÔ `BuffManager.getEffectiveStat(statKey, baseValue)` Îª×¼¡£
+### 2.3 Effectï¼ˆæ ‡å‡†åŒ–ï¼‰
 
-## 6. ´ı°ìÊÂÏî (To-Do List)
+ç»Ÿä¸€ç»“æ„ï¼š
 
-1.  ¶ÔÆëÏÖÓĞ `test/buff_editor_v2.html`£¬Ã÷È·ËüÔÚĞÂÉè¼ÆÖĞµÄÎ»ÖÃ£¨ÊÇ¡°¾É°æÔ­ĞÍ¡±»¹ÊÇ¡°Éı¼¶»ù×ù¡±£©¡£
-2.  ÏÈÊµÏÖ¡°Ö»¶Á¼ÓÔØ + Ä£ÄâÆ÷¡±£¬È·±£ÄÜÅÜÍ¨ 5.4 µÄ²âÊÔÓÃÀı¡£
-3.  ÔÙÊµÏÖ¡°±à¼­Óë±£´æ¡±£¬±ÜÃâ±à¼­Æ÷×ö³öÀ´µ«ÎŞ·¨ÑéÖ¤ÉúĞ§¡£
-4.  Ôö¼Ó schema Ğ£Ñé£¨ÖÁÉÙĞ£Ñé£ºid/type/lifecycle/effects ¸ñÊ½£©¡£
-5.  Ôö¼Ó alias ½âÎöÕ¹Ê¾£¨Ô­Ê¼¶¨Òå vs Õ¹¿ª¶¨Òå£©¡£
+- `trigger`ï¼šæ¥è‡ª `meta.enums.triggers`
+- `action`ï¼šæ¥è‡ª `meta.enums.effectActions`
+- `target`ï¼šæ¥è‡ª `meta.enums.targets`
+- `payload`ï¼šç”± `action` å†³å®šå½¢çŠ¶ï¼ˆAction-specific payloadï¼‰
+
+çº¦æŸï¼šç¼–è¾‘å™¨ä¸å†æŠŠâ€œä»»æ„ key-value params ç¼–è¾‘å™¨â€ä½œä¸ºä¸»å…¥å£ï¼›å¦‚ç¡®éœ€å…œåº•ï¼Œæ”¾å…¥â€œé«˜çº§ â†’ åŸå§‹ JSONâ€ã€‚
+
+---
+
+## 3. ä¿¡æ¯æ¶æ„ï¼ˆIAï¼‰ä¸å¸ƒå±€
+
+### 3.1 æ¨èå¸ƒå±€ï¼šä¸¤æ  + åº•éƒ¨é¢æ¿
+
+- å·¦ä¾§ï¼šBuff åº“ï¼ˆåˆ—è¡¨/æœç´¢/è¿‡æ»¤/åˆ†ç»„/è´¨é‡çŠ¶æ€ï¼‰
+- å³ä¾§ï¼šä¸»ç¼–è¾‘åŒºï¼ˆTabsï¼‰
+- åº•éƒ¨é¢æ¿ï¼ˆæˆ–å³ä¾§æŠ½å±‰ï¼‰ï¼šé—®é¢˜åˆ—è¡¨/æ ¡éªŒç»“æœ/æ—¥å¿—/å¯é€‰æ¨¡æ‹Ÿå™¨
+
+åŸåˆ™ï¼šç¼–è¾‘æ•ˆç‡ä¼˜å…ˆï¼›æ¨¡æ‹Ÿå™¨æŒ‰éœ€å±•å¼€ã€‚
+
+### 3.2 ä¸»ç¼–è¾‘åŒº Tabsï¼ˆå»ºè®®ï¼‰
+
+1. `æ¦‚è§ˆ`ï¼šid/name/type/tags/status/versionï¼Œå¿«é€Ÿæ‘˜è¦ï¼ˆdurationã€stacksã€effects æ•°é‡ï¼‰
+2. `ç”Ÿå‘½å‘¨æœŸ`ï¼š`lifecycle` å¯è§†åŒ–ç¼–è¾‘
+3. `å±æ€§ä¿®æ”¹ï¼ˆStatï¼‰`ï¼š`statModifiers` åˆ—è¡¨ç¼–è¾‘
+4. `æ•ˆæœï¼ˆEffectsï¼‰`ï¼šå¯æ’åºã€å¯å¤åˆ¶ã€å¯æ¨¡æ¿åŒ–çš„ effect ç¼–è¾‘
+5. `å¼•ç”¨ä¸åˆ«å`ï¼š`aliasOf`ã€è¢«å¼•ç”¨ç»Ÿè®¡ï¼ˆåå‘å¼•ç”¨ï¼‰
+6. `é«˜çº§`ï¼šåŸå§‹ JSONã€å·®å¼‚/å†å²ï¼ˆå¯é€‰ï¼‰
+
+---
+
+## 4. å…³é”®äº¤äº’ï¼ˆé‡ç‚¹ï¼‰
+
+### 4.1 å·¦ä¾§åˆ—è¡¨ï¼šåº“ç®¡ç†å™¨èƒ½åŠ›
+
+- æœç´¢ï¼šæ”¯æŒ `id/name/tags/description` å…¨æ–‡ï¼›é«˜çº§ç­›é€‰ï¼ˆtype/status/trigger/actionï¼‰
+- åˆ†ç»„ï¼šæŒ‰ `type`ã€`status`ã€`tag` åˆ†ç»„æŠ˜å 
+- è´¨é‡æç¤ºï¼šæ¯æ¡ Buff æ˜¾ç¤ºæ ¡éªŒçŠ¶æ€ï¼ˆOK/Warn/Errorï¼‰ä¸æœªä¿å­˜æ ‡è®°
+
+### 4.2 Effectsï¼šAction â†’ Payload åŠ¨æ€è¡¨å•
+
+æµç¨‹ï¼šå…ˆé€‰ `trigger/action/target`ï¼Œå†ç”± `action` å†³å®š `payload` çš„ç»“æ„åŒ–å­—æ®µã€‚
+
+å»ºè®®èƒ½åŠ›ï¼š
+
+- effect å¤åˆ¶/ç²˜è´´/æ‹–æ‹½æ’åº
+- effect æ¨¡æ¿åº“ï¼ˆä¾‹å¦‚ï¼šå›åˆå¼€å§‹ä¼¤å®³ã€æ”»å‡»åå¸è¡€ã€å—å‡»ååä¼¤ç­‰ï¼‰
+- å¯¹è¡¨è¾¾å¼å­—æ®µæä¾›å˜é‡æç¤ºä¸æ’å…¥ï¼ˆè‹¥å¼•æ“æ”¯æŒè¡¨è¾¾å¼ï¼‰
+
+### 4.3 StatModifiersï¼šè¯­ä¹‰åŒ–å‘ˆç° + å†²çªæç¤º
+
+æ¯è¡Œå»ºè®®å±•ç¤ºä¸ºï¼š`stat + op(flat/percent_base/...) + value + äººç±»å¯è¯»è¯´æ˜`ã€‚
+
+å¹¶æä¾›ï¼š
+
+- åŒä¸€ stat é‡å¤é¡¹æç¤º
+- ä¸ effects çš„åŠŸèƒ½é‡å æç¤ºï¼ˆä»…æç¤ºï¼Œä¸å¼ºé™åˆ¶ï¼‰
+
+---
+
+## 5. æ ¡éªŒä½“ç³»ï¼ˆå¿…é¡»å¼ºï¼‰
+
+### 5.1 æ ¡éªŒç±»å‹
+
+1. ç»“æ„æ ¡éªŒï¼šå¿…å¡«å­—æ®µç¼ºå¤±ã€ç±»å‹é”™è¯¯
+2. æšä¸¾æ ¡éªŒï¼š`trigger/action/target/type/stackStrategy/stat/modifierType` ç­‰å¿…é¡»æ¥è‡ª `meta.enums.*`
+3. å¼•ç”¨æ ¡éªŒï¼š`aliasOf` æ˜¯å¦å­˜åœ¨ã€ç¦æ­¢ alias ç¯ï¼ˆè‡³å°‘æç¤ºï¼‰
+4. ä¸€è‡´æ€§æ ¡éªŒï¼š`id` ä¸å¯¹è±¡ key ä¸€è‡´ï¼ˆå¦‚æœä»¥ key å­˜å‚¨ï¼‰ã€åŸºç¡€çº¦æŸï¼ˆå¦‚ duration=-1 çš„æç¤ºè§„åˆ™ï¼‰
+5. è¿ç§»æç¤ºï¼ˆå¯é€‰ï¼‰ï¼šæ£€æµ‹åˆ°æ—§å­—æ®µï¼ˆ`params`ã€`value/valueType`ï¼‰å¼•å¯¼è¿ç§»
+
+### 5.2 å‘ˆç°ä¸å®šä½
+
+- åº•éƒ¨â€œé—®é¢˜é¢æ¿â€ï¼š`severity + message + path`
+- ç‚¹å‡»è·³è½¬åˆ°å­—æ®µï¼›æ”¯æŒâ€œä»…å½“å‰ Buff/ä»… Error/å¯¼å‡ºæŠ¥å‘Šâ€
+
+---
+
+## 6. æ‰¹é‡å·¥å…·ï¼ˆToolsï¼‰
+
+ä¼˜å…ˆåšä¸€ä¸ª `å·¥å…·ï¼ˆToolsï¼‰` æŠ½å±‰é¡µï¼š
+
+- æ‰¹é‡é‡å‘½å `id`ï¼ˆè¿å¸¦æ›´æ–° `aliasOf` å¼•ç”¨ï¼‰
+- æ‰¹é‡æ›¿æ¢/è¿½åŠ  tag
+- æ‰¹é‡æŸ¥æ‰¾ï¼šæŒ‰ trigger/action/stat/target æŸ¥æ‰¾ Buff
+- è¿ç§»å·¥å…·ï¼šæŠŠå†å² effect ç»“æ„è¿ç§»ä¸º `{ payload }`ï¼ˆå¦‚ä»éœ€å¤„ç†æ—§æ•°æ®ï¼‰
+- æ¨¡æ¿åº“ï¼šä»å½“å‰ Buff ç”Ÿæˆæ¨¡æ¿ã€é€šè¿‡æ¨¡æ¿æ‰¹é‡åˆ›å»º
+
+---
+
+## 7. å¯¼å…¥/å¯¼å‡ºä¸å·¥ä½œæµ
+
+### 7.1 åªæ“ä½œå®¹å™¨ç»“æ„ï¼ˆbuffs_v2_1ï¼‰
+
+- å¯¼å…¥ï¼šé€‰æ‹©æ–‡ä»¶ â†’ è§£æ â†’ æ ¡éªŒ â†’ è½½å…¥ workspace
+- å¯¼å‡ºï¼šå¯¼å‡ºæ•´ä¸ªæ–‡æ¡£ï¼ˆåŒ…å« `$schemaVersion/meta/buffs`ï¼‰
+
+### 7.2 å• Buff å¯¼å‡º/åˆ†äº«
+
+- å¯¼å‡ºå•ä¸ª `BuffDef`ï¼ˆç”¨äº PR/è®¨è®ºï¼‰
+- å¯é€‰ï¼šå¯¼å‡ºâ€œæœ€å°å·®å¼‚/patch æ–‡æœ¬â€ï¼ˆç”¨äºå®¡é˜…ï¼‰
+
+---
+
+## 8. æ¨¡æ‹Ÿå™¨ï¼ˆå¯é€‰ï¼Œå»ºè®®ç‹¬ç«‹æˆ–å¯æŠ˜å ï¼‰
+
+### 8.1 åŸåˆ™
+
+- æ¨¡æ‹Ÿå™¨ç”¨äºè§£é‡Š Buff æ˜¯å¦è§¦å‘ã€å¦‚ä½•ä¿®æ”¹ contextï¼Œä¸è¿½æ±‚å®Œæ•´æˆ˜æ–—å¤åˆ»ã€‚
+- å¿…é¡»æä¾›â€œä¸Šä¸‹æ–‡å˜åŒ–ï¼ˆdiffï¼‰â€ä¸â€œæœ‰æ•ˆå±æ€§ï¼ˆeffective statsï¼‰â€å±•ç¤ºï¼Œé¿å…è¯¯åˆ¤ã€‚
+
+### 8.2 æœ€å°èƒ½åŠ›
+
+1. Turnï¼š`TURN_START` / `TURN_END`
+2. Attack pipelineï¼ˆç®€åŒ–ï¼‰ï¼š`BATTLE_ATTACK_PRE` â†’ ç»“ç®— â†’ `BATTLE_TAKE_DAMAGE_PRE` â†’ `BATTLE_ATTACK_POST`
+3. Action intentï¼ˆæ§åˆ¶ç±» Buffï¼‰ï¼š`BATTLE_ACTION_PRE` æ”¯æŒå–æ¶ˆåŠ¨ä½œ
+
+### 8.3 è¾“å‡º
+
+- äº‹ä»¶æ—¥å¿—ï¼ševent â†’ matched effects â†’ action â†’ payload â†’ context diff
+- actor æœ‰æ•ˆå±æ€§é¢æ¿ï¼šæ˜¾ç¤ºå åŠ  Buff åçš„æœ€ç»ˆæ•°å€¼
