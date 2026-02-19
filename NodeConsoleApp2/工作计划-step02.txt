@@ -43,3 +43,5 @@ buffºÄÉ¢»úÖÆ£ºREMOVE_SELFÓ¦¸ÃÓÉÉùÃ÷ÖÜÆÚ¾ö¶¨£¬¶ø²»ÊÇbuff¶¯×÷¾ö¶¨£¬Çë·ÖÎöµ±Ç°buffº
 ÎÒÏ£Íûbuff_design.mdÖÐµÄ5.4.2ÕÂ½Úactionº­¸ÇdamageÑªÁ¿£¬damage»¤¼×,heal»¤¼×£¬healÑªÁ¿£¬Ìø¹ý»ØºÏ¼¸¸öaction
 
 effect.actionµÄÃ¶¾Ù±äÁ¿ÐèÒªÔÚbuff_design.mdÖÐÃ÷È·¡£²¢½«ÕâÐ©¸ü¸ÄÏàÓ¦µØ·´Ó³ÔÚbuff_editor_v4.htmlµÄUIÉè¼ÆÖÐ£¬ÒÔ¼°buffs_v2_1.jsonÖÐ¡£
+
+ÎÒÏ£Íûbuff_editor_v4.htmlÖÐ×Ö¶Î±à¼­µÄµÄ¸÷¸ö×Ö¶ÎÓ¢ÎÄºóÃæ¶¼ÅäÉÏÖÐÎÄ×¢ÊÍ£¬ÒÔÌáÉýÓÃ»§µÄÀí½âºÍÊ¹ÓÃÌåÑé¡£

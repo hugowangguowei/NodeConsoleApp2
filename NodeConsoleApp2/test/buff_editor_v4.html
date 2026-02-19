@@ -308,11 +308,11 @@
                           <div class="section-title">概览</div>
                             <div class="row">
                                 <div class="col">
-                                    <div class="small">ID</div>
+                                    <div class="small">ID（标识）</div>
                                     <input class="input" v-model="currentBuff.id" @blur="onBuffIdBlur" />
                                 </div>
                                 <div class="col">
-                                    <div class="small">Type</div>
+                                    <div class="small">Type（类型）</div>
                                     <select class="select" v-model="currentBuff.type">
                                         <option v-for="t in enums.buffTypes" :key="t" :value="t">{{ t }}</option>
                                     </select>
@@ -321,14 +321,14 @@
 
                             <div class="row" style="margin-top:10px;">
                                 <div class="col">
-                                    <div class="small">Name</div>
+                                    <div class="small">Name（名称）</div>
                                     <input class="input" v-model="currentBuff.name" />
                                 </div>
                                <div class="col"></div>
                             </div>
 
                             <div style="margin-top:10px;">
-                                <div class="small">Description</div>
+                                <div class="small">Description（描述）</div>
                                 <textarea class="textarea" v-model="currentBuff.description"></textarea>
                             </div>
 
@@ -338,7 +338,7 @@
                                     <input class="input" v-model="tagsString" placeholder="e.g. dot, poison" />
                                 </div>
                                 <div class="col">
-                                    <div class="small">version</div>
+                                    <div class="small">version（版本，可选）</div>
                                     <input class="input" v-model="currentBuff.version" placeholder="optional" />
                                 </div>
                             </div>
@@ -346,24 +346,24 @@
                             <div class="section-title">生命周期</div>
                             <div class="row">
                                 <div class="col">
-                                    <div class="small">duration</div>
+                                    <div class="small">duration（持续回合）</div>
                                     <input class="input" type="number" v-model.number="currentBuff.lifecycle.duration" />
                                 </div>
                                 <div class="col">
-                                    <div class="small">maxStacks</div>
+                                    <div class="small">maxStacks（最大层数）</div>
                                     <input class="input" type="number" v-model.number="currentBuff.lifecycle.maxStacks" />
                                 </div>
                             </div>
                             <div class="row" style="margin-top:10px;">
                                 <div class="col">
-                                    <div class="small">stackStrategy</div>
+                                    <div class="small">stackStrategy（叠层策略）</div>
                                     <select class="select" v-model="currentBuff.lifecycle.stackStrategy">
                                         <option v-for="s in enums.stackStrategies" :key="s" :value="s">{{ s }}</option>
                                     </select>
                                 </div>
                                 <div class="col" style="display:flex; flex-direction:column; justify-content:center;">
                                     <label class="small" style="display:flex; gap:8px; align-items:center;">
-                                        <input type="checkbox" v-model="currentBuff.lifecycle.removeOnBattleEnd" /> removeOnBattleEnd
+                                        <input type="checkbox" v-model="currentBuff.lifecycle.removeOnBattleEnd" /> removeOnBattleEnd（战斗结束移除）
                                     </label>
                                 </div>
                             </div>
@@ -377,9 +377,9 @@
                             <table v-else class="table" style="margin-top:8px;">
                                 <thead>
                                     <tr>
-                                        <th>stat</th>
-                                        <th>type</th>
-                                        <th>value</th>
+                                        <th>stat（属性）</th>
+                                        <th>type（修正类型）</th>
+                                        <th>value（数值）</th>
                                         <th></th>
                                     </tr>
                                 </thead>
@@ -414,19 +414,19 @@
                                 <div v-for="(ef, idx) in currentBuff.effects" :key="idx" style="border:1px solid #eee; border-radius:8px; padding:10px; margin-bottom:10px;">
                                     <div class="row" style="align-items:flex-end;">
                                         <div class="col">
-                                            <div class="small">trigger</div>
+                                            <div class="small">trigger（触发时机）</div>
                                             <select class="select" v-model="ef.trigger">
                                                 <option v-for="t in enums.triggers" :key="t" :value="t">{{ t }}</option>
                                             </select>
                                         </div>
                                         <div class="col">
-                                            <div class="small">action</div>
+                                            <div class="small">action（动作）</div>
                                             <select class="select" v-model="ef.action" @change="onEffectActionChanged(ef)">
                                                 <option v-for="a in enums.effectActions" :key="a" :value="a">{{ a }}</option>
                                             </select>
                                         </div>
                                         <div class="col">
-                                            <div class="small">target</div>
+                                            <div class="small">target（作用对象）</div>
                                             <select class="select" v-model="ef.target">
                                                 <option v-for="t in enums.targets" :key="t" :value="t">{{ t }}</option>
                                             </select>
@@ -442,11 +442,11 @@
                                  <div v-if="ef.action==='DAMAGE_HP' || ef.action==='DAMAGE_ARMOR' || ef.action==='HEAL_HP' || ef.action==='HEAL_ARMOR'">
                                         <div class="row">
                                             <div class="col">
-                                             <div class="small">payload.value</div>
+                                             <div class="small">payload.value（数值/公式）</div>
                                                 <input class="input" v-model="ef.payload.value" placeholder="number 或公式字符串" />
                                             </div>
                                             <div class="col">
-                                             <div class="small">payload.valueType</div>
+                                             <div class="small">payload.valueType（数值类型）</div>
                                                 <select class="select" v-model="ef.payload.valueType">
                                                     <option v-for="t in enums.valueTypes" :key="t" :value="t">{{ t }}</option>
                                                 </select>
@@ -466,12 +466,12 @@
                             <div class="section-title">引用/别名</div>
                             <div class="row">
                                 <div class="col">
-                                    <div class="small">aliasOf</div>
+                                    <div class="small">aliasOf（别名/复用）</div>
                                     <input class="input" v-model="currentBuff.aliasOf" placeholder="可选：复用另一条定义" />
                                     <div class="small" style="margin-top:6px;">被引用次数：{{ aliasBackRefCount[currentBuff.id] || 0 }}</div>
                                 </div>
                                 <div class="col">
-                                    <div class="small">icon</div>
+                                    <div class="small">icon（图标，可选）</div>
                                     <input class="input" v-model="currentBuff.icon" placeholder="optional" />
                                 </div>
                             </div>
