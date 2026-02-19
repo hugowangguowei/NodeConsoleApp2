@@ -32,17 +32,11 @@
       "valueTypes": ["flat", "percent_base", "percent_current", "formula", "overwrite", "mult"],
       "statModifierTypes": ["flat", "percent_base", "percent_current", "overwrite", "formula"],
       "effectActions": [
-        "DAMAGE",
-        "HEAL",
-        "SKIP_TURN",
-        "SET_DAMAGE_TAKEN",
-        "MULTIPLY_DAMAGE_TAKEN",
-        "REMOVE_SELF",
-        "MODIFY_STAT_TEMP",
-        "ATTACK",
-        "MODIFY_AP",
-        "ABSORB_TO_HEAL",
-        "PREVENT_ARMOR_BREAK"
+        "DAMAGE_HP",
+        "DAMAGE_ARMOR",
+        "HEAL_HP",
+        "HEAL_ARMOR",
+        "SKIP_TURN"
       ]
     }
   },
@@ -65,7 +59,7 @@
     "effects": [
       {
         "trigger": "onTurnEnd",
-        "action": "DAMAGE",
+        "action": "DAMAGE_HP",
         "target": "self",
         "payload": {
           "value": "maxHp * 0.05",
@@ -120,38 +114,6 @@
     },
     "effects": []
   },
-  "buff_shield": {
-    "id": "buff_shield",
-    "name": "护盾",
-    "description": "护盾：抵挡一次伤害（一次性）。",
-    "type": "buff",
-    "tags": [
-      "defense"
-    ],
-    "lifecycle": {
-      "duration": 2,
-      "maxStacks": 1,
-      "stackStrategy": "replace",
-      "removeOnBattleEnd": true
-    },
-    "effects": [
-      {
-        "trigger": "onTakeDamagePre",
-        "action": "SET_DAMAGE_TAKEN",
-        "target": "self",
-        "payload": {
-          "value": 0,
-          "valueType": "overwrite"
-        }
-      },
-      {
-        "trigger": "onTakeDamagePre",
-        "action": "REMOVE_SELF",
-        "target": "self"
-      }
-    ],
-    "statModifiers": {}
-  },
   "buff_bleed": {
     "id": "buff_bleed",
     "name": "流血",
@@ -170,7 +132,7 @@
     "effects": [
       {
         "trigger": "onTurnStart",
-        "action": "DAMAGE",
+        "action": "DAMAGE_HP",
         "target": "self",
         "payload": {
           "value": 5,
@@ -247,41 +209,6 @@
     },
     "effects": []
   },
-  "buff_armor_pen": {
-    "id": "buff_armor_pen",
-    "name": "破甲",
-    "description": "下一次攻击削弱目标护甲减免（通过 onAttackPre 写入 armorMitigationMult 临时修正，随后消耗自我）。",
-    "type": "buff",
-    "tags": [
-      "offensive"
-    ],
-    "lifecycle": {
-      "duration": 1,
-      "maxStacks": 1,
-      "stackStrategy": "refresh",
-      "removeOnBattleEnd": true
-    },
-    "effects": [
-      {
-        "trigger": "onAttackPre",
-        "action": "MODIFY_STAT_TEMP",
-        "target": "target",
-        "params": {
-          "stat": "armorMitigationMult",
-          "value": "+0.3",
-          "type": "percent_current"
-        },
-        "_paramsJson": "{\n  \"stat\": \"armorMitigationMult\",\n  \"value\": \"+0.3\",\n  \"type\": \"percent_current\"\n}"
-      },
-      {
-        "trigger": "onAttackPost",
-        "action": "REMOVE_SELF",
-        "target": "self",
-        "_paramsJson": ""
-      }
-    ],
-    "statModifiers": {}
-  },
   "buff_bless": {
     "id": "buff_bless",
     "name": "祝福",
@@ -308,33 +235,6 @@
     },
     "effects": []
   },
-  "buff_block": {
-    "id": "buff_block",
-    "name": "格挡",
-    "description": "减伤：受到伤害前将伤害乘以 0.5（持续 1 回合）。",
-    "type": "buff",
-    "tags": [
-      "defense"
-    ],
-    "lifecycle": {
-      "duration": 1,
-      "maxStacks": 1,
-      "stackStrategy": "refresh",
-      "removeOnBattleEnd": true
-    },
-    "effects": [
-      {
-        "trigger": "onTakeDamagePre",
-        "action": "MULTIPLY_DAMAGE_TAKEN",
-        "target": "self",
-        "payload": {
-          "value": 0.5,
-          "valueType": "mult"
-        }
-      }
-    ],
-    "statModifiers": {}
-  },
   "buff_pain_sup": {
     "id": "buff_pain_sup",
     "name": "痛苦压制",
@@ -357,39 +257,6 @@
       }
     },
     "effects": []
-  },
-  "buff_evasion": {
-    "id": "buff_evasion",
-    "name": "残影",
-    "description": "增益：抵挡 1 次伤害（一次性）。",
-    "type": "buff",
-    "tags": [
-      "defense",
-      "speed"
-    ],
-    "lifecycle": {
-      "duration": 1,
-      "maxStacks": 1,
-      "stackStrategy": "refresh",
-      "removeOnBattleEnd": true
-    },
-    "effects": [
-      {
-        "trigger": "onTakeDamagePre",
-        "action": "SET_DAMAGE_TAKEN",
-        "target": "self",
-        "payload": {
-          "value": 0,
-          "valueType": "overwrite"
-        }
-      },
-      {
-        "trigger": "onTakeDamagePre",
-        "action": "REMOVE_SELF",
-        "target": "self"
-      }
-    ],
-    "statModifiers": {}
   },
   "buff_immortality_armor": {
     "id": "buff_immortality_armor",
@@ -461,7 +328,7 @@
     "effects": [
       {
         "trigger": "onDefendPost",
-        "action": "DAMAGE",
+        "action": "DAMAGE_HP",
         "target": "attacker",
         "payload": {
           "value": "damageTaken * 0.3",

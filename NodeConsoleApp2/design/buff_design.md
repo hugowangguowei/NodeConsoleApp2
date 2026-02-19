@@ -183,7 +183,7 @@ Buff对象是所有效果的最小单元。一个标准的 Buff 对象包含**基础信息**、**生命周期控
 **设计口径统一**（对齐 1.2 的测试结论）：
 
 - 本轮回归口径下，`buff_shield` 定义为：**抵挡一次伤害（一次性）**。
-- 推荐实现方式：在 `onTakeDamagePre` 阶段将 `context.damageTaken = 0`（或等价字段），并在同一次受击后 `REMOVE_SELF`。
+- 推荐实现方式：在 `onTakeDamagePre` 阶段将 `context.damageTaken = 0`（或等价字段），并由 **lifecycle 耗散规则**在本次触发后移除/消耗（而不是依赖 `REMOVE_SELF` 动作）。
 - 若未来需要“护盾池/可吸收数值”的体系，可另行引入 `shieldPool` 机制 Buff（与本轮 `buff_shield` 区分 ID 与文案）。
 
 **可追溯日志要求**（回归验证必需）：
@@ -358,7 +358,7 @@ Buff 的效果分为**静态属性修正**和**动态触发行为**两类。
       "tags": ["dot", "control", "stat_up", "stat_down", "defense", "offensive", "poison", "physical"],
       "statNames": ["maxHp", "atk", "def", "speed", "critRate", "hitRate", "dodgeRate", "damageDealtMult", "damageTakenMult", "armorMitigationMult", "maxAp"],
       "statModifierTypes": ["flat", "percent_base", "percent_current", "overwrite", "formula"],
-      "effectActions": ["DAMAGE", "HEAL", "SKIP_TURN", "SET_DAMAGE_TAKEN", "REMOVE_SELF", "MODIFY_STAT_TEMP", "APPLY_BUFF", "REMOVE_BUFF"]
+      "effectActions": ["DAMAGE", "HEAL", "SKIP_TURN", "SET_DAMAGE_TAKEN", "MODIFY_STAT_TEMP", "APPLY_BUFF", "REMOVE_BUFF"]
     }
   },
   "buffs": {}
@@ -442,14 +442,89 @@ Buff 的效果分为**静态属性修正**和**动态触发行为**两类。
 
 建议 MVP 支持：
 
-- `DAMAGE`：`payload.value/valueType`
-- `HEAL`：`payload.value/valueType`
-- `SKIP_TURN`：无 payload 或 `payload.reason`
-- `SET_DAMAGE_TAKEN`：`payload.value/valueType=overwrite`
-- `REMOVE_SELF`：无 payload
-- `MODIFY_STAT_TEMP`：`payload.stat/payload.value/payload.type`
+- `DAMAGE_HP`：对生命值造成伤害
+  - `payload.value/valueType`
+- `DAMAGE_ARMOR`：对护甲造成伤害
+  - `payload.value/valueType`
+- `HEAL_HP`：恢复生命值
+  - `payload.value/valueType`
+- `HEAL_ARMOR`：恢复护甲
+  - `payload.value/valueType`
+- `SKIP_TURN`：跳过本回合行动
+  - 无 payload 或 `payload.reason`
 
-> 说明：`APPLY_BUFF/REMOVE_BUFF` 是否放在 Buff 的 action 中取决于你是否允许“buff 触发 buff”（链式）。如果你希望把复杂度留在技能侧，可先不纳入 MVP。
+
+为提升可维护性与编辑器体验，建议在 `meta.enums.effectActions` 的设计上同时遵循以下约束与改进方向（不影响 MVP 的最小落地顺序，但影响后续扩展的“长相”）：
+
+##### (A) 每个 action 必须有明确语义与 payload 合同（Contract）
+
+在 `meta.fieldNotes` 中为每个 action 增加说明（最低限度为“用途 + payload 字段”），避免出现“枚举有了但不知道怎么填”的情况。建议形态（与 5.4.2 的动作枚举保持一致）：
+
+- `effects.action.DAMAGE_HP`：对 `target` 的生命值造成伤害。
+  - `payload.value: number|string`（常量或公式）
+  - `payload.valueType: flat|percent_base|percent_current|formula`
+- `effects.action.DAMAGE_ARMOR`：对 `target` 的护甲造成伤害。
+  - `payload.value: number|string`
+  - `payload.valueType: flat|percent_base|percent_current|formula`
+- `effects.action.HEAL_HP`：恢复 `target` 的生命值。
+  - `payload.value: number|string`
+  - `payload.valueType: flat|percent_base|percent_current|formula`
+- `effects.action.HEAL_ARMOR`：恢复 `target` 的护甲。
+  - `payload.value: number|string`
+  - `payload.valueType: flat|percent_base|percent_current|formula`
+- `effects.action.SKIP_TURN`：跳过本回合行动。
+  - 可选 `payload.reason: string`
+
+
+> 上述“合同”并不强制你一次性实现全部 action，但建议一次性把“字段定义清楚”，否则编辑器无法做到强校验与动态表单。
+
+##### (F) 耗散/一次性机制：由 lifecycle 负责，而不是 action
+
+为避免“生命周期与行为混写”，建议将“一次性/触发后消失/消耗层数”等耗散能力收敛到 `lifecycle`（或 `lifecycle.consume`）字段中，而不是通过 effect 中追加 `REMOVE_SELF` 来表达。
+
+推荐形态（示例，字段名可后续定稿）：
+
+```json
+"lifecycle": {
+  "duration": -1,
+  "maxStacks": 1,
+  "stackStrategy": "replace",
+  "removeOnBattleEnd": true,
+  "consume": { "mode": "remove", "when": "onTrigger", "count": 1 }
+}
+```
+
+含义：
+
+- `consume.mode`：`none | remove | consumeStacks`
+- `consume.when`：`onTrigger`（命中该 Buff 的任一 effect 后触发）或更细粒度的事件点（如 `onTakeDamagePre`）
+- `consume.count`：消耗层数（用于“n 次免疫/闪避”）
+
+##### (B) 命名建议：优先“策划语义”，避免“面向实现细节”
+
+长期来看，action 需要面向内容生产（策划/关卡/系统）而不仅仅是引擎实现。
+
+- `ABSORB_TO_HEAL`：建议未来考虑更语义化的名称（例如 `CONVERT_DAMAGE_TO_HEAL` 或 `LIFESTEAL`），并明确它是“按本次承伤/按本次造成伤害/按吸收量”中的哪一种。
+- `PREVENT_ARMOR_BREAK`：属于强耦合“部位护甲破坏规则”的特化 action。建议未来优先收敛成“规则修改类 action”的参数，而不是持续增加特化 action。
+
+##### (C) 结构建议：避免 action 粒度混杂，优先合并同域动作
+
+本版 MVP 动作库不包含“修改承伤/改写结算管线”类 action。
+
+- 若未来确有需求，建议以“版本化扩展包”的形式引入（例如 `buffs_v2_2` 扩展动作库），而不是在 MVP 阶段提前占位。
+
+##### (D) 对 `MODIFY_STAT_TEMP` 的约束建议（防止成为“万能 action 黑洞”）
+
+本版 MVP 动作库不包含 `MODIFY_STAT_TEMP`。
+
+- 若未来需要“临时改写上下文/结算参数”的能力，建议在更高版本中引入，并在同一版本内明确：作用域、回滚机制、优先级与可叠加规则。
+
+##### (E) `ATTACK`/主动行为类 action 的边界建议
+
+`ATTACK` 这类“生成一次主动行为”的 action 会显著提高系统复杂度（需要与战斗管线/Skill 选择/部位选择深度耦合）。
+
+- 建议 MVP 阶段不实现或不开放给策划使用（可保留枚举但编辑器隐藏/标记为 advanced）。
+- 若保留，需明确其 `payload` 合同（例如是否必须提供 `skillId`、是否允许指定 bodyPart、是否会再次触发 `onAttackPre/Post`）。
 
 ---
 

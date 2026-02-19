@@ -324,10 +324,7 @@
                                     <div class="small">Name</div>
                                     <input class="input" v-model="currentBuff.name" />
                                 </div>
-                                <div class="col">
-                                    <div class="small">status</div>
-                                    <input class="input" v-model="currentBuff.status" placeholder="optional" />
-                                </div>
+                               <div class="col"></div>
                             </div>
 
                             <div style="margin-top:10px;">
@@ -442,59 +439,16 @@
 
                                     <div class="hr"></div>
 
-                                    <div v-if="ef.action==='DAMAGE' || ef.action==='HEAL'">
+                                 <div v-if="ef.action==='DAMAGE_HP' || ef.action==='DAMAGE_ARMOR' || ef.action==='HEAL_HP' || ef.action==='HEAL_ARMOR'">
                                         <div class="row">
                                             <div class="col">
-                                                <div class="small">payload.amount</div>
-                                                <input class="input" v-model="ef.payload.amount" placeholder="number 或公式字符串" />
+                                             <div class="small">payload.value</div>
+                                                <input class="input" v-model="ef.payload.value" placeholder="number 或公式字符串" />
                                             </div>
                                             <div class="col">
-                                                <div class="small">payload.amountType</div>
-                                                <select class="select" v-model="ef.payload.amountType">
+                                             <div class="small">payload.valueType</div>
+                                                <select class="select" v-model="ef.payload.valueType">
                                                     <option v-for="t in enums.valueTypes" :key="t" :value="t">{{ t }}</option>
-                                                </select>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div v-else-if="ef.action==='APPLY_BUFF'">
-                                        <div class="row">
-                                            <div class="col">
-                                                <div class="small">payload.buffId</div>
-                                                <select class="select" v-model="ef.payload.buffId">
-                                                    <option value="">(请选择)</option>
-                                                    <option v-for="b in buffList" :key="b.id" :value="b.id">{{ b.name || b.id }} ({{ b.id }})</option>
-                                                </select>
-                                            </div>
-                                            <div class="col">
-                                                <div class="small">payload.stacks</div>
-                                                <input class="input" type="number" v-model.number="ef.payload.stacks" />
-                                            </div>
-                                            <div class="col">
-                                                <div class="small">payload.duration（可选）</div>
-                                                <input class="input" type="number" v-model.number="ef.payload.duration" placeholder="optional" />
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div v-else-if="ef.action==='MODIFY_STAT_TEMP'">
-                                        <div class="row">
-                                            <div class="col">
-                                                <div class="small">payload.stat</div>
-                                                <select class="select" v-model="ef.payload.stat">
-                                                    <option v-for="s in enums.stats" :key="s" :value="s">{{ s }}</option>
-                                                </select>
-                                            </div>
-                                            <div class="col">
-                                                <div class="small">payload.value</div>
-                                                <input class="input" v-model="ef.payload.value" placeholder="例如 +0.3 / -10" />
-                                            </div>
-                                            <div class="col">
-                                                <div class="small">payload.type</div>
-                                                <select class="select" v-model="ef.payload.type">
-                                                    <option value="flat">flat</option>
-                                                    <option value="percent_current">percent_current</option>
-                                                    <option value="percent_base">percent_base</option>
                                                 </select>
                                             </div>
                                         </div>
@@ -707,9 +661,9 @@
 			buffTypes: ['buff', 'debuff', 'hidden'],
 			stackStrategies: ['refresh', 'add', 'extend', 'replace'],
 			triggers: ['onTurnStart', 'onTurnEnd', 'onAttackPre', 'onTakeDamagePre', 'onTakeDamage', 'onAttackPost', 'onDefendPost'],
-			effectActions: ['DAMAGE', 'HEAL', 'APPLY_BUFF', 'SKIP_TURN', 'MODIFY_AP', 'ABSORB_DAMAGE', 'MODIFY_DAMAGE_TAKEN', 'REMOVE_SELF', 'MODIFY_STAT_TEMP'],
+           effectActions: ['DAMAGE_HP', 'DAMAGE_ARMOR', 'HEAL_HP', 'HEAL_ARMOR', 'SKIP_TURN', 'REMOVE_SELF', 'ATTACK', 'MODIFY_AP', 'ABSORB_TO_HEAL', 'PREVENT_ARMOR_BREAK'],
 			targets: ['self', 'target', 'attacker'],
-			valueTypes: ['flat', 'percent', 'formula', 'mult'],
+         valueTypes: ['flat', 'percent_base', 'percent_current', 'formula'],
 			stats: ['atk', 'def', 'speed', 'maxHp', 'hp', 'ap'],
 			statModifierTypes: ['flat', 'percent_base', 'percent_current', 'overwrite']
 		};
@@ -995,17 +949,12 @@
 					if (!ef.payload || typeof ef.payload !== 'object') ef.payload = {};
 
 					// minimal defaults based on action
-					if (ef.action === 'DAMAGE' || ef.action === 'HEAL') {
-						ef.payload.amount = (ef.payload.amount !== undefined) ? ef.payload.amount : 1;
-						ef.payload.amountType = ef.payload.amountType || this.enums.valueTypes[0];
-					} else if (ef.action === 'APPLY_BUFF') {
-						ef.payload.buffId = ef.payload.buffId || '';
-						ef.payload.stacks = (ef.payload.stacks !== undefined) ? ef.payload.stacks : 1;
-					} else if (ef.action === 'MODIFY_STAT_TEMP') {
-						ef.payload.stat = ef.payload.stat || this.enums.stats[0];
-						ef.payload.value = (ef.payload.value !== undefined) ? ef.payload.value : '+0';
-						ef.payload.type = ef.payload.type || 'flat';
-					}
+                   if (ef.action === 'DAMAGE_HP' || ef.action === 'DAMAGE_ARMOR' || ef.action === 'HEAL_HP' || ef.action === 'HEAL_ARMOR') {
+                        ef.payload.value = (ef.payload.value !== undefined) ? ef.payload.value : 1;
+                        ef.payload.valueType = ef.payload.valueType || this.enums.valueTypes[0];
+                    } else if (ef.action === 'SKIP_TURN') {
+                        ef.payload.reason = ef.payload.reason || '';
+                    }
 				},
 
 				syncPayloadJson(ef) {
