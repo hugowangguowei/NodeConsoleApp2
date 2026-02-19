@@ -36,7 +36,9 @@
         "DAMAGE_ARMOR",
         "HEAL_HP",
         "HEAL_ARMOR",
-        "SKIP_TURN"
+        "SKIP_TURN",
+        "PREVENT_DAMAGE_HP",
+        "PREVENT_DAMAGE_ARMOR"
       ]
     }
   },

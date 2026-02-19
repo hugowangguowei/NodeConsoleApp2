@@ -149,6 +149,7 @@
 			box-sizing: border-box;
 		}
 		.textarea { min-height: 90px; resize: vertical; font-family: var(--monospace); }
+        .textarea.auto-fit { overflow: hidden; resize: none; }
 
 		.row {
 			display: flex;
@@ -454,6 +455,15 @@
                                         </div>
                                     </div>
 
+                                        <div v-else-if="ef.action==='SKIP_TURN' || ef.action==='PREVENT_DAMAGE_HP' || ef.action==='PREVENT_DAMAGE_ARMOR'">
+                                            <div class="row">
+                                                <div class="col">
+                                                    <div class="small">payload.reason（原因，可选）</div>
+                                                    <input class="input" v-model="ef.payload.reason" placeholder="可选：用于日志/调试" />
+                                                </div>
+                                            </div>
+                                        </div>
+
                                     <div v-else>
                                         <div class="small">当前 action 的 payload 结构未在 v4 内置表单中定义，可在此编辑原始 JSON。</div>
                                         <textarea class="textarea" v-model="ef._payloadJson" @blur="syncPayloadJson(ef)" placeholder='{"any":"json"}'></textarea>
@@ -481,7 +491,7 @@
                                 <span>原始 JSON（当前 Buff）</span>
                                 <button class="btn btn-sm btn-dark" @click="copyCurrentBuffJson">Copy</button>
                             </div>
-                            <textarea class="textarea" readonly :value="currentBuffJson"></textarea>
+                            <textarea class="textarea auto-fit" readonly :value="currentBuffJson" :style="{ height: currentBuffJsonHeight + 'px' }"></textarea>
                             <div class="small" style="margin-top:8px;">注：v4 以结构化表单为主，原始 JSON 仅用于查看/兜底。</div>
 						</div>
 
@@ -661,7 +671,7 @@
 			buffTypes: ['buff', 'debuff', 'hidden'],
 			stackStrategies: ['refresh', 'add', 'extend', 'replace'],
 			triggers: ['onTurnStart', 'onTurnEnd', 'onAttackPre', 'onTakeDamagePre', 'onTakeDamage', 'onAttackPost', 'onDefendPost'],
-           effectActions: ['DAMAGE_HP', 'DAMAGE_ARMOR', 'HEAL_HP', 'HEAL_ARMOR', 'SKIP_TURN', 'REMOVE_SELF', 'ATTACK', 'MODIFY_AP', 'ABSORB_TO_HEAL', 'PREVENT_ARMOR_BREAK'],
+           effectActions: ['DAMAGE_HP', 'DAMAGE_ARMOR', 'HEAL_HP', 'HEAL_ARMOR', 'SKIP_TURN', 'PREVENT_DAMAGE_HP', 'PREVENT_DAMAGE_ARMOR', 'REMOVE_SELF', 'ATTACK', 'MODIFY_AP', 'ABSORB_TO_HEAL', 'PREVENT_ARMOR_BREAK'],
 			targets: ['self', 'target', 'attacker'],
          valueTypes: ['flat', 'percent_base', 'percent_current', 'formula'],
 			stats: ['atk', 'def', 'speed', 'maxHp', 'hp', 'ap'],
@@ -919,8 +929,24 @@
 				availableTargetParts() {
 					return this.simEnemy?.bodyParts ? Object.keys(this.simEnemy.bodyParts) : [];
 				}
+              },
+                watch: {
+                    currentBuffJson: {
+                        immediate: true,
+                        handler(v) {
+                            this.updateCurrentBuffJsonHeight?.(v);
+                        }
+                    }
 			},
 			methods: {
+                  updateCurrentBuffJsonHeight(text) {
+                        const s = String(text || '');
+                        const lines = Math.max(3, s.split(/\r\n|\r|\n/).length);
+                        const lineHeight = 18;
+                        const padding = 18;
+                        const h = lines * lineHeight + padding;
+                        this.currentBuffJsonHeight = Math.min(1200, Math.max(140, h));
+                    },
 				log(msg, level = 'info') {
 					this.logs.push({ time: nowTime(), msg, level });
 					this.$nextTick(() => {
@@ -949,10 +975,10 @@
 					if (!ef.payload || typeof ef.payload !== 'object') ef.payload = {};
 
 					// minimal defaults based on action
-                   if (ef.action === 'DAMAGE_HP' || ef.action === 'DAMAGE_ARMOR' || ef.action === 'HEAL_HP' || ef.action === 'HEAL_ARMOR') {
+                    if (ef.action === 'DAMAGE_HP' || ef.action === 'DAMAGE_ARMOR' || ef.action === 'HEAL_HP' || ef.action === 'HEAL_ARMOR') {
                         ef.payload.value = (ef.payload.value !== undefined) ? ef.payload.value : 1;
                         ef.payload.valueType = ef.payload.valueType || this.enums.valueTypes[0];
-                    } else if (ef.action === 'SKIP_TURN') {
+                 } else if (ef.action === 'SKIP_TURN' || ef.action === 'PREVENT_DAMAGE_HP' || ef.action === 'PREVENT_DAMAGE_ARMOR') {
                         ef.payload.reason = ef.payload.reason || '';
                     }
 				},

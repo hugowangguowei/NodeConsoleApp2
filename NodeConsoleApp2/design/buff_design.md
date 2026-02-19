@@ -452,6 +452,18 @@ Buff 的效果分为**静态属性修正**和**动态触发行为**两类。
   - `payload.value/valueType`
 - `SKIP_TURN`：跳过本回合行动
   - 无 payload 或 `payload.reason`
+- `PREVENT_DAMAGE_HP`：阻止本次对生命值的伤害（一次性免伤/抵挡）
+  - 无 payload（MVP：阻止全部伤害）或 `payload.reason`
+  - 约束建议：仅允许在 `onTakeDamagePre` 触发器使用
+- `PREVENT_DAMAGE_ARMOR`：阻止本次对护甲的伤害（一次性免伤/抵挡）
+  - 无 payload（MVP：阻止全部伤害）或 `payload.reason`
+  - 约束建议：仅允许在 `onTakeDamagePre` 触发器使用
+- `AP_COST_ADD`：增加技能 AP 消耗（疲劳/缠绕/负重等）
+  - `payload.value/valueType`
+  - 约束建议：仅允许在“技能扣费前”的触发器使用（建议新增/采用 `onSkillCostCalc` / `onBeforePayCost` 语义）
+- `AP_COST_REDUCE`：减少技能 AP 消耗（专注/连击窗口/加速施法等）
+  - `payload.value/valueType`
+  - 约束建议：仅允许在“技能扣费前”的触发器使用（建议新增/采用 `onSkillCostCalc` / `onBeforePayCost` 语义）
 
 
 为提升可维护性与编辑器体验，建议在 `meta.enums.effectActions` 的设计上同时遵循以下约束与改进方向（不影响 MVP 的最小落地顺序，但影响后续扩展的“长相”）：
@@ -474,6 +486,21 @@ Buff 的效果分为**静态属性修正**和**动态触发行为**两类。
   - `payload.valueType: flat|percent_base|percent_current|formula`
 - `effects.action.SKIP_TURN`：跳过本回合行动。
   - 可选 `payload.reason: string`
+- `effects.action.PREVENT_DAMAGE_HP`：阻止本次对 `target` 的生命值伤害。
+  - 可选 `payload.reason: string`
+  - 约束建议：仅允许在 `onTakeDamagePre`
+- `effects.action.PREVENT_DAMAGE_ARMOR`：阻止本次对 `target` 的护甲伤害。
+  - 可选 `payload.reason: string`
+  - 约束建议：仅允许在 `onTakeDamagePre`
+
+- `effects.action.AP_COST_ADD`：增加技能 AP 消耗（在扣费前修正 cost）。
+  - `payload.value: number|string`
+  - `payload.valueType: flat|percent_base|percent_current|formula`
+  - 约束建议：仅允许在“技能扣费前”触发器（建议 `onSkillCostCalc` / `onBeforePayCost`）
+- `effects.action.AP_COST_REDUCE`：减少技能 AP 消耗（在扣费前修正 cost）。
+  - `payload.value: number|string`
+  - `payload.valueType: flat|percent_base|percent_current|formula`
+  - 约束建议：仅允许在“技能扣费前”触发器（建议 `onSkillCostCalc` / `onBeforePayCost`）
 
 
 > 上述“合同”并不强制你一次性实现全部 action，但建议一次性把“字段定义清楚”，否则编辑器无法做到强校验与动态表单。

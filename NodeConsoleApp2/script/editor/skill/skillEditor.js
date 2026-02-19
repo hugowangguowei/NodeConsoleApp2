@@ -17,6 +17,7 @@ export class SkillEditor {
         // State
         this.skills = []; // Array of skill objects (editor internal)
         this.buffDict = {}; // buffs.json map
+        this.buffDoc = null; // wrapped buffs doc (optional): { $schemaVersion, meta, buffs }
         this.skillPackMeta = null; // skills_melee_v3.json meta
         this.skillPackSchemaVersion = null;
         this.defaultParts = ['head','chest','left_arm','right_arm','left_leg','right_leg'];
@@ -128,6 +129,7 @@ export class SkillEditor {
                 if (!s) return;
                 s.editorMeta = s.editorMeta || {};
                 s.editorMeta.editState = this.elMetaEditState.value;
+                this.renderNodes?.();
                 this.renderSkillLibrary?.();
                 this.updateSummary?.();
             });
@@ -484,7 +486,9 @@ export class SkillEditor {
         this.elNodeLayer.innerHTML = '';
         this.skills.forEach(skill => {
             const el = document.createElement('div');
-            el.className = `skill-node rarity-${(skill.rarity || 'common').toLowerCase()}`;
+            const editState = skill?.editorMeta?.editState || 'done';
+            el.className = `skill-node rarity-${(skill.rarity || 'common').toLowerCase()} state-${editState}`;
+            el.dataset.editState = editState;
             if ((this.selectedNodeIds && this.selectedNodeIds.has(skill.id)) || this.selectedNodeId === skill.id) {
                 el.classList.add('selected');
             }
@@ -494,6 +498,7 @@ export class SkillEditor {
             el.style.top = `${y}px`;
             el.dataset.id = skill.id;
             el.innerHTML = `
+                <span class="node-editState-badge" data-state="${editState}" title="editState: ${editState}">${editState}</span>
                 <div>${skill.name || ''}</div>
                 <div style="font-size:10px; color:#666">AP: ${skill.costs?.ap ?? 0}</div>
                 <div class="node-anchor anchor-top" data-dir="top"></div>
@@ -1155,18 +1160,44 @@ export class SkillEditor {
         return this.loadBuffsOnly();
     }
 
-    async loadBuffsOnly() {
+    importBuffsFile(input) {
+        const file = input?.files?.[0];
+        if (!file) return;
+        this.loadBuffsOnly(file);
+        input.value = '';
+    }
+
+    async loadBuffsOnly(file) {
         try {
-            const buffsResp = await fetch('../assets/data/buffs.json');
-            const buffsData = await buffsResp.json();
-            this.buffDict = buffsData || {};
+            const buffsData = await (async () => {
+                if (file) {
+                    const text = await new Promise((resolve, reject) => {
+                        const reader = new FileReader();
+                        reader.onload = (e) => resolve(e.target?.result ?? '');
+                        reader.onerror = () => reject(reader.error || new Error('读取文件失败'));
+                        reader.readAsText(file);
+                    });
+                    return JSON.parse(String(text || ''));
+                }
+                const buffsResp = await fetch('../assets/data/buffs.json');
+                return await buffsResp.json();
+            })();
+
+            // Normalize to a flat { buffId -> buffObject } map.
+            // Newer versions follow `buff_design.md`: { $schemaVersion, meta, buffs }.
+            this.buffDoc = (buffsData && typeof buffsData === 'object') ? buffsData : null;
+            const normalized = (buffsData && typeof buffsData === 'object' && buffsData.buffs && typeof buffsData.buffs === 'object')
+                ? buffsData.buffs
+                : buffsData;
+            this.buffDict = (normalized && typeof normalized === 'object') ? normalized : {};
             this.ensureBuffNameIndex();
 
             // Re-render buff UI if a skill is selected so the dropdown switches from input->select.
             this.renderBuffRefTables();
             this.updateSummary();
 
-            alert(`Loaded buffs: ${Object.keys(this.buffDict).length}`);
+            const src = file?.name ? ` (${file.name})` : '';
+            alert(`Loaded buffs${src}: ${Object.keys(this.buffDict).length}`);
         } catch (e) {
             console.error(e);
             alert('Load Buffs failed: ' + (e.message || String(e)));

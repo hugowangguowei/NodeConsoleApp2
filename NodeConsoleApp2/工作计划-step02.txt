@@ -45,3 +45,20 @@ buffºÄÉ¢»úÖÆ£ºREMOVE_SELFÓ¦¸ÃÓÉÉùÃ÷ÖÜÆÚ¾ö¶¨£¬¶ø²»ÊÇbuff¶¯×÷¾ö¶¨£¬Çë·ÖÎöµ±Ç°buffº
 effect.actionµÄÃ¶¾Ù±äÁ¿ÐèÒªÔÚbuff_design.mdÖÐÃ÷È·¡£²¢½«ÕâÐ©¸ü¸ÄÏàÓ¦µØ·´Ó³ÔÚbuff_editor_v4.htmlµÄUIÉè¼ÆÖÐ£¬ÒÔ¼°buffs_v2_1.jsonÖÐ¡£
 
 ÎÒÏ£Íûbuff_editor_v4.htmlÖÐ×Ö¶Î±à¼­µÄµÄ¸÷¸ö×Ö¶ÎÓ¢ÎÄºóÃæ¶¼ÅäÉÏÖÐÎÄ×¢ÊÍ£¬ÒÔÌáÉýÓÃ»§µÄÀí½âºÍÊ¹ÓÃÌåÑé¡£
+
+ÎÒÏ£ÍûÔÚbuff_design.mdµÄ5.4.2ÕÂ½ÚÔö¼ÓÒ»¸öaction£¬½Ð×öprevent_damage£¬Çë·ÖÎö¸ÃÔõÃ´Ìí¼Ó
+
+ÎÒÏ£Íûskill_editor_test_v3.htmlÖÐµÄloadBuffs¿ÉÒÔÀàËÆImportSkillsÖ¸¶¨buffÊý¾ÝÎÄ¼þ£¬¶ø²»ÊÇÄ¬ÈÏµÄbuffÎÄ¼þ
+
+ÎÒÏ£Íû¸øskill_editor_test_v3.htmlÖÐµÄÃ¿¸ö¼¼ÄÜ½Úµã£¨skill-node)Ôö¼Ó±à¼­×´Ì¬µÄÐ§¹û£¬ÀýÈçµ±¼¼ÄÜµÄeditStateÎª"editing"Ê±£¬¼¼ÄÜ½ÚµãÌî³äÎªÇ³À¶É«£»µ±editStateÎª"done"Ê±£¬¼¼ÄÜ½ÚµãÏÔÊ¾ÎªÇ³ÂÌÉ«£»µ±editStateÎª"deprecated"Ê±£¬¼¼ÄÜ½ÚµãÏÔÊ¾ÎªÇ³»ÒÉ«¡£Çë·ÖÎöÊµÏÖÕâ¸ö¹¦ÄÜµÄ¿ÉÐÐÐÔ£¬²¢Ìá³ö¾ßÌåµÄÊµÏÖ½¨Òé£¬ÒÔÌáÉý¼¼ÄÜ±à¼­Æ÷µÄÓÃ»§ÌåÑéºÍ¹¦ÄÜÐÔ£¬ÏÈ²»ÒªÐÞ¸Ä´úÂë¡£
+
+ÎÒÏ£Íû¸øÕû¸öskill-nodeÔö¼Ó±³¾°É«£¬¶ø²»½ö½öÊÇ¼¼ÄÜ×´Ì¬²¿·Ö£¬ÒÔ¸üÃ÷ÏÔµØÇø·Ö²»Í¬×´Ì¬µÄ¼¼ÄÜ½Úµã¡£Çë·ÖÎöÊµÏÖÕâ¸ö¹¦ÄÜµÄ¿ÉÐÐÐÔ£¬²¢Ìá³ö¾ßÌåµÄÊµÏÖ½¨Òé£¬ÒÔÌáÉý¼¼ÄÜ±à¼­Æ÷µÄÓÃ»§ÌåÑéºÍ¹¦ÄÜÐÔ£¬ÏÈ²»ÒªÐÞ¸Ä´úÂë¡£
+
+ÎÒÏ£ÍûÔÚbuff_design.mdÖÐÔö¼ÓAPÏûºÄÔö¼ÓºÍAPÏûºÄ¼õÉÙÁ½¸öaction£¬ÒÔ·á¸»buffµÄÉè¼ÆÄÚÈÝ¡£Çë·ÖÎöÕâÁ½¸öactionµÄÉè¼ÆÄ¿µÄºÍÊµ¼ÊÓ¦ÓÃ³¡¾°£¬²¢Ìá³ö¾ßÌåµÄÉè¼Æ½¨Òé£¬ÒÔÓÅ»¯buffÉè¼Æ·½°¸£¬ÏÈ²»ÒªÐÞ¸Ä´úÂë¡£
+
+»ùÓÚbuff_designÖÐÐÂÔöµÄaction£¬ÐÞ¶©buffs_v2_2.jsonÎÄ¼þ¡£
+
+buff_editor_v4.htmlÖÐÔ­Ê¼JSON(µ±Ç°Buff)¿òµÄjsonÊý¾Ý¿òµÄ¸ß¶ÈÌ«Ð¡ÁË£¬ÎÒÏ£Íû¿ÉÒÔÊÊÓ¦jsonÎÄ±¾£¬ÒòÎª±¾Éí±à¼­ÇøÒÑ¾­ÓÐ¹ö¶¯ÌõÁË£¬Õâ¸ö²»ÐèÒª¹ö¶¯Ìõ
+
+ÎÒ·¢ÏÖskill_editor_test_v3.htmlÔÚ¼ÓÔØÐÂ°æ±¾buffÊ±£¨buffs_v2_3.json),·¢Éú½âÎö´íÎó£¬Çë»ùÓÚbuff_design.mdºÍbuffs_v2_3.jsonµÄÄÚÈÝ£¬·ÖÎöÐÞ¸ÄbuffµÄ½âÎö·½·¨£¬ÒÔÊÊÓ¦ÐÂ°æ±¾buffÉè¼Æ·½°¸µÄ±ä»¯£¬²¢½â¾öµ±Ç°µÄ½âÎö´íÎóÎÊÌâ£¬ÏÈ²»ÒªÐÞ¸Ä´úÂë¡£
+
