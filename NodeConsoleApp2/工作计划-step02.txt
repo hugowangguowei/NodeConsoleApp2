@@ -62,3 +62,4 @@ buff_editor_v4.htmlÖÐÔ­Ê¼JSON(µ±Ç°Buff)¿òµÄjsonÊý¾Ý¿òµÄ¸ß¶ÈÌ«Ð¡ÁË£¬ÎÒÏ£Íû¿ÉÒÔÊÊÓ
 
 ÎÒ·¢ÏÖskill_editor_test_v3.htmlÔÚ¼ÓÔØÐÂ°æ±¾buffÊ±£¨buffs_v2_3.json),·¢Éú½âÎö´íÎó£¬Çë»ùÓÚbuff_design.mdºÍbuffs_v2_3.jsonµÄÄÚÈÝ£¬·ÖÎöÐÞ¸ÄbuffµÄ½âÎö·½·¨£¬ÒÔÊÊÓ¦ÐÂ°æ±¾buffÉè¼Æ·½°¸µÄ±ä»¯£¬²¢½â¾öµ±Ç°µÄ½âÎö´íÎóÎÊÌâ£¬ÏÈ²»ÒªÐÞ¸Ä´úÂë¡£
 
+»ùÓÚµ±Ç°µÄbuffs_v2_3.jsonÎÄµµ£¬½øÐÐbuff_design.mdµÄÐÞ¶©£¬ÒÔÈ·±£buffÉè¼ÆÎÄµµÓë×îÐÂµÄbuffÊý¾Ý½á¹¹ºÍÄÚÈÝ±£³ÖÒ»ÖÂ¡£Çë·ÖÎöµ±Ç°buffs_v2_3.jsonÖÐµÄÉè¼ÆÌØµãºÍ±ä»¯£¬²¢Ìá³ö¾ßÌåµÄÐÞ¶©½¨Òé£¬²¢É¾È¥¹ý³ÌÐÔµÄ·ÖÎöÊý¾Ý£¬ÒÔÌáÉýbuffÉè¼ÆÎÄµµµÄ¹æ·¶ÐÔºÍÊµ

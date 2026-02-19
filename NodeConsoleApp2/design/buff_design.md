@@ -18,7 +18,7 @@ Buff (ÔöÒæ) Óë Debuff (¼õÒæ) ÏµÍ³ÊÇ±¾ÓÎÏ·Õ½¶·Âß¼­µÄºËĞÄµ×²ã»úÖÆ¡£Ëü²»½öÓÃÓÚ´¦ÀíÕ
 
 ---
 
-## 1.3 Óë¼¼ÄÜÏµÍ³µÄ±ß½çÓë¶ÔÆë£¨Alignment with Skill System£©
+## 1.2 Óë¼¼ÄÜÏµÍ³µÄ±ß½çÓë¶ÔÆë£¨Alignment with Skill System£©
 
 Buff Óë Skill µÄÖ°Ôğ±ß½çÓ¦µ±Óë `skill_design.md` µÄ¡°×éºÏ/Ô¼Êø/Êı¾İ»¯¡±Ë¼Â·Ò»ÖÂ£º
 
@@ -29,7 +29,7 @@ Buff Óë Skill µÄÖ°Ôğ±ß½çÓ¦µ±Óë `skill_design.md` µÄ¡°×éºÏ/Ô¼Êø/Êı¾İ»¯¡±Ë¼Â·Ò»ÖÂ£
 
 ---
 
-## 1.2 »ùÓÚ²âÊÔ½áÂÛµÄ¸Ä¶¯¾ö²ß£¨Test-driven Change Decisions£©
+## 1.3 »ùÓÚ²âÊÔ½áÂÛµÄ¸Ä¶¯¾ö²ß£¨Test-driven Change Decisions£©
 
 > À´Ô´£º`test/test_doc/buff_editor_test_doc_v2.md` µÚÈıÕÂ£¨Per-Buff£©µÄ¡°½áÂÛ¡±ÌõÄ¿¡£
 > Ä¿±ê£º°Ñ¡°±¾ÂÖ²âÊÔ´ï³ÉµÄÈ¡Éá¡±¹Ì»¯Îª Buff ÌåÏµµÄÉè¼ÆÔ¼Êø£¬±ÜÃâºóĞøÊı¾İ¼ÌĞøÑØÓÃ²»¿É²â/Î´ÂäµØµÄ×Ö¶ÎÓëÓïÒå¡£
@@ -100,160 +100,6 @@ Buff¶ÔÏóÊÇËùÓĞĞ§¹ûµÄ×îĞ¡µ¥Ôª¡£Ò»¸ö±ê×¼µÄ Buff ¶ÔÏó°üº¬**»ù´¡ĞÅÏ¢**¡¢**ÉúÃüÖÜÆÚ¿Ø
 
 ---
 
-## 4. Buff ÀàĞÍÌåÏµ£¨°´ĞèÇóÓò·ÖÀà£©
-
-±¾ÕÂ½ÚÊÇĞÂµÄ¡°Ö÷·ÖÀà¡±¡£·ÖÀàÔ­ÔòÊÇ£º**Buff = ¾²Ì¬ĞŞÕı£¨statModifiers£© + ÔÚÌØ¶¨ÊÂ¼şµãÖ´ĞĞ¶¯×÷£¨effects£©**¡£
-
-ÄãºóĞøÊµÏÖ `BuffSystem` Ê±¿ÉÒÔ°´¡°ÊÂ¼ş¹³×Ó -> ÊÕ¼¯¿ÉÓÃ Buff -> Ö´ĞĞ¶¯×÷/ĞŞ¸ÄÉÏÏÂÎÄ¡±À´ÂäµØ¡£
-
-### 4.1 A Àà£ºÉËº¦½áËã¹ÜÏßÀà£¨Damage Pipeline Buffs£©
-
-**ĞèÇó**£ºÓ°ÏìÒ»´Î¹¥»÷/¼¼ÄÜµÄÉËº¦½á¹û£¬Í¨³£·¢ÉúÔÚ `onAttackPre`¡¢`onTakeDamage`¡¢`onAttackPost` µÈÊÂ¼ş¡£
-
-#### 4.1.1 A1 Êä³öĞŞÕı£¨Damage Dealt Modifiers£©
-
-* µäĞÍ£ºĞéÈõ¡¢¹¥»÷Ï÷Èõ
-* ÍÆ¼ö×Ö¶Î£º`statModifiers.damageDealtMult`
-* Ê¾Àı£º`buff_weakness`£¨ÀúÊ·¿Ú¾¶£ºÊä³ö³ËÇø£©
-
-> ¶ÔÆë 1.2 µÄ²âÊÔ½áÂÛ£º±¾ÂÖ½«¡°ĞéÈõ¡±¿Ú¾¶¶¨ÒåÎª **½µµÍ `atk`**£¨D Àà statModifiers£©£¬¶ø²»ÊÇ `damageDealtMult`¡£
-> Òò´Ë A1 µÄ `damageDealtMult` ÈÔ¿É±£ÁôÎª¡°Î´À´¿ÉÓÃµÄÉËº¦³ËÇø»úÖÆ¡±£¬µ« `debuff_weak` ²»Ó¦ÔÙ×÷ÎªËüµÄÊ¾Àı¡£
-
-> ½¨Òé£¨ÎÄµµ²ãÃæ£©£ºÍ³Ò»ÃüÃûÓëÓïÒå£¨ÀıÈçÖ»±£ÁôÒ»¸öÏµÁĞ£º`debuff_weakness_*`£©£¬±ÜÃâ³öÏÖ¡°Í¬Òå²»Í¬ ID¡±¡£´úÂë²ãÃæÎŞĞèÁ¢¿Ì¸Ä¶¯¡£
-
-#### 4.1.2 A2 ³ĞÉËĞŞÕı£¨Damage Taken Modifiers£©
-
-* µäĞÍ£ºÒ×ÉË¡¢ÉËº¦ÒÖÖÆ
-* ÍÆ¼ö×Ö¶Î£º`statModifiers.damageTakenMult`
-* Ê¾Àı£º`buff_vulnerable`¡¢`buff_pain_sup`£¨ÎÄµµÖĞµÄ¶¨Òå£©¡¢×°±¸±»¶¯ `passive_dragon`£¨ÊÜÉË¼õÃâ£©
-
-#### 4.1.3 A3 »¤¼×½»»¥£¨Armor Interaction£©¡ª¡ª²ÉÓÃ¡°¸Ä»¤¼×¼õÃâÏµÊı¡±ÓïÒå
-
-**±¾ÏîÄ¿Õ½¶·µÄ¹Ø¼ü²îÒìµãÔÚÓÚ£º»¤¼×°´²¿Î»¶ÀÁ¢´æÔÚ£¬²¢²ÎÓë¼õÉË**¡£Òò´Ë¡°ÆÆ¼×/´©Í¸/»¤¼×Ï÷Èõ¡±ÕâÀà Buff ĞèÒªÃ÷È·ÓïÒå£¬·ñÔò²âÊÔÊ±»á³öÏÖ¡°Ã÷Ã÷Ê©¼ÓÁËÆÆ¼× Buff£¬µ«ÉËº¦Ã»ÓĞ±ä»¯¡±µÄÀ§»ó¡£
-
-±¾·½°¸Ñ¡Ôñ£º**ÆÆ¼×Àà Buff ²»Ö±½Ó¸Ä»¤¼×ÊıÖµ£¬Ò²²»Ö±½ÓÎŞÊÓ»¤¼×£»¶øÊÇĞŞ¸Ä»¤¼×ÔÚÉËº¦¹«Ê½ÖĞµÄ¼õÃâÏµÊı£¨Armor Mitigation Coefficient£©**¡£
-
-##### a) ÉËº¦¹«Ê½ÖĞµÄ»¤¼×¼õÃâÏµÊı£¨½¨Òé¶¨Òå£©
-
-ÒıÇæÔÚ¼ÆËã¶ÔÄ³²¿Î»µÄÉËº¦Ê±£¬Í¨³£»á¾­Àú£º
-
-1) ¼ÆËãÔ­Ê¼ÉËº¦ `rawDamage`
-2) ¸ù¾İÄ¿±ê²¿Î»»¤¼×£¬µÃ³ö¼õÃâÏµÊı `mitigationCoeff`£¨0~1 ·¶Î§ÎªÖ÷£©
-3) µÃµ½×îÖÕÉËº¦ `finalDamage`
-
-½¨Òé°Ñ»¤¼×¼õÃâ³éÏó³É£º
-
-* `mitigationCoeff = f(armorValue, ...)`  £¨ÓÉ»¤¼×Öµ¾ö¶¨£©
-* `finalDamage = rawDamage * mitigationCoeff`
-
-##### b) Buff ÈçºÎ¡°¸Ä»¤¼×¼õÃâÏµÊı¡±
-
-Îª±£Ö¤Êı¾İÇı¶¯¼òµ¥¿É¿Ø£¬ÍÆ¼ö¼ÓÈëÒ»¸öÍ³Ò»µÄ¿ÉÀ©Õ¹×Ö¶Î£º
-
-* `statModifiers.armorMitigationMult`£º¶Ô `mitigationCoeff` µÄ³Ë·¨ĞŞÕı
-
-ÓïÒå£º
-
-* `armorMitigationMult = 1.0`£º²»¸Ä±ä»¤¼×¼õÃâ
-* `armorMitigationMult > 1.0`£º**ÆÆ¼×/´©Í¸**£¨»¤¼×¼õÃâ±äÈõ£¬ÏµÊı¸ü´ó£¬×îÖÕÉËº¦¸ü¸ß£©
-* `armorMitigationMult < 1.0`£º**»¤¼×Ç¿»¯/¸ñµ²**£¨»¤¼×¼õÃâ¸üÇ¿£¬ÏµÊı¸üĞ¡£¬×îÖÕÉËº¦¸üµÍ£©
-
-¾ÙÀı£º
-
-* ÈôÔ­±¾ `mitigationCoeff = 0.30`£¨»¤¼×ºÜÓ²£¬×îÖÕÖ»³Ô 30%£©
-* Ê©¼ÓÆÆ¼× Buff£º`armorMitigationMult = 1.5`
-* Ôò `mitigationCoeff' = 0.30 * 1.5 = 0.45`£¬×îÖÕÉËº¦ÌáÉı 50%
-
-##### c) Óë¡°²¿Î»¡±½áºÏ
-
-ÆÆ¼×Í¨³£ÊÇ¶Ô¡°Ä³¸ö²¿Î»¡±ÉúĞ§£¬Òò´Ë½¨ÒéÔÚ Buff ÀïÓÃ¿ÉÑ¡×Ö¶Î±í´ï×÷ÓÃ·¶Î§£º
-
-* `scope.part`£º`"head" | "body" | "limbs" | "all"`
-
-Èç¹ûÃ»ÓĞ `scope.part`£¬Ä¬ÈÏÊÇ `all`¡£
-
-> µ±Ç° `buffs.json` Àï²¢Ã»ÓĞ¸Ã×Ö¶Î£¬±¾Éè¼ÆÏÈÔÚÎÄµµÖĞ¶¨ÒåÓïÒå£¬ºóĞøÊµÏÖÊ±ÔÙ¾ö¶¨ÊÇ·ñ¼ÓÈë JSON£¨±£³Ö¼æÈİ£©¡£
-
-#### 4.1.4 A4 »¤¶Ü/ÎüÊÕ/×ª»¯£¨Shield / Absorb / Conversion£©
-
-* µäĞÍ£º»¤¶ÜÎüÊÕ¡¢ÉËº¦×ª»¯ÎªÖÎÁÆ
-* ´¥·¢µã£¨¹æ·¶£©£ºÓÅÏÈÊ¹ÓÃ `onTakeDamagePre`£¨¶ø²»ÊÇ `onTakeDamage`£©
-* Ê¾Àı£º`buff_shield`£¨Ò»´ÎĞÔµÖµ²£©¡¢`buff_damage_absorb`£¨Aegis£¬ÎÄµµÖĞ¶¨Òå£©
-
-**Éè¼Æ¿Ú¾¶Í³Ò»**£¨¶ÔÆë 1.2 µÄ²âÊÔ½áÂÛ£©£º
-
-- ±¾ÂÖ»Ø¹é¿Ú¾¶ÏÂ£¬`buff_shield` ¶¨ÒåÎª£º**µÖµ²Ò»´ÎÉËº¦£¨Ò»´ÎĞÔ£©**¡£
-- ÍÆ¼öÊµÏÖ·½Ê½£ºÔÚ `onTakeDamagePre` ½×¶Î½« `context.damageTaken = 0`£¨»òµÈ¼Û×Ö¶Î£©£¬²¢ÓÉ **lifecycle ºÄÉ¢¹æÔò**ÔÚ±¾´Î´¥·¢ºóÒÆ³ı/ÏûºÄ£¨¶ø²»ÊÇÒÀÀµ `REMOVE_SELF` ¶¯×÷£©¡£
-- ÈôÎ´À´ĞèÒª¡°»¤¶Ü³Ø/¿ÉÎüÊÕÊıÖµ¡±µÄÌåÏµ£¬¿ÉÁíĞĞÒıÈë `shieldPool` »úÖÆ Buff£¨Óë±¾ÂÖ `buff_shield` Çø·Ö ID ÓëÎÄ°¸£©¡£
-
-**¿É×·ËİÈÕÖ¾ÒªÇó**£¨»Ø¹éÑéÖ¤±ØĞè£©£º
-
-- µ± shield ÎüÊÕ·¢ÉúÊ±£¬½¨ÒéÊä³ö½á¹¹»¯ÈÕÖ¾×Ö¶Î£¨»òÖÁÉÙÔÚÎÄ±¾ÖĞ°üº¬£©£º
-  - `incomingDamage`
-  - `absorbed`
-  - `remainingDamage`
-  - `remainingShield`
-  - `sourceBuffId`
-  - `targetId`
-
----
-
-### 4.2 B Àà£º»ØºÏÖÜÆÚ½áËãÀà£¨Periodic Buffs£©
-
-**ĞèÇó**£ºÃ¿»ØºÏ½áËãÒ»´Î£¬²»ÒÀÀµ¹¥»÷¶¯×÷¡£
-
-* B1 DoT£º`buff_poison`¡¢`buff_bleed`£¨`buff_burn` ÒÑ´Ó `assets/data/buffs.json` ÒÆ³ı£©
-* B2 HoT£ºÖÎÁÆÀà£¨¼¼ÄÜÉè¼ÆÖĞ³öÏÖºó¿É²¹Æë£©
-* B3 ×ÊÔ´½áËã£º`buff_ap_regen`£¨ÎÄµµÖĞ¶¨Òå£©
-
----
-
-### 4.3 C Àà£º¿ØÖÆÓëĞĞ¶¯ÏŞÖÆÀà£¨Control / Action Gating£©
-
-**ĞèÇó**£º¾ö¶¨½ÇÉ«ÄÜ·ñĞĞ¶¯¡¢ĞĞ¶¯Ë³Ğò¡¢¼¼ÄÜÊÇ·ñ¿ÉÓÃ¡£
-
-* C1 Ó²¿Ø£º`buff_stun`£¨`skipTurn`£©
-* C2 Èí¿Ø£º`buff_slow`£¨speed -5£©
-* C3 ¼¼ÄÜ/²¿Î»½ûÓÃ£º±¾ÂÖ½áÂÛÒÑÉ¾³ı `buff_silence_limb`£¨Ôİ²»ÄÉÈë»Ø¹éÓëÖ÷Êı¾İ£©
-
----
-
-### 4.4 D Àà£ºÃæ°åÊôĞÔĞŞÕıÀà£¨Stat Buffs£©
-
-**ĞèÇó**£ºÖ±½ÓĞŞ¸Ä½ÇÉ«Ãæ°åÊôĞÔÓÃÓÚºóĞøËùÓĞ¼ÆËã¡£
-
-* `buff_strength`¡¢`debuff_weak` µÄ `atk` ĞŞÕıµÈ
-
-ÍÆ¼ö×ö·¨£ºD Àà Buff ¾¡Á¿Ö»Ê¹ÓÃ `statModifiers`£¬²»ÒÀÀµ `effects`£¬±£Ö¤½áËã¼òµ¥¡£
-
----
-
-### 4.5 E Àà£º·ÀÓù»úÖÆÀà£¨Defensive Mechanics£©
-
-**ĞèÇó**£º¸Ä±äËÀÍö¹æÔò¡¢Ìá¹©ÏÂÏŞ±£»¤»òÌØÊâÎüÊÕ»úÖÆ¡£
-
-* E1 »¤¶Ü/ÎüÊÕ£º`buff_shield`£¨±¾ÂÖ¶¨ÒåÎª¡°Ò»´ÎĞÔµÖµ²Ò»´ÎÉËº¦¡±£©
-* E2/E4£º±¾ÂÖ»Ø¹é½×¶Î²»ÒıÈë¡°ÃâËÀ/¸´»î¡±ÌåÏµ£»¶ÔÓ¦µÄ `buff_immortality_hp` / `buff_revive` ÒÑ´Ó `assets/data/buffs.json` ÒÆ³ı
-* E3 »¤¼×²»Ğà£º`buff_immortality_armor`£¨ÊÇ·ñ±£ÁôÈ¡¾öÓÚ»¤¼×ÆÆ»µ¹ÜÏßÂäµØ£©
-
----
-
-### 4.6 F Àà£º·´Ó¦/·´ÖÆÀà£¨Reactive Effects£©
-
-**ĞèÇó**£º»ùÓÚ¡°¹¥»÷ºó/ÊÜ»÷ºó¡±´¥·¢¶îÍâ¶¯×÷¡£
-
-* `buff_thorns`£¨·´ÉË£©¡¢`buff_counter`£¨·´»÷£©¡¢`buff_lifesteal`£¨ÎüÑª£©
-
----
-
-### 4.7 G Àà£º±»¶¯/ÏµÍ³Àà£¨Passives & Meta Buffs£©
-
-**ĞèÇó**£ºÓÃÓÚ×°±¸¡¢Ìì¸³¡¢³¡¾°³£×¤Ğ§¹û¡£Í¨³£ `duration = -1`£¬»òÍ¨¹ıÒıÇæ¿ØÖÆÔÚÕ½¶·¿ªÊ¼/½áÊøÊ±¹ÒÔØÓëÇåÀí¡£
-
-* `passive_knight`¡¢`passive_heavy_armor`¡¢`passive_dragon`¡¢`passive_cursed_self_dmg` µÈ
-
----
-
 ## 3. Buff Ğ§¹ûÀàĞÍÓë´¥·¢»úÖÆ (Effects & Triggers)
 
 Buff µÄĞ§¹û·ÖÎª**¾²Ì¬ÊôĞÔĞŞÕı**ºÍ**¶¯Ì¬´¥·¢ĞĞÎª**Á½Àà¡£
@@ -300,6 +146,19 @@ Buff µÄĞ§¹û·ÖÎª**¾²Ì¬ÊôĞÔĞŞÕı**ºÍ**¶¯Ì¬´¥·¢ĞĞÎª**Á½Àà¡£
 
 ---
 
+## 4. Buff ÀàĞÍÌåÏµ£¨°´ĞèÇóÓò·ÖÀà£©
+
+> ±¾½Ú±£Áô¡°°´ĞèÇóÓò·ÖÀà¡±µÄ½á¹¹×÷ÎªÉè¼ÆË÷Òı£¨°ïÖúÄÚÈİÉú²úÓëÊµÏÖÓ³Éä£©¡£
+> ¾ßÌå Buff ¶ÔÏóÊÇ·ñ´æÔÚ/ÊÇ·ñÄÉÈëÖ÷Êı¾İ£¬ÒÔ `assets/data/buffs_v2_3.json` Îª×¼¡£
+
+- A Àà£ºÉËº¦½áËã¹ÜÏßÀà£¨Damage Pipeline£©
+- B Àà£º»ØºÏÖÜÆÚ½áËãÀà£¨Periodic£©
+- C Àà£º¿ØÖÆÓëĞĞ¶¯ÏŞÖÆÀà£¨Control / Action Gating£©
+- D Àà£ºÃæ°åÊôĞÔĞŞÕıÀà£¨Stat Modifiers£©
+- E Àà£º·ÀÓù»úÖÆÀà£¨Defensive Mechanics£©
+- F Àà£º·´Ó¦/·´ÖÆÀà£¨Reactive Effects£©
+- G Àà£º±»¶¯/ÏµÍ³Àà£¨Passives & Meta Buffs£©
+
 ## 5. Buff Êı¾İ¹æ·¶£¨Data Spec / Schema£©
 
 ±¾ÕÂ½Ú¸ø³ö Buff Êı¾İ½á¹¹µÄÂäµØ¹æ·¶£ºÈçºÎÔÚ `assets/data/buffs.json` ÖĞ×éÖ¯ Buff ¶ÔÏó£¬Ê¹ÆäÄÜ±»ÒıÇæ¡¢±à¼­Æ÷¡¢²âÊÔ¹¤¾ß¹²Í¬Ê¹ÓÃ£¬²¢¾ß±¸¿ÉÑİ½øĞÔ¡£
@@ -341,9 +200,9 @@ Buff µÄĞ§¹û·ÖÎª**¾²Ì¬ÊôĞÔĞŞÕı**ºÍ**¶¯Ì¬´¥·¢ĞĞÎª**Á½Àà¡£
 
 ```json
 {
-  "$schemaVersion": "buffs_v1",
+  "$schemaVersion": "buffs_v2_1_wrapped",
   "meta": {
-    "title": "Buff Library",
+    "title": "Buff ¿â",
     "source": "",
     "notes": [],
     "fieldNotes": {},
@@ -353,12 +212,25 @@ Buff µÄĞ§¹û·ÖÎª**¾²Ì¬ÊôĞÔĞŞÕı**ºÍ**¶¯Ì¬´¥·¢ĞĞÎª**Á½Àà¡£
     "enums": {
       "buffTypes": ["buff", "debuff", "hidden"],
       "stackStrategies": ["refresh", "extend", "add", "max", "replace", "independent"],
-      "triggers": ["onTurnStart", "onTurnEnd", "onAttackPre", "onAttackPost", "onTakeDamagePre", "onTakeDamagePost", "onDeath"],
+      "triggers": ["onTurnStart", "onTurnEnd", "onAttackPre", "onAttackPost", "onTakeDamagePre", "onTakeDamagePost", "onDefendPre", "onDefendPost", "onDeath"],
       "targets": ["self", "target", "attacker"],
       "tags": ["dot", "control", "stat_up", "stat_down", "defense", "offensive", "poison", "physical"],
-      "statNames": ["maxHp", "atk", "def", "speed", "critRate", "hitRate", "dodgeRate", "damageDealtMult", "damageTakenMult", "armorMitigationMult", "maxAp"],
+      "stats": ["maxHp", "atk", "def", "speed", "critRate", "hitRate", "dodgeRate", "damageDealtMult", "damageTakenMult", "armorMitigationMult", "ap", "maxAp"],
       "statModifierTypes": ["flat", "percent_base", "percent_current", "overwrite", "formula"],
-      "effectActions": ["DAMAGE", "HEAL", "SKIP_TURN", "SET_DAMAGE_TAKEN", "MODIFY_STAT_TEMP", "APPLY_BUFF", "REMOVE_BUFF"]
+      "effectActions": [
+        "DAMAGE_HP",
+        "DAMAGE_ARMOR",
+        "HEAL_HP",
+        "HEAL_ARMOR",
+        "SKIP_TURN",
+        "PREVENT_DAMAGE_HP",
+        "PREVENT_DAMAGE_ARMOR",
+        "AP_COST_ADD",
+        "AP_COST_REDUCE",
+
+        "MODIFY_AP",
+        "ATTACK"
+      ]
     }
   },
   "buffs": {}
@@ -370,6 +242,11 @@ Buff µÄĞ§¹û·ÖÎª**¾²Ì¬ÊôĞÔĞŞÕı**ºÍ**¶¯Ì¬´¥·¢ĞĞÎª**Á½Àà¡£
 - `meta.enums` ÓÃÓÚ±à¼­Æ÷ÏÂÀ­ÓëÊı¾İĞ£Ñé¡£
 - `meta.fieldNotes` ÓÃÓÚ°Ñ¡°×Ö¶Îº¬Òå¡±¹Ì¶¨ÏÂÀ´£¬±ÜÃâÍÅ¶Ó¼ÇÒäÒÀÀµ¡£
 - `meta.defaults` ÓÃÓÚÌá¹©È±Ê¡Öµ£¨±à¼­Æ÷×Ô¶¯²¹Æë¡¢¼ÓÔØÊ±ºÏ²¢£©¡£
+
+Ô¼¶¨£º
+
+- `meta.enums.stats` Îª `statModifiers[].stat` µÄÃ¶¾ÙÀ´Ô´¡£
+- `meta.enums.effectActions` ±ØĞë¸²¸ÇÊı¾İÖĞÊµ¼Ê³öÏÖµÄ action£»ÆäÖĞ MVP ¶¯×÷¿â¼û 5.4.2£¬ÆäÓà action ĞèÒªÔÚÎÄµµÖĞÃ÷È·Îª¡°ÊµÑé/´ıÊµÏÖ¡±²¢ÒªÇó±à¼­Æ÷Ìá¹©¶µµ× JSON ±à¼­Èë¿Ú£¨±ÜÃâ¾²Ä¬Ê§°Ü£©¡£
 
 #### 5.2.2 ¼æÈİ¾É°æ½á¹¹
 
@@ -427,7 +304,7 @@ Buff µÄĞ§¹û·ÖÎª**¾²Ì¬ÊôĞÔĞŞÕı**ºÍ**¶¯Ì¬´¥·¢ĞĞÎª**Á½Àà¡£
 ```json
 {
   "trigger": "onTurnEnd",
-  "action": "DAMAGE",
+  "action": "DAMAGE_HP",
   "target": "self",
   "payload": { "value": "maxHp * 0.05", "valueType": "formula" }
 }
@@ -466,110 +343,21 @@ Buff µÄĞ§¹û·ÖÎª**¾²Ì¬ÊôĞÔĞŞÕı**ºÍ**¶¯Ì¬´¥·¢ĞĞÎª**Á½Àà¡£
   - Ô¼Êø½¨Òé£º½öÔÊĞíÔÚ¡°¼¼ÄÜ¿Û·ÑÇ°¡±µÄ´¥·¢Æ÷Ê¹ÓÃ£¨½¨ÒéĞÂÔö/²ÉÓÃ `onSkillCostCalc` / `onBeforePayCost` ÓïÒå£©
 
 
-ÎªÌáÉı¿ÉÎ¬»¤ĞÔÓë±à¼­Æ÷ÌåÑé£¬½¨ÒéÔÚ `meta.enums.effectActions` µÄÉè¼ÆÉÏÍ¬Ê±×ñÑ­ÒÔÏÂÔ¼ÊøÓë¸Ä½ø·½Ïò£¨²»Ó°Ïì MVP µÄ×îĞ¡ÂäµØË³Ğò£¬µ«Ó°ÏìºóĞøÀ©Õ¹µÄ¡°³¤Ïà¡±£©£º
-
-##### (A) Ã¿¸ö action ±ØĞëÓĞÃ÷È·ÓïÒåÓë payload ºÏÍ¬£¨Contract£©
-
-ÔÚ `meta.fieldNotes` ÖĞÎªÃ¿¸ö action Ôö¼ÓËµÃ÷£¨×îµÍÏŞ¶ÈÎª¡°ÓÃÍ¾ + payload ×Ö¶Î¡±£©£¬±ÜÃâ³öÏÖ¡°Ã¶¾ÙÓĞÁËµ«²»ÖªµÀÔõÃ´Ìî¡±µÄÇé¿ö¡£½¨ÒéĞÎÌ¬£¨Óë 5.4.2 µÄ¶¯×÷Ã¶¾Ù±£³ÖÒ»ÖÂ£©£º
-
-- `effects.action.DAMAGE_HP`£º¶Ô `target` µÄÉúÃüÖµÔì³ÉÉËº¦¡£
-  - `payload.value: number|string`£¨³£Á¿»ò¹«Ê½£©
-  - `payload.valueType: flat|percent_base|percent_current|formula`
-- `effects.action.DAMAGE_ARMOR`£º¶Ô `target` µÄ»¤¼×Ôì³ÉÉËº¦¡£
-  - `payload.value: number|string`
-  - `payload.valueType: flat|percent_base|percent_current|formula`
-- `effects.action.HEAL_HP`£º»Ö¸´ `target` µÄÉúÃüÖµ¡£
-  - `payload.value: number|string`
-  - `payload.valueType: flat|percent_base|percent_current|formula`
-- `effects.action.HEAL_ARMOR`£º»Ö¸´ `target` µÄ»¤¼×¡£
-  - `payload.value: number|string`
-  - `payload.valueType: flat|percent_base|percent_current|formula`
-- `effects.action.SKIP_TURN`£ºÌø¹ı±¾»ØºÏĞĞ¶¯¡£
-  - ¿ÉÑ¡ `payload.reason: string`
-- `effects.action.PREVENT_DAMAGE_HP`£º×èÖ¹±¾´Î¶Ô `target` µÄÉúÃüÖµÉËº¦¡£
-  - ¿ÉÑ¡ `payload.reason: string`
-  - Ô¼Êø½¨Òé£º½öÔÊĞíÔÚ `onTakeDamagePre`
-- `effects.action.PREVENT_DAMAGE_ARMOR`£º×èÖ¹±¾´Î¶Ô `target` µÄ»¤¼×ÉËº¦¡£
-  - ¿ÉÑ¡ `payload.reason: string`
-  - Ô¼Êø½¨Òé£º½öÔÊĞíÔÚ `onTakeDamagePre`
-
-- `effects.action.AP_COST_ADD`£ºÔö¼Ó¼¼ÄÜ AP ÏûºÄ£¨ÔÚ¿Û·ÑÇ°ĞŞÕı cost£©¡£
-  - `payload.value: number|string`
-  - `payload.valueType: flat|percent_base|percent_current|formula`
-  - Ô¼Êø½¨Òé£º½öÔÊĞíÔÚ¡°¼¼ÄÜ¿Û·ÑÇ°¡±´¥·¢Æ÷£¨½¨Òé `onSkillCostCalc` / `onBeforePayCost`£©
-- `effects.action.AP_COST_REDUCE`£º¼õÉÙ¼¼ÄÜ AP ÏûºÄ£¨ÔÚ¿Û·ÑÇ°ĞŞÕı cost£©¡£
-  - `payload.value: number|string`
-  - `payload.valueType: flat|percent_base|percent_current|formula`
-  - Ô¼Êø½¨Òé£º½öÔÊĞíÔÚ¡°¼¼ÄÜ¿Û·ÑÇ°¡±´¥·¢Æ÷£¨½¨Òé `onSkillCostCalc` / `onBeforePayCost`£©
-
-
-> ÉÏÊö¡°ºÏÍ¬¡±²¢²»Ç¿ÖÆÄãÒ»´ÎĞÔÊµÏÖÈ«²¿ action£¬µ«½¨ÒéÒ»´ÎĞÔ°Ñ¡°×Ö¶Î¶¨ÒåÇå³ş¡±£¬·ñÔò±à¼­Æ÷ÎŞ·¨×öµ½Ç¿Ğ£ÑéÓë¶¯Ì¬±íµ¥¡£
-
-##### (F) ºÄÉ¢/Ò»´ÎĞÔ»úÖÆ£ºÓÉ lifecycle ¸ºÔğ£¬¶ø²»ÊÇ action
-
-Îª±ÜÃâ¡°ÉúÃüÖÜÆÚÓëĞĞÎª»ìĞ´¡±£¬½¨Òé½«¡°Ò»´ÎĞÔ/´¥·¢ºóÏûÊ§/ÏûºÄ²ãÊı¡±µÈºÄÉ¢ÄÜÁ¦ÊÕÁ²µ½ `lifecycle`£¨»ò `lifecycle.consume`£©×Ö¶ÎÖĞ£¬¶ø²»ÊÇÍ¨¹ı effect ÖĞ×·¼Ó `REMOVE_SELF` À´±í´ï¡£
-
-ÍÆ¼öĞÎÌ¬£¨Ê¾Àı£¬×Ö¶ÎÃû¿ÉºóĞø¶¨¸å£©£º
-
-```json
-"lifecycle": {
-  "duration": -1,
-  "maxStacks": 1,
-  "stackStrategy": "replace",
-  "removeOnBattleEnd": true,
-  "consume": { "mode": "remove", "when": "onTrigger", "count": 1 }
-}
-```
-
-º¬Òå£º
-
-- `consume.mode`£º`none | remove | consumeStacks`
-- `consume.when`£º`onTrigger`£¨ÃüÖĞ¸Ã Buff µÄÈÎÒ» effect ºó´¥·¢£©»ò¸üÏ¸Á£¶ÈµÄÊÂ¼şµã£¨Èç `onTakeDamagePre`£©
-- `consume.count`£ºÏûºÄ²ãÊı£¨ÓÃÓÚ¡°n ´ÎÃâÒß/ÉÁ±Ü¡±£©
-
-##### (B) ÃüÃû½¨Òé£ºÓÅÏÈ¡°²ß»®ÓïÒå¡±£¬±ÜÃâ¡°ÃæÏòÊµÏÖÏ¸½Ú¡±
-
-³¤ÆÚÀ´¿´£¬action ĞèÒªÃæÏòÄÚÈİÉú²ú£¨²ß»®/¹Ø¿¨/ÏµÍ³£©¶ø²»½ö½öÊÇÒıÇæÊµÏÖ¡£
-
-- `ABSORB_TO_HEAL`£º½¨ÒéÎ´À´¿¼ÂÇ¸üÓïÒå»¯µÄÃû³Æ£¨ÀıÈç `CONVERT_DAMAGE_TO_HEAL` »ò `LIFESTEAL`£©£¬²¢Ã÷È·ËüÊÇ¡°°´±¾´Î³ĞÉË/°´±¾´ÎÔì³ÉÉËº¦/°´ÎüÊÕÁ¿¡±ÖĞµÄÄÄÒ»ÖÖ¡£
-- `PREVENT_ARMOR_BREAK`£ºÊôÓÚÇ¿ñîºÏ¡°²¿Î»»¤¼×ÆÆ»µ¹æÔò¡±µÄÌØ»¯ action¡£½¨ÒéÎ´À´ÓÅÏÈÊÕÁ²³É¡°¹æÔòĞŞ¸ÄÀà action¡±µÄ²ÎÊı£¬¶ø²»ÊÇ³ÖĞøÔö¼ÓÌØ»¯ action¡£
-
-##### (C) ½á¹¹½¨Òé£º±ÜÃâ action Á£¶È»ìÔÓ£¬ÓÅÏÈºÏ²¢Í¬Óò¶¯×÷
-
-±¾°æ MVP ¶¯×÷¿â²»°üº¬¡°ĞŞ¸Ä³ĞÉË/¸ÄĞ´½áËã¹ÜÏß¡±Àà action¡£
-
-- ÈôÎ´À´È·ÓĞĞèÇó£¬½¨ÒéÒÔ¡°°æ±¾»¯À©Õ¹°ü¡±µÄĞÎÊ½ÒıÈë£¨ÀıÈç `buffs_v2_2` À©Õ¹¶¯×÷¿â£©£¬¶ø²»ÊÇÔÚ MVP ½×¶ÎÌáÇ°Õ¼Î»¡£
-
-##### (D) ¶Ô `MODIFY_STAT_TEMP` µÄÔ¼Êø½¨Òé£¨·ÀÖ¹³ÉÎª¡°ÍòÄÜ action ºÚ¶´¡±£©
-
-±¾°æ MVP ¶¯×÷¿â²»°üº¬ `MODIFY_STAT_TEMP`¡£
-
-- ÈôÎ´À´ĞèÒª¡°ÁÙÊ±¸ÄĞ´ÉÏÏÂÎÄ/½áËã²ÎÊı¡±µÄÄÜÁ¦£¬½¨ÒéÔÚ¸ü¸ß°æ±¾ÖĞÒıÈë£¬²¢ÔÚÍ¬Ò»°æ±¾ÄÚÃ÷È·£º×÷ÓÃÓò¡¢»Ø¹ö»úÖÆ¡¢ÓÅÏÈ¼¶Óë¿Éµş¼Ó¹æÔò¡£
-
-##### (E) `ATTACK`/Ö÷¶¯ĞĞÎªÀà action µÄ±ß½ç½¨Òé
-
-`ATTACK` ÕâÀà¡°Éú³ÉÒ»´ÎÖ÷¶¯ĞĞÎª¡±µÄ action »áÏÔÖøÌá¸ßÏµÍ³¸´ÔÓ¶È£¨ĞèÒªÓëÕ½¶·¹ÜÏß/Skill Ñ¡Ôñ/²¿Î»Ñ¡ÔñÉî¶ÈñîºÏ£©¡£
-
-- ½¨Òé MVP ½×¶Î²»ÊµÏÖ»ò²»¿ª·Å¸ø²ß»®Ê¹ÓÃ£¨¿É±£ÁôÃ¶¾Ùµ«±à¼­Æ÷Òş²Ø/±ê¼ÇÎª advanced£©¡£
-- Èô±£Áô£¬ĞèÃ÷È·Æä `payload` ºÏÍ¬£¨ÀıÈçÊÇ·ñ±ØĞëÌá¹© `skillId`¡¢ÊÇ·ñÔÊĞíÖ¸¶¨ bodyPart¡¢ÊÇ·ñ»áÔÙ´Î´¥·¢ `onAttackPre/Post`£©¡£
-
----
-
 ### 5.5 statModifiers ¹æ·¶£¨Passive Modifiers£©
 
 #### 5.5.1 ½á¹¹
 
 ```json
-"statModifiers": {
-  "atk": { "value": 5, "type": "flat" },
-  "damageTakenMult": { "value": 0.2, "type": "percent_base" }
-}
+"statModifiers": [
+  { "stat": "atk", "type": "flat", "value": 5 },
+  { "stat": "damageTakenMult", "type": "percent_base", "value": 0.2 }
+]
 ```
 
 #### 5.5.2 ½¨ÒéÔ¼Êø
 
-- `statModifiers` µÄ key Ó¦ÓÅÏÈÀ´×Ô `meta.enums.statNames`¡£
-- ÈôÓöµ½Î´Öª stat key »òÎ´Öª type£º½ûÖ¹¾²Ä¬ºöÂÔ£¬±ØĞë²úÉúÈÕÖ¾¸æ¾¯£¨±ãÓÚ»Ø¹é¶¨Î»£©¡£
+- `statModifiers[].stat` µÄÈ¡ÖµÓ¦ÓÅÏÈÀ´×Ô `meta.enums.stats`¡£
+- ÈôÓöµ½Î´Öª stat »òÎ´Öª type£º½ûÖ¹¾²Ä¬ºöÂÔ£¬±ØĞë²úÉúÈÕÖ¾¸æ¾¯£¨±ãÓÚ»Ø¹é¶¨Î»£©¡£
 
 ---
 
@@ -579,7 +367,7 @@ Buff µÄĞ§¹û·ÖÎª**¾²Ì¬ÊôĞÔĞŞÕı**ºÍ**¶¯Ì¬´¥·¢ĞĞÎª**Á½Àà¡£
 
 1) `buffs` key Óë `buff.id` Ò»ÖÂĞÔ£¨Èô±£ÁôË«Ğ´£©
 2) `type/trigger/action/target/stackStrategy` ±ØĞëÔÚ `meta.enums` ÖĞ
-3) `statModifiers` µÄ key Óë type ±ØĞë¿ÉÊ¶±ğ
+3) `statModifiers[].stat` Óë `statModifiers[].type` ±ØĞë¿ÉÊ¶±ğ
 4) `aliasOf` Ö¸ÏòµÄ buff ±ØĞë´æÔÚ£¬ÇÒ²»ÔÊĞíÑ­»· alias
 
 ---
@@ -595,59 +383,7 @@ Buff µÄĞ§¹û·ÖÎª**¾²Ì¬ÊôĞÔĞŞÕı**ºÍ**¶¯Ì¬´¥·¢ĞĞÎª**Á½Àà¡£
 
 ## 6. ¼¼ÄÜÏµÍ³ÑÜÉú Buff ÁĞ±í (Skill System Derived Buffs)
 
-»ùÓÚ `skill_design.md` µÚÈıÕÂµÄ¼¼ÄÜÉè¼Æ£¬ÕûÀí³öÈçÏÂ Buff ¶ÔÏóĞèÇó¡£ÕâĞ©¶ÔÏó½«×÷Îª JSON Êı¾İÅäÖÃµÄ»ù´¡¡£
-
-### 6.1 ³ÖĞøÉËº¦Óë×´Ì¬Òì³£Àà (DoT & Status Effects)
-
-| Buff ID | Ãû³Æ | ÀàĞÍ | À´Ô´¼¼ÄÜ/Ö°Òµ | Ğ§¹ûÃèÊö | ÊµÏÖÂß¼­ |
-| :--- | :--- | :--- | :--- | :--- | :--- |
-| `buff_bleed` | Á÷Ñª (Bleed) | Debuff | ½£Êõ (Duelist) | Ã¿»ØºÏÊÜµ½ÎïÀíÉËº¦ | `onTurnStart` -> `damage` (flat value) |
-| `buff_burn` | È¼ÉÕ (Burn) | Debuff | ÔªËØ (Elementalist) | ÒÑ´ÓÖ÷Êı¾İÒÆ³ı£¨Î´À´°æ±¾£ºÔªËØÌåÏµÔÙÒıÈë£© | - |
-| `buff_poison` | ÖĞ¶¾ (Poison) | Debuff | ÓÎÏÀ (Ranger), Í¿¶¾ | Ã¿»ØºÏÊÜµ½×î´óHP°Ù·Ö±ÈÉËº¦ | `onTurnEnd` -> `damage` (percent maxHP) |
-| `buff_stun` | Ñ£ÔÎ (Stun) | Debuff | ÖØ×° (Juggernaut), µÀ¾ß | Ìø¹ıµ±Ç°»ØºÏ | ÒıÇæ×´Ì¬¼ì²é `canAct = false`, `onTurnStart` -> decrease duration |
-| `buff_freeze` | ¶³½á (Freeze) | Debuff | ÔªËØ (Elementalist) | ÒÑ´ÓÖ÷Êı¾İÒÆ³ı£¨Î´À´°æ±¾£º¿É×÷Îª `buff_slow` µÄ alias ÔÙÒıÈë£© | - |
-| `buff_slow` | ¼õËÙ (Slow) | Debuff | ¾Ñ»÷ (Sniper) | ËÙ¶ÈÏÔÖø½µµÍ | `statModifiers: { speed: -value }` |
-| `buff_weakness` | ĞéÈõ (Weakness) | Debuff | Ìú±Ú (Guardian), ¾Ñ»÷ | £¨¿Ú¾¶´ı¶¨£º±¾ÂÖ¸üÆ«ºÃÒÔ `atk` ±í´ïĞéÈõ£»Èô±£Áô damageDealtMult£¬ĞèÃ÷È·Óë `debuff_weak` Çø·Ö£© | - |
-| `buff_vulnerable` | Ò×ÉË (Vulnerable)| Debuff | ¾Ñ»÷ (Sniper) | ÊÜµ½µÄÉËº¦Ôö¼Ó | `statModifiers: { damageTakenMult: +percent }` |
-| `buff_silence_limb`| ÖÂ²Ğ (Crippled) | Debuff | ¾Ñ»÷ (Sniper) | ÒÑ´ÓÖ÷Êı¾İÒÆ³ı£¨Î´À´°æ±¾£ºĞèÏÈÂäµØ¡°¼¼ÄÜ/²¿Î»¿ÉÓÃĞÔÅĞ¶¨¹ÜÏß¡±£© | - |
-
-### 6.2 Õ½¶·ÔöÒæÀà (Combat Buffs - Offensive)
-
-| Buff ID | Ãû³Æ | ÀàĞÍ | À´Ô´¼¼ÄÜ/Ö°Òµ | Ğ§¹ûÃèÊö | ÊµÏÖÂß¼­ |
-| :--- | :--- | :--- | :--- | :--- | :--- |
-| `buff_berserk` | ¿ñ±© (Berserk) | Buff | ÖØ×° (Juggernaut) | ÒÑ´ÓÖ÷Êı¾İÒÆ³ı£¨Î´À´°æ±¾£ºÃüÖĞ/±©»÷Á´Â·ÂäµØºóÔÙÒıÈë£© | - |
-| `buff_focus` | ×¨×¢ (Focus) | Buff | ¾Ñ»÷ (Sniper) | ÒÑ´ÓÖ÷Êı¾İÒÆ³ı£¨Î´À´°æ±¾£ºÃüÖĞ/±©»÷Á´Â·ÂäµØºóÔÙÒıÈë£© | - |
-| `buff_magic_surge`| Ä§Á¦¹ıÔØ (Surge) | Buff | ÔªËØ (Elementalist) | ÒÑ´ÓÖ÷Êı¾İÒÆ³ı£¨Î´À´°æ±¾£º·¨ÊõÉËº¦ÌåÏµÂäµØºóÔÙÒıÈë£© | - |
-| `buff_poison_coat`| ¶¾ËØÍ¿²ã (Coating)| Buff | ÓÎÏÀ (Ranger) | ÒÑ´ÓÖ÷Êı¾İÒÆ³ı£¨Î´À´°æ±¾£ºÓëÖĞ¶¾µş¼Ó/À´Ô´¹æÔòÃ÷È·ºóÔÙÒıÈë£© | - |
-| `buff_eagle_eye` | Ó¥ÑÛ (Eagle Eye) | Buff | ¾Ñ»÷ (Sniper) | ÒÑ´ÓÖ÷Êı¾İÒÆ³ı£¨Î´À´°æ±¾£ºÃüÖĞÅĞ¶¨¹ÜÏßÂäµØºóÔÙÒıÈë£© | - |
-| `buff_armor_pen` | ÆÆ¼×ÒâÍ¼ (Feint) | Buff | ½£Êõ (Duelist) | ÏÂ´Î¹¥»÷Ï÷Èõ»¤¼×¼õÃâ£¨Ìá¸ßÄ¿±ê»¤¼×¼õÃâÏµÊı£© | `onAttackPre` -> Apply `armorMitigationMult` (Temp/Context) |
-| `buff_bless` | ×£¸£ (Bless) | Buff | ÉñÊ¥ (Cleric) | ÃüÖĞÂÊÓëÉÁ±ÜÂÊÌáÉı | `statModifiers: { hitRate: +20%, dodgeRate: +10% }` |
-
-### 6.3 ·ÀÓùÓëÉú´æÀà (Combat Buffs - Defensive)
-
-| Buff ID | Ãû³Æ | ÀàĞÍ | À´Ô´¼¼ÄÜ/Ö°Òµ | Ğ§¹ûÃèÊö | ÊµÏÖÂß¼­ |
-| :--- | :--- | :--- | :--- | :--- | :--- |
-| `buff_iron_will` | ¸ÖÌúÒâÖ¾ (Iron Will)| Buff | Ìú±Ú (Guardian) | ÒÑ´ÓÖ÷Êı¾İÒÆ³ı£¨Î´À´°æ±¾£ºdef/»¤¼×¿Ú¾¶Í³Ò»ºóÔÙÒıÈë£© | - |
-| `buff_block` | ¸ñµ² (Block) | Buff | Ìú±Ú (Guardian) | ÏÂ´ÎÊÜµ½µÄÉËº¦¼õ°ë | `onTakeDamagePre` -> Modify Incoming Dmg * 0.5 |
-| `buff_pain_sup` | Í´¿àÑ¹ÖÆ (Suppression)| Buff | ÉñÊ¥ (Cleric) | ÊÜµ½µÄÉËº¦¼õÉÙ30% | `statModifiers: { damageTakenMult: -30% }` |
-| `buff_evasion` | ²ĞÓ° (Evasion) | Buff | ÓÎÏÀ (Ranger) | £¨±¾ÂÖ½áÂÛ£ºn ´ÎÃâÒßÉËº¦£»µ±Ç°Ö÷Êı¾İÊµÏÖÎª 1 ´Î£© | `onTakeDamagePre` -> `damageTaken=0` + `REMOVE_SELF` |
-| `buff_immortality_hp`| ÌìÊ¹ÊØ»¤ (Immortal HP) | Buff | ÉñÊ¥ (Cleric) | £¨±¾ÂÖ½áÂÛ£º»Ø¹é½×¶ÎÒÆ³ı£»Ö÷Êı¾İÒÑÒÆ³ı£© | - |
-| `buff_immortality_armor`| ²»Ğà±ÚÀİ (Immortal Armor) | Buff | Ìú±Ú (Guardian) | »¤¼×ÎŞ·¨±»ÆÆ»µ£¨TBD£© | ĞèÒª»¤¼×ÆÆ»µ/»¤¼×ÉËº¦¹ÜÏßÖ§³Ö£¨°´²¿Î»£© |
-| `buff_shield` | »¤¶Ü (Shield) | Buff | ÉñÊ¥ (Cleric) | µÖµ²Ò»´ÎÉËº¦£¨Ò»´ÎĞÔ£© | `onTakeDamagePre` -> `damageTaken=0` + `REMOVE_SELF` |
-| `buff_revive` | ¹â»Ô¸´ËÕ (Revive) | Buff | ÉñÊ¥ (Cleric) | £¨±¾ÂÖ½áÂÛ£º»Ø¹é½×¶ÎÒÆ³ı£»Ö÷Êı¾İÒÑÒÆ³ı£© | - |
-| `buff_shield_wall` | ¶ÜÇ½ (Shield Wall) | Buff | Ìú±Ú (Guardian) | »¤¼×¹²Ïí£¬APÌáÉı | ÒıÇæÂß¼­: Shared Armor Pool, `statModifiers: { maxAp: +3 }` |
-
-### 6.4 ÌØÊâ»úÖÆÀà (Special Mechanics)
-
-| Buff ID | Ãû³Æ | ÀàĞÍ | À´Ô´¼¼ÄÜ/Ö°Òµ | Ğ§¹ûÃèÊö | ÊµÏÖÂß¼­ |
-| :--- | :--- | :--- | :--- | :--- | :--- |
-| `buff_thorns` | ¾£¼¬ (Thorns) | Buff | Ìú±Ú (Guardian) | ±»¹¥»÷Ê±·´µ¯ÉËº¦ | `onDefendPost` -> `damage` (Attacker) |
-| `buff_counter` | ·´»÷×ËÌ¬ (Counter) | Buff | Ìú±Ú (Guardian) | ÉÁ±Ü²¢·´»÷±ØÖĞ | `statModifiers: { dodge: +100% }, onDefendPost` -> `attack` |
-| `buff_lifesteal` | ÎüÑª (Lifesteal) | Buff | ½£Êõ (Duelist), ×°±¸ | ¹¥»÷Ôì³ÉÉËº¦»Ø¸´HP | `onAttackPost` -> `heal` (percent of dmg) |
-| `buff_ap_regen` | Õ½Êõ»Ö¸´ (AP Regen)| Buff | ÓÎÏÀ (Ranger), ×°±¸ | ĞĞ¶¯Á¦»Ö¸´/ÏûºÄ¼õÉÙ | `onTurnStart` -> `modifyAP: +1` »ò `statModifiers: { apCost: -1 }` |
-| `buff_damage_absorb`| Ê¥¶Ü (Aegis) | Buff | Ìú±Ú (Guardian) | ÊÜµ½µÄÉËº¦×ª»¯ÎªÖÎÁÆ£¨TBD£© | `onTakeDamagePre` -> `absorbToHeal`£¨ĞèÒª¶¯×÷¿âÖ§³Ö£© |
-
----
+»ùÓÚ `skill_design.md` µÚÈıÕÂµÄ¼¼ÄÜÉè¼Æ£¬ÕûÀí³öÈçÏÂ Buff ¶ÔÏóĞèÇó¡£ÕâĞ©¶ÔÏó½«×÷Îª JSON Êı¾İÅäÖÃµÄ»ù´¡¡££¨ÒÑÉ¾³ı£©
 
 ## 7. ×°±¸ÏµÍ³ÑÜÉú Buff ÁĞ±í (Item System Derived Buffs)
 
@@ -662,11 +398,11 @@ Buff µÄĞ§¹û·ÖÎª**¾²Ì¬ÊôĞÔĞŞÕı**ºÍ**¶¯Ì¬´¥·¢ĞĞÎª**Á½Àà¡£
 
 Í¨¹ıÉÏÊö³éÏó£¬ÎÒÃÇ½«¸´ÔÓµÄÕ½¶·¼¼ÄÜÂß¼­×ª»¯ÎªÁËÔ¼ 30 ¸ö»ù´¡ Buff ¶ÔÏó¡£ÔÚ¿ª·¢ `script/engine/BuffSystem.js` Ê±£¬Ó¦ÓÅÏÈÊµÏÖ `statModifiers` ºÍ `onTurnStart/End` µÄ´¦ÀíÂß¼­£¬ËæºóÖğ²½ÊµÏÖ `EventBus` ÖĞµÄ `onAttack/Defend` ¹³×ÓÒÔÖ§³Ö¸ß¼¶ Buff¡£
 
-## 10. ÊµÏÖ¼Ü¹¹Éè¼Æ (Implementation Architecture)
+## 9. ÊµÏÖ¼Ü¹¹Éè¼Æ (Implementation Architecture)
 
 ±¾ÕÂ½ÚÃèÊöÈçºÎÊµÏÖÒ»¸öµÍñîºÏ¡¢Êı¾İÇı¶¯µÄ Buff ÏµÍ³£¬Ê¹ÆäÂú×ãÉÏÊö JSON ÅäÖÃĞèÇó¡£
 
-### 10.1 ¼Ü¹¹ºËĞÄ (Core Architecture)
+### 9.1 ¼Ü¹¹ºËĞÄ (Core Architecture)
 
 Õû¸öÏµÍ³ÓÉËÄ¸öºËĞÄ²¿·Ö×é³É£º
 1.  **BuffManager**: ¹ÒÔØÔÚ Character ÉÏµÄÊı¾İÈİÆ÷£¬¸ºÔğ Buff µÄÔöÉ¾¸Ä²éºÍÉúÃüÖÜÆÚ Tick¡£
@@ -674,14 +410,14 @@ Buff µÄĞ§¹û·ÖÎª**¾²Ì¬ÊôĞÔĞŞÕı**ºÍ**¶¯Ì¬´¥·¢ĞĞÎª**Á½Àà¡£
 3.  **ActionLibrary (Registry)**: Ô­×Ó²Ù×÷¿â£¬½« JSON ÖĞµÄ×Ö·û´® action Ó³ÉäÎª¾ßÌåµÄ JS º¯Êı¡£
 4.  **ConditionLibrary (Registry)**: Ìõ¼şÅĞ¶Ï¿â£¬ÓÃÓÚ¼ì²é effects ÖĞµÄ triggers ÊÇ·ñÂú×ãÖ´ĞĞÌõ¼ş¡£
 
-### 10.2 Êı¾İÁ÷Ïò (Data Flow)
+### 9.2 Êı¾İÁ÷Ïò (Data Flow)
 
 1.  **ÊÂ¼ş´¥·¢**: Õ½¶·ÏµÍ³ (CombatSystem) ·¢²¼ÊÂ¼ş (e.g. `EVENT.ATTACK_HIT`).
 2.  **ÏµÍ³ÏìÓ¦**: `BuffSystem` ¼àÌıµ½ÊÂ¼ş£¬±éÀúËùÓĞ²ÎÓëÕßµÄ `BuffManager`¡£
 3.  **Æ¥Åä Trigger**: ¶ÔÓÚÃ¿¸ö Buff£¬¼ì²éÆä `effects` ÁĞ±íÖĞµÄ `trigger` ×Ö¶ÎÊÇ·ñÆ¥Åäµ±Ç°ÊÂ¼şÃû¡£
 4.  **Ö´ĞĞÂß¼­**: Èç¹ûÆ¥Åä£¬µ÷ÓÃ `ActionLibrary` Ö´ĞĞ¶ÔÓ¦µÄÔ­×Óº¯Êı¡£
 
-### 10.3 ¶¯×÷¿âÉè¼Æ (ActionLibrary - The "Code in JSON")
+### 9.3 ¶¯×÷¿âÉè¼Æ (ActionLibrary - The "Code in JSON")
 
 ÎªÁËÔÚ JSON ÖĞÅäÖÃÂß¼­£¬ÎÒÃÇĞèÒª½¨Á¢×Ö·û´®µ½º¯ÊıµÄÓ³Éä±í¡£
 
@@ -718,7 +454,7 @@ function resolveValue(valExpression, source, target) {
     }
    ```
 
-### 10.3.1 °¸Àı·ÖÎö£ºÅäÖÃ¡°¹¥»÷ÎüÑª¡± (Example: Configuring Life Steal)
+### 9.3.1 °¸Àı·ÖÎö£ºÅäÖÃ¡°¹¥»÷ÎüÑª¡± (Example: Configuring Life Steal)
 
 ÒÔ `buff_lifesteal` ÎªÀı£¬·ÖÎöÈçºÎÅäÖÃ **20% ÎüÑª±ÈÀı**£¬Õ¹Ê¾Êı¾İÇı¶¯µÄÁé»îĞÔ¡£
 
@@ -757,7 +493,7 @@ EventBus.emit("onAttackPost", attacker, defender, contextData);
 ÔÚ `ActionLibrary` µÄ `HEAL` º¯ÊıÖĞ£¬½âÎöÆ÷»á½« `{context.damageDealt}` Ìæ»»Îª `50`£¬È»ºóÖ´ĞĞ `50 * 0.2 = 10` µÄÖÎÁÆ¡£
 ÕâÑù£¬**ÎüÑª±ÈÀı (0.2)** ÉõÖÁ **¼ÆËã¹«Ê½** ¶¼ÍêÈ«ÓÉ JSON ¾ö¶¨£¬¸Ä¶¯Ê±ÎŞĞèÖØĞÂ±àÒë´úÂë¡£
 
-### 10.3.2 °¸Àı·ÖÎö£ºÅäÖÃ¡°ÆÆ¼×ÒâÍ¼¡± (Example: Configuring Armor Penetration)
+### 9.3.2 °¸Àı·ÖÎö£ºÅäÖÃ¡°ÆÆ¼×ÒâÍ¼¡± (Example: Configuring Armor Penetration)
 
 Ä¿±êÊÇÊµÏÖ **¡°ÏÂ´Î¹¥»÷Ï÷ÈõÄ¿±ê»¤¼×¼õÃâ 30%£¬ÉúĞ§Ò»´ÎºóÏûÊ§¡±**¡£ÕâÊÇÒ»¸öµäĞÍµÄ **ºÄÉ¢ĞÍ (Consumable) Buff**£¬ĞèÒª×éºÏÁ½¸ö Effect À´ÊµÏÖ¡£
 
@@ -794,11 +530,11 @@ EventBus.emit("onAttackPost", attacker, defender, contextData);
 4.  **ºóÖÃ¹³×Ó (`onAttackPost`)**: ÉËº¦½áËãÍê±Ï¡£
 5.  **×ÔÎÒÏûºÄ**: ´¥·¢ `REMOVE_SELF`£¬Buff ´ÓÁĞ±íÖĞÒÆ³ı£¬È·±£Ğ§¹ûÖ»ÉúĞ§Ò»´Î¡£
 
-### 10.4 ²ÎÊıÌåÏµÉî¶È½âÎö (Deep Dive into Parameters)
+### 9.4 ²ÎÊıÌåÏµÉî¶È½âÎö (Deep Dive into Parameters)
 
 Õë¶Ô `params` ÖĞµÄºËĞÄ×Ö¶Î `stat`, `value`, `type`£¬±¾Éè¼ÆÃ÷È·ÁËÄÄĞ©ÊÇ**¿ÉÖ±½ÓÀ©Õ¹µÄ**£¨ÎŞĞè¸Ä´úÂë£©£¬ÄÄĞ©ÊÇ**Ã¶¾ÙÀàĞÍ**£¨ĞèÒıÇæÖ§³Ö£©¡£
 
-#### 10.4.1 stat (ÊôĞÔ¼üÃû) - ¿ÉÀ©Õ¹ (Extensible)
+#### 9.4.1 stat (ÊôĞÔ¼üÃû) - ¿ÉÀ©Õ¹ (Extensible)
 *   **¶¨Òå**: Ä¿±ê¶ÔÏóÉÏĞèÒª±»ĞŞ¸ÄµÄÊôĞÔÃû³Æ£¨Èç `atk`, `def`, `speed`£©¡£
 *   **ÀàĞÍ**: **¿ª·Å×Ö·û´® (Open String)**¡£
 *   **À©Õ¹²ßÂÔ**:
@@ -818,7 +554,7 @@ EventBus.emit("onAttackPost", attacker, defender, contextData);
     }
     ```
 
-#### 10.4.2 type (¼ÆËã²ßÂÔ) - Ã¶¾ÙÖµ (Enumeration)
+#### 9.4.2 type (¼ÆËã²ßÂÔ) - Ã¶¾ÙÖµ (Enumeration)
 *   **¶¨Òå**: ÊıÖµ×÷ÓÃÓÚÊôĞÔµÄÊıÑ§Ëã·¨¡£
 *   **ÀàĞÍ**: **±ÕºÏÃ¶¾Ù (Closed Enum)**¡£
 *   **À©Õ¹²ßÂÔ**:
@@ -831,7 +567,7 @@ EventBus.emit("onAttackPost", attacker, defender, contextData);
 *   **ÒıÇæÊµÏÖ**:
     *   ÍÆ¼öÊ¹ÓÃ²ßÂÔÄ£Ê½ (Strategy Pattern) Î¬»¤ÕâĞ©Ëã·¨£¬±ãÓÚ¼¯ÖĞ¹ÜÀí¡£
 
-#### 10.4.3 value (ÊıÖµÔØºÉ) - ¸ß¶È¶¯Ì¬ (Dynamic)
+#### 9.4.3 value (ÊıÖµÔØºÉ) - ¸ß¶È¶¯Ì¬ (Dynamic)
 *   **¶¨Òå**: Êµ¼Ê×÷ÓÃµÄÊıÖµ´óĞ¡¡£
 *   **ÀàĞÍ**: **¶àÌ¬ (Number | String Expression)**¡£
 *   **À©Õ¹²ßÂÔ**:
@@ -842,17 +578,17 @@ EventBus.emit("onAttackPost", attacker, defender, contextData);
 *   **ÒıÇæÊµÏÖ**:
     *   ÀûÓÃ `Context` ÉÏÏÂÎÄ¶ÔÏó£¬½âÎö×Ö·û´®ÖĞµÄÕ¼Î»·û£¨Èç `{source.atk}`£©£¬Ìæ»»ÎªÊµ¼ÊÔËĞĞÊ±ÊıÖµºó¼ÆËã¡£
 
-### 10.5 µÍñîºÏÓÅÊÆ (Decoupling Benefits)
+### 9.5 µÍñîºÏÓÅÊÆ (Decoupling Benefits)
 
 *   **ÎŞĞèĞŞ¸ÄÕ½¶·´úÂë**: ĞÂÔöÒ»¸ö"¹¥»÷Ê±ÎüÑª"µÄ Buff£¬Ö»ĞèÒªÔÚ JSON ÀïÅäÖÃ `trigger: onAttackPost`, `action: HEAL`, `target: self`¡£²»ĞèÒªÈ¥¸Ä¶¯ CombatSystem µÄ¹¥»÷º¯Êı¡£
 *   **Í³Ò»Èë¿Ú**: ËùÓĞĞŞ¸ÄÊôĞÔ¡¢Ôì³ÉÉËº¦µÄÀ´Ô´¶¼±»Í³Ò»¹ÜÀí£¬·½±ãÍ¨¹ı `console.log` ×·×ÙÕ½¶·ÈÕÖ¾¡£
 *   **Ò×ÓÚÀ©Õ¹**: Èç¹ûĞèÒªĞÂ»úÖÆ£¨ÀıÈç¡°ÍµÈ¡½ğ±Ò¡±£©£¬Ö»ĞèÔÚ `ActionLibrary` ×¢²á `STEAL_GOLD` º¯Êı£¬ÎŞĞè¸Ä¶¯Õû¸ö¼Ü¹¹¡£
 
-## 11. ºËĞÄÒıÇæ¼¯³ÉÓëÎÊÌâ·ÖÎö (Core Integration & Analysis)
+## 10. ºËĞÄÒıÇæ¼¯³ÉÓëÎÊÌâ·ÖÎö (Core Integration & Analysis)
 
 Õë¶ÔÒ×ÉË (Vulnerable) ºÍ ÆÆ¼× (Armor Pen) µÈ¸ß¼¶»úÖÆÔÚ¼òÒ×Ä£ÄâÆ÷ÖĞÊ§Ğ§µÄÎÊÌâ£¬±¾ÕÂ½ÚÃ÷È·ÁËºËĞÄÒıÇæ±ØĞë¾ß±¸µÄ¼Ü¹¹Ä£¿é¡£
 
-### 9.1 ²âÊÔÊ§Ğ§Ô­ÒòÉî¶È½âÎö (Root Cause Analysis)
+### 10.1 ²âÊÔÊ§Ğ§Ô­ÒòÉî¶È½âÎö (Root Cause Analysis)
 
 ÔÚ `buff_editor_v2.html` µÄÄ£Äâ²âÊÔÖĞ£¬·¢ÏÖ²¿·Ö¼¼ÄÜĞ§¹ûÎ´ÉúĞ§£¬Æä¸ùÔ´ÔÚÓÚ**Ä£Äâ´úÂë¹ıÓÚÏßĞÔ**£¬È±·¦¡°ÖĞ¼ä¼ş¡±»úÖÆ£º
 
@@ -866,7 +602,7 @@ EventBus.emit("onAttackPost", attacker, defender, contextData);
     *   **Ô­Òò**: ÆÆ¼×ÒÀÀµ `onAttackPre` Ê±»ú´¥·¢£¬Ä¿µÄÊÇÔÚ¡°»¤¼×½áËã½×¶Î¡±ÁÙÊ±ĞŞ¸Ä `armorMitigationMult`¡£Ä£Äâ´úÂëÖĞ£¬ÊÂ¼ş´¥·¢ (`onAttackPre`) ºÍ »¤¼×½áËã ÊÇ·ÖÀëµÄ£¬ÊÂ¼ş´¥·¢½ö½ö´òÓ¡ÁËÈÕÖ¾£¬²¢Ã»ÓĞ½«ĞŞ¸ÄºóµÄ²ÎÊı´«µİ¸ø»¤¼×½áËã²½Öè¡£
     *   **È±Ê§**: È±ÉÙ**¿É±äÉÏÏÂÎÄ (Mutable Context)** µÄ´«µİ»úÖÆ¡£
 
-### 9.2 ÄÚºËÄ£¿éĞèÇó (Module Requirements)
+### 10.2 ÄÚºËÄ£¿éĞèÇó (Module Requirements)
 
 ÎªÁË½â¾öÉÏÊöÎÊÌâ£¬Core Engine ±ØĞë°üº¬ÒÔÏÂÁ½¸öºËĞÄ×ÓÄ£¿é£¨»ò¹¦ÄÜ¼¯£©£º
 
@@ -880,7 +616,7 @@ EventBus.emit("onAttackPost", attacker, defender, contextData);
 *   **Ö°Ôğ**: `getEffectiveStat(entity, statName)`
 *   **Âß¼­**: Base Value + Equipment Modifiers + **Buff Modifiers (Iterate & Sum)**.
 
-### 9.3 Õ½¶·Á÷³Ì¼¯³É·½°¸ (Pipeline Integration Scheme)
+### 10.3 Õ½¶·Á÷³Ì¼¯³É·½°¸ (Pipeline Integration Scheme)
 
 ÒªÊµÏÖÆÆ¼×ºÍ¶¯Ì¬ÉËº¦£¬Õ½¶·Á÷³Ì±ØĞë¸ÄÔìÎª**¹ÜµÀÄ£Ê½ (Pipeline Pattern)**¡£
 
@@ -926,13 +662,8 @@ async function executeCombatAction(attacker, target, actionData) {
 }
 ```
 
-### 9.4 ½áÂÛ (Conclusion)
+### 10.4 ½áÂÛ (Conclusion)
 
 ÊÇµÄ£¬ĞèÒªÔÚÄÚºËÒıÇæÖĞÔö¼Ó¶ÀÁ¢µÄ **BuffSystem** Ä£¿é¡£µ¥´¿ÔÚ `CoreEngine.js` ÖĞĞ´ËÀÂß¼­ÎŞ·¨Âú×ãĞèÇó¡£
 
-*   **ÏÂÒ»²½¼Æ»®**:
-    1.  ´´½¨ `script/engine/BuffSystem.js`¡£
-    2.  ´´½¨ `script/engine/StatCalculator.js`¡£
-    3.  ÔÚ `CoreEngine` ³õÊ¼»¯Ê±Æô¶¯ BuffSystem¡£
-    4.  ÖØ¹¹Õ½¶·Âß¼­£¬Ê¹ÓÃÉÏÊö Context Pipeline Ä£Ê½¡£
 
