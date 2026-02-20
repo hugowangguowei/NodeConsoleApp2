@@ -65,8 +65,21 @@ buff_editor_v4.htmlÖÐÔ­Ê¼JSON(µ±Ç°Buff)¿òµÄjsonÊý¾Ý¿òµÄ¸ß¶ÈÌ«Ð¡ÁË£¬ÎÒÏ£Íû¿ÉÒÔÊÊÓ
 »ùÓÚµ±Ç°µÄbuffs_v2_3.jsonÎÄµµ£¬½øÐÐbuff_design.mdµÄÐÞ¶©£¬ÒÔÈ·±£buffÉè¼ÆÎÄµµÓë×îÐÂµÄbuffÊý¾Ý½á¹¹ºÍÄÚÈÝ±£³ÖÒ»ÖÂ¡£Çë·ÖÎöµ±Ç°buffs_v2_3.jsonÖÐµÄÉè¼ÆÌØµãºÍ±ä»¯£¬²¢Ìá³ö¾ßÌåµÄÐÞ¶©½¨Òé£¬²¢É¾È¥¹ý³ÌÐÔµÄ·ÖÎöÊý¾Ý£¬ÒÔÌáÉýbuffÉè¼ÆÎÄµµµÄ¹æ·¶ÐÔºÍÊµ
 
 26-02-25-12:15
+ÈÎÎñ1£ºÕûÀíµ±Ç°ÏîÄ¿½á¹¹
 Ä¿Ç°ÎÒÒÑ¾­Íê³ÉÁËÓÎÏ·µÄ²¿·Ö¹¤×÷£¬Çë°ïÎÒ´´½¨Ò»¸ötodoList.md£¬ÎÒÏ£ÍûÕâ¸ötodoListÄÜ¹»º­¸ÇÎÒ½ÓÏÂÀ´ÐèÒªÍê³ÉµÄ¹¤×÷ÄÚÈÝ£¬²¢ÇÒ°´ÕÕÓÅÏÈ¼¶½øÐÐÅÅÐò£¬ÒÔ°ïÖúÎÒ¸üºÃµØ¹æ»®ºÍ¹ÜÀíÎÒµÄ¹¤×÷½ø¶È¡£ºóÃæ½«ÓÐ2-3¸öÈËµÄÍÅ¶ÓÐ­×÷Íê³ÉÎÒµ±Ç°µÄ¹¤×÷£¬Çë°´ÕÕÍÅ¶Ó·Ö¹¤½øÐÐ²ð·Ö¡£
 
 ÎªÕâ¸öÏîÄ¿´´½¨Ò»¸öreadme.md£¬ÎÒÒª·Åµ½githubÉÏ½øÐÐÐû´«ºÍÍÆ¹ã
 
 ÎÒ¾õµÃµ±Ç°µÄtodoList²¢²»ÄÜÈÃÎÒÂúÒâ£¬ÎÒ¾õµÃtodoListÓ¦¸ÃÒÔ4ÈËÐ­×÷£¬ÀýÈç1ÈË¸ºÔð¼¼ÄÜ/buff±à¼­Æ÷¿ª·¢£¬1ÈË¸ºÔðÓÎÏ·ÄÚºËºÍ×´Ì¬»úÓÅ»¯ÒÔ¼°¼¼ÄÜ/buffÊý¾ÝµÄ¼ÓÔØ£¬1ÈË¸ºÔðUI/Ô­»­ºÍ½»»¥ÓÅ»¯£¬1ÈË¸ºÔðÏîÄ¿¹ÜÀí£¬°´ÕÕÕâ¸öÂß¼­ÖØÐÂÉè¼ÆtodoList.md£¬Ã÷È·Ã¿¸öÈËµÄÖ°ÔðºÍÈÎÎñ£¬²¢°´ÕÕÓÅÏÈ¼¶½øÐÐÅÅÐò£¬ÒÔÈ·±£ÏîÄ¿µÄË³Àû½øÐÐºÍ¸ßÐ§Ð­×÷¡£Çë·ÖÎöµ±Ç°todoListµÄÉè¼ÆÂß¼­£¬È·ÈÏÊÇ·ñ´æÔÚ²»ºÏÀíÖ®´¦£¬²¢Ìá³ö¸Ä½ø½¨Òé£¬ÒÔÓÅ»¯todoListµÄ½á¹¹ºÍÊ¹ÓÃÌåÑé¡£
+
+ÈÎÎñ2£º¾Ö²¿Ï¸½Úµ÷Õû
+ÎÒÏ£ÍûÏÈ½«skill_editor_test_v3.htmlÖÐJ.TagesÏàÓ¦µÄÄÚÈÝÒþ²Ø
+
+ÈÎÎñ3£ºbuffÊäÈëÊä³ö½Ó¿ÚÉè¼Æ
+ÎÒÕýÔÚ·ÖÎöÔÚskill_editor_test_v3.htmlÖÐµ÷ÓÃbuffs_v2_3.jsonµÄÎÊÌâ£¬Ã¿¸öbuff¶ÔÏóÓÉÓÚÊôÐÔ²»Í¬£¬ÐèÒªÅäÖÃµÄÊäÈëÒ²²»¾¡ÏàÍ¬£¬ÇëÎÊÊÇ·ñÓÐ±ØÒªÎªbuffÌá¹©¹æ·¶µÄÊäÈë£¬Êä³ö½Ó¿Ú£¬ÒÔ±ãbuff¶ÔÏóÔÚÆäËûÓ¦ÓÃÖÐµ÷ÓÃ£¿Çë½øÐÐ·ÖÎö¡£
+
+ÒÔÁ÷ÑªÎªÀý£¬ÎÒÏ£ÍûÔÚskill_editor_test_v3.htmlÖÐ¶ÔÄ³¸ö¼¼ÄÜÅäÖÃÒ»¸öÁ÷Ñªbuff,ÎÒ»áÔÚbuff RefsÖÐÌí¼ÓÒ»¸ö¶ÔÁ÷ÑªbuffµÄÒýÓÃ£¬µ«ÊÇÎÒÏ£ÍûÄÜ¹»¶ÔÕâ¸öÁ÷ÑªbuffµÄÃ¿ÂÖÉËº¦½øÐÐÅäÖÃ£¬ÀýÈçÉËº¦ÊýÖµºÍ³ÖÐøÂÖÊý¡£µ«ÊÇ²¢²»ÊÇËùÓÐµÄbuffÊôÐÔ¶¼ÐèÒªÅäÖÃ£¬ÀýÈçbuffµÄID£¬´¥·¢Ê±»úµÈÊôÐÔÊÇ¹Ì¶¨µÄ¡£ÄÇÃ´ÎÒµÄÎÊÌâÊÇ£¬ÈçºÎÖ¸¶¨ÄÄÐ©buffÊôÐÔ¿ÉÒÔ¶¯Ì¬Ö¸¶¨£¬ÄÄÐ©ÊôÐÔÊÇ¹Ì¶¨µÄ£¿ÓÐÃ»ÓÐÒ»¸ö±È½ÏºÏÀíµÄ·½°¸£¬ÀýÈçÊäÈëÊä³ö½Ó¿ÚµÈÀ´½â¾öÕâ¸öÎÊÌâ£¿Çë·ÖÎöµ±Ç°buffÉè¼Æ·½°¸µÄÁé»îÐÔºÍ¿ÉÅäÖÃÐÔ£¬È·ÈÏÊÇ·ñ´æÔÚ²»ºÏÀíÖ®´¦£¬²¢Ìá³ö¸Ä½ø½¨Òé£¬ÒÔÓÅ»¯buffµÄÉè¼ÆºÍÊ¹ÓÃÌåÑé£¬ÏÈ²»ÒªÐÞ¸Ä´úÂë¡£
+
+¸ù¾ÝÄãµÄÒâ¼û£¬ÎÒÏ£Íû×öÈçÏÂÉè¼Æ£º
+1.ÎªbuffÊý¾ÝµÄ¸÷Ïî×Ö¶ÎÌí¼Ó¡°isConfigurable¡±µÄÊôÐÔ£¬ÓÃÀ´±ê¼Ç¸Ã×Ö¶ÎÊÇ·ñ¿ÉÒÔÔÚ¼¼ÄÜ±à¼­Æ÷»òÕßÆäËûÓ¦ÓÃÖÐ½øÐÐÅäÖÃ¡£
+2.ÔÚ
