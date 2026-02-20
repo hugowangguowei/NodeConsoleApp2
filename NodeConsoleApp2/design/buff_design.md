@@ -419,6 +419,8 @@ Buff 的效果分为**静态属性修正**和**动态触发行为**两类。
 
 ### 9.3 动作库设计 (ActionLibrary - The "Code in JSON")
 
+---
+
 为了在 JSON 中配置逻辑，我们需要建立字符串到函数的映射表。
 
 ```javascript
@@ -584,86 +586,175 @@ EventBus.emit("onAttackPost", attacker, defender, contextData);
 *   **统一入口**: 所有修改属性、造成伤害的来源都被统一管理，方便通过 `console.log` 追踪战斗日志。
 *   **易于扩展**: 如果需要新机制（例如“偷取金币”），只需在 `ActionLibrary` 注册 `STEAL_GOLD` 函数，无需改动整个架构。
 
-## 10. 核心引擎集成与问题分析 (Core Integration & Analysis)
+## 10. Buff 输入参数接口（Skill 可配置参数）(Buff Parameter Interface)
 
-针对易伤 (Vulnerable) 和 破甲 (Armor Pen) 等高级机制在简易模拟器中失效的问题，本章节明确了核心引擎必须具备的架构模块。
+> 目的：解决“Buff 模板结构固定，但在 Skill 引用时需要配置少量数值参数（例如流血每轮伤害、持续回合）”的问题。
+>
+> 原则：
+> 1) **Skill 只做引用与实例化参数**（override），不修改 Buff 的 trigger/action/target 等结构。
+> 2) **白名单式可配置参数**：只有 Buff 明确声明为可覆盖的参数才允许在 Skill 侧配置。
+> 3) **运行时合并**：`finalParams = defaults + overrides`，并对 overrides 做 schema 校验。
 
-### 10.1 测试失效原因深度解析 (Root Cause Analysis)
+### 10.1 背景与动机
 
-在 `buff_editor_v2.html` 的模拟测试中，发现部分技能效果未生效，其根源在于**模拟代码过于线性**，缺乏“中间件”机制：
+当前 `assets/data/buffs_v2_3.json` 的 Buff 数据以 `lifecycle + effects + statModifiers` 为核心。它非常适合表达“Buff 自身如何结算”。
 
-1.  **易伤失效 (Vulnerable Failure)**:
-    *   **现象**: 伤害数值未增加。
-    *   **原因**: 易伤通常通过 `statModifiers: { damageTakenMult: 0.2 }` (受伤增加20%) 实现。模拟代码直接执行 `hp -= damage`，完全忽略了对 `damageTakenMult` 属性的检查和乘算。
-    *   **缺失**: 缺少一个**统一属性计算层 (Stat Calculator)** 来聚合所有 Buff 的被动属性修正。
+但在技能编辑器（`test/skill_editor_test_v3.html`）中引用 Buff（`skills_melee_v4_3.json` 的 `buffRefs.apply/applySelf/remove`）时，常会出现一个需求：
 
-2.  **破甲失效 (Armor Pen Failure)**:
-    *   **现象**: 护甲减免数值未变。
-    *   **原因**: 破甲依赖 `onAttackPre` 时机触发，目的是在“护甲结算阶段”临时修改 `armorMitigationMult`。模拟代码中，事件触发 (`onAttackPre`) 和 护甲结算 是分离的，事件触发仅仅打印了日志，并没有将修改后的参数传递给护甲结算步骤。
-    *   **缺失**: 缺少**可变上下文 (Mutable Context)** 的传递机制。
+- Buff 的 **行为机制固定**（例如流血在 `onTurnStart` 触发 `DAMAGE_HP`；不希望每个技能都改 trigger/action）。
+- 但 Buff 的 **部分数值参数可配置**（例如每轮伤害、持续回合数、最大叠层）。
 
-### 10.2 内核模块需求 (Module Requirements)
+如果没有“可配置参数接口”，常见后果是：
 
-为了解决上述问题，Core Engine 必须包含以下两个核心子模块（或功能集）：
+- 复制出大量相似 Buff（`buff_bleed_1/buff_bleed_2/...`）造成冗余。
+- 或在 Skill 侧硬编码不同 Buff 的 UI/解析分支，维护成本急剧上升。
 
-#### A. BuffSystem (逻辑处理器)
-这是一个常驻的单例系统，负责：
-1.  **生命周期管理**: 回合开始/结束时更新所有实体的 Buff (Tick)。
-2.  **事件响应**: 监听 `EventBus`，根据 Buff 配置的 Triggers 执行 Actions。
+因此引入以下接口：在 Buff 模板中声明可配置参数 schema；在 Skill 引用中提供 overrides。
 
-#### B. StatCalculator (动态属性层)
-这是一个静态工具类或服务，负责取代简单的 `obj.stats.atk` 访问方式。
-*   **职责**: `getEffectiveStat(entity, statName)`
-*   **逻辑**: Base Value + Equipment Modifiers + **Buff Modifiers (Iterate & Sum)**.
+### 10.2 Buff 侧新增字段（模板参数定义）
 
-### 10.3 战斗流程集成方案 (Pipeline Integration Scheme)
+在每个单独 Buff 对象（`buffs.*`）中，建议新增以下字段（不改变现有 `lifecycle/effects/statModifiers` 语义）：
 
-要实现破甲和动态伤害，战斗流程必须改造为**管道模式 (Pipeline Pattern)**。
+#### 10.2.1 `paramsDefaults`（推荐）
 
-```javascript
-// 伪代码：战斗行为执行流
-async function executeCombatAction(attacker, target, actionData) {
+- 类型：`object`
+- 含义：该 Buff 暴露给外部（Skill/道具/关卡等）可覆盖参数的默认值。
+- 作用：当 Skill 不提供 overrides 时，运行时仍能用 defaults 得到可用的参数值。
 
-    // 1. 创建作战上下文 (Combat Context)
-    // 这个对象将在整个流程中传递，并允许被 Buff 修改
-    const context = {
-        attacker: attacker,
-        target: target,
-        rawDamage: actionData.baseDamage,
-        armorMitigationMult: 1.0, // 护甲减免系数乘区 (初值 1.0)
-        damageMultiplier: 1.0,    // 伤害乘区 (初值 1.0)
-        resultLog: []
-    };
+示例（以 `buff_bleed` 为例，概念示例）：
 
-    // 2. 触发阶段: 攻击前 (Attack Pre)
-    // BuffSystem 监听到此事件，若 attacker 有“破甲意图”Buff：
-    // -> 触发 ACTION: "MODIFY_CONTEXT" -> context.armorMitigationMult *= 1.3
-    await EventBus.emit('BATTLE_ATTACK_PRE', context);
-
-    // 3. 计算阶段: 动态属性获取
-    // 这里不再用 def 做“护甲”，护甲按部位参与减免：
-    // finalDamage = rawDamage * f(armorValue) * context.armorMitigationMult
-    // （f(armorValue) 为护甲系统定义的减免函数/系数）
-    let finalDamage = context.rawDamage;
-
-    // 5. 触发阶段: 受击前 (Take Damage Pre / Defense Pre)
-    // BuffSystem 监听到此事件，若 target 有“易伤”Buff：
-    // -> Buff属性中自带 statModifiers.damageTakenMult
-    // 或者是动态触发的效果
-    let takenMult = StatCalculator.get(target, 'damageTakenMult') || 1.0;
-    finalDamage *= takenMult;
-
-    // 6. 结算应用
-    target.stats.hp -= finalDamage;
-
-    // 7. 触发阶段: 攻击后 (Attack Post)
-    // 处理吸血等逻辑
-    await EventBus.emit('BATTLE_ATTACK_POST', context);
+```json
+"paramsDefaults": {
+  "damagePerTurn": 5,
+  "duration": 3
 }
 ```
 
-### 10.4 结论 (Conclusion)
+> 提示：`duration` 目前位于 `lifecycle.duration`。为保持向后兼容，既可以继续保留 `lifecycle.duration` 作为默认值，也可以同步写入 `paramsDefaults.duration`（加载层归一化时做合并）。
 
-是的，需要在内核引擎中增加独立的 **BuffSystem** 模块。单纯在 `CoreEngine.js` 中写死逻辑无法满足需求。
+#### 10.2.2 `paramsSchema`（关键）
+
+- 类型：`object`（以参数 key 为键的字典）
+- 含义：声明哪些参数允许被外部覆盖（overrideable），并提供最小 UI/校验信息。
+
+```json
+"paramsSchema": {
+  "damagePerTurn": { "type": "int", "default": 5, "overrideable": true, "label": "damagePerTurn", "labelCn": "每回合伤害", "min": 1, "max": 999, "step": 1 },
+  "duration": { "type": "int", "default": 3, "overrideable": true, "label": "duration", "labelCn": "持续回合数", "min": 1, "max": 99, "step": 1 }
+}
+```
+
+### 10.3 `ParamSchema` 最小字段集合（用于自动生成 UI 与校验）
+
+编辑器/加载器至少需要以下字段来实现：下拉/输入框渲染 + 基本合法性校验。
+
+#### 10.3.1 最小字段（MVP）
+
+- `type`: `"int" | "number" | "string" | "bool" | "enum"`
+- `default`: 默认值（与 type 对齐）
+- `overrideable`: `boolean`（是否允许 Skill 侧覆盖）
+- `label`: `string`（英文/键名显示）
+- `labelCn`: `string`（中文说明，用于 UI/文档注释）
+
+#### 10.3.2 常用可选字段（强烈推荐）
+
+- `min?: number`
+- `max?: number`
+- `step?: number`
+- `enumValues?: string[]`（当 `type=enum` 时）
+
+> 注意：不要尝试对 `effects[].trigger/action/target` 等结构字段提供 override；这些属于 Buff 行为机制，应保持模板稳定。
+
+### 10.4 Skill 侧新增字段（实例参数 overrides）
+
+`skills_melee_v4_3.json` 目前的 `buffRefs.apply/applySelf` 已包含 `buffId/target/chance/duration/stacks` 等。
+
+为支持“同一个 buff 模板在不同技能中使用不同参数”，建议在每条 buff 引用对象中新增：
+
+#### 10.4.1 `paramsOverrides`
+
+- 位置：`skills[].buffRefs.apply[].paramsOverrides` 与 `skills[].buffRefs.applySelf[].paramsOverrides`
+- 类型：`object`
+- 含义：对该次 Buff 应用的参数覆盖值（仅存储覆盖项，不复制整份 Buff）。
+
+示例（技能施加流血，但覆盖每轮伤害与持续回合）：
+
+```json
+{
+  "buffId": "buff_bleed",
+  "target": "enemy",
+  "chance": 1.0,
+  "paramsOverrides": {
+    "damagePerTurn": 8,
+    "duration": 2
+  }
+}
+```
+
+> 说明：UI 交互建议使用 `buff.name` 搜索选择，但落盘引用仍使用稳定的 `buffId`。
+
+### 10.5 运行时合并与校验规则（必须明确）
+
+#### 10.5.1 白名单校验（禁止静默）
+
+对 `paramsOverrides` 中的每个 key：
+
+1) 必须存在于 `buff.paramsSchema`。
+2) 必须满足 `overrideable=true`。
+3) 值必须符合 `type/min/max/enumValues` 等约束。
+
+不满足时建议：编辑器直接报错；加载层输出 `BUFF:WARN`（并拒绝该覆盖项）。
+
+#### 10.5.2 合并顺序
+
+`finalParams = { ...buff.paramsDefaults, ...buffRef.paramsOverrides }`
+
+如果 Buff 未提供 `paramsDefaults`，则可用 `paramsSchema.*.default` 形成隐式 defaults（加载层归一化生成）。
+
+#### 10.5.3 与现有字段的映射（归一化建议）
+
+为了不破坏 `buffs_v2_3.json` 已有结构，可在加载/运行时做归一化映射：
+
+- `finalDuration`：优先取 `finalParams.duration`，否则取 `buff.lifecycle.duration`。
+- tick 伤害/治疗数值：若该 Buff 的 `effects[].payload.value` 需要来自参数，则使用参数引用方式（见 10.6）。
+
+### 10.6 参数如何影响 effect.payload（两种可选实现策略）
+
+本项目当前 payload 支持 `value` 为 number 或 string（例如毒：`"maxHp * 0.05"`）。基于此，有两种贴近现状的策略：
+
+#### 10.6.1 方案 A：在 `payload.value` 中约定参数引用语法（改动小）
+
+- 示例：`"value": "@damagePerTurn"` 或 `"value": "params.damagePerTurn"`
+- 运行时：若检测到 `value` 为引用表达式，则从 `finalParams` 取值。
+
+优点：不新增字段；兼容现有 string formula 体系。
+缺点：需要定义清晰的引用前缀与解析规则，避免与 formula 混淆。
+
+#### 10.6.2 方案 B：在 payload 中增加 `valueRef`（更结构化）
+
+```json
+"payload": {
+  "valueType": "flat",
+  "valueRef": "damagePerTurn"
+}
+```
+
+运行时：若存在 `valueRef`，则忽略 `value`（或 `value` 作为 fallback），直接使用 `finalParams[valueRef]`。
+
+优点：结构清晰、编辑器更易做校验。
+缺点：需要一次性演进 payload spec。
+
+### 10.7 编辑器交互建议（BuffEditor/SkillEditor）
+
+#### 10.7.1 BuffEditor（维护 schema）
+
+- 在 Buff 参数编辑区提供：参数 key、default、type、约束(min/max/enum)、`overrideable` 勾选、`labelCn`。
+- 保存时写入 `paramsSchema` 与 `paramsDefaults`。
+
+#### 10.7.2 SkillEditor（按 schema 动态生成输入）
+
+- Buff Refs 行选择 buff 后：读取该 Buff 的 `paramsSchema`，仅展示 `overrideable=true` 的参数。
+- 自动生成输入控件并写入 `buffRef.paramsOverrides`。
+- 保存前对 overrides 做 schema 校验，防止脏数据进入技能库。
 
 

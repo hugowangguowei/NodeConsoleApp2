@@ -82,4 +82,6 @@ buff_editor_v4.htmlÖÐÔ­Ê¼JSON(µ±Ç°Buff)¿òµÄjsonÊý¾Ý¿òµÄ¸ß¶ÈÌ«Ð¡ÁË£¬ÎÒÏ£Íû¿ÉÒÔÊÊÓ
 
 ¸ù¾ÝÄãµÄÒâ¼û£¬ÎÒÏ£Íû×öÈçÏÂÉè¼Æ£º
 1.ÎªbuffÊý¾ÝµÄ¸÷Ïî×Ö¶ÎÌí¼Ó¡°isConfigurable¡±µÄÊôÐÔ£¬ÓÃÀ´±ê¼Ç¸Ã×Ö¶ÎÊÇ·ñ¿ÉÒÔÔÚ¼¼ÄÜ±à¼­Æ÷»òÕßÆäËûÓ¦ÓÃÖÐ½øÐÐÅäÖÃ¡£
-2.ÔÚ
+2.ÔÚbuff±à¼­Æ÷ÖÐ£¬¶Ô²ÎÊý×Ö¶ÎµÄ²ÎÊýÃû³ÆºóÃæÌí¼ÓÒ»¸öÊÇ·ñ¿ÉÅäÖÃÑ¡Ôñ¿ò£¬Èç¹û¹´Ñ¡ÁË¿ÉÅäÖÃ£¬ÄÇÃ´buffs.jsonÔÚµ¼ÈëµÄÊ±ºò»á½øÐÐ¼ÇÂ¼¡£
+3.ÔÚ¼¼ÄÜ±à¼­Æ÷ÖÐ£¬µ±Ñ¡ÔñÒ»¸öbuffÊ±£¬×Ô¶¯ÏÔÊ¾¸ÃbuffµÄ¿ÉÅäÖÃ×Ö¶Î£¬²¢Ìá¹©ÏàÓ¦µÄÊäÈë¿ò¹©ÓÃ»§½øÐÐÅäÖÃ£¬Í¬Ê±½«ÕâÐ©ÅäÖÃÏîÓë¼¼ÄÜ½øÐÐ¹ØÁª£¬ÒÔ±ãÔÚÓÎÏ·ÖÐÕýÈ·Ó¦ÓÃÕâÐ©ÅäÖÃ¡£
+Çë·ÖÎöÕâ¸öÉè¼Æ·½°¸ÊÇ·ñ¿ÉÐÐ£¬²¢Ìá³ö¸Ä½ø½¨Òé£¬ÒÔÈ·±£buffµÄÊäÈëÊä³ö½Ó¿ÚÉè¼ÆÄÜ¹»Âú×ã¼¼ÄÜ±à¼­Æ÷µÄÐèÇó£¬Í¬Ê±±£³ÖbuffÉè¼ÆµÄÁé»îÐÔºÍ¿ÉÎ¬»¤ÐÔ£¬ÏÈ²»ÒªÐÞ¸Ä´úÂë¡£
