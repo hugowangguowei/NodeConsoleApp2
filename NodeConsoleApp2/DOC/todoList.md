@@ -1,108 +1,128 @@
-# TODO List（按优先级）
+# TODO List（四人协作版 / 按优先级）
 
-> 目标：推进`skills/buffs`数据规范与编辑器（`skill_editor` / `buff_editor`）落地，减少冗余配置，提高可维护性，并为2-3人协作拆分清晰任务。
+> 目标：把“**设计文档—数据(JSON)—编辑器(UI)—游戏运行时(内核/状态机)**”做成闭环；减少冗余配置、提升可维护性，并让 4 人并行不互相阻塞。
 
-## P0（必须先做，阻塞后续）
+---
 
-### P0-1 修复`skill_editor_test_v3.html`加载新版本`buffs_v2_3.json`解析错误
-- [ ] 对齐`buff_design.md`与`buffs_v2_3.json`结构差异，梳理当前解析失败的字段/枚举（如`effect.action`、`action`参数结构等）。
-- [ ] 修改`loadBuffs`/buff解析逻辑，兼容`buffs_v2_3.json`（不考虑旧版兼容则直接按新版重构）。
-- [ ] 增加基本校验与错误提示（缺字段、枚举不合法时给出位置）。
-- [ ] 增加最小化回归用例：加载`buffs_v2_1.json`、`buffs_v2_2.json`、`buffs_v2_3.json`各一次（如不需要兼容旧版则只保留新版）。
+## 角色与职责（固定分工）
 
-### P0-2 完成`editState`在技能数据与UI中的闭环
-- [ ] 在`skills_melee_v4_3.json`中补充`editorMeta.editState`字段（默认`"done"`）。
-- [ ] 在技能json开头枚举列表（如果存在meta/enums段）中增加`editState`枚举：`editing`/`done`/`deprecated`。
-- [ ] 修改`skill_editor` UI：
-  - [ ] `skill-node`整体背景色随`editState`变化：
-    - `editing`浅蓝
-    - `done`浅绿
-    - `deprecated`浅灰
-  - [ ] 提供交互：下拉选择/快捷切换编辑状态。
-  - [ ] 列表/筛选：按状态筛选或高亮当前非`done`。
+### R1 工具开发（技能/Buff 编辑器）
+- 负责 `skill_editor_*` / `buff_editor_*` 的功能开发、数据校验、导入导出与交互效率。
 
-### P0-3 规范并落地Effect中`action`枚举的定义与编辑器呈现
-- [ ] 在`buff_design.md`明确`effect.action`枚举：每个值含义、参数结构、适用范围。
-- [ ] `buff_design.md` 5.4.2 action：覆盖
+### R2 游戏内核（状态机/战斗流程/数据加载）
+- 负责运行时对 `skills*.json`、`buffs*.json` 的加载、解析、执行；确保编辑器产物能在游戏里跑通。
+
+### R3 UI/原画/交互体验
+- 负责编辑器与游戏内 UI 的视觉一致性、可用性改进（布局、颜色、图标、提示、信息层级）。
+
+### R4 项目管理（需求/里程碑/验收/协作）
+- 负责维护任务优先级、定义验收标准、每周节奏、风险管理与对外展示（README/Changelog/演示素材）。
+
+---
+
+## P0（必须先做：打通“新版 Buff 数据 -> 编辑器 -> 运行时”闭环）
+
+### P0-1（R1 主责，R2 配合）修复 `skill_editor_test_v3.html` 加载 `buffs_v2_3.json` 解析错误
+- [ ] 对齐 `buff_design.md` 与 `buffs_v2_3.json` 差异，定位解析失败原因（字段名/枚举/结构）。
+- [ ] 重构/修复 `loadBuffs` 与 buff 解析逻辑（可不兼容旧版则直接按新版）。
+- [ ] 增加错误提示：定位到 buff 名称/索引/字段路径。
+- [ ] 最小回归：能稳定加载指定的 `buffs_v2_3.json`（以及你要求兼容的其他版本）。
+
+验收标准：编辑器能加载并展示全部 buff；无控制台报错；解析失败时能给出可读错误信息。
+
+### P0-2（R2 主责，R1 配合）运行时 Buff/Skill 数据加载与执行链路对齐
+- [ ] 统一运行时数据入口：明确“项目启动默认只加载 `buffs.json`，技能由用户导入”的可行实现路径。
+- [ ] 为新版 buff action/参数结构提供运行时解析适配层（与编辑器/文档一致）。
+- [ ] 建立最小战斗验证：加载一组技能 + 1-2 个 buff，在回合流程中能触发并产生可观察效果。
+
+验收标准：给定一份 `skills*.json` + `buffs_v2_3.json`，运行时可加载并运行一次完整流程（至少能触发一次 buff）。
+
+### P0-3（R1 主责，R4 协调验收）技能 `editorMeta.editState` 数据与 UI 闭环
+- [ ] 在 `skills_melee_v4_3.json` 中补充 `editorMeta.editState`（默认 `"done"`）。
+- [ ] 在技能 JSON 的枚举列表（如有 meta/enums）中增加 `editState`：`editing` / `done` / `deprecated`。
+- [ ] `skill-node` 整体背景色随 `editState` 变化：
+  - [ ] `editing`：浅蓝
+  - [ ] `done`：浅绿
+  - [ ] `deprecated`：浅灰
+- [ ] 提供交互：下拉选择/快捷切换 + 列表筛选。
+
+验收标准：编辑器中每个技能卡片整体背景色可区分状态；修改状态可立即反映并可导出到 JSON。
+
+---
+
+## P1（重要：收敛枚举与结构，降低“写不动/改不动”的摩擦）
+
+### P1-1（R4 主责，R1/R2 配合）收敛并冻结 `effect.action` 枚举与参数结构（形成“契约”）
+- [ ] 在 `buff_design.md` 明确 `effect.action`：每个枚举值的语义、参数、触发时机、示例。
+- [ ] 5.4.2 action 覆盖并标准化：
   - [ ] `damage_hp`（伤血）
   - [ ] `damage_armor`（伤甲）
   - [ ] `heal_armor`（回甲）
   - [ ] `heal_hp`（回血）
   - [ ] `skip_turn`（跳过回合）
-  - [ ] `prevent_damage`（新增：免伤/阻断伤害，定义触发条件与作用域）
-- [ ] 移除/下线当前阶段不需要的动作：`SET_DAMAGE_TAKEN`、`MULTIPLY_DAMAGE_TAKEN`、`MODIFY_STAT_TEMP`（如果确认移除）。
-- [ ] 同步到数据：修订`buffs_v2_2.json` / 生成`buffs_v2_3+`（按你当前版本命名策略）。
-- [ ] 修改`buff_editor_v4.html` UI：根据选择的`action`动态展示参数面板。
+  - [ ] `prevent_damage`（免伤/阻断伤害，定义作用域与条件）
+- [ ] 移除/下线（如确认）：`SET_DAMAGE_TAKEN`、`MULTIPLY_DAMAGE_TAKEN`、`MODIFY_STAT_TEMP`。
 
-## P1（重要优化，提升效率/体验）
+验收标准：文档给出完整枚举表 + 示例；编辑器与运行时均按此实现，不再出现“action 不是枚举”的不一致。
 
-### P1-1 `buff_editor_v4.html`移除冗余`status`概念并简化界面
-- [ ] 清理UI中`status`相关字段/显示。
-- [ ] 统一“生命周期/耗散机制”由持续时间/触发次数等字段表达，而非通过动作如`REMOVE_SELF`表达。
+### P1-2（R1 主责）`buff_editor_v4.html` 移除冗余 `status` 并简化生命周期表达
+- [ ] 清理 UI 中 `status` 相关字段/显示。
+- [ ] 用持续回合/次数/触发条件表达耗散机制，避免通过 `REMOVE_SELF` 这类动作表达生命周期。
 
-### P1-2 `buffId`改为从`buffs.json`/buff数据文件读取并以`name`作为交互标识
-- [ ] 在`skill_editor`/`action-editor`中，buff选择控件优先使用`buff.name`展示与检索。
-- [ ] 内部保存仍可用`id`（如存在），但交互不暴露难选的`id`输入。
-- [ ] 增加搜索/过滤（按名称、tag、动作类型）。
+验收标准：UI 不再出现 status；生命周期字段能覆盖实际需要。
 
-### P1-3 `loadProjectData`只加载`buffs.json`，技能由用户手动导入
-- [ ] 调整项目加载流程：默认只加载buff库。
-- [ ] 技能导入提供按钮：`ImportSkills`（已有则复用），并记录最后导入文件路径（可选）。
+### P1-3（R1 主责，R3 配合）以 `name` 作为 Buff 交互标识，替代手动输入 `buffId`
+- [ ] Buff 选择控件读取 buff 数据文件生成列表（可搜索）。
+- [ ] 展示 `name`（必要时附 `id` 只读），保存时内部仍可存 `id`。
 
-### P1-4 清理`action-editor`中Target显式绑定时的冗余选项
-- [ ] 当`target.binding.mode = explicit`时，在`action-editor`隐藏：
-  - `target.spec.selection.mode`
-  - `target.spec.selection.selectCount`
-  - `target.spec.selection.selectCandidateParts`
-- [ ] 逻辑：因为在技能/动作界面行为确定，选择部位后由系统推导单选/多选/数量。
-
-## P2（文档与规范化，降低维护成本）
-
-### P2-1 升级`buff_design.md`（以`skill_design.md`的规范为参考）
-- [ ] 补齐`meta/enums`段落与字段定义表。
-- [ ] 明确：buff数据版本策略、兼容策略（本轮可不兼容旧版）。
-- [ ] 统一命名：`camelCase`/`snake_case`、枚举大小写风格。
-- [ ] 提供示例：常见buff模板（增伤、dot、护盾、禁疗、跳过回合等）。
-
-### P2-2 解释与整理：`buff_editor_v3`中`statModifiers`含义
-- [ ] 在`buff_editor_design.md`或`buff_design.md`中给出定义、字段结构、示例。
-
-### P2-3 整理buff列表冗余与缺失（基于`skills_melee_v4_2.json`）
-- [ ] 统计当前buff被引用情况：未引用/重复语义/可合并。
-- [ ] 分析缺失buff：常用控制类/增益减益类/防护类/状态免疫类。
-- [ ] 输出建议：
-  - [ ] buff分类（tag/领域：伤害、治疗、防御、控制、资源、位移等）
-  - [ ] 统一字段与动作组合方式
-
-## P3（体验改良/非阻塞）
-
-### P3-1 `buff_editor_v4.html`字段英文后增加中文注释
-- [ ] 所有字段label：`English（中文）`。
-- [ ] 对复杂字段提供tooltip（可选）。
-
-### P3-2 调整“原始JSON(当前Buff)”区域高度自适应
-- [ ] 让JSON文本框高度随内容增长（编辑区已有滚动条，内部不需要滚动）。
-
-## 团队分工建议（2-3人）
-
-### 角色A：数据规范与文档（偏设计/数据）
-- P0-3（定义/收敛`effect.action`枚举与参数结构）
-- P2-1（升级`buff_design.md`并与数据对齐）
-- P2-3（buff冗余/缺失分析与整理建议）
-
-### 角色B：技能编辑器（偏前端/编辑器）
-- P0-2（`editState`数据补齐与`skill-node`整卡片背景色渲染与交互）
-- P1-3（只加载buff库 + 手动导入技能）
-- P1-4（Target显式绑定下隐藏冗余字段）
-
-### 角色C：Buff编辑器（偏前端/编辑器）
-- P0-1（修复解析`buffs_v2_3.json`，重构load/validate）
-- P1-1（移除`status`概念与简化生命周期UI）
-- P3-1 / P3-2（中文注释与JSON区域体验优化）
+验收标准：配置 Buff 时不需要手打 id；可通过名称搜索选择。
 
 ---
 
+## P2（体验与内容生产效率：让团队用得起来）
+
+### P2-1（R3 主责，R1 配合）编辑器交互与可读性提升
+- [ ] `buff_editor_v4.html` 字段 label 统一：`English（中文）`。
+- [ ] 复杂字段增加悬浮提示（tooltip）与示例。
+- [ ] 调整“原始 JSON(当前 Buff)”区域：高度自适应内容（外层已有滚动即可）。
+
+验收标准：新成员无需读源码即可理解字段用途；关键字段有中文解释与示例。
+
+### P2-2（R4 主责）整理“制作流程”与贡献规范
+- [ ] 制作流程：如何新增/修改 buff/skill、如何验证、如何提交。
+- [ ] 统一命名规范与版本策略：文件命名、枚举风格、破坏性变更策略。
+
+验收标准：新增一个 buff/skill 的流程可在 10 分钟内讲清并按文档执行。
+
+### P2-3（R2 主责）状态机/战斗流程优化（确保 Buff 机制可扩展）
+- [ ] 梳理 buff 触发点（回合开始/结束/受击前后/出手前后等）并在状态机中标准化。
+- [ ] 明确“编辑器字段 -> 运行时事件”映射表，避免埋点分散。
+
+验收标准：新增一种触发点不需要到处改代码；核心触发链路清晰可测试。
+
+---
+
+## P3（非阻塞：内容质量与宣传）
+
+### P3-1（R3 主责）补齐演示素材
+- [ ] 编辑器截图、动图（导入/编辑/导出一条典型链路）。
+- [ ] 一组示例数据：最小能跑通的技能+buff组合。
+
+### P3-2（R4 主责）GitHub 宣传与对外页面
+- [ ] 完善 `README.md`：功能截图、使用场景、路线图、FAQ。
+- [ ] `CHANGELOG.md` 版本节奏与“破坏性变更说明”。
+
+---
+
+## 协作节奏（建议）
+
+- 每周 2 个迭代块：
+  - Block A：P0/P1（闭环/契约）
+  - Block B：P2/P3（体验/产能/宣传）
+- 每个任务必须包含：负责人、依赖、验收标准（上文已内置模板）。
+
 ## 里程碑建议
-- M1（1-2天）：P0全部完成，确保新版buff可被加载、技能状态可视化可用。
-- M2（2-4天）：P1完成，编辑器交互顺畅，减少手动输入与冗余字段。
-- M3（持续）：P2/P3完成，文档稳定、数据结构可长期迭代。
+
+- M1（闭环）：完成 P0（能加载新版 buff、技能状态可视化、运行时能触发一次 buff）。
+- M2（契约）：完成 P1（action 枚举冻结，编辑器与运行时一致）。
+- M3（产能）：完成 P2（体验提升 + 制作流程文档化，方便扩团队）。
