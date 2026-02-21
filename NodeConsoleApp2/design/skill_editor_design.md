@@ -263,7 +263,6 @@ v4 action 的关键字段：
 
 - `buffId`（下拉选择，来源 `buffs.json`）
 - `target`（枚举 `meta.enums.buffRefTargets`，当前为 `self/enemy`）
-- `chance`（0~1）
 - `params`（动态参数对象，根据所选 Buff 的 `paramsSchema` 动态生成输入项）
 
 **UI 交互升级（卡片式动态表单）**：
@@ -309,7 +308,6 @@ v4 action 的关键字段：
 4. `prerequisites`：引用 id 存在，且无循环依赖。
 5. 数值合理性：`ap>=0`、`slotCost>=0`、`perTurnLimit>=1`（若存在）。
 6. `buffRefs`：
-   - `chance` 在 `[0,1]`
    - `buffId` 存在于 `buffs.json`（若已加载）
 
 ---
@@ -422,7 +420,6 @@ v4 action 的关键字段：
 |---|---|---:|:---:|---|---|
 | buffId | `buffId` | `string` | 是 | 从 `buffs.json` 下拉 | 必须存在于 `buffs.json`（若已加载） |
 | 目标 | `target` | `string` | 是 | `meta.enums.buffRefTargets[0]` | 必须在 `meta.enums.buffRefTargets` 内 |
-| 概率 | `chance` | `number` | 否 | `1` | 若存在必须在 `[0,1]` |
 | 动态参数 | `params` | `object` | 否 | 根据 `paramsSchema` 初始化 | 必须符合对应 Buff 的 `paramsSchema` 定义 |
 
 ---

@@ -1879,11 +1879,11 @@ export class SkillEditor {
 
     renderBuffRefTables() {
         const skill = this.selectedNodeId ? this.getSkillById(this.selectedNodeId) : null;
-        const tables = {
-            apply: document.querySelector('#table-apply tbody'),
-            remove: document.querySelector('#table-remove tbody'),
+        const lists = {
+            apply: document.querySelector('#buff-apply-list'),
+            remove: document.querySelector('#buff-remove-list'),
         };
-        Object.values(tables).forEach(t => { if (t) t.innerHTML = ''; });
+        Object.values(lists).forEach(t => { if (t) t.innerHTML = ''; });
         if (!skill) return;
         const escapeAttr = (s) => String(s ?? '')
             .replaceAll('&', '&amp;')
@@ -1910,66 +1910,93 @@ export class SkillEditor {
 
             return `<select class="select" data-field="buffId">${options.join('')}</select>`;
         };
+
+        const renderParamsForm = (buffId, params) => {
+            if (!buffId || !this.buffDict || !this.buffDict[buffId]) return '';
+            const buff = this.buffDict[buffId];
+            const schema = buff.paramsSchema;
+            if (!schema || typeof schema !== 'object' || Object.keys(schema).length === 0) {
+                return '<div class="small" style="color:#888; margin-top:4px;">(无动态参数)</div>';
+            }
+
+            const p = params || {};
+            const fields = Object.entries(schema).map(([key, s]) => {
+                const name = key;
+                const type = s.type || 'number';
+                const labelCn = s.labelCn || s.name || s.description || name;
+                const def = s.default !== undefined ? s.default : (s.defaultValue !== undefined ? s.defaultValue : '');
+                const val = p[name] !== undefined ? p[name] : '';
+
+                let inputHtml = '';
+                if (type === 'boolean' || type === 'bool') {
+                    const checked = (val === true || val === 'true') ? 'checked' : '';
+                    inputHtml = `<input type="checkbox" data-field="params.${name}" ${checked} />`;
+                } else {
+                    const inputType = (type === 'number' || type === 'int') ? 'number' : 'text';
+                    inputHtml = `<input class="input" data-field="params.${name}" type="${inputType}" value="${escapeAttr(val)}" placeholder="默认: ${escapeAttr(def)}" />`;
+                }
+
+                return `
+                    <div style="display:flex; align-items:center; gap:8px; margin-top:4px;">
+                        <div class="small" style="width:140px; text-align:right; line-height:1.2;" title="${escapeAttr(name)}">
+                            <div style="font-weight:bold;">${escapeAttr(labelCn)}</div>
+                            <div style="color:#888; font-size:0.85em;">${escapeAttr(name)} (${escapeAttr(type)})</div>
+                        </div>
+                        <div style="flex:1;">${inputHtml}</div>
+                    </div>
+                `;
+            }).join('');
+
+            return `<div style="margin-top:8px; padding:8px; background:#f0f0f0; border-radius:4px; border:1px solid #ddd;">
+                <div class="small" style="font-weight:bold; margin-bottom:4px;">动态参数 (params)</div>
+                ${fields}
+            </div>`;
+        };
+
         const renderRow = (kind, row, index) => {
             if (kind === 'remove') {
                 return `
-                    <tr data-kind="${kind}" data-index="${index}">
-                        <td>
-                            <div class="buffref-row2">
-                                <div class="buffref-line1">
-                                    <div class="buffref-buff">${renderBuffPicker(row.buffId)}</div>
-                                    <button class="btn btn-sm btn-danger" data-action="del">Del</button>
-                                </div>
-                                <div class="buffref-line2">
-                                    <label class="small">target</label>
-                                    <select class="select" data-field="target">
-                                        <option value="self" ${(row.target||'self')==='self'?'selected':''}>self</option>
-                                        <option value="enemy" ${(row.target||'self')==='enemy'?'selected':''}>enemy</option>
-                                    </select>
-                                </div>
-                            </div>
-                        </td>
-                    </tr>
+                    <div class="panel" data-kind="${kind}" data-index="${index}" style="margin-bottom:8px; padding:8px;">
+                        <div style="display:flex; gap:8px; align-items:center;">
+                            <div style="flex:1;">${renderBuffPicker(row.buffId)}</div>
+                            <select class="select" data-field="target" style="width:100px;">
+                                <option value="self" ${(row.target||'self')==='self'?'selected':''}>self</option>
+                                <option value="enemy" ${(row.target||'self')==='enemy'?'selected':''}>enemy</option>
+                            </select>
+                            <button class="btn btn-sm btn-danger" data-action="del">Del</button>
+                        </div>
+                    </div>
                 `;
             }
             return `
-                <tr data-kind="${kind}" data-index="${index}">
-                    <td>
-                        <div class="buffref-row2">
-                            <div class="buffref-line1">
-                                <div class="buffref-buff">${renderBuffPicker(row.buffId)}</div>
-                                <button class="btn btn-sm btn-danger" data-action="del">Del</button>
-                            </div>
-                            <div class="buffref-line2">
-                                <label class="small">target</label>
-                                <select class="select" data-field="target">
-                                    <option value="enemy" ${(row.target||'enemy')==='enemy'?'selected':''}>enemy</option>
-                                    <option value="self" ${(row.target||'enemy')==='self'?'selected':''}>self</option>
-                                </select>
-                                <label class="small">chance</label>
-                                <input class="input" data-field="chance" type="number" step="0.01" value="${row.chance ?? 1}"/>
-                                <label class="small">duration</label>
-                                <input class="input" data-field="duration" type="number" value="${row.duration ?? ''}"/>
-                                <label class="small">stacks</label>
-                                <input class="input" data-field="stacks" type="number" value="${row.stacks ?? ''}"/>
-                            </div>
-                        </div>
-                    </td>
-                </tr>
+                <div class="panel" data-kind="${kind}" data-index="${index}" style="margin-bottom:8px; padding:8px;">
+                    <div style="display:flex; gap:8px; align-items:center; margin-bottom:8px;">
+                        <div style="flex:1;">${renderBuffPicker(row.buffId)}</div>
+                        <button class="btn btn-sm btn-danger" data-action="del">Del</button>
+                    </div>
+                    <div style="display:flex; gap:8px; align-items:center;">
+                        <label class="small">target</label>
+                        <select class="select" data-field="target" style="width:100px;">
+                            <option value="enemy" ${(row.target||'enemy')==='enemy'?'selected':''}>enemy</option>
+                            <option value="self" ${(row.target||'enemy')==='self'?'selected':''}>self</option>
+                        </select>
+                    </div>
+                    ${renderParamsForm(row.buffId, row.params)}
+                </div>
             `;
         };
 
         ['apply','remove'].forEach(kind => {
             const arr = skill.buffRefs?.[kind] || [];
             arr.forEach((row, idx) => {
-                tables[kind].insertAdjacentHTML('beforeend', renderRow(kind, row, idx));
+                lists[kind].insertAdjacentHTML('beforeend', renderRow(kind, row, idx));
             });
         });
         const container = document.getElementById('properties-panel');
         if (!this._buffRefDelegated) {
             this._buffRefDelegated = true;
             container.addEventListener('change', (e) => {
-                const tr = e.target.closest('tr[data-kind]');
+                const tr = e.target.closest('div[data-kind]');
                 if (!tr) return;
                 const kind = tr.dataset.kind;
                 const index = Number(tr.dataset.index);
@@ -1978,15 +2005,44 @@ export class SkillEditor {
                 const sk = this.getSkillById(this.selectedNodeId);
                 if (!sk) return;
                 const row = sk.buffRefs[kind][index];
+
                 let v = e.target.value;
-                if (field === 'chance' || field === 'duration' || field === 'stacks') v = v === '' ? undefined : Number(v);
-                row[field] = v;
+                if (e.target.type === 'checkbox') {
+                    v = e.target.checked;
+                } else if (e.target.type === 'number') {
+                    v = v === '' ? undefined : Number(v);
+                }
+
+                if (field.startsWith('params.')) {
+                    const paramName = field.split('.')[1];
+                    if (!row.params) row.params = {};
+                    row.params[paramName] = v;
+                } else {
+                    row[field] = v;
+                    // If buffId changed, initialize default params
+                    if (field === 'buffId' && kind === 'apply') {
+                        row.params = {};
+                        if (v && this.buffDict && this.buffDict[v]) {
+                            const schema = this.buffDict[v].paramsSchema;
+                            if (schema && typeof schema === 'object') {
+                                Object.entries(schema).forEach(([key, s]) => {
+                                    const def = s.default !== undefined ? s.default : s.defaultValue;
+                                    if (def !== undefined) {
+                                        row.params[key] = def;
+                                    }
+                                });
+                            }
+                        }
+                        // Re-render to show new params form
+                        this.renderBuffRefTables();
+                    }
+                }
                 this.updateSummary();
             });
             container.addEventListener('click', (e) => {
                 const btn = e.target.closest('button[data-action="del"]');
                 if (!btn) return;
-                const tr = e.target.closest('tr[data-kind]');
+                const tr = e.target.closest('div[data-kind]');
                 if (!tr) return;
                 const kind = tr.dataset.kind;
                 const index = Number(tr.dataset.index);
@@ -2006,7 +2062,7 @@ export class SkillEditor {
         if (!sk.buffRefs) sk.buffRefs = { apply: [], remove: [] };
         if (!Array.isArray(sk.buffRefs[kind])) sk.buffRefs[kind] = [];
         if (kind === 'remove') sk.buffRefs[kind].push({ buffId: '', target: 'self' });
-        else sk.buffRefs[kind].push({ buffId: '', target: 'enemy', chance: 1.0 });
+        else sk.buffRefs[kind].push({ buffId: '', target: 'enemy' });
         this.renderBuffRefTables();
         this.updateSummary();
     }
