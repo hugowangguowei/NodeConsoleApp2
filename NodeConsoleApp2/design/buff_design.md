@@ -586,212 +586,125 @@ EventBus.emit("onAttackPost", attacker, defender, contextData);
 *   **统一入口**: 所有修改属性、造成伤害的来源都被统一管理，方便通过 `console.log` 追踪战斗日志。
 *   **易于扩展**: 如果需要新机制（例如“偷取金币”），只需在 `ActionLibrary` 注册 `STEAL_GOLD` 函数，无需改动整个架构。
 
-## 10. Buff 输入参数接口（Skill 可配置参数）(Buff Parameter Interface)
+## 10. Buff 动态参数与映射机制 (Dynamic Parameters & Mapping)
 
-> 目的：解决“Buff 模板结构固定，但在 Skill 引用时需要配置少量数值参数（例如流血每轮伤害、持续回合）”的问题。
+> 目的：解决“Buff 模板结构固定，但在 Skill 引用时需要配置少量数值参数（例如流血每轮伤害、持续回合）”的问题，同时**严格保证数据与逻辑的解耦**。
 >
-> 原则：
-> 1) **Skill 只做引用与实例化参数**（override），不修改 Buff 的 trigger/action/target 等结构。
-> 2) **白名单式可配置参数**：只有 Buff 明确声明为可覆盖的参数才允许在 Skill 侧配置。
-> 3) **运行时合并**：`finalParams = defaults + overrides`，并对 overrides 做 schema 校验。
+> 核心原则：
+> 1) **数据自描述映射**：Buff 的 JSON 数据不仅要声明有哪些参数，还要通过**占位符（Placeholder）**自己描述这些参数替换到哪个具体字段。引擎只做无情的解析器。
+> 2) **Skill 只做传参**：Skill 引用 Buff 时只传入参数字典（Key-Value），不关心 Buff 内部结构。
+> 3) **UI 傻瓜化**：编辑器底层保存占位符字符串，但 UI 层面通过“模式切换（固定值/参数绑定）”让策划做选择题，避免手敲代码。
 
-### 10.1 背景与动机
+### 10.1 核心方案：占位符映射（Variable Interpolation）
 
-当前 `assets/data/buffs_v2_3.json` 的 Buff 数据以 `lifecycle + effects + statModifiers` 为核心。它非常适合表达“Buff 自身如何结算”。
+为了让 Buff 成为一个“带参数的模板”，我们采用**占位符映射（方案A）**。
+在 Buff 的具体数值字段中，不写死数字，而是写成类似 `${paramName}` 的字符串。引擎在实例化 Buff 时，自动将 `${}` 替换为外部传入的参数。
 
-但在技能编辑器（`test/skill_editor_test_v3.html`）中引用 Buff（`skills_melee_v4_3.json` 的 `buffRefs.apply/applySelf/remove`）时，常会出现一个需求：
+**优势**：
+- **解耦最彻底**：映射关系直接写在具体字段的值里，策划看 JSON 一眼就知道这个参数用在哪了。
+- **一对多映射**：同一个参数（如 `${power}`）可以填在多个 Effect 的 value 中，实现一个参数控制多个效果（如同时造成伤害和减甲）。
+- **不破坏原有结构**：不需要把 value 变成复杂的对象，保持了 JSON 的简洁性。
 
-- Buff 的 **行为机制固定**（例如流血在 `onTurnStart` 触发 `DAMAGE_HP`；不希望每个技能都改 trigger/action）。
-- 但 Buff 的 **部分数值参数可配置**（例如每轮伤害、持续回合数、最大叠层）。
+### 10.2 Buff 侧数据结构（模板定义）
 
-如果没有“可配置参数接口”，常见后果是：
+在 `buffs.json` 的每个 Buff 对象中，需要增加 `paramsSchema` 字段，并在具体数值处使用占位符。
 
-- 复制出大量相似 Buff（`buff_bleed_1/buff_bleed_2/...`）造成冗余。
-- 或在 Skill 侧硬编码不同 Buff 的 UI/解析分支，维护成本急剧上升。
-
-因此引入以下接口：在 Buff 模板中声明可配置参数 schema；在 Skill 引用中提供 overrides。
-
-### 10.2 Buff 侧新增字段（模板参数定义）
-
-在每个单独 Buff 对象（`buffs.*`）中，建议新增以下字段（不改变现有 `lifecycle/effects/statModifiers` 语义）：
-
-#### 10.2.1 `paramsDefaults`（推荐）
-
-- 类型：`object`
-- 含义：该 Buff 暴露给外部（Skill/道具/关卡等）可覆盖参数的默认值。
-- 作用：当 Skill 不提供 overrides 时，运行时仍能用 defaults 得到可用的参数值。
-
-示例（以 `buff_bleed` 为例，概念示例）：
-
-```json
-"paramsDefaults": {
-  "damagePerTurn": 5,
-  "duration": 3
-}
-```
-
-> 提示：`duration` 目前位于 `lifecycle.duration`。为保持向后兼容，既可以继续保留 `lifecycle.duration` 作为默认值，也可以同步写入 `paramsDefaults.duration`（加载层归一化时做合并）。
-
-#### 10.2.2 `paramsSchema`（关键）
-
-- 类型：`object`（以参数 key 为键的字典）
-- 含义：声明哪些参数允许被外部覆盖（overrideable），并提供最小 UI/校验信息。
+#### 10.2.1 `paramsSchema`（参数声明）
+声明该 Buff 接受哪些动态参数，并提供默认值和 UI 渲染信息。
 
 ```json
 "paramsSchema": {
-  "damagePerTurn": { "type": "int", "default": 5, "overrideable": true, "label": "damagePerTurn", "labelCn": "每回合伤害", "min": 1, "max": 999, "step": 1 },
-  "duration": { "type": "int", "default": 3, "overrideable": true, "label": "duration", "labelCn": "持续回合数", "min": 1, "max": 99, "step": 1 }
-}
-```
-
-### 10.3 `ParamSchema` 最小字段集合（用于自动生成 UI 与校验）
-
-编辑器/加载器至少需要以下字段来实现：下拉/输入框渲染 + 基本合法性校验。
-
-#### 10.3.1 最小字段（MVP）
-
-- `type`: `"int" | "number" | "string" | "bool" | "enum"`
-- `default`: 默认值（与 type 对齐）
-- `overrideable`: `boolean`（是否允许 Skill 侧覆盖）
-- `label`: `string`（英文/键名显示）
-- `labelCn`: `string`（中文说明，用于 UI/文档注释）
-
-#### 10.3.2 常用可选字段（强烈推荐）
-
-- `min?: number`
-- `max?: number`
-- `step?: number`
-- `enumValues?: string[]`（当 `type=enum` 时）
-
-> 注意：不要尝试对 `effects[].trigger/action/target` 等结构字段提供 override；这些属于 Buff 行为机制，应保持模板稳定。
-
-### 10.4 Skill 侧新增字段（实例参数 overrides）
-
-`skills_melee_v4_3.json` 目前的 `buffRefs.apply/applySelf` 已包含 `buffId/target/chance/duration/stacks` 等。
-
-为支持“同一个 buff 模板在不同技能中使用不同参数”，建议在每条 buff 引用对象中新增：
-
-#### 10.4.1 `paramsOverrides`
-
-- 位置：`skills[].buffRefs.apply[].paramsOverrides` 与 `skills[].buffRefs.applySelf[].paramsOverrides`
-- 类型：`object`
-- 含义：对该次 Buff 应用的参数覆盖值（仅存储覆盖项，不复制整份 Buff）。
-
-示例（技能施加流血，但覆盖每轮伤害与持续回合）：
-
-```json
-{
-  "buffId": "buff_bleed",
-  "target": "enemy",
-  "chance": 1.0,
-  "paramsOverrides": {
-    "damagePerTurn": 8,
-    "duration": 2
+  "damagePerTurn": { 
+    "type": "number", 
+    "default": 5, 
+    "name": "每回合伤害" 
+  },
+  "duration": { 
+    "type": "number", 
+    "default": 3, 
+    "name": "持续回合" 
   }
 }
 ```
 
-> 说明：UI 交互建议使用 `buff.name` 搜索选择，但落盘引用仍使用稳定的 `buffId`。
-
-### 10.5 运行时合并与校验规则（必须明确）
-
-#### 10.5.1 白名单校验（禁止静默）
-
-对 `paramsOverrides` 中的每个 key：
-
-1) 必须存在于 `buff.paramsSchema`。
-2) 必须满足 `overrideable=true`。
-3) 值必须符合 `type/min/max/enumValues` 等约束。
-
-不满足时建议：编辑器直接报错；加载层输出 `BUFF:WARN`（并拒绝该覆盖项）。
-
-#### 10.5.2 合并顺序
-
-`finalParams = { ...buff.paramsDefaults, ...buffRef.paramsOverrides }`
-
-如果 Buff 未提供 `paramsDefaults`，则可用 `paramsSchema.*.default` 形成隐式 defaults（加载层归一化生成）。
-
-#### 10.5.3 与现有字段的映射（归一化建议）
-
-为了不破坏 `buffs_v2_3.json` 已有结构，可在加载/运行时做归一化映射：
-
-- `finalDuration`：优先取 `finalParams.duration`，否则取 `buff.lifecycle.duration`。
-- tick 伤害/治疗数值：若该 Buff 的 `effects[].payload.value` 需要来自参数，则使用参数引用方式（见 10.6）。
-
-### 10.6 参数如何影响 effect.payload（两种可选实现策略）
-
-本项目当前 payload 支持 `value` 为 number 或 string（例如毒：`"maxHp * 0.05"`）。基于此，有两种贴近现状的策略：
-
-#### 10.6.1 方案 A：在 `payload.value` 中约定参数引用语法（改动小）
-
-- 示例：`"value": "@damagePerTurn"` 或 `"value": "params.damagePerTurn"`
-- 运行时：若检测到 `value` 为引用表达式，则从 `finalParams` 取值。
-
-优点：不新增字段；兼容现有 string formula 体系。
-缺点：需要定义清晰的引用前缀与解析规则，避免与 formula 混淆。
-
-#### 10.6.2 方案 B：在 payload 中增加 `valueRef`（更结构化）
+#### 10.2.2 字段占位符（映射描述）
+在 `lifecycle`, `effects`, `statModifiers` 等原本填数字的地方，填入 `${参数名}`。
 
 ```json
-"payload": {
-  "valueType": "flat",
-  "valueRef": "damagePerTurn"
+{
+  "id": "buff_bleed",
+  "paramsSchema": {
+    "damagePerTurn": { "type": "number", "default": 5, "name": "每回合伤害" },
+    "duration": { "type": "number", "default": 3, "name": "持续回合" }
+  },
+  "lifecycle": {
+    "duration": "${duration}",  // <--- 绑定持续回合参数
+    "maxStacks": 5
+  },
+  "effects": [
+    {
+      "trigger": "onTurnStart",
+      "action": "DAMAGE_HP",
+      "target": "self",
+      "value": "${damagePerTurn}" // <--- 绑定伤害参数
+    }
+  ]
 }
 ```
 
-运行时：若存在 `valueRef`，则忽略 `value`（或 `value` 作为 fallback），直接使用 `finalParams[valueRef]`。
+### 10.3 Skill 侧数据结构（实例传参）
 
-优点：结构清晰、编辑器更易做校验。
-缺点：需要一次性演进 payload spec。
-
-### 10.7 编辑器交互建议（BuffEditor/SkillEditor）
-
-#### 10.7.1 BuffEditor（维护 schema）
-
-- 在 Buff 参数编辑区提供：参数 key、default、type、约束(min/max/enum)、`overrideable` 勾选、`labelCn`。
-- 保存时写入 `paramsSchema` 与 `paramsDefaults`。
-
-#### 10.7.2 SkillEditor（按 schema 动态生成输入）
-
-- Buff Refs 行选择 buff 后：读取该 Buff 的 `paramsSchema`，仅展示 `overrideable=true` 的参数。
-- 自动生成输入控件并写入 `buffRef.paramsOverrides`。
-- 保存前对 overrides 做 schema 校验，防止脏数据进入技能库。
-
-### 10.8 `statModifiers` 是否支持覆盖（结论与推荐做法）
-
-结论：**可以支持“数值覆盖”**，但推荐方式不是让 Skill 直接覆盖 `statModifiers` 的结构（增删条目、改 `stat`、改顺序），而是沿用本章的 **`paramsSchema + paramsOverrides`** 机制，把 `statModifiers[].value` 参数化。
-
-#### 10.8.1 推荐约束（保持可维护性）
-
-- ? 推荐允许覆盖：`statModifiers[].value`（数值强度），必要时也可让 `duration/maxStacks` 等生命周期数值通过参数覆盖。
-- ?? 谨慎允许覆盖：`statModifiers[].type`（flat/percent_base/overwrite 等）——会影响叠加与数值管线，若开放必须加严格校验与编辑器约束。
-- ? 不建议允许覆盖：
-  - `statModifiers[].stat`（属性键）
-  - `statModifiers[]` 的条目增删/重排（结构级覆盖）
-
-原因：结构级覆盖会让 Skill 实际上“重写 Buff 本体”，会显著增加解析分支、迁移成本与回归难度。
-
-#### 10.8.2 两种落地方式（与现有 `buffs_v2_3.json` 对齐）
-
-**方式 A（改动最小）**：沿用 `value` 可为字符串的能力，在 `statModifiers[].value` 中使用参数引用语法。
-
-- 示例：
-  - `paramsDefaults.speedDelta = -5`
-  - `paramsSchema.speedDelta.overrideable = true`
-  - `statModifiers: [{ "stat": "speed", "type": "flat", "value": "@speedDelta" }]`
-
-运行时：解析 `@speedDelta` 并从 `finalParams.speedDelta` 取值。
-
-**方式 B（更结构化）**：在 `statModifiers[]` 中新增 `valueRef`。
+在 `skills.json` 中引用 Buff 时，通过 `params` 字段传入具体的数值。Skill 不需要知道这些数值最终会替换 Buff 的哪些字段。
 
 ```json
-"statModifiers": [
-  { "stat": "speed", "type": "flat", "valueRef": "speedDelta" }
+"buffRefs": [
+  {
+    "buffId": "buff_bleed",
+    "target": "enemy",
+    "params": {
+      "damagePerTurn": 10,
+      "duration": 2
+    }
+  }
 ]
 ```
 
-运行时：若存在 `valueRef`，则使用 `finalParams[valueRef]` 作为 value。
+### 10.4 引擎解析逻辑（运行时实例化）
 
-> 推荐：短期可先采用方式 A 快速验证通路；当编辑器需要更强校验与更少歧义时，再演进到方式 B。
+引擎在战斗中实例化 Buff 时的处理流程：
+1. 读取 Buff 模板（`buffs.json` 中的定义）。
+2. 获取外部传入的 `params`（如果没有传，则使用 `paramsSchema` 中的 `default` 值）。
+3. **递归遍历** Buff 模板的 JSON 结构。
+4. 发现任何值为字符串且匹配 `${...}` 正则表达式的字段，提取出参数名。
+5. 从 `params` 中取出对应的值进行替换。
+6. **类型转换**：根据 `paramsSchema` 中定义的 `type`（如 `number`），将替换后的字符串强转回正确的类型（解决 JSON 语法限制占位符必须是字符串的问题）。
+
+### 10.5 编辑器 UI 交互设计（防呆与体验优化）
+
+为了避免策划手动输入 `${...}` 导致拼写错误或类型混乱，`buff_editor` 必须采用**“模式切换（Mode Switch） + 引用绑定”**的 UI 设计。同时，为了符合策划“先填数值，再想起来要配参数”的心智模型，必须支持**“就地创建（Create In-Place）”**工作流。
+
+**工作流 1：自上而下（先声明，后绑定）**
+- **参数声明区**：在 Buff 编辑器顶部增加“动态参数定义区”。用户可预先添加参数，输入参数名、显示名称、默认值。这会实时更新 JSON 中的 `paramsSchema` 对象。
+- **字段绑定区**：在 Effect 或 StatModifier 的数值输入框旁边，增加一个**“模式切换按钮”**（例如 `[fx]` 或 ?? 图标）。
+  - **状态 A（固定值模式 - 默认）**：普通的数字输入框 `<input type="number">`。底层 JSON 保存为纯数字，例如 `"value": 5`。
+  - **状态 B（动态参数模式）**：点击 `[fx]` 后，输入框变成下拉选择框。用户从列表中选择已声明的参数，底层 JSON 自动保存为字符串 `"${damagePerTurn}"`。
+
+**工作流 2：自下而上（就地创建参数 - 强烈推荐）**
+当策划在输入框中已经填入了具体数值（如 `5`），突然决定将其提取为动态参数时：
+1. **触发新建**：点击 `[fx]` 切换到动态参数模式，下拉框最底部提供特殊选项：**`[+] 新建参数... (Create New Parameter...)`**。
+2. **智能预填**：点击后弹出新建参数表单。编辑器**自动将刚才填写的 `5` 作为新参数的默认值（Default）**，并自动推断类型为 `number`。
+3. **确认绑定**：策划只需补充“参数名”和“中文标签”，点击确认。
+4. **后台处理**：编辑器自动在 `paramsSchema` 中追加该参数，并将当前输入框的值自动绑定为该参数的占位符（`${新参数名}`）。
+
+**优势**：
+- **防呆设计**：策划不需要学习占位符语法，只需做“选择题”。
+- **心智契合**：就地创建（类似 IDE 的 Extract Variable）不打断策划思路，免去频繁上下滚动的繁琐操作。
+- **数据干净**：底层生成的 JSON 依然是完美的占位符结构，引擎解析极其方便。
+
+### 10.6 常见场景解答
+
+**Q: 如果一个 Buff 有多个 Effect，每个 action 下面的 value 都要配置不一样的参数名吗？**
+**A: 不需要，这正是占位符的灵活性所在（一对多映射）。**
+如果一个“剧毒”Buff 既造成生命值伤害，又削减护甲，且你希望它们由**同一个参数**控制。你只需定义一个参数 `power`。在 `DAMAGE_HP` 的 value 中填入 `${power}`，在 `DAMAGE_ARMOR` 的 value 中也填入 `${power}`。技能编辑器中只需输入一次 `power = 10`，引擎会自动把这两个 Effect 的值都替换为 10。只有当需要独立控制时，才定义不同的参数名。
 
 
