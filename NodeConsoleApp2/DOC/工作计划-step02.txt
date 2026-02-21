@@ -119,3 +119,12 @@ buff_editor_v4.htmlÖÐÔ­Ê¼JSON(µ±Ç°Buff)¿òµÄjsonÊý¾Ý¿òµÄ¸ß¶ÈÌ«Ð¡ÁË£¬ÎÒÏ£Íû¿ÉÒÔÊÊÓ
 skill_editor_test_v3.htmlÃ»ÓÐ³É¹¦ÏÔÊ¾¶¯Ì¬²ÎÊý£¬Çë¼ì²éÔ­Òò
 
 ÎÒÏ£ÍûÏÔÊ¾¶¯Ì¬²ÎÊýµÄÊäÈë¿òÊ±ºò£¬ÄÜ¹»Í¬²½ÏÔÊ¾¶¯Ì¬²ÎÊýµÄLabel£¨ÖÐÎÄÃû£©ºÍType(ÀàÐÍ£©·½±ãÎÒ±à¼­
+
+
+26-02-22-01:30
+
+ÈÎÎñ1£ºÓÅ»¯½çÃæ£º
+
+1£©I. Buff RefsÄ£¿éµÄÅÅ°æ²»ÃÀ¹Û²»ÕûÆë£¬ÔÚ±£Ö¤ÏÖÓÐ¹¦ÄÜµÄÇ°ÌáÏÂ£¬ÓÅ»¯ÅÅ°æ£¬Ê¹ÆäÕûÆëÃÀ¹Û¡£
+
+skill_editor_test_v3.htmlÓÐÐ©ÊôÐÔÃæ°å²»Ì«½ô´Õ£¬ÀýÈç B. Tree (Editor Meta),F. Costs£¬ËûÃÇµÄÖµÆäÊµºÜ¶Ì£¬µ«ÊÇÔ¤ÁôÁË¹ý³¤µÄÊäÈë¿ò£¬,½¨ÒéÐÞ¸ÄÎªÃ¿ÐÐÓÐÁ½ÁÐ²¢ÁÐ£¬»òÕßÊÇÆäËûÄãÈÏÎªºÏÊÊµÄ¸ü½ô´ÕµÄ²¼¾Ö¡£

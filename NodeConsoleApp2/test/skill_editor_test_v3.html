@@ -90,21 +90,25 @@
 
                 <div class="panel">
                     <div class="panel-h">A. Basic</div>
-                    <div class="grid2">
-                        <div class="small">id</div>
-                        <input class="input" type="text" id="prop-id" readonly>
-
-                        <div class="small">name</div>
-                        <input class="input" type="text" id="prop-name">
-
-                        <div class="small">rarity</div>
-                        <select class="select" id="prop-rarity">
-                            <option value="Common">Common</option>
-                            <option value="Uncommon">Uncommon</option>
-                            <option value="Rare">Rare</option>
-                            <option value="Epic">Epic</option>
-                            <option value="Legendary">Legendary</option>
-                        </select>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                        <div style="grid-column: span 2;">
+                            <div class="small">id</div>
+                            <input class="input" type="text" id="prop-id" readonly>
+                        </div>
+                        <div>
+                            <div class="small">name</div>
+                            <input class="input" type="text" id="prop-name">
+                        </div>
+                        <div>
+                            <div class="small">rarity</div>
+                            <select class="select" id="prop-rarity">
+                                <option value="Common">Common</option>
+                                <option value="Uncommon">Uncommon</option>
+                                <option value="Rare">Rare</option>
+                                <option value="Epic">Epic</option>
+                                <option value="Legendary">Legendary</option>
+                            </select>
+                        </div>
                     </div>
                     <div style="margin-top:10px;">
                         <div class="small" style="margin-bottom:6px;">description</div>
@@ -115,24 +119,30 @@
 
                 <div class="panel">
                     <div class="panel-h">B. Tree (Editor Meta)</div>
-                    <div class="grid2">
-                        <div class="small">editorMeta.x</div>
-                        <input class="input" type="number" id="meta-x" readonly>
-
-                        <div class="small">editorMeta.y</div>
-                        <input class="input" type="number" id="meta-y" readonly>
-
-                        <div class="small">editorMeta.group</div>
-                        <input class="input" type="text" id="meta-group" placeholder="e.g. melee" disabled>
-
-                        <div class="small">editorMeta.locked</div>
-                        <select class="select" id="meta-locked" disabled>
-                            <option value="false">false</option>
-                            <option value="true">true</option>
-                        </select>
-
-                        <div class="small">editorMeta.editState</div>
-                        <select class="select" id="meta-editState" disabled></select>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                        <div>
+                            <div class="small">editorMeta.x</div>
+                            <input class="input" type="number" id="meta-x" readonly>
+                        </div>
+                        <div>
+                            <div class="small">editorMeta.y</div>
+                            <input class="input" type="number" id="meta-y" readonly>
+                        </div>
+                        <div>
+                            <div class="small">editorMeta.group</div>
+                            <input class="input" type="text" id="meta-group" placeholder="e.g. melee" disabled>
+                        </div>
+                        <div>
+                            <div class="small">editorMeta.locked</div>
+                            <select class="select" id="meta-locked" disabled>
+                                <option value="false">false</option>
+                                <option value="true">true</option>
+                            </select>
+                        </div>
+                        <div style="grid-column: span 2;">
+                            <div class="small">editorMeta.editState</div>
+                            <select class="select" id="meta-editState" disabled></select>
+                        </div>
                     </div>
                 </div>
 
@@ -150,48 +160,56 @@
 
                 <div class="panel">
                     <div class="panel-h">E. Target & Speed</div>
-                    <div class="grid2">
-                        <div class="small">speed</div>
-                        <input class="input" type="number" id="prop-speed">
-
-                        <div class="small">target.subject</div>
-                        <select class="select" id="prop-target-subject"></select>
-
-                        <div class="small">target.scope</div>
-                        <select class="select" id="prop-target-scope"></select>
-
-                        <div class="small">selection.mode</div>
-                        <select class="select" id="prop-target-mode"></select>
-
-                        <div class="small">selection.selectCount</div>
-                        <input class="input" type="number" id="prop-target-selectCount" min="1">
-
-                        <div class="small">candidateParts</div>
-                        <div style="position:relative;">
-                            <button type="button" class="btn btn-dark btn-sm" id="candidatePartsBtn" style="width:100%; text-align:left;">(none)</button>
-                            <div id="candidatePartsDropdown" class="panel" style="position:absolute; top:36px; left:0; right:0; z-index:999; display:none; padding:10px;">
-                                <div class="small" style="margin-bottom:8px;">选择候选部位（candidateParts）</div>
-                                <div id="candidatePartsList"></div>
-                                <div style="margin-top:10px; display:flex; gap:8px;">
-                                    <button type="button" class="btn btn-sm btn-dark" id="candidatePartsAll">All</button>
-                                    <button type="button" class="btn btn-sm btn-dark" id="candidatePartsNone">None</button>
-                                    <span style="flex:1"></span>
-                                    <button type="button" class="btn btn-sm btn-primary" id="candidatePartsClose">OK</button>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                        <div>
+                            <div class="small">speed</div>
+                            <input class="input" type="number" id="prop-speed">
+                        </div>
+                        <div>
+                            <div class="small">target.subject</div>
+                            <select class="select" id="prop-target-subject"></select>
+                        </div>
+                        <div>
+                            <div class="small">target.scope</div>
+                            <select class="select" id="prop-target-scope"></select>
+                        </div>
+                        <div>
+                            <div class="small">selection.mode</div>
+                            <select class="select" id="prop-target-mode"></select>
+                        </div>
+                        <div>
+                            <div class="small">selection.selectCount</div>
+                            <input class="input" type="number" id="prop-target-selectCount" min="1">
+                        </div>
+                        <div>
+                            <div class="small">candidateParts</div>
+                            <div style="position:relative;">
+                                <button type="button" class="btn btn-dark btn-sm" id="candidatePartsBtn" style="width:100%; text-align:left;">(none)</button>
+                                <div id="candidatePartsDropdown" class="panel" style="position:absolute; top:36px; left:0; right:0; z-index:999; display:none; padding:10px;">
+                                    <div class="small" style="margin-bottom:8px;">选择候选部位（candidateParts）</div>
+                                    <div id="candidatePartsList"></div>
+                                    <div style="margin-top:10px; display:flex; gap:8px;">
+                                        <button type="button" class="btn btn-sm btn-dark" id="candidatePartsAll">All</button>
+                                        <button type="button" class="btn btn-sm btn-dark" id="candidatePartsNone">None</button>
+                                        <span style="flex:1"></span>
+                                        <button type="button" class="btn btn-sm btn-primary" id="candidatePartsClose">OK</button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-
-                        <div class="small">selectedParts</div>
-                        <div style="position:relative;">
-                            <button type="button" class="btn btn-dark btn-sm" id="selectedPartsBtn" style="width:100%; text-align:left;">(none)</button>
-                            <div id="selectedPartsDropdown" class="panel" style="position:absolute; top:36px; left:0; right:0; z-index:999; display:none; padding:10px;">
-                                <div class="small" style="margin-bottom:8px;">选择已选部位（selectedParts）</div>
-                                <div id="selectedPartsList"></div>
-                                <div style="margin-top:10px; display:flex; gap:8px;">
-                                    <button type="button" class="btn btn-sm btn-dark" id="selectedPartsAll">All</button>
-                                    <button type="button" class="btn btn-sm btn-dark" id="selectedPartsNone">None</button>
-                                    <span style="flex:1"></span>
-                                    <button type="button" class="btn btn-sm btn-primary" id="selectedPartsClose">OK</button>
+                        <div style="grid-column: span 2;">
+                            <div class="small">selectedParts</div>
+                            <div style="position:relative;">
+                                <button type="button" class="btn btn-dark btn-sm" id="selectedPartsBtn" style="width:100%; text-align:left;">(none)</button>
+                                <div id="selectedPartsDropdown" class="panel" style="position:absolute; top:36px; left:0; right:0; z-index:999; display:none; padding:10px;">
+                                    <div class="small" style="margin-bottom:8px;">选择已选部位（selectedParts）</div>
+                                    <div id="selectedPartsList"></div>
+                                    <div style="margin-top:10px; display:flex; gap:8px;">
+                                        <button type="button" class="btn btn-sm btn-dark" id="selectedPartsAll">All</button>
+                                        <button type="button" class="btn btn-sm btn-dark" id="selectedPartsNone">None</button>
+                                        <span style="flex:1"></span>
+                                        <button type="button" class="btn btn-sm btn-primary" id="selectedPartsClose">OK</button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -201,18 +219,23 @@
 
                 <div class="panel">
                     <div class="panel-h">F. Costs</div>
-                    <div class="grid2">
-                        <div class="small">costs.ap</div>
-                        <input class="input" type="number" id="prop-costs-ap" min="0">
-
-                        <div class="small">costs.perTurnLimit</div>
-                        <input class="input" type="number" id="prop-costs-perTurnLimit" min="1">
-
-                        <div class="small">costs.partSlot.part</div>
-                        <select class="select" id="prop-costs-part"></select>
-
-                        <div class="small">costs.partSlot.slotCost</div>
-                        <input class="input" type="number" id="prop-costs-slotCost" min="0">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                        <div>
+                            <div class="small">costs.ap</div>
+                            <input class="input" type="number" id="prop-costs-ap" min="0">
+                        </div>
+                        <div>
+                            <div class="small">costs.perTurnLimit</div>
+                            <input class="input" type="number" id="prop-costs-perTurnLimit" min="1">
+                        </div>
+                        <div>
+                            <div class="small">costs.partSlot.part</div>
+                            <select class="select" id="prop-costs-part"></select>
+                        </div>
+                        <div>
+                            <div class="small">costs.partSlot.slotCost</div>
+                            <input class="input" type="number" id="prop-costs-slotCost" min="0">
+                        </div>
                     </div>
                     <div class="error" id="err-costs" style="display:none; margin-top:8px;"></div>
                 </div>
@@ -261,16 +284,25 @@
                 <div class="panel">
                     <div class="panel-h">
                         <span>I. Buff Refs</span>
-                        <button class="btn btn-sm btn-dark" onclick="editor.addBuffRefRow('apply')" id="btn-add-apply" disabled>+ apply</button>
                     </div>
-                    <div class="small" style="margin-bottom:8px;">编辑 `buffRefs.apply/remove`。apply 通过 target 区分 self/enemy；buff 从 `buffs.json` 按 name 搜索选择（保存为 buffId）。</div>
+                    <div class="small" style="margin-bottom:12px; color:#666;">编辑 `buffRefs.apply/remove`。apply 通过 target 区分 self/enemy；buff 从 `buffs.json` 按 name 搜索选择（保存为 buffId）。</div>
 
-                    <div class="small" style="font-weight:700; margin:8px 0 4px;">apply</div>
-                    <div id="buff-apply-list"></div>
+                    <div style="margin-bottom:16px; padding:10px; background:#f9f9f9; border:1px solid #eee; border-radius:6px;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                            <div class="small" style="font-weight:700; color:#333;">Apply Buffs</div>
+                            <button class="btn btn-sm btn-dark" onclick="editor.addBuffRefRow('apply')" id="btn-add-apply" disabled>+ Add Apply</button>
+                        </div>
+                        <div id="buff-apply-list"></div>
+                    </div>
 
-                    <div class="small" style="font-weight:700; margin:12px 0 4px;">remove</div>
-                    <button class="btn btn-sm btn-dark" onclick="editor.addBuffRefRow('remove')" id="btn-add-remove" disabled>+ remove</button>
-                    <div id="buff-remove-list" style="margin-top:6px;"></div>
+                    <div style="padding:10px; background:#f9f9f9; border:1px solid #eee; border-radius:6px;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                            <div class="small" style="font-weight:700; color:#333;">Remove Buffs</div>
+                            <button class="btn btn-sm btn-dark" onclick="editor.addBuffRefRow('remove')" id="btn-add-remove" disabled>+ Add Remove</button>
+                        </div>
+                        <div id="buff-remove-list"></div>
+                    </div>
+
                     <div class="error" id="err-buffs" style="display:none; margin-top:8px;"></div>
                 </div>
 

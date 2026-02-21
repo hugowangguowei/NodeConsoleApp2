@@ -1916,7 +1916,7 @@ export class SkillEditor {
             const buff = this.buffDict[buffId];
             const schema = buff.paramsSchema;
             if (!schema || typeof schema !== 'object' || Object.keys(schema).length === 0) {
-                return '<div class="small" style="color:#888; margin-top:4px;">(无动态参数)</div>';
+                return '<div class="small" style="color:#aaa; margin-top:8px; text-align:center; font-style:italic;">(无动态参数)</div>';
             }
 
             const p = params || {};
@@ -1930,25 +1930,25 @@ export class SkillEditor {
                 let inputHtml = '';
                 if (type === 'boolean' || type === 'bool') {
                     const checked = (val === true || val === 'true') ? 'checked' : '';
-                    inputHtml = `<input type="checkbox" data-field="params.${name}" ${checked} />`;
+                    inputHtml = `<input type="checkbox" data-field="params.${name}" ${checked} style="margin:0;" />`;
                 } else {
                     const inputType = (type === 'number' || type === 'int') ? 'number' : 'text';
-                    inputHtml = `<input class="input" data-field="params.${name}" type="${inputType}" value="${escapeAttr(val)}" placeholder="默认: ${escapeAttr(def)}" />`;
+                    inputHtml = `<input class="input" data-field="params.${name}" type="${inputType}" value="${escapeAttr(val)}" placeholder="默认: ${escapeAttr(def)}" style="padding:4px 8px; font-size:12px;" />`;
                 }
 
                 return `
-                    <div style="display:flex; align-items:center; gap:8px; margin-top:4px;">
-                        <div class="small" style="width:140px; text-align:right; line-height:1.2;" title="${escapeAttr(name)}">
-                            <div style="font-weight:bold;">${escapeAttr(labelCn)}</div>
-                            <div style="color:#888; font-size:0.85em;">${escapeAttr(name)} (${escapeAttr(type)})</div>
+                    <div style="display:flex; align-items:center; gap:12px; margin-top:6px; padding:4px 0; border-bottom:1px dashed #e0e0e0;">
+                        <div style="width:120px; text-align:right; line-height:1.2;" title="${escapeAttr(name)}">
+                            <div style="font-weight:600; font-size:12px; color:#333;">${escapeAttr(labelCn)}</div>
+                            <div style="color:#888; font-size:10px; margin-top:2px;">${escapeAttr(name)} <span style="color:#aaa;">(${escapeAttr(type)})</span></div>
                         </div>
-                        <div style="flex:1;">${inputHtml}</div>
+                        <div style="flex:1; display:flex; align-items:center;">${inputHtml}</div>
                     </div>
                 `;
             }).join('');
 
-            return `<div style="margin-top:8px; padding:8px; background:#f0f0f0; border-radius:4px; border:1px solid #ddd;">
-                <div class="small" style="font-weight:bold; margin-bottom:4px;">动态参数 (params)</div>
+            return `<div style="margin-top:10px; padding:8px 12px; background:#fff; border-radius:4px; border:1px solid #e8e8e8; box-shadow:inset 0 1px 3px rgba(0,0,0,0.02);">
+                <div class="small" style="font-weight:600; color:#555; margin-bottom:6px; border-bottom:2px solid #eee; padding-bottom:4px;">动态参数配置</div>
                 ${fields}
             </div>`;
         };
@@ -1956,30 +1956,27 @@ export class SkillEditor {
         const renderRow = (kind, row, index) => {
             if (kind === 'remove') {
                 return `
-                    <div class="panel" data-kind="${kind}" data-index="${index}" style="margin-bottom:8px; padding:8px;">
+                    <div class="panel" data-kind="${kind}" data-index="${index}" style="margin-bottom:8px; padding:8px; border: 1px solid #e0e0e0; border-radius: 4px; background: #fafafa;">
                         <div style="display:flex; gap:8px; align-items:center;">
                             <div style="flex:1;">${renderBuffPicker(row.buffId)}</div>
-                            <select class="select" data-field="target" style="width:100px;">
+                            <select class="select" data-field="target" style="width:80px;" title="Target">
                                 <option value="self" ${(row.target||'self')==='self'?'selected':''}>self</option>
                                 <option value="enemy" ${(row.target||'self')==='enemy'?'selected':''}>enemy</option>
                             </select>
-                            <button class="btn btn-sm btn-danger" data-action="del">Del</button>
+                            <button class="btn btn-sm btn-danger" data-action="del" title="Delete">Del</button>
                         </div>
                     </div>
                 `;
             }
             return `
-                <div class="panel" data-kind="${kind}" data-index="${index}" style="margin-bottom:8px; padding:8px;">
-                    <div style="display:flex; gap:8px; align-items:center; margin-bottom:8px;">
-                        <div style="flex:1;">${renderBuffPicker(row.buffId)}</div>
-                        <button class="btn btn-sm btn-danger" data-action="del">Del</button>
-                    </div>
+                <div class="panel" data-kind="${kind}" data-index="${index}" style="margin-bottom:8px; padding:8px; border: 1px solid #e0e0e0; border-radius: 4px; background: #fafafa;">
                     <div style="display:flex; gap:8px; align-items:center;">
-                        <label class="small">target</label>
-                        <select class="select" data-field="target" style="width:100px;">
+                        <div style="flex:1;">${renderBuffPicker(row.buffId)}</div>
+                        <select class="select" data-field="target" style="width:80px;" title="Target">
                             <option value="enemy" ${(row.target||'enemy')==='enemy'?'selected':''}>enemy</option>
                             <option value="self" ${(row.target||'enemy')==='self'?'selected':''}>self</option>
                         </select>
+                        <button class="btn btn-sm btn-danger" data-action="del" title="Delete">Del</button>
                     </div>
                     ${renderParamsForm(row.buffId, row.params)}
                 </div>
