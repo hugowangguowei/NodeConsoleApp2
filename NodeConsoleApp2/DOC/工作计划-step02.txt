@@ -85,3 +85,10 @@ buff_editor_v4.htmlÖÐÔ­Ê¼JSON(µ±Ç°Buff)¿òµÄjsonÊý¾Ý¿òµÄ¸ß¶ÈÌ«Ð¡ÁË£¬ÎÒÏ£Íû¿ÉÒÔÊÊÓ
 2.ÔÚbuff±à¼­Æ÷ÖÐ£¬¶Ô²ÎÊý×Ö¶ÎµÄ²ÎÊýÃû³ÆºóÃæÌí¼ÓÒ»¸öÊÇ·ñ¿ÉÅäÖÃÑ¡Ôñ¿ò£¬Èç¹û¹´Ñ¡ÁË¿ÉÅäÖÃ£¬ÄÇÃ´buffs.jsonÔÚµ¼ÈëµÄÊ±ºò»á½øÐÐ¼ÇÂ¼¡£
 3.ÔÚ¼¼ÄÜ±à¼­Æ÷ÖÐ£¬µ±Ñ¡ÔñÒ»¸öbuffÊ±£¬×Ô¶¯ÏÔÊ¾¸ÃbuffµÄ¿ÉÅäÖÃ×Ö¶Î£¬²¢Ìá¹©ÏàÓ¦µÄÊäÈë¿ò¹©ÓÃ»§½øÐÐÅäÖÃ£¬Í¬Ê±½«ÕâÐ©ÅäÖÃÏîÓë¼¼ÄÜ½øÐÐ¹ØÁª£¬ÒÔ±ãÔÚÓÎÏ·ÖÐÕýÈ·Ó¦ÓÃÕâÐ©ÅäÖÃ¡£
 Çë·ÖÎöÕâ¸öÉè¼Æ·½°¸ÊÇ·ñ¿ÉÐÐ£¬²¢Ìá³ö¸Ä½ø½¨Òé£¬ÒÔÈ·±£buffµÄÊäÈëÊä³ö½Ó¿ÚÉè¼ÆÄÜ¹»Âú×ã¼¼ÄÜ±à¼­Æ÷µÄÐèÇó£¬Í¬Ê±±£³ÖbuffÉè¼ÆµÄÁé»îÐÔºÍ¿ÉÎ¬»¤ÐÔ£¬ÏÈ²»ÒªÐÞ¸Ä´úÂë¡£
+
+ÎÒÒÑ¾­ÔÄ¶ÁÁËÄã±àÐ´µÄbuff_design.mdµÄµÚ10ÕÂµÄÄÚÈÝ£¬ÇëÈ·ÈÏÒ»ÏÂ£¬stat ModifiersÖÐµÄ×Ö¶ÎÅäÖÃÊÇ·ñÒ²ÄÜÍê³É¸²¸Ç£¿
+
+ÏÖÔÚ»ùÓÚÄãÔÙbuff_design.mdÖÐµÚ10ÕÂÌá³öµÄÉè¼Æ·½°¸£¬Ö´ÐÐÒÔÏÂÄÚÈÝ£º
+1. ÐÞ¸Äbuffs_v2_3.jsonÎÄ¼þ£¬Ê¹Æä·ûºÏbuff_design.mdÖÐµÚ10ÕÂµÄÉè¼Æ·½°¸£¬ÌØ±ðÊÇ¹ØÓÚbuff²ÎÊýµÄ¿ÉÅäÖÃÐÔ·½Ãæ¡£
+2. ÐÞ¸Äbuff_editor_v4.htmlµÄUIÉè¼Æ£¬ÒÔÊÊÓ¦buff_design.mdÖÐµÚ10ÕÂµÄÉè¼Æ·½°¸£¬ÌØ±ðÊÇ¹ØÓÚbuff²ÎÊýµÄ¿ÉÅäÖÃÐÔ·½Ãæ¡£
+3. ÐÞ¸Äskill_editor_test_v3.htmlµÄbuffÅäÖÃ½çÃæ£¬ÒÔÊÊÓ¦buff_design.mdÖÐµÚ10ÕÂµÄÉè¼Æ·½°¸£¬ÌØ±ðÊÇ¹ØÓÚbuff²ÎÊýµÄ¿ÉÅäÖÃÐÔ·½Ãæ¡£

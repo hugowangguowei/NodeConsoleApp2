@@ -757,4 +757,41 @@ EventBus.emit("onAttackPost", attacker, defender, contextData);
 - 自动生成输入控件并写入 `buffRef.paramsOverrides`。
 - 保存前对 overrides 做 schema 校验，防止脏数据进入技能库。
 
+### 10.8 `statModifiers` 是否支持覆盖（结论与推荐做法）
+
+结论：**可以支持“数值覆盖”**，但推荐方式不是让 Skill 直接覆盖 `statModifiers` 的结构（增删条目、改 `stat`、改顺序），而是沿用本章的 **`paramsSchema + paramsOverrides`** 机制，把 `statModifiers[].value` 参数化。
+
+#### 10.8.1 推荐约束（保持可维护性）
+
+- ? 推荐允许覆盖：`statModifiers[].value`（数值强度），必要时也可让 `duration/maxStacks` 等生命周期数值通过参数覆盖。
+- ?? 谨慎允许覆盖：`statModifiers[].type`（flat/percent_base/overwrite 等）——会影响叠加与数值管线，若开放必须加严格校验与编辑器约束。
+- ? 不建议允许覆盖：
+  - `statModifiers[].stat`（属性键）
+  - `statModifiers[]` 的条目增删/重排（结构级覆盖）
+
+原因：结构级覆盖会让 Skill 实际上“重写 Buff 本体”，会显著增加解析分支、迁移成本与回归难度。
+
+#### 10.8.2 两种落地方式（与现有 `buffs_v2_3.json` 对齐）
+
+**方式 A（改动最小）**：沿用 `value` 可为字符串的能力，在 `statModifiers[].value` 中使用参数引用语法。
+
+- 示例：
+  - `paramsDefaults.speedDelta = -5`
+  - `paramsSchema.speedDelta.overrideable = true`
+  - `statModifiers: [{ "stat": "speed", "type": "flat", "value": "@speedDelta" }]`
+
+运行时：解析 `@speedDelta` 并从 `finalParams.speedDelta` 取值。
+
+**方式 B（更结构化）**：在 `statModifiers[]` 中新增 `valueRef`。
+
+```json
+"statModifiers": [
+  { "stat": "speed", "type": "flat", "valueRef": "speedDelta" }
+]
+```
+
+运行时：若存在 `valueRef`，则使用 `finalParams[valueRef]` 作为 value。
+
+> 推荐：短期可先采用方式 A 快速验证通路；当编辑器需要更强校验与更少歧义时，再演进到方式 B。
+
 
