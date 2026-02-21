@@ -259,13 +259,18 @@ v4 action 的关键字段：
 - `buffRefs.applySelf[]`
 - `buffRefs.remove[]`
 
-每行建议字段：
+每行建议字段（基于 Schema 驱动的动态表单）：
 
 - `buffId`（下拉选择，来源 `buffs.json`）
 - `target`（枚举 `meta.enums.buffRefTargets`，当前为 `self/enemy`）
 - `chance`（0~1）
-- `duration`（回合数）
-- `stacks`（可选）
+- `params`（动态参数对象，根据所选 Buff 的 `paramsSchema` 动态生成输入项）
+
+**UI 交互升级（卡片式动态表单）**：
+1. **放弃固定表格布局**：将每个 Buff 引用渲染为一个独立的配置卡片，而不是固定列的表格。
+2. **动态参数渲染**：当选中某个 Buff 时，实时读取其 `paramsSchema`，在卡片主体中动态渲染输入项（如 `duration`, `damagePerTurn` 等）。
+3. **数据绑定支持嵌套**：支持 `params.xxx` 的点语法数据绑定，确保动态参数正确写入 `buffRef.params` 对象。
+4. **默认值初始化**：首次选择 Buff 时，自动将 `paramsSchema` 中的 `defaultValue` 填充到 `params` 对象中。
 
 ---
 
@@ -418,8 +423,7 @@ v4 action 的关键字段：
 | buffId | `buffId` | `string` | 是 | 从 `buffs.json` 下拉 | 必须存在于 `buffs.json`（若已加载） |
 | 目标 | `target` | `string` | 是 | `meta.enums.buffRefTargets[0]` | 必须在 `meta.enums.buffRefTargets` 内 |
 | 概率 | `chance` | `number` | 否 | `1` | 若存在必须在 `[0,1]` |
-| 持续回合 | `duration` | `number` | 否 | `1` | 若存在建议 `>=1` |
-| 层数 | `stacks` | `number` | 否 | `1` | 若存在建议 `>=1` |
+| 动态参数 | `params` | `object` | 否 | 根据 `paramsSchema` 初始化 | 必须符合对应 Buff 的 `paramsSchema` 定义 |
 
 ---
 

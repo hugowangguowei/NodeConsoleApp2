@@ -107,3 +107,9 @@ buff_editor_v4.htmlÖÐÔ­Ê¼JSON(µ±Ç°Buff)¿òµÄjsonÊý¾Ý¿òµÄ¸ß¶ÈÌ«Ð¡ÁË£¬ÎÒÏ£Íû¿ÉÒÔÊÊÓ
 °´ÕÕbuff_design.md µÚ10.5½Ú£º±à¼­Æ÷ UI ½»»¥Éè¼Æ£¬¹¤×÷Âß¼­ÊÇÏÈÌí¼Ó²ÎÊýÉùÃ÷£¬ÔÙ°ó¶¨¶¯Ì¬²ÎÊý£¬ÊÇ·ñ´æÔÚÖ±½Ó»ùÓÚÄ³¸öÖµÔÚ²ÎÊýÉùÃ÷ÇøÐÂ½¨²ÎÊýµÄÇé¿ö£¬Õâ¸öÇé¿öÊÇ·ñÓÐÒâÒå£¿
 
 °´ÕÕÄãµÄÉè¼Æ£¬ÎÒ¾õµÃµ±Ç°µÄbuffs_v2_3.jsonÎÄ¼þ²¢²»ÐèÒªÐÞ¸Ä£¬Ö»ÐèÒªÐÞ¸Äbuff_editor_v4.html£¬ÔÚÔØÈëbuffs_v2_3.jsonÎÄ¼þºó£¬ÄÜ¹»¶¯Ì¬ÐÞ¸Äbuff¶ÔÏó×Ö¶Î£¬²¢µ¼³ö¡£ÊÇÕâÑùÂð£¿Çë·ÖÎö
+
+Çë¸ùbuff_design.mdµÚ10ÕÂµÄÉè¼Æ£¬¶Ôbuff_editor_v4.html½øÐÐÉý¼¶¡£
+
+Ä¿Ç°ÒÑ¾­»ùÓÚbuff_design.mdµÚ10ÕÂÍê³ÉÁËbuff_editor_v4.htmlµÄÉý¼¶£¬½ÓÏÂÀ´ÎÒÏ£ÍûÔÚskill_editor_test_v3.htmlÖÐ¶ÔbuffÅäÖÃ½çÃæ½øÐÐÏàÓ¦µÄÉý¼¶£¬ÒÔÊÊÓ¦buff_design.mdµÚ10ÕÂµÄÉè¼Æ·½°¸¡£Çë·ÖÎöµ±Ç°skill_editor_test_v3.htmlÖÐbuff¹¦ÄÜµÄÉè¼ÆÂß¼­£¬È·ÈÏÊÇ·ñ´æÔÚ²»ºÏÀíÖ®´¦£¬²¢Ìá³ö¸Ä½ø½¨Òé£¬ÒÔÓÅ»¯buffÅäÖÃ½çÃæµÄÉè¼ÆºÍÊ¹ÓÃÌåÑé£¬ÏÈ²»ÒªÐÞ¸Ä´úÂë¡£
+
+½«µ±Ç°µÄ¸üÐÂ·½°¸¸üÐÂµ½skill_editor_design.md¶ÔÓ¦µÄÕÂ½ÚÖÐ£¬Çë·ÖÎöskill_editor_design.mdµÄ½á¹¹£¬ÕÒµ½×îºÏÊÊµÄÎ»ÖÃ²¹³ä¡£

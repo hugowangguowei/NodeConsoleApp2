@@ -262,6 +262,44 @@
 		</header>
 
 		<div class="main">
+			<!-- Create Param Modal -->
+			<div v-if="showParamModal" style="position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); display:flex; align-items:center; justify-content:center; z-index:1000;">
+				<div style="background:#fff; padding:20px; border-radius:8px; width:400px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
+					<div class="panel-title">新建动态参数</div>
+					<div class="row" style="margin-top:10px;">
+						<div class="col">
+							<div class="small">参数名 (Key) *</div>
+							<input class="input" v-model="newParam.key" placeholder="e.g. damagePerTurn" />
+						</div>
+					</div>
+					<div class="row" style="margin-top:10px;">
+						<div class="col">
+							<div class="small">中文标签 (Label)</div>
+							<input class="input" v-model="newParam.labelCn" placeholder="e.g. 每回合伤害" />
+						</div>
+					</div>
+					<div class="row" style="margin-top:10px;">
+						<div class="col">
+							<div class="small">类型 (Type)</div>
+							<select class="select" v-model="newParam.type">
+								<option value="number">number</option>
+								<option value="int">int</option>
+								<option value="string">string</option>
+								<option value="bool">bool</option>
+							</select>
+						</div>
+						<div class="col">
+							<div class="small">默认值 (Default)</div>
+							<input class="input" v-model="newParam.default" />
+						</div>
+					</div>
+					<div style="margin-top:20px; display:flex; justify-content:flex-end; gap:10px;">
+						<button class="btn btn-dark" @click="cancelCreateParam">取消</button>
+						<button class="btn btn-primary" @click="confirmCreateParam">确定</button>
+					</div>
+				</div>
+			</div>
+
 			<aside>
 				<div class="search">
 					<input class="input" v-model="searchQuery" placeholder="Search by id/name/tag..." />
@@ -344,15 +382,53 @@
                                 </div>
                             </div>
 
+                            <div class="section-title">动态参数声明 (Params Schema)</div>
+                            <div style="display:flex; justify-content:space-between; align-items:center;">
+                                <div class="small">声明可供外部（如 Skill）覆盖的参数。</div>
+                                <button class="btn btn-sm btn-primary" @click="addParamSchema">+ Add Param</button>
+                            </div>
+                            <div v-if="!currentBuff.paramsSchema || Object.keys(currentBuff.paramsSchema).length===0" class="small" style="margin-top:8px;">无</div>
+                            <table v-else class="table" style="margin-top:8px;">
+                                <thead>
+                                    <tr>
+                                        <th>Key (参数名)</th>
+                                        <th>Label (中文名)</th>
+                                        <th>Type (类型)</th>
+                                        <th>Default (默认值)</th>
+                                        <th>Overrideable</th>
+                                        <th></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr v-for="(p, key) in currentBuff.paramsSchema" :key="key">
+                                        <td>
+                                            <input class="input" style="padding:6px" :value="key" @blur="renameParamSchema(key, $event.target.value)" />
+                                        </td>
+                                        <td><input class="input" style="padding:6px" v-model="p.labelCn" /></td>
+                                        <td>
+                                            <select class="select" style="padding:6px" v-model="p.type">
+                                                <option value="number">number</option>
+                                                <option value="int">int</option>
+                                                <option value="string">string</option>
+                                                <option value="bool">bool</option>
+                                            </select>
+                                        </td>
+                                        <td><input class="input" style="padding:6px" v-model="p.default" /></td>
+                                        <td><input type="checkbox" v-model="p.overrideable" /></td>
+                                        <td><button class="btn btn-sm btn-danger" @click="removeParamSchema(key)">&times;</button></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+
                             <div class="section-title">生命周期</div>
                             <div class="row">
                                 <div class="col">
                                     <div class="small">duration（持续回合）</div>
-                                    <input class="input" type="number" v-model.number="currentBuff.lifecycle.duration" />
+                                    <fx-input v-model="currentBuff.lifecycle.duration" :schema="currentBuff.paramsSchema" input-type="number" @create-param="openCreateParamModal"></fx-input>
                                 </div>
                                 <div class="col">
                                     <div class="small">maxStacks（最大层数）</div>
-                                    <input class="input" type="number" v-model.number="currentBuff.lifecycle.maxStacks" />
+                                    <fx-input v-model="currentBuff.lifecycle.maxStacks" :schema="currentBuff.paramsSchema" input-type="number" @create-param="openCreateParamModal"></fx-input>
                                 </div>
                             </div>
                             <div class="row" style="margin-top:10px;">
@@ -396,7 +472,7 @@
                                                 <option v-for="t in enums.statModifierTypes" :key="t" :value="t">{{ t }}</option>
                                             </select>
                                         </td>
-                                        <td><input class="input" style="padding:6px" v-model.number="m.value" /></td>
+                                        <td><fx-input v-model="m.value" :schema="currentBuff.paramsSchema" input-type="number" @create-param="openCreateParamModal"></fx-input></td>
                                         <td><button class="btn btn-sm btn-danger" @click="removeStatModifier(idx)">&times;</button></td>
                                     </tr>
                                 </tbody>
@@ -406,7 +482,7 @@
                             <div style="display:flex; justify-content:space-between; align-items:center;">
                                 <div class="small">Effects 统一为 `{trigger, action, target, payload}`。</div>
                                 <div style="display:flex; gap:8px;">
-                                    <button class="btn btn-sm btn-dark" @click="addEffectTemplate('turnDamage')">+ 回合伤害</button>
+                                    <!--<button class="btn btn-sm btn-dark" @click="addEffectTemplate('turnDamage')">+ 回合伤害</button>-->
                                     <button class="btn btn-sm btn-primary" @click="addEffect">+ Add</button>
                                 </div>
                             </div>
@@ -444,7 +520,7 @@
                                         <div class="row">
                                             <div class="col">
                                              <div class="small">payload.value（数值/公式）</div>
-                                                <input class="input" v-model="ef.payload.value" placeholder="number 或公式字符串" />
+                                                <fx-input v-model="ef.payload.value" :schema="currentBuff.paramsSchema" input-type="text" @create-param="openCreateParamModal"></fx-input>
                                             </div>
                                             <div class="col">
                                              <div class="small">payload.valueType（数值类型）</div>
@@ -659,6 +735,96 @@
 
 		const { createApp } = Vue;
 
+		const FxInput = {
+			template: `
+				<div style="display:flex; align-items:center; gap:4px; width:100%;">
+					<template v-if="isDynamic">
+						<select class="select" :value="paramName" @change="onSelectChange" style="flex:1; background-color: #e8f4f8; border-color: var(--primary-color); padding: 6px;">
+							<option value="">-- 选择参数 --</option>
+							<option v-for="(p, key) in schema" :key="key" :value="key">{{ key }} ({{ p.labelCn || p.name || key }})</option>
+							<option disabled>──────────</option>
+							<option value="__NEW__">[+] 新建参数...</option>
+						</select>
+					</template>
+					<template v-else>
+						<input class="input" :type="inputType" :value="modelValue" @input="onInput" style="flex:1; padding: 6px;" />
+					</template>
+					<button class="btn btn-sm" :class="isDynamic ? 'btn-primary' : 'btn-dark'" @click="toggleMode" title="切换动态参数模式" style="padding: 4px 6px; font-family: monospace;">fx</button>
+				</div>
+			`,
+			props: {
+				modelValue: { required: true },
+				schema: { type: Object, default: () => ({}) },
+				inputType: { type: String, default: 'text' }
+			},
+			emits: ['update:modelValue', 'create-param'],
+			data() {
+				return {
+					lastFixedValue: null
+				};
+			},
+			watch: {
+				modelValue: {
+					immediate: true,
+					handler(val) {
+						if (!this.isDynamicStr(val)) {
+							this.lastFixedValue = val;
+						}
+					}
+				}
+			},
+			computed: {
+				isDynamic() {
+					return this.isDynamicStr(this.modelValue);
+				},
+				paramName() {
+					if (!this.isDynamic) return '';
+					const m = /^\$\{([a-zA-Z0-9_]+)\}$/.exec(this.modelValue);
+					return m ? m[1] : '';
+				}
+			},
+			methods: {
+				isDynamicStr(val) {
+					return typeof val === 'string' && /^\$\{[a-zA-Z0-9_]*\}$/.test(val);
+				},
+				onInput(e) {
+					let val = e.target.value;
+					if (this.inputType === 'number') {
+						val = val === '' ? 0 : Number(val);
+					}
+					this.$emit('update:modelValue', val);
+				},
+				toggleMode() {
+					if (this.isDynamic) {
+						const pName = this.paramName;
+						let def = this.lastFixedValue;
+						if (def === null || def === undefined) {
+							def = (pName && this.schema && this.schema[pName]) ? this.schema[pName].default : (this.inputType === 'number' ? 0 : '');
+						}
+						this.$emit('update:modelValue', def);
+					} else {
+						this.lastFixedValue = this.modelValue;
+						this.$emit('update:modelValue', '${}');
+					}
+				},
+				onSelectChange(e) {
+					const val = e.target.value;
+					if (val === '__NEW__') {
+						e.target.value = this.paramName;
+						this.$emit('create-param', this.lastFixedValue, (newParamName) => {
+							if (newParamName) {
+								this.$emit('update:modelValue', `\${${newParamName}}`);
+							}
+						});
+					} else if (val) {
+						this.$emit('update:modelValue', `\${${val}}`);
+					} else {
+						this.$emit('update:modelValue', '${}');
+					}
+				}
+			}
+		};
+
 		function deepClone(x) {
 			return JSON.parse(JSON.stringify(x));
 		}
@@ -832,6 +998,9 @@
 		}
 
 		createApp({
+			components: {
+				FxInput
+			},
 			data() {
 				return {
 					searchQuery: '',
@@ -841,6 +1010,11 @@
 
 					bottomVisible: true,
 					simulatorVisible: false,
+
+					// param modal
+					showParamModal: false,
+					newParam: { key: '', labelCn: '', type: 'number', default: 0 },
+					newParamCallback: null,
 
 					// validation
 					allIssues: [],
@@ -1103,6 +1277,107 @@
 					this.log('Deleted buff.', 'info');
 					this.runValidation();
 				},
+
+				// --- Param Schema Methods ---
+				openCreateParamModal(defaultValue, callback) {
+					this.newParam = {
+						key: '',
+						labelCn: '',
+						type: typeof defaultValue === 'number' ? 'number' : 'string',
+						default: defaultValue
+					};
+					this.newParamCallback = callback;
+					this.showParamModal = true;
+				},
+				cancelCreateParam() {
+					this.showParamModal = false;
+					if (this.newParamCallback) this.newParamCallback(null);
+					this.newParamCallback = null;
+				},
+				confirmCreateParam() {
+					const key = this.newParam.key.trim();
+					if (!key) {
+						this.log('参数名不能为空', 'warn');
+						return;
+					}
+					if (!this.currentBuff.paramsSchema) {
+						this.currentBuff.paramsSchema = {};
+					}
+					if (this.currentBuff.paramsSchema[key]) {
+						this.log(`参数名已存在：${key}`, 'warn');
+						return;
+					}
+
+					let defVal = this.newParam.default;
+					if (this.newParam.type === 'number' || this.newParam.type === 'int') {
+						defVal = Number(defVal);
+					}
+
+					this.currentBuff.paramsSchema[key] = {
+						type: this.newParam.type,
+						default: defVal,
+						labelCn: this.newParam.labelCn,
+						overrideable: true
+					};
+
+					this.showParamModal = false;
+					if (this.newParamCallback) this.newParamCallback(key);
+					this.newParamCallback = null;
+					this.log(`已创建参数：${key}`, 'success');
+				},
+				addParamSchema() {
+					if (!this.currentBuff) return;
+					if (!this.currentBuff.paramsSchema) this.currentBuff.paramsSchema = {};
+					let baseKey = 'newParam';
+					let key = baseKey;
+					let i = 1;
+					while (this.currentBuff.paramsSchema[key]) {
+						key = baseKey + i;
+						i++;
+					}
+					this.currentBuff.paramsSchema[key] = {
+						type: 'number',
+						default: 0,
+						labelCn: '新参数',
+						overrideable: true
+					};
+				},
+				removeParamSchema(key) {
+					if (!this.currentBuff || !this.currentBuff.paramsSchema) return;
+					delete this.currentBuff.paramsSchema[key];
+				},
+				renameParamSchema(oldKey, newKey) {
+					newKey = newKey.trim();
+					if (!newKey || oldKey === newKey) return;
+					if (this.currentBuff.paramsSchema[newKey]) {
+						this.log(`参数名已存在：${newKey}`, 'warn');
+						return;
+					}
+					this.currentBuff.paramsSchema[newKey] = this.currentBuff.paramsSchema[oldKey];
+					delete this.currentBuff.paramsSchema[oldKey];
+
+					this.renamePlaceholderInBuff(this.currentBuff, oldKey, newKey);
+				},
+				renamePlaceholderInBuff(buff, oldKey, newKey) {
+					const oldStr = `\${${oldKey}}`;
+					const newStr = `\${${newKey}}`;
+
+					const replaceInObj = (obj) => {
+						if (!obj) return;
+						for (const k in obj) {
+							if (typeof obj[k] === 'string' && obj[k] === oldStr) {
+								obj[k] = newStr;
+							} else if (typeof obj[k] === 'object') {
+								replaceInObj(obj[k]);
+							}
+						}
+					};
+
+					replaceInObj(buff.lifecycle);
+					replaceInObj(buff.statModifiers);
+					replaceInObj(buff.effects);
+				},
+				// ----------------------------
 
 				addStatModifier() {
 					if (!this.currentBuff) return;
