@@ -59,7 +59,7 @@
 
 仅用 `costs.ap` 无法表达“同一回合多技能配置”的核心约束：
 
-- 玩家可能 AP 够用，但某个技能需要占用 `right_arm` 的“技能槽”，导致同回合无法再安排其他需要 `right_arm` 的技能；
+- 玩家可能 AP 够用，但某个技能需要占用 `arm` 的“技能槽”，导致同回合无法再安排其他需要 `arm` 的技能；
 - 某些强力防御技能（例如格挡/护盾）如果只消耗 AP，会变成“无脑必带”的最优解；
 - 多技能队列需要从“资源层”限制组合上限，而不是事后在引擎里硬编码。
 
@@ -84,9 +84,9 @@
   - 多数主动技能都应显式填写 `costs.partSlot`；
   - 护盾/格挡/强控制技能建议同时具备 `costs.partSlot` 与 `perTurnLimit`。
 - **同部位竞争**（手部技能为例）：
-  - `right_arm` 通常代表主手动作；当你把多个“主手技能”塞进同回合队列，应当被槽位系统自然限制。
+  - `arm` 代表手部动作；当你把多个“手部技能”塞进同回合队列，应当被槽位系统自然限制。
 - **跨部位组合**：
-  - 允许“左手防御 + 右手攻击”这种组合成为稳定策略；
+  - 允许“手部防御 + 腿部攻击”这种组合成为稳定策略；
   - 通过槽位差异引导玩家构建更丰富的回合内决策。
 
 #### 3.3.4 与数据结构的对应关系
@@ -113,7 +113,7 @@
 *   **AOE 的重新定义 (Area of Effect in 1v1)**
     *   *背景*: 本游戏采用 1v1 决斗机制 (Duel)，不存在“多名敌人”的概念。
     *   *约束*: 所有的 **AOE (范围伤害)** 技能，其作用对象不是多个单位，而是 **单一目标的所有身体部位** (All Parts)。
-    *   *设计*: 例如 "暴风雪" 技能，效果是对敌人的 [头、胸、四肢] 同时造成伤害。这类技能通常用于快速剥离敌人全身护甲，或施加全局 Debuff。
+    *   *设计*: 例如 "暴风雪" 技能，效果是对敌人的 [头、胸、腹、手、腿] 同时造成伤害。这类技能通常用于快速剥离敌人全身护甲，或施加全局 Debuff。
 *   **无队友机制 (Solo Combat)**
     *   *背景*: 玩家全程单人作战。
     *   *约束*: 移除所有依赖队友的技能设计。
@@ -124,6 +124,16 @@
     *   *设计*: 
         *   **如果目标是特定部位**: 若该部位在技能判定前损毁，技能应 **默认转移至躯干 (Chest)** 或 **判定为丢失 (Miss)** (根据技能类型决定，如精密射击可能Miss，狂乱挥砍则转移)。
         *   **如果目标是全身**: 即使部分部位损毁，技能仍对剩余完好部位生效。
+
+### 3.7 护甲部位枚举（简化版）
+
+为降低输入成本与数据维护复杂度，护甲部位统一为 5 个标准枚举，不再区分左右：
+
+- `head`（头）
+- `chest`（胸）
+- `abdomen`（腹）
+- `arm`（手）
+- `leg`（腿）
 
 ---
 
@@ -557,7 +567,7 @@ Skill Editor / Balance Tool 在“保存/导出（Export(dev)）”时，必须保证：
     "scope": "SCOPE_PART",
     "selection": {
       "mode": "single",
-      "candidateParts": ["head", "chest", "left_arm", "right_arm", "left_leg", "right_leg"],
+      "candidateParts": ["head", "chest", "abdomen", "arm", "leg"],
       "selectedParts": ["chest"],
       "selectCount": 1
     }
@@ -590,8 +600,8 @@ Skill Editor / Balance Tool 在“保存/导出（Export(dev)）”时，必须保证：
 
   - `candidateParts: string[]`
     - 候选部位池（该技能允许命中/影响的部位范围）。
-    - 例：只能攻击手臂 -> `["left_arm","right_arm"]`；攻击任意部位 -> 全部部位列表。
-    - 约束建议：`candidateParts` 不应包含抽象值（如 `arm/leg`），而应展开为具体部位。
+    - 例：只能攻击手部 -> `["arm"]`；攻击任意部位 -> 全部部位列表。
+    - 约束建议：`candidateParts` 应使用标准枚举（`head/chest/abdomen/arm/leg`），避免旧版左右拆分混入数据。
 
   - `selectedParts: string[]`
     - 已选部位（主要用于：
@@ -637,7 +647,7 @@ Skill Editor / Balance Tool 在“保存/导出（Export(dev)）”时，必须保证：
     "scope": "SCOPE_PART",
     "selection": {
       "mode": "single",
-      "candidateParts": ["head", "chest", "left_arm", "right_arm", "left_leg", "right_leg"],
+      "candidateParts": ["head", "chest", "abdomen", "arm", "leg"],
       "selectedParts": [],
       "selectCount": 1
     }
@@ -666,7 +676,7 @@ Skill Editor / Balance Tool 在“保存/导出（Export(dev)）”时，必须保证：
     "scope": "SCOPE_PART",
     "selection": {
       "mode": "single",
-      "candidateParts": ["head", "chest", "left_arm", "right_arm", "left_leg", "right_leg"],
+      "candidateParts": ["head", "chest", "abdomen", "arm", "leg"],
       "selectedParts": [],
       "selectCount": 1
     }
@@ -818,7 +828,7 @@ Skill Editor / Balance Tool 在“保存/导出（Export(dev)）”时，必须保证：
   "requirements": {
     "targetHpPercentBelow": 0.3,
     "targetPart": { "armorZero": true },
-    "selfPart": { "mode": "ANY", "parts": ["left_arm"], "mustBeUsable": true }
+    "selfPart": { "mode": "ANY", "parts": ["arm"], "mustBeUsable": true }
   }
 }
 ```
@@ -829,7 +839,7 @@ Skill Editor / Balance Tool 在“保存/导出（Export(dev)）”时，必须保证：
 {
   "costs": {
     "ap": 3,
-    "partSlot": { "part": "left_arm", "slotCost": 1 },
+    "partSlot": { "part": "arm", "slotCost": 1 },
     "perTurnLimit": 1
   }
 }

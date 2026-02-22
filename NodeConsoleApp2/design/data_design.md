@@ -26,8 +26,8 @@
 *   `head` (头部)
 *   `chest` (胸部)
 *   `abdomen` (腹部)
-*   `arms` (手臂)
-*   `legs` (腿部)
+*   `arm` (手臂)
+*   `leg` (腿部)
 
 **数据结构：**
 
@@ -36,8 +36,8 @@
     "head":       { "current": 20, "max": 20, "weakness": 1.5 },
     "chest":      { "current": 40, "max": 50, "weakness": 1.0 },
     "abdomen":    { "current": 30, "max": 40, "weakness": 1.1 },
-    "arms":       { "current": 30, "max": 50, "weakness": 1.0 },
-    "legs":       { "current": 40, "max": 60, "weakness": 1.0 }
+    "arm":        { "current": 30, "max": 50, "weakness": 1.0 },
+    "leg":        { "current": 40, "max": 60, "weakness": 1.0 }
 }
 ```
 
@@ -60,8 +60,8 @@
       "head":       { "current": 0, "max": 0, "weakness": 1.5 },
       "chest":      { "current": 0, "max": 0, "weakness": 1.0 },
       "abdomen":    { "current": 0, "max": 0, "weakness": 1.1 },
-      "arms":       { "current": 0, "max": 0, "weakness": 1.0 },
-      "legs":       { "current": 0, "max": 0, "weakness": 1.0 }
+      "arm":        { "current": 0, "max": 0, "weakness": 1.0 },
+      "leg":        { "current": 0, "max": 0, "weakness": 1.0 }
   },
   "equipment": {
       "weapon": "wp_sword_great",
@@ -69,8 +69,8 @@
       "head": "helm_plate_01",
       "chest": "armor_plate_01",
       "abdomen": "armor_chain_01",
-      "arms": "gloves_plate_01", // 映射到 arms
-      "legs": "boots_plate_01"    // 映射到 legs
+      "arm": "gloves_plate_01", // 映射到 arm
+      "leg": "boots_plate_01"    // 映射到 leg
   },
   "inventory": []
 }
@@ -96,8 +96,8 @@
       "head":       { "max": 30, "weakness": 2.0 }, // 头部脆弱
       "chest":      { "max": 50, "weakness": 0.8 },
       "abdomen":    { "max": 40, "weakness": 1.2 },
-      "arms":       { "max": 60, "weakness": 1.0 },
-      "legs":       { "max": 70, "weakness": 1.0 }
+      "arm":        { "max": 60, "weakness": 1.0 },
+      "leg":        { "max": 70, "weakness": 1.0 }
     },
     "dropTable": "drop_assassin_common",
     "aiStrategy": "aggressive" // 定义 AI 行为模式

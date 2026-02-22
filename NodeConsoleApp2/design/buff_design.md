@@ -25,6 +25,8 @@ Buff Óë Skill µÄÖ°Ôð±ß½çÓ¦µ±Óë `skill_design.md` µÄ¡°×éºÏ/Ô¼Êø/Êý¾Ý»¯¡±Ë¼Â·Ò»ÖÂ£
 - Skill£¨Ö÷¶¯¼¼ÄÜ£©¸ºÔð£ºÑ¡ÔñÄ¿±ê£¨º¬²¿Î»Ñ¡Ôñ£©¡¢×ÊÔ´ÓëÆµÂÊÔ¼Êø£¨AP¡¢²ÛÎ»¡¢Ã¿»ØºÏÏÞÖÆ£©¡¢ÒÔ¼°¡°Ê©¼Ó/ÒÆ³ý Buff¡±µÄÖ¸Áî¡£
 - Buff£¨×´Ì¬¶ÔÏó£©¸ºÔð£º×ÔÉíÉúÃüÖÜÆÚ£¨duration/stack/remove£©¡¢ÒÔ¼°ÔÚÌØ¶¨´¥·¢µã£¨trigger£©¶ÔÕ½¶·ÉÏÏÂÎÄ£¨context£©½øÐÐÐÞ¸Ä¡£
 
+²¿Î»Ïà¹ØµÄ Buff Ä¿±êÑ¡ÔñÓë×÷ÓÃ·¶Î§ÐèÓë¼¼ÄÜÏµÍ³±£³ÖÒ»ÖÂ£¬Í³Ò»Ê¹ÓÃ¼ò»¯ºóµÄ 5 ²¿Î»Ã¶¾Ù£º`head` / `chest` / `abdomen` / `arm` / `leg`£¬²»ÔÙÇø·Ö×óÓÒ¡£
+
 Òò´Ë£¬`buffs.json` µÄÄ¿±ê²»ÊÇ¡°ÁÐÒ»¶Ñ¶ÔÏó¡±£¬¶øÊÇ³ÉÎªÒ»¸ö¿ÉÎ¬»¤¡¢¿ÉÐ£Ñé¡¢¿ÉÀ©Õ¹µÄ¡°Ð§¹û¿â¡±¡£
 
 ---
