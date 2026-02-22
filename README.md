@@ -24,6 +24,7 @@
 
 1. 克隆仓库：
    - `git clone https://github.com/hugowangguowei/NodeConsoleApp2.git`
+   在本地通过 python -m http.server 3000方式启动一个静态服务器，访问 http://localhost:3000/ 即可看到文件列表。
 2. 打开编辑器页面：
    - `buff_editor_v4.html`
    - `skill_editor_test_v3.html`
