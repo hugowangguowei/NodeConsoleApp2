@@ -137,7 +137,9 @@ skill_editor_test_v3.html有些属性面板不太紧凑，例如 B. Tree (Editor Meta),F. Cos
 【未实现】按照的建议，先修改设计文档，要涵盖data_design.md，skill_design.md，buff_design.md等部分以及其他必备的文档。
 【不理想】按照你的建议，先优化skill_design.md中护甲结构改进导致的技能设计方案改动。
 【不理想】优化buff_design.md中护甲结构改进导致的buff设计方案改动。
-【总结：】这个指令Gemini3.1实现的不理想。
+【总结：】这个指令Gemini3.1实现的不理想。主要的问题点在于：1）Gemini3.1反复执行 git grep -l等命令导致持续等待错误；2）在明确要求修改某几个文件的前提下，依然在反复修改不相关文件。
+
+
 
 
 
