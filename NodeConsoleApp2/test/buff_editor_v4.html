@@ -829,6 +829,68 @@
 			return JSON.parse(JSON.stringify(x));
 		}
 
+        const DEFAULT_PLAYER_PARTS = {
+            head: { current: 0, max: 0, weakness: 1.5, status: 'NORMAL' },
+            chest: { current: 10, max: 10, weakness: 1.0, status: 'NORMAL' },
+            abdomen: { current: 0, max: 0, weakness: 1.1, status: 'NORMAL' },
+            arm: { current: 0, max: 0, weakness: 1.0, status: 'NORMAL' },
+            leg: { current: 0, max: 0, weakness: 1.0, status: 'NORMAL' }
+        };
+        const DEFAULT_ENEMY_PARTS = {
+            head: { current: 0, max: 0, weakness: 1.5, status: 'NORMAL' },
+            chest: { current: 0, max: 0, weakness: 1.0, status: 'NORMAL' },
+            abdomen: { current: 0, max: 0, weakness: 1.1, status: 'NORMAL' },
+            arm: { current: 0, max: 0, weakness: 1.0, status: 'NORMAL' },
+            leg: { current: 0, max: 0, weakness: 1.0, status: 'NORMAL' }
+        };
+        const UNIFIED_PART_ORDER = ['head', 'chest', 'abdomen', 'arm', 'leg'];
+
+        function normalizeBodyPartsToUnified(bodyParts, defaults) {
+            const out = (bodyParts && typeof bodyParts === 'object') ? deepClone(bodyParts) : {};
+            const baseDefaults = defaults || DEFAULT_PLAYER_PARTS;
+            const ensurePart = (key, fallback) => {
+                if (!out[key]) out[key] = deepClone(fallback);
+            };
+            const mergePaired = (target, leftKey, rightKey, fallback) => {
+                if (!out[target]) {
+                    const left = out[leftKey];
+                    const right = out[rightKey];
+                    if (left || right) {
+                        const leftMax = left?.max ?? left?.maxArmor ?? 0;
+                        const rightMax = right?.max ?? right?.maxArmor ?? 0;
+                        const leftCur = left?.current ?? leftMax;
+                        const rightCur = right?.current ?? rightMax;
+                        const weaknessValues = [left?.weakness, right?.weakness].filter(v => typeof v === 'number');
+                        const weakness = weaknessValues.length
+                            ? weaknessValues.reduce((a, b) => a + b, 0) / weaknessValues.length
+                            : fallback.weakness;
+                        const status = left?.status || right?.status || fallback.status;
+                        out[target] = { current: leftCur + rightCur, max: leftMax + rightMax, weakness, status };
+                    }
+                }
+                delete out[leftKey];
+                delete out[rightKey];
+                ensurePart(target, fallback);
+            };
+
+            mergePaired('arm', 'left_arm', 'right_arm', baseDefaults.arm);
+            mergePaired('leg', 'left_leg', 'right_leg', baseDefaults.leg);
+            ensurePart('head', baseDefaults.head);
+            ensurePart('chest', baseDefaults.chest);
+            ensurePart('abdomen', baseDefaults.abdomen);
+
+            for (const key of Object.keys(out)) {
+                const part = out[key];
+                const maxVal = (part.max !== undefined) ? part.max : (part.maxArmor || 0);
+                part.max = maxVal;
+                part.current = (part.current !== undefined) ? part.current : maxVal;
+                part.weakness = (part.weakness !== undefined) ? part.weakness : 1.0;
+                part.status = part.status || 'NORMAL';
+            }
+
+            return out;
+        }
+
 		function nowTime() {
 			return new Date().toLocaleTimeString();
 		}
@@ -946,7 +1008,7 @@
 			}
 		}
 
-		function normalizeEnemyTemplateToOneInstance(enemyTemplate) {
+       function normalizeEnemyTemplateToOneInstance(enemyTemplate) {
 			const e = deepClone(enemyTemplate || {});
 			if (!e.stats) e.stats = {};
 			e.stats.hp = (typeof e.stats.hp === 'number') ? e.stats.hp : (typeof e.hp === 'number' ? e.hp : 1);
@@ -956,20 +1018,12 @@
 			e.maxHp = e.stats.maxHp;
 			e.speed = e.stats.speed;
 
-			if (!e.bodyParts) e.bodyParts = { chest: { max: 10, weakness: 1.0 } };
-			for (const key of Object.keys(e.bodyParts)) {
-				const p = e.bodyParts[key];
-				const maxVal = (p.max !== undefined) ? p.max : (p.maxArmor || 0);
-				p.max = maxVal;
-				p.current = (p.current !== undefined) ? p.current : maxVal;
-				p.weakness = (p.weakness !== undefined) ? p.weakness : 1.0;
-				p.status = p.status || 'NORMAL';
-			}
+          e.bodyParts = normalizeBodyPartsToUnified(e.bodyParts, DEFAULT_ENEMY_PARTS);
 
 			return e;
 		}
 
-		function normalizePlayerTemplate(playerTemplate) {
+      function normalizePlayerTemplate(playerTemplate) {
 			const p = deepClone(playerTemplate || {});
 			p.id = p.id || 'player';
 			if (!p.stats) p.stats = { hp: 100, maxHp: 100, ap: 3, maxAp: 6, speed: 10 };
@@ -978,21 +1032,7 @@
 			p.stats.ap = (p.stats.ap !== undefined) ? p.stats.ap : (p.stats.maxAp || 3);
 			p.stats.speed = (p.stats.speed !== undefined) ? p.stats.speed : 10;
 
-			if (!p.bodyParts) {
-				p.bodyParts = {
-					head: { current: 0, max: 0, weakness: 1.5, status: 'NORMAL' },
-					chest: { current: 10, max: 10, weakness: 1.0, status: 'NORMAL' },
-					abdomen: { current: 0, max: 0, weakness: 1.1, status: 'NORMAL' }
-				};
-			}
-
-			for (const key of Object.keys(p.bodyParts)) {
-				const part = p.bodyParts[key];
-				part.max = (part.max !== undefined) ? part.max : (part.maxArmor || 0);
-				part.current = (part.current !== undefined) ? part.current : part.max;
-				part.weakness = (part.weakness !== undefined) ? part.weakness : 1.0;
-				part.status = part.status || 'NORMAL';
-			}
+         p.bodyParts = normalizeBodyPartsToUnified(p.bodyParts, DEFAULT_PLAYER_PARTS);
 
 			return p;
 		}
@@ -1100,9 +1140,12 @@
 					}
 					return count;
 				},
-				availableTargetParts() {
-					return this.simEnemy?.bodyParts ? Object.keys(this.simEnemy.bodyParts) : [];
-				}
+                availableTargetParts() {
+                    const parts = this.simEnemy?.bodyParts ? Object.keys(this.simEnemy.bodyParts) : [];
+                    const ordered = UNIFIED_PART_ORDER.filter(p => parts.includes(p));
+                    const extras = parts.filter(p => !UNIFIED_PART_ORDER.includes(p));
+                    return ordered.concat(extras);
+                }
               },
                 watch: {
                     currentBuffJson: {

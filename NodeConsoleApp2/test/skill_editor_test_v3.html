@@ -340,6 +340,13 @@
 
 </div>
 
-<script type="module" src="../script/editor/skill/bootstrap.js"></script>
+<script type="module">
+    import '../script/editor/skill/bootstrap.js';
+
+    if (window.editor) {
+        window.editor.defaultParts = ['head', 'chest', 'abdomen', 'arm', 'leg'];
+        window.editor.renderPartsCheckboxesFromMeta?.();
+    }
+</script>
 </body>
 </html>

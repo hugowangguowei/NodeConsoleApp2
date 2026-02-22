@@ -69,10 +69,9 @@
     "defaultParts": [
       "head",
       "chest",
-      "left_arm",
-      "right_arm",
-      "left_leg",
-      "right_leg"
+      "abdomen",
+      "arm",
+      "leg"
     ],
     "enums": {
       "rarities": [
@@ -238,20 +237,18 @@
           "candidateParts": [
             "head",
             "chest",
-            "left_arm",
-            "right_arm",
-            "left_leg",
-            "right_leg"
+            "abdomen",
+            "arm",
+            "leg"
           ],
           "selectedParts": [
             "head",
             "chest",
-            "left_arm",
-            "right_arm",
-            "left_leg",
-            "right_leg"
+            "abdomen",
+            "arm",
+            "leg"
           ],
-          "selectCount": 6
+          "selectCount": 5
         }
       },
       "requirements": {},
@@ -324,10 +321,9 @@
           "candidateParts": [
             "head",
             "chest",
-            "left_arm",
-            "right_arm",
-            "left_leg",
-            "right_leg"
+            "abdomen",
+            "arm",
+            "leg"
           ],
           "selectedParts": [],
           "selectCount": 1
@@ -337,8 +333,7 @@
         "selfPart": {
           "mode": "ANY",
           "parts": [
-            "left_arm",
-            "right_arm"
+            "arm"
           ],
           "mustBeUsable": true
         }
@@ -346,7 +341,7 @@
       "costs": {
         "ap": 3,
         "partSlot": {
-          "part": "right_arm",
+          "part": "arm",
           "slotCost": 2
         },
         "perTurnLimit": 1
@@ -434,8 +429,7 @@
         "selfPart": {
           "mode": "ANY",
           "parts": [
-            "left_leg",
-            "right_leg"
+            "leg"
           ],
           "mustBeUsable": true
         }
@@ -443,7 +437,7 @@
       "costs": {
         "ap": 0,
         "partSlot": {
-          "part": "left_leg",
+          "part": "leg",
           "slotCost": 2
         },
         "perTurnLimit": 1
@@ -540,8 +534,7 @@
         "selfPart": {
           "mode": "ANY",
           "parts": [
-            "left_arm",
-            "right_arm"
+            "arm"
           ],
           "mustBeUsable": true
         }
@@ -549,7 +542,7 @@
       "costs": {
         "ap": 4,
         "partSlot": {
-          "part": "right_arm",
+          "part": "arm",
           "slotCost": 2
         },
         "perTurnLimit": 1
@@ -649,20 +642,18 @@
           "candidateParts": [
             "head",
             "chest",
-            "left_arm",
-            "right_arm",
-            "left_leg",
-            "right_leg"
+            "abdomen",
+            "arm",
+            "leg"
           ],
           "selectedParts": [
             "head",
             "chest",
-            "left_arm",
-            "right_arm",
-            "left_leg",
-            "right_leg"
+            "abdomen",
+            "arm",
+            "leg"
           ],
-          "selectCount": 6
+          "selectCount": 5
         }
       },
       "requirements": {
@@ -775,10 +766,9 @@
           "candidateParts": [
             "head",
             "chest",
-            "left_arm",
-            "right_arm",
-            "left_leg",
-            "right_leg"
+            "abdomen",
+            "arm",
+            "leg"
           ],
           "selectedParts": [],
           "selectCount": 1
@@ -790,7 +780,7 @@
       "costs": {
         "ap": 3,
         "partSlot": {
-          "part": "right_arm",
+          "part": "arm",
           "slotCost": 2
         },
         "perTurnLimit": 1
@@ -865,10 +855,9 @@
           "candidateParts": [
             "head",
             "chest",
-            "left_arm",
-            "right_arm",
-            "left_leg",
-            "right_leg"
+            "abdomen",
+            "arm",
+            "leg"
           ],
           "selectedParts": [],
           "selectCount": 1
@@ -878,8 +867,7 @@
         "selfPart": {
           "mode": "ANY",
           "parts": [
-            "left_arm",
-            "right_arm"
+            "arm"
           ],
           "mustBeUsable": true
         }
@@ -887,7 +875,7 @@
       "costs": {
         "ap": 5,
         "partSlot": {
-          "part": "right_arm",
+          "part": "arm",
           "slotCost": 3
         },
         "perTurnLimit": 1
@@ -969,28 +957,25 @@
           "candidateParts": [
             "head",
             "chest",
-            "left_arm",
-            "right_arm",
-            "left_leg",
-            "right_leg"
+            "abdomen",
+            "arm",
+            "leg"
           ],
           "selectedParts": [
             "head",
             "chest",
-            "left_arm",
-            "right_arm",
-            "left_leg",
-            "right_leg"
+            "abdomen",
+            "arm",
+            "leg"
           ],
-          "selectCount": 6
+          "selectCount": 5
         }
       },
       "requirements": {
         "selfPart": {
           "mode": "ANY",
           "parts": [
-            "left_arm",
-            "right_arm"
+            "arm"
           ],
           "mustBeUsable": true
         }
@@ -998,7 +983,7 @@
       "costs": {
         "ap": 6,
         "partSlot": {
-          "part": "right_arm",
+          "part": "arm",
           "slotCost": 4
         },
         "perTurnLimit": 1
@@ -1076,10 +1061,9 @@
           "candidateParts": [
             "head",
             "chest",
-            "left_arm",
-            "right_arm",
-            "left_leg",
-            "right_leg"
+            "abdomen",
+            "arm",
+            "leg"
           ],
           "selectedParts": [],
           "selectCount": 6
@@ -1089,8 +1073,7 @@
         "selfPart": {
           "mode": "ANY",
           "parts": [
-            "left_arm",
-            "right_arm"
+            "arm"
           ],
           "mustBeUsable": true
         }
@@ -1169,20 +1152,18 @@
           "candidateParts": [
             "head",
             "chest",
-            "left_arm",
-            "right_arm",
-            "left_leg",
-            "right_leg"
+            "abdomen",
+            "arm",
+            "leg"
           ],
           "selectedParts": [
             "head",
             "chest",
-            "left_arm",
-            "right_arm",
-            "left_leg",
-            "right_leg"
+            "abdomen",
+            "arm",
+            "leg"
           ],
-          "selectCount": 6
+          "selectCount": 5
         }
       },
       "requirements": {},
@@ -1251,7 +1232,7 @@
         "selection": {
           "mode": "single",
           "candidateParts": [
-            "right_arm"
+            "arm"
           ],
           "selectedParts": [],
           "selectCount": 1
@@ -1302,10 +1283,10 @@
               "selection": {
                 "mode": "single",
                 "candidateParts": [
-                  "right_arm"
+                  "arm"
                 ],
                 "selectedParts": [
-                  "right_arm"
+                  "arm"
                 ],
                 "selectCount": 1
               }
@@ -1368,10 +1349,9 @@
           "candidateParts": [
             "head",
             "chest",
-            "left_arm",
-            "right_arm",
-            "left_leg",
-            "right_leg"
+            "abdomen",
+            "arm",
+            "leg"
           ],
           "selectedParts": [],
           "selectCount": 1
@@ -1472,10 +1452,9 @@
           "candidateParts": [
             "head",
             "chest",
-            "left_arm",
-            "right_arm",
-            "left_leg",
-            "right_leg"
+            "abdomen",
+            "arm",
+            "leg"
           ],
           "selectedParts": [],
           "selectCount": 6
@@ -1585,8 +1564,7 @@
         "selfPart": {
           "mode": "ANY",
           "parts": [
-            "left_arm",
-            "right_arm"
+            "arm"
           ],
           "mustBeUsable": true
         }
@@ -1668,10 +1646,9 @@
           "candidateParts": [
             "head",
             "chest",
-            "left_arm",
-            "right_arm",
-            "left_leg",
-            "right_leg"
+            "abdomen",
+            "arm",
+            "leg"
           ],
           "selectedParts": [],
           "selectCount": 1
@@ -1681,8 +1658,7 @@
         "selfPart": {
           "mode": "ANY",
           "parts": [
-            "left_arm",
-            "right_arm"
+            "arm"
           ],
           "mustBeUsable": true
         }
@@ -1690,7 +1666,7 @@
       "costs": {
         "ap": 1,
         "partSlot": {
-          "part": "right_arm",
+          "part": "arm",
           "slotCost": 1
         },
         "perTurnLimit": 1
@@ -1768,8 +1744,7 @@
         "selection": {
           "mode": "single",
           "candidateParts": [
-            "left_arm",
-            "right_arm"
+            "arm"
           ],
           "selectedParts": [],
           "selectCount": 1
@@ -1779,8 +1754,7 @@
         "selfPart": {
           "mode": "ANY",
           "parts": [
-            "left_arm",
-            "right_arm"
+            "arm"
           ],
           "mustBeUsable": true
         }
@@ -1788,7 +1762,7 @@
       "costs": {
         "ap": 1,
         "partSlot": {
-          "part": "right_arm",
+          "part": "arm",
           "slotCost": 1
         },
         "perTurnLimit": 1
@@ -1860,8 +1834,7 @@
         "selection": {
           "mode": "single",
           "candidateParts": [
-            "left_leg",
-            "right_leg"
+            "leg"
           ],
           "selectedParts": [],
           "selectCount": 1
@@ -1871,8 +1844,7 @@
         "selfPart": {
           "mode": "ANY",
           "parts": [
-            "left_arm",
-            "right_arm"
+            "arm"
           ],
           "mustBeUsable": true
         }
@@ -1880,7 +1852,7 @@
       "costs": {
         "ap": 1,
         "partSlot": {
-          "part": "right_leg",
+          "part": "leg",
           "slotCost": 1
         },
         "perTurnLimit": 1
@@ -1959,8 +1931,7 @@
         "selection": {
           "mode": "single",
           "candidateParts": [
-            "left_arm",
-            "right_arm"
+            "arm"
           ],
           "selectedParts": [],
           "selectCount": 6
@@ -1978,7 +1949,7 @@
       "costs": {
         "ap": 1,
         "partSlot": {
-          "part": "right_arm",
+          "part": "arm",
           "slotCost": 1
         },
         "perTurnLimit": 1
@@ -2046,10 +2017,20 @@
         "selection": {
           "mode": "multiple",
           "candidateParts": [
-            "head"
+            "head",
+            "chest",
+            "abdomen",
+            "arm",
+            "leg"
           ],
-          "selectedParts": [],
-          "selectCount": 6
+          "selectedParts": [
+            "head",
+            "chest",
+            "abdomen",
+            "arm",
+            "leg"
+          ],
+          "selectCount": 5
         }
       },
       "requirements": {
@@ -2154,10 +2135,9 @@
           "candidateParts": [
             "head",
             "chest",
-            "left_arm",
-            "right_arm",
-            "left_leg",
-            "right_leg"
+            "abdomen",
+            "arm",
+            "leg"
           ],
           "selectedParts": [],
           "selectCount": 1
@@ -2256,20 +2236,18 @@
           "candidateParts": [
             "head",
             "chest",
-            "left_arm",
-            "right_arm",
-            "left_leg",
-            "right_leg"
+            "abdomen",
+            "arm",
+            "leg"
           ],
           "selectedParts": [
             "head",
             "chest",
-            "left_arm",
-            "right_arm",
-            "left_leg",
-            "right_leg"
+            "abdomen",
+            "arm",
+            "leg"
           ],
-          "selectCount": 6
+          "selectCount": 5
         }
       },
       "requirements": {
@@ -2284,7 +2262,7 @@
       "costs": {
         "ap": 2,
         "partSlot": {
-          "part": "right_arm",
+          "part": "arm",
           "slotCost": 1
         },
         "perTurnLimit": 1
@@ -2339,12 +2317,12 @@
       ]
     },
     {
-      "id": "skill_shockwave_copy_1769791396881_copy_1769957170451",
-      "name": "装甲摊平",
+      "id": "skill_shockwave_copy_1770041956468",
+      "name": "后撤步",
       "rarity": "Rare",
-      "description": "取消全部护甲，并重新平均分配到每个部位。\n【问题：这个技能描述请确认有没有好的实现方法】",
+      "description": "扣除5点腿部护甲，获得一层免伤\n【问题：需要补充免伤buff】",
       "prerequisites": [
-        "skill_artery_slice"
+        "skill_skull_cracker_copy_1769957925421_copy_1769961490300"
       ],
       "unlock": {
         "cost": {
@@ -2357,21 +2335,31 @@
         }
       },
       "editorMeta": {
-        "x": 314,
+        "x": 1014,
         "y": 714,
         "editState": "done"
       },
-      "speed": 2,
+      "speed": 8,
       "target": {
         "subject": "SUBJECT_ENEMY",
         "scope": "SCOPE_MULTI_PARTS",
         "selection": {
           "mode": "multiple",
           "candidateParts": [
-            "head"
+            "head",
+            "chest",
+            "abdomen",
+            "arm",
+            "leg"
           ],
-          "selectedParts": [],
-          "selectCount": 1
+          "selectedParts": [
+            "head",
+            "chest",
+            "abdomen",
+            "arm",
+            "leg"
+          ],
+          "selectCount": 5
         }
       },
       "requirements": {
@@ -2429,36 +2417,23 @@
           },
           "effect": {
             "effectType": "DMG_ARMOR",
-            "amount": 100,
-            "amountType": "PCT_CURRENT"
-          }
-        },
-        {
-          "id": "action_2",
-          "name": "Effect 2",
-          "target": {
-            "binding": {
-              "mode": "follow",
-              "ref": "skillTarget"
-            }
-          },
-          "effect": {
-            "effectType": "AP_GAIN",
-            "amountType": "ABS",
-            "amount": 3
+            "amount": 5,
+            "amountType": "ABS"
           }
         }
       ]
     },
     {
-      "id": "skill_skull_cracker_copy_1769957925421",
-      "name": "腐蚀药水",
-      "rarity": "Uncommon",
-      "description": "对选定目标部位造成10点伤害，并添加中毒buff",
-      "prerequisites": [],
+      "id": "skill_aegis_copy_1770042764756",
+      "name": "重新开始",
+      "rarity": "Legendary",
+      "description": "全部技能消耗-1",
+      "prerequisites": [
+        "skill_execute_copy_1769961767095"
+      ],
       "unlock": {
         "cost": {
-          "kp": 2
+          "kp": 8
         },
         "requirements": {},
         "exclusives": [],
@@ -2467,110 +2442,88 @@
         }
       },
       "editorMeta": {
-        "x": 2014,
-        "y": 514,
+        "x": 1014,
+        "y": 1114,
         "editState": "done"
       },
-      "speed": -3,
+      "speed": 10,
       "target": {
-        "subject": "SUBJECT_ENEMY",
-        "scope": "SCOPE_PART",
+        "subject": "SUBJECT_SELF",
+        "scope": "SCOPE_ENTITY",
         "selection": {
-          "mode": "single",
+          "mode": "multiple",
           "candidateParts": [
-            "head"
+            "head",
+            "chest",
+            "abdomen",
+            "arm",
+            "leg"
           ],
           "selectedParts": [
-            "head"
+            "head",
+            "chest",
+            "abdomen",
+            "arm",
+            "leg"
           ],
-          "selectCount": 1
+          "selectCount": 5
         }
       },
       "requirements": {
         "selfPart": {
           "mode": "ANY",
           "parts": [
-            "left_arm",
-            "right_arm"
+            "chest"
           ],
           "mustBeUsable": true
         }
       },
       "costs": {
-        "ap": 1,
+        "ap": 5,
         "partSlot": {
-          "part": "right_arm",
-          "slotCost": 2
+          "part": "chest",
+          "slotCost": 3
         },
         "perTurnLimit": 1
       },
       "buffRefs": {
-        "apply": [],
+        "apply": [
+          {
+            "buffId": "buff_shield",
+            "target": "self",
+            "chance": 1,
+            "duration": 1
+          },
+          {
+            "buffId": "buff_block",
+            "target": "self",
+            "chance": 1,
+            "duration": 1
+          }
+        ],
         "remove": []
       },
       "tags": [
-        "DMG_HP",
-        "DMG_ARMOR",
-        "SCALING",
+        "BUFF_APPLY",
         "ABS",
         "INSTANT",
-        "ONE_SHOT",
+        "ONE_TURN",
         "UNCONDITIONAL",
-        "SUBJECT_ENEMY",
-        "SCOPE_PART",
+        "SUBJECT_SELF",
+        "SCOPE_ENTITY",
         "RES_AP",
         "RES_SLOT",
         "REQ_SELF_PART",
         "MELEE"
       ],
       "tagMeta": {},
-      "actions": [
-        {
-          "id": "action_1",
-          "name": "Effect 1",
-          "target": {
-            "binding": {
-              "mode": "follow",
-              "ref": "skillTarget"
-            }
-          },
-          "effect": {
-            "effectType": "DMG_HP",
-            "amountType": "SCALING",
-            "scaling": {
-              "stat": "atk",
-              "multiplier": 1.5
-            }
-          }
-        },
-        {
-          "id": "action_2",
-          "name": "Effect 2",
-          "target": {
-            "binding": {
-              "mode": "follow",
-              "ref": "skillTarget"
-            }
-          },
-          "effect": {
-            "effectType": "DMG_ARMOR",
-            "amount": 30,
-            "amountType": "ABS",
-            "partOverride": {
-              "mode": "fixed",
-              "parts": [
-                "head"
-              ]
-            }
-          }
-        }
-      ]
+      "actions": []
     },
     {
-      "id": "skill_skull_cracker_copy_1769957925421_copy_1769961490300",
-      "name": "锯齿剑",
+      "id": "skill_skull_cracker_copy_1769957925421_copy_1769961490300_copy_1770042860426",
+      "name": "转进如风",
       "rarity": "Uncommon",
-      "description": "对选定目标部位造成10点伤害，并添加流血buff",
+      "description": "所有技能的基础速度+2\n【问题：需要一个基础加速buff】",
       "prerequisites": [
         "skill_double_thrust"
       ],
@@ -2585,7 +2538,7 @@
         }
       },
       "editorMeta": {
-        "x": 1114,
+        "x": 1314,
         "y": 514,
         "editState": "done"
       },
@@ -2608,8 +2561,7 @@
         "selfPart": {
           "mode": "ANY",
           "parts": [
-            "left_arm",
-            "right_arm"
+            "arm"
           ],
           "mustBeUsable": true
         }
@@ -2617,7 +2569,7 @@
       "costs": {
         "ap": 1,
         "partSlot": {
-          "part": "right_arm",
+          "part": "arm",
           "slotCost": 2
         },
         "perTurnLimit": 1
@@ -2716,10 +2668,9 @@
           "candidateParts": [
             "head",
             "chest",
-            "left_arm",
-            "right_arm",
-            "left_leg",
-            "right_leg"
+            "abdomen",
+            "arm",
+            "leg"
           ],
           "selectedParts": [],
           "selectCount": 1
@@ -2731,7 +2682,7 @@
       "costs": {
         "ap": 3,
         "partSlot": {
-          "part": "right_arm",
+          "part": "arm",
           "slotCost": 2
         },
         "perTurnLimit": 1
@@ -2774,331 +2725,6 @@
       ]
     },
     {
-      "id": "skill_shockwave_copy_1770041956468",
-      "name": "后撤步",
-      "rarity": "Rare",
-      "description": "扣除5点腿部护甲，获得一层免伤\n【问题：需要补充免伤buff】",
-      "prerequisites": [
-        "skill_skull_cracker_copy_1769957925421_copy_1769961490300"
-      ],
-      "unlock": {
-        "cost": {
-          "kp": 3
-        },
-        "requirements": {},
-        "exclusives": [],
-        "grants": {
-          "type": "permanent"
-        }
-      },
-      "editorMeta": {
-        "x": 1014,
-        "y": 714,
-        "editState": "done"
-      },
-      "speed": 8,
-      "target": {
-        "subject": "SUBJECT_ENEMY",
-        "scope": "SCOPE_MULTI_PARTS",
-        "selection": {
-          "mode": "multiple",
-          "candidateParts": [
-            "head",
-            "chest",
-            "left_arm",
-            "right_arm",
-            "left_leg",
-            "right_leg"
-          ],
-          "selectedParts": [
-            "head",
-            "chest",
-            "left_arm",
-            "right_arm",
-            "left_leg",
-            "right_leg"
-          ],
-          "selectCount": 6
-        }
-      },
-      "requirements": {
-        "selfPart": {
-          "mode": "ANY",
-          "parts": [
-            "chest"
-          ],
-          "mustBeUsable": true
-        }
-      },
-      "costs": {
-        "ap": 1,
-        "partSlot": {
-          "part": "chest",
-          "slotCost": 2
-        },
-        "perTurnLimit": 1
-      },
-      "buffRefs": {
-        "apply": [
-          {
-            "buffId": "buff_slow",
-            "target": "enemy",
-            "chance": 1,
-            "duration": 2
-          }
-        ],
-        "remove": []
-      },
-      "tags": [
-        "DMG_HP",
-        "ABS",
-        "INSTANT",
-        "ONE_SHOT",
-        "UNCONDITIONAL",
-        "BUFF_APPLY",
-        "SUBJECT_ENEMY",
-        "SCOPE_MULTI_PARTS",
-        "RES_AP",
-        "RES_SLOT",
-        "REQ_SELF_PART",
-        "MELEE"
-      ],
-      "tagMeta": {},
-      "actions": [
-        {
-          "id": "action_1",
-          "name": "Effect 1",
-          "target": {
-            "binding": {
-              "mode": "follow",
-              "ref": "skillTarget"
-            }
-          },
-          "effect": {
-            "effectType": "DMG_ARMOR",
-            "amount": 5,
-            "amountType": "ABS"
-          }
-        }
-      ]
-    },
-    {
-      "id": "skill_aegis_copy_1770042764756",
-      "name": "重新开始",
-      "rarity": "Legendary",
-      "description": "全部技能消耗-1",
-      "prerequisites": [
-        "skill_execute_copy_1769961767095"
-      ],
-      "unlock": {
-        "cost": {
-          "kp": 8
-        },
-        "requirements": {},
-        "exclusives": [],
-        "grants": {
-          "type": "permanent"
-        }
-      },
-      "editorMeta": {
-        "x": 1014,
-        "y": 1114,
-        "editState": "done"
-      },
-      "speed": 10,
-      "target": {
-        "subject": "SUBJECT_SELF",
-        "scope": "SCOPE_ENTITY",
-        "selection": {
-          "mode": "multiple",
-          "candidateParts": [
-            "head",
-            "chest",
-            "left_arm",
-            "right_arm",
-            "left_leg",
-            "right_leg"
-          ],
-          "selectedParts": [
-            "head",
-            "chest",
-            "left_arm",
-            "right_arm",
-            "left_leg",
-            "right_leg"
-          ],
-          "selectCount": 6
-        }
-      },
-      "requirements": {
-        "selfPart": {
-          "mode": "ANY",
-          "parts": [
-            "chest"
-          ],
-          "mustBeUsable": true
-        }
-      },
-      "costs": {
-        "ap": 5,
-        "partSlot": {
-          "part": "chest",
-          "slotCost": 3
-        },
-        "perTurnLimit": 1
-      },
-      "buffRefs": {
-        "apply": [
-          {
-            "buffId": "buff_shield",
-            "target": "self",
-            "chance": 1,
-            "duration": 1
-          },
-          {
-            "buffId": "buff_block",
-            "target": "self",
-            "chance": 1,
-            "duration": 1
-          }
-        ],
-        "remove": []
-      },
-      "tags": [
-        "BUFF_APPLY",
-        "ABS",
-        "INSTANT",
-        "ONE_TURN",
-        "UNCONDITIONAL",
-        "SUBJECT_SELF",
-        "SCOPE_ENTITY",
-        "RES_AP",
-        "RES_SLOT",
-        "REQ_SELF_PART",
-        "MELEE"
-      ],
-      "tagMeta": {},
-      "actions": []
-    },
-    {
-      "id": "skill_skull_cracker_copy_1769957925421_copy_1769961490300_copy_1770042860426",
-      "name": "转进如风",
-      "rarity": "Uncommon",
-      "description": "所有技能的基础速度+2\n【问题：需要一个基础加速buff】",
-      "prerequisites": [
-        "skill_double_thrust"
-      ],
-      "unlock": {
-        "cost": {
-          "kp": 2
-        },
-        "requirements": {},
-        "exclusives": [],
-        "grants": {
-          "type": "permanent"
-        }
-      },
-      "editorMeta": {
-        "x": 1314,
-        "y": 514,
-        "editState": "done"
-      },
-      "speed": -3,
-      "target": {
-        "subject": "SUBJECT_ENEMY",
-        "scope": "SCOPE_PART",
-        "selection": {
-          "mode": "single",
-          "candidateParts": [
-            "head"
-          ],
-          "selectedParts": [
-            "head"
-          ],
-          "selectCount": 1
-        }
-      },
-      "requirements": {
-        "selfPart": {
-          "mode": "ANY",
-          "parts": [
-            "left_arm",
-            "right_arm"
-          ],
-          "mustBeUsable": true
-        }
-      },
-      "costs": {
-        "ap": 1,
-        "partSlot": {
-          "part": "right_arm",
-          "slotCost": 2
-        },
-        "perTurnLimit": 1
-      },
-      "buffRefs": {
-        "apply": [],
-        "remove": []
-      },
-      "tags": [
-        "DMG_HP",
-        "DMG_ARMOR",
-        "SCALING",
-        "ABS",
-        "INSTANT",
-        "ONE_SHOT",
-        "UNCONDITIONAL",
-        "SUBJECT_ENEMY",
-        "SCOPE_PART",
-        "RES_AP",
-        "RES_SLOT",
-        "REQ_SELF_PART",
-        "MELEE"
-      ],
-      "tagMeta": {},
-      "actions": [
-        {
-          "id": "action_1",
-          "name": "Effect 1",
-          "target": {
-            "binding": {
-              "mode": "follow",
-              "ref": "skillTarget"
-            }
-          },
-          "effect": {
-            "effectType": "DMG_HP",
-            "amountType": "SCALING",
-            "scaling": {
-              "stat": "atk",
-              "multiplier": 1.5
-            }
-          }
-        },
-        {
-          "id": "action_2",
-          "name": "Effect 2",
-          "target": {
-            "binding": {
-              "mode": "follow",
-              "ref": "skillTarget"
-            }
-          },
-          "effect": {
-            "effectType": "DMG_ARMOR",
-            "amount": 30,
-            "amountType": "ABS",
-            "partOverride": {
-              "mode": "fixed",
-              "parts": [
-                "head"
-              ]
-            }
-          }
-        }
-      ]
-    },
-    {
       "id": "skill_shockwave_copy_1770041956468_copy_1770042951717",
       "name": "撕裂伤口",
       "rarity": "Rare",
@@ -3130,20 +2756,18 @@
           "candidateParts": [
             "head",
             "chest",
-            "left_arm",
-            "right_arm",
-            "left_leg",
-            "right_leg"
+            "abdomen",
+            "arm",
+            "leg"
           ],
           "selectedParts": [
             "head",
             "chest",
-            "left_arm",
-            "right_arm",
-            "left_leg",
-            "right_leg"
+            "abdomen",
+            "arm",
+            "leg"
           ],
-          "selectCount": 6
+          "selectCount": 5
         }
       },
       "requirements": {
@@ -3239,10 +2863,9 @@
           "candidateParts": [
             "head",
             "chest",
-            "left_arm",
-            "right_arm",
-            "left_leg",
-            "right_leg"
+            "abdomen",
+            "arm",
+            "leg"
           ],
           "selectedParts": [],
           "selectCount": 1
@@ -3254,7 +2877,7 @@
       "costs": {
         "ap": 3,
         "partSlot": {
-          "part": "right_arm",
+          "part": "arm",
           "slotCost": 2
         },
         "perTurnLimit": 1
@@ -3328,10 +2951,9 @@
           "candidateParts": [
             "head",
             "chest",
-            "left_arm",
-            "right_arm",
-            "left_leg",
-            "right_leg"
+            "abdomen",
+            "arm",
+            "leg"
           ],
           "selectedParts": [],
           "selectCount": 1
@@ -3343,7 +2965,7 @@
       "costs": {
         "ap": 3,
         "partSlot": {
-          "part": "right_arm",
+          "part": "arm",
           "slotCost": 2
         },
         "perTurnLimit": 1
@@ -3417,10 +3039,9 @@
           "candidateParts": [
             "head",
             "chest",
-            "left_arm",
-            "right_arm",
-            "left_leg",
-            "right_leg"
+            "abdomen",
+            "arm",
+            "leg"
           ],
           "selectedParts": [],
           "selectCount": 1
@@ -3430,8 +3051,7 @@
         "selfPart": {
           "mode": "ANY",
           "parts": [
-            "left_arm",
-            "right_arm"
+            "arm"
           ],
           "mustBeUsable": true
         }
@@ -3439,7 +3059,7 @@
       "costs": {
         "ap": 1,
         "partSlot": {
-          "part": "right_arm",
+          "part": "arm",
           "slotCost": 1
         },
         "perTurnLimit": 1
@@ -3479,10 +3099,9 @@
                 "candidateParts": [
                   "head",
                   "chest",
-                  "left_arm",
-                  "right_arm",
-                  "left_leg",
-                  "right_leg"
+                  "abdomen",
+                  "arm",
+                  "leg"
                 ],
                 "selectedParts": [],
                 "selectCount": 1
@@ -3536,10 +3155,9 @@
           "candidateParts": [
             "head",
             "chest",
-            "left_arm",
-            "right_arm",
-            "left_leg",
-            "right_leg"
+            "abdomen",
+            "arm",
+            "leg"
           ],
           "selectedParts": [],
           "selectCount": 1
@@ -3581,10 +3199,9 @@
           "candidateParts": [
             "head",
             "chest",
-            "left_arm",
-            "right_arm",
-            "left_leg",
-            "right_leg"
+            "abdomen",
+            "arm",
+            "leg"
           ],
           "selectedParts": [],
           "selectCount": 1
