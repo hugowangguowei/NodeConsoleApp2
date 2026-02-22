@@ -20,16 +20,14 @@
 | `speed` | Number | 速度（决定出手顺序） | `10` |
 
 ### 2.2 身体部位与护甲 (Body Parts & Armor)
-为了适配 UI 的 7 部位细分显示，所有战斗单位必须包含完整的 `bodyParts` 定义。
+为了适配 UI 的 5 部位细分显示，所有战斗单位必须包含完整的 `bodyParts` 定义。
 
 **标准部位定义：**
 *   `head` (头部)
 *   `chest` (胸部)
 *   `abdomen` (腹部)
-*   `left_arm` (左臂)
-*   `right_arm` (右臂)
-*   `left_leg` (左腿)
-*   `right_leg` (右腿)
+*   `arms` (手臂)
+*   `legs` (腿部)
 
 **数据结构：**
 
@@ -38,10 +36,8 @@
     "head":       { "current": 20, "max": 20, "weakness": 1.5 },
     "chest":      { "current": 40, "max": 50, "weakness": 1.0 },
     "abdomen":    { "current": 30, "max": 40, "weakness": 1.1 },
-    "left_arm":   { "current": 15, "max": 25, "weakness": 1.0 },
-    "right_arm":  { "current": 15, "max": 25, "weakness": 1.0 },
-    "left_leg":   { "current": 20, "max": 30, "weakness": 1.0 },
-    "right_leg":  { "current": 20, "max": 30, "weakness": 1.0 }
+    "arms":       { "current": 30, "max": 50, "weakness": 1.0 },
+    "legs":       { "current": 40, "max": 60, "weakness": 1.0 }
 }
 ```
 
@@ -64,10 +60,8 @@
       "head":       { "current": 0, "max": 0, "weakness": 1.5 },
       "chest":      { "current": 0, "max": 0, "weakness": 1.0 },
       "abdomen":    { "current": 0, "max": 0, "weakness": 1.1 },
-      "left_arm":   { "current": 0, "max": 0, "weakness": 1.0 },
-      "right_arm":  { "current": 0, "max": 0, "weakness": 1.0 },
-      "left_leg":   { "current": 0, "max": 0, "weakness": 1.0 },
-      "right_leg":  { "current": 0, "max": 0, "weakness": 1.0 }
+      "arms":       { "current": 0, "max": 0, "weakness": 1.0 },
+      "legs":       { "current": 0, "max": 0, "weakness": 1.0 }
   },
   "equipment": {
       "weapon": "wp_sword_great",
@@ -75,8 +69,8 @@
       "head": "helm_plate_01",
       "chest": "armor_plate_01",
       "abdomen": "armor_chain_01",
-      "hands": "gloves_plate_01", // 映射到 left_arm, right_arm
-      "legs": "boots_plate_01"    // 映射到 left_leg, right_leg
+      "arms": "gloves_plate_01", // 映射到 arms
+      "legs": "boots_plate_01"    // 映射到 legs
   },
   "inventory": []
 }
@@ -98,14 +92,12 @@
     },
     "skills": ["skill_poison_blade", "skill_stealth"],
     "bodyParts": { 
-      // 必须完整定义7个部位，或在加载时补全默认值
+      // 必须完整定义5个部位，或在加载时补全默认值
       "head":       { "max": 30, "weakness": 2.0 }, // 头部脆弱
       "chest":      { "max": 50, "weakness": 0.8 },
       "abdomen":    { "max": 40, "weakness": 1.2 },
-      "left_arm":   { "max": 30, "weakness": 1.0 },
-      "right_arm":  { "max": 30, "weakness": 1.0 },
-      "left_leg":   { "max": 35, "weakness": 1.0 },
-      "right_leg":  { "max": 35, "weakness": 1.0 }
+      "arms":       { "max": 60, "weakness": 1.0 },
+      "legs":       { "max": 70, "weakness": 1.0 }
     },
     "dropTable": "drop_assassin_common",
     "aiStrategy": "aggressive" // 定义 AI 行为模式
