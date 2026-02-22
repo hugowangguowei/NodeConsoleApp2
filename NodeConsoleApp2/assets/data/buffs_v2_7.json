@@ -102,13 +102,21 @@
           "action": "DAMAGE_HP",
           "target": "self",
           "payload": {
-            "value": "maxHp * 0.05",
+            "value": "${damageVal}",
             "valueType": "flat"
           },
           "_payloadJson": ""
         }
       ],
-      "statModifiers": []
+      "statModifiers": [],
+      "paramsSchema": {
+        "damageVal": {
+          "type": "int",
+          "default": 5,
+          "labelCn": "中毒伤害值",
+          "overrideable": true
+        }
+      }
     },
     "buff_stun": {
       "id": "buff_stun",
@@ -145,8 +153,8 @@
         "dot"
       ],
       "lifecycle": {
-        "duration": 3,
-        "maxStacks": 5,
+        "duration": "${buff_duration}",
+        "maxStacks": "${maxVal}",
         "stackStrategy": "refresh",
         "removeOnBattleEnd": true
       },
@@ -162,7 +170,21 @@
           "_payloadJson": ""
         }
       ],
-      "statModifiers": []
+      "statModifiers": [],
+      "paramsSchema": {
+        "buff_duration": {
+          "type": "number",
+          "default": 2,
+          "labelCn": "持续时间",
+          "overrideable": true
+        },
+        "maxVal": {
+          "type": "number",
+          "default": 5,
+          "labelCn": "堆叠层数",
+          "overrideable": true
+        }
+      }
     },
     "buff_slow": {
       "id": "buff_slow",
@@ -183,10 +205,18 @@
         {
           "stat": "speed",
           "type": "flat",
-          "value": -5
+          "value": "${buff_speedVal}"
         }
       ],
-      "effects": []
+      "effects": [],
+      "paramsSchema": {
+        "buff_speedVal": {
+          "type": "number",
+          "default": -5,
+          "labelCn": "速度更改值",
+          "overrideable": true
+        }
+      }
     },
     "debuff_weak": {
       "id": "debuff_weak",
@@ -225,13 +255,7 @@
         "stackStrategy": "refresh",
         "removeOnBattleEnd": true
       },
-      "statModifiers": [
-        {
-          "stat": "damageTakenMult",
-          "type": "percent_base",
-          "value": 0.2
-        }
-      ],
+      "statModifiers": [],
       "effects": []
     },
     "buff_pain_sup": {
@@ -249,13 +273,7 @@
         "stackStrategy": "refresh",
         "removeOnBattleEnd": true
       },
-      "statModifiers": [
-        {
-          "stat": "damageTakenMult",
-          "type": "percent_base",
-          "value": -0.3
-        }
-      ],
+      "statModifiers": [],
       "effects": []
     },
     "buff_thorns": {
@@ -353,7 +371,7 @@
         "utility"
       ],
       "lifecycle": {
-        "duration": 3,
+        "duration": "${buffDuration}",
         "maxStacks": 1,
         "stackStrategy": "refresh",
         "removeOnBattleEnd": true
@@ -361,17 +379,31 @@
       "effects": [
         {
           "trigger": "onTurnStart",
-          "action": "MODIFY_AP",
+          "action": "HEAL_ARMOR",
           "target": "self",
           "payload": {
-            "value": 1,
+            "value": "${ArmorGetVal}",
             "valueType": "flat"
           },
           "_payloadJson": ""
         }
       ],
-      "description": "",
-      "statModifiers": []
+      "description": "护甲回复没有部位的概念，后续需要补充",
+      "statModifiers": [],
+      "paramsSchema": {
+        "ArmorGetVal": {
+          "type": "int",
+          "default": 20,
+          "labelCn": "",
+          "overrideable": true
+        },
+        "buffDuration": {
+          "type": "number",
+          "default": 2,
+          "labelCn": "",
+          "overrideable": true
+        }
+      }
     },
     "new_buff_1771481773827": {
       "id": "new_buff_1771481773827",
@@ -381,8 +413,8 @@
       "type": "buff",
       "tags": [],
       "lifecycle": {
-        "duration": 3,
-        "maxStacks": 1,
+        "duration": "${buffDuration}",
+        "maxStacks": "${stackNum}",
         "stackStrategy": "refresh",
         "removeOnBattleEnd": true
       },
@@ -399,7 +431,21 @@
           },
           "_payloadJson": ""
         }
-      ]
+      ],
+      "paramsSchema": {
+        "buffDuration": {
+          "type": "number",
+          "default": 2,
+          "labelCn": "",
+          "overrideable": true
+        },
+        "stackNum": {
+          "type": "number",
+          "default": 3,
+          "labelCn": "免伤次数",
+          "overrideable": true
+        }
+      }
     },
     "new_buff_1771481936095": {
       "id": "new_buff_1771481936095",
@@ -437,7 +483,7 @@
       "type": "buff",
       "tags": [],
       "lifecycle": {
-        "duration": 3,
+        "duration": 1,
         "maxStacks": 1,
         "stackStrategy": "refresh",
         "removeOnBattleEnd": true
@@ -449,12 +495,20 @@
           "action": "HEAL_ARMOR",
           "target": "self",
           "payload": {
-            "value": "5",
+            "value": "${ArmorGetVal}",
             "valueType": "flat"
           },
           "_payloadJson": ""
         }
-      ]
+      ],
+      "paramsSchema": {
+        "ArmorGetVal": {
+          "type": "int",
+          "default": 5,
+          "labelCn": "获得护甲值",
+          "overrideable": true
+        }
+      }
     },
     "new_buff_1771485041778": {
       "id": "new_buff_1771485041778",
@@ -476,12 +530,20 @@
           "action": "HEAL_ARMOR",
           "target": "self",
           "payload": {
-            "value": "5",
+            "value": "${healArmorVal}",
             "valueType": "flat"
           },
           "_payloadJson": ""
         }
-      ]
+      ],
+      "paramsSchema": {
+        "healArmorVal": {
+          "type": "int",
+          "default": 5,
+          "labelCn": "获甲值",
+          "overrideable": true
+        }
+      }
     },
     "new_buff_1771485482007": {
       "id": "new_buff_1771485482007",
@@ -496,25 +558,27 @@
         "stackStrategy": "refresh",
         "removeOnBattleEnd": true
       },
-      "statModifiers": [
-        {
-          "stat": "ap",
-          "type": "flat",
-          "value": 0
-        }
-      ],
+      "statModifiers": [],
       "effects": [
         {
           "trigger": "onTurnStart",
           "action": "AP_COST_REDUCE",
           "target": "self",
           "payload": {
-            "value": 1,
+            "value": "${apReduceVal}",
             "valueType": "flat"
           },
           "_payloadJson": ""
         }
-      ]
+      ],
+      "paramsSchema": {
+        "apReduceVal": {
+          "type": "int",
+          "default": "1",
+          "labelCn": "ap降低值",
+          "overrideable": true
+        }
+      }
     },
     "new_buff_1771487055554": {
       "id": "new_buff_1771487055554",
@@ -560,10 +624,18 @@
         {
           "stat": "speed",
           "type": "flat",
-          "value": 2
+          "value": "${speedUpVal}"
         }
       ],
-      "effects": []
+      "effects": [],
+      "paramsSchema": {
+        "speedUpVal": {
+          "type": "number",
+          "default": 2,
+          "labelCn": "加速值",
+          "overrideable": true
+        }
+      }
     },
     "new_buff_1771487561747": {
       "id": "new_buff_1771487561747",

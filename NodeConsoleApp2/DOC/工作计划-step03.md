@@ -4,7 +4,7 @@
 
 ---
 
-## 26-02-22-01:30
+## 26-02-22
 
 ### 任务 1：优化界面
 
@@ -44,6 +44,21 @@
 1.反复执行 git grep -l等命令导致持续等待错误；
 2.在明确要求修改某几个文件的前提下，依然在反复修改不相关文件。
 【GPT-5.2-Codex】实现的比较理想。
+
+---
+### 任务 3：编辑技能并测试
+
+**开始时间**
+26.02.22-22:50
+
+**执行步骤**
+1. 选用【GPT-5.2-Codex】
+2. 我在buff_editor_v4.html中编辑技能“护甲免伤”的时候，发现选择action 为“PREVENT_DAMAGE_ARMOR”时，显示的payLoad.reason，我觉得这里应该跟“DAMAGE_HP”一样，显示的payload.value等属性，因为我同样需要设置免伤的次数。请分析我的理解是否合理，先不要改代码。
+3. 我要修改当前的设计方案，增加payload.value等属性，以便我能够设置免伤的次数。请分析这个修改方案是否合理，先不要改代码。
+4. 我在buff_editor_v4.html中编辑技能“开销降低”的时候，发现选择action 为“AP_COST_REDUCE”时，没有对应的payLoad.value等属性显示，我觉得这里应该跟“DAMAGE_HP”一样，显示的payload.value等属性，因为我同样需要设置降低的AP数量。请分析我的理解是否合理，先不要改代码。
+5. 修改buff_editor_v4.html,以满足“AP_COST_REDUCE”时显示payload.value等属性的需求。
+
+
 
 
 

@@ -102,13 +102,21 @@
           "action": "DAMAGE_HP",
           "target": "self",
           "payload": {
-            "value": "maxHp * 0.05",
+            "value": "${damageVal}",
             "valueType": "flat"
           },
           "_payloadJson": ""
         }
       ],
-      "statModifiers": []
+      "statModifiers": [],
+      "paramsSchema": {
+        "damageVal": {
+          "type": "int",
+          "default": 5,
+          "labelCn": "中毒伤害值",
+          "overrideable": true
+        }
+      }
     },
     "buff_stun": {
       "id": "buff_stun",
@@ -135,29 +143,6 @@
       ],
       "statModifiers": []
     },
-    "buff_strength": {
-      "id": "buff_strength",
-      "name": "力量增强",
-      "description": "属性增益：攻击力 +5（flat），可叠加 3 层，刷新持续时间。",
-      "type": "buff",
-      "tags": [
-        "stat_up"
-      ],
-      "lifecycle": {
-        "duration": 3,
-        "maxStacks": 3,
-        "stackStrategy": "refresh",
-        "removeOnBattleEnd": true
-      },
-      "statModifiers": [
-        {
-          "stat": "atk",
-          "type": "flat",
-          "value": 5
-        }
-      ],
-      "effects": []
-    },
     "buff_bleed": {
       "id": "buff_bleed",
       "name": "流血",
@@ -168,8 +153,8 @@
         "dot"
       ],
       "lifecycle": {
-        "duration": 3,
-        "maxStacks": 5,
+        "duration": "${buff_duration}",
+        "maxStacks": "${maxVal}",
         "stackStrategy": "refresh",
         "removeOnBattleEnd": true
       },
@@ -185,7 +170,21 @@
           "_payloadJson": ""
         }
       ],
-      "statModifiers": []
+      "statModifiers": [],
+      "paramsSchema": {
+        "buff_duration": {
+          "type": "number",
+          "default": 2,
+          "labelCn": "持续时间",
+          "overrideable": true
+        },
+        "maxVal": {
+          "type": "number",
+          "default": 5,
+          "labelCn": "堆叠层数",
+          "overrideable": true
+        }
+      }
     },
     "buff_slow": {
       "id": "buff_slow",
@@ -206,10 +205,18 @@
         {
           "stat": "speed",
           "type": "flat",
-          "value": -5
+          "value": "${buff_speedVal}"
         }
       ],
-      "effects": []
+      "effects": [],
+      "paramsSchema": {
+        "buff_speedVal": {
+          "type": "number",
+          "default": -5,
+          "labelCn": "速度更改值",
+          "overrideable": true
+        }
+      }
     },
     "debuff_weak": {
       "id": "debuff_weak",
@@ -236,7 +243,7 @@
     },
     "buff_vulnerable": {
       "id": "buff_vulnerable",
-      "name": "易伤",
+      "name": "增伤",
       "description": "减益：受到的伤害提高（damageTakenMult +20%），可叠加 3 层。",
       "type": "debuff",
       "tags": [
@@ -248,46 +255,12 @@
         "stackStrategy": "refresh",
         "removeOnBattleEnd": true
       },
-      "statModifiers": [
-        {
-          "stat": "damageTakenMult",
-          "type": "percent_base",
-          "value": 0.2
-        }
-      ],
-      "effects": []
-    },
-    "buff_bless": {
-      "id": "buff_bless",
-      "name": "祝福",
-      "description": "增益：命中率 +0.2，闪避率 +0.1。",
-      "type": "buff",
-      "tags": [
-        "divine"
-      ],
-      "lifecycle": {
-        "duration": 3,
-        "maxStacks": 1,
-        "stackStrategy": "refresh",
-        "removeOnBattleEnd": true
-      },
-      "statModifiers": [
-        {
-          "stat": "hitRate",
-          "type": "flat",
-          "value": 0.2
-        },
-        {
-          "stat": "dodgeRate",
-          "type": "flat",
-          "value": 0.1
-        }
-      ],
+      "statModifiers": [],
       "effects": []
     },
     "buff_pain_sup": {
       "id": "buff_pain_sup",
-      "name": "痛苦压制",
+      "name": "减伤",
       "description": "减伤：受到的伤害降低（damageTakenMult -30%）。",
       "type": "buff",
       "tags": [
@@ -300,71 +273,12 @@
         "stackStrategy": "refresh",
         "removeOnBattleEnd": true
       },
-      "statModifiers": [
-        {
-          "stat": "damageTakenMult",
-          "type": "percent_base",
-          "value": -0.3
-        }
-      ],
-      "effects": []
-    },
-    "buff_immortality_armor": {
-      "id": "buff_immortality_armor",
-      "name": "绝对防御",
-      "type": "buff",
-      "tags": [
-        "defense"
-      ],
-      "lifecycle": {
-        "duration": 2,
-        "maxStacks": 1,
-        "stackStrategy": "refresh",
-        "removeOnBattleEnd": true
-      },
-      "description": "护甲无法被破坏",
-      "tbd": {
-        "reason": "需要护甲伤害/破坏管线支持（按部位）",
-        "proposed": {
-          "effects": [
-            {
-              "trigger": "onTakeDamagePre",
-              "action": "preventArmorBreak",
-              "target": "self"
-            }
-          ]
-        }
-      },
-      "effects": [],
-      "statModifiers": []
-    },
-    "buff_shield_wall": {
-      "id": "buff_shield_wall",
-      "name": "盾墙",
-      "description": "增益：大幅增加最大行动点数（maxAp +3）。",
-      "type": "buff",
-      "tags": [
-        "defense",
-        "team"
-      ],
-      "lifecycle": {
-        "duration": 2,
-        "maxStacks": 1,
-        "stackStrategy": "refresh",
-        "removeOnBattleEnd": true
-      },
-      "statModifiers": [
-        {
-          "stat": "maxAp",
-          "type": "flat",
-          "value": 3
-        }
-      ],
+      "statModifiers": [],
       "effects": []
     },
     "buff_thorns": {
       "id": "buff_thorns",
-      "name": "荆棘",
+      "name": "反伤",
       "description": "反伤：防御结算后对攻击者造成其本次造成伤害的 30%。",
       "type": "buff",
       "tags": [
@@ -393,7 +307,7 @@
     },
     "buff_counter": {
       "id": "buff_counter",
-      "name": "反击姿态",
+      "name": "反击",
       "description": "反击姿态：防御结算后对攻击者发起一次攻击（需 CombatSystem 支持），并大幅提高闪避。",
       "type": "buff",
       "tags": [
@@ -427,38 +341,18 @@
       "id": "buff_lifesteal",
       "name": "吸血",
       "type": "buff",
-      "tags": [
-        "offensive",
-        "vampire"
-      ],
-      "lifecycle": {
-        "duration": -1,
-        "maxStacks": 1,
-        "stackStrategy": "refresh",
-        "removeOnBattleEnd": true
-      },
-      "aliasOf": "passive_vampire",
-      "description": "",
-      "effects": [],
-      "statModifiers": []
-    },
-    "buff_ap_regen": {
-      "id": "buff_ap_regen",
-      "name": "战斗恢复",
-      "type": "buff",
-      "tags": [
-        "utility"
-      ],
+      "tags": [],
       "lifecycle": {
         "duration": 3,
         "maxStacks": 1,
         "stackStrategy": "refresh",
         "removeOnBattleEnd": true
       },
+      "description": "攻击造成伤害的值",
       "effects": [
         {
-          "trigger": "onTurnStart",
-          "action": "MODIFY_AP",
+          "trigger": "onAttackPost",
+          "action": "HEAL_ARMOR",
           "target": "self",
           "payload": {
             "value": 1,
@@ -467,57 +361,49 @@
           "_payloadJson": ""
         }
       ],
-      "description": "",
       "statModifiers": []
     },
-    "buff_damage_absorb": {
-      "id": "buff_damage_absorb",
-      "name": "圣盾",
-      "description": "TBD：吸收本次受到的伤害并转化为治疗（需要 absorbToHeal 管线支持）。",
+    "buff_ap_regen": {
+      "id": "buff_ap_regen",
+      "name": "护甲回复",
       "type": "buff",
       "tags": [
-        "defense",
-        "divine"
+        "utility"
       ],
       "lifecycle": {
-        "duration": 1,
+        "duration": "${buffDuration}",
         "maxStacks": 1,
         "stackStrategy": "refresh",
         "removeOnBattleEnd": true
       },
       "effects": [
         {
-          "trigger": "onTakeDamagePre",
-          "action": "ABSORB_TO_HEAL",
+          "trigger": "onTurnStart",
+          "action": "HEAL_ARMOR",
           "target": "self",
-          "payload": {},
+          "payload": {
+            "value": "${ArmorGetVal}",
+            "valueType": "flat"
+          },
           "_payloadJson": ""
         }
       ],
-      "statModifiers": []
-    },
-    "passive_heavy_armor": {
-      "id": "passive_heavy_armor",
-      "name": "重甲负重",
-      "description": "装备被动：速度 -5。",
-      "type": "hidden",
-      "tags": [
-        "equipment"
-      ],
-      "lifecycle": {
-        "duration": -1,
-        "maxStacks": 1,
-        "stackStrategy": "refresh",
-        "removeOnBattleEnd": true
-      },
-      "statModifiers": [
-        {
-          "stat": "speed",
-          "type": "flat",
-          "value": -5
+      "description": "护甲回复没有部位的概念，后续需要补充",
+      "statModifiers": [],
+      "paramsSchema": {
+        "ArmorGetVal": {
+          "type": "int",
+          "default": 20,
+          "labelCn": "",
+          "overrideable": true
+        },
+        "buffDuration": {
+          "type": "number",
+          "default": 2,
+          "labelCn": "",
+          "overrideable": true
         }
-      ],
-      "effects": []
+      }
     },
     "new_buff_1771481773827": {
       "id": "new_buff_1771481773827",
@@ -527,8 +413,8 @@
       "type": "buff",
       "tags": [],
       "lifecycle": {
-        "duration": 3,
-        "maxStacks": 1,
+        "duration": "${buffDuration}",
+        "maxStacks": "${stackNum}",
         "stackStrategy": "refresh",
         "removeOnBattleEnd": true
       },
@@ -542,9 +428,24 @@
             "value": 1,
             "valueType": "flat",
             "reason": ""
-          }
+          },
+          "_payloadJson": ""
         }
-      ]
+      ],
+      "paramsSchema": {
+        "buffDuration": {
+          "type": "number",
+          "default": 2,
+          "labelCn": "",
+          "overrideable": true
+        },
+        "stackNum": {
+          "type": "number",
+          "default": 3,
+          "labelCn": "免伤次数",
+          "overrideable": true
+        }
+      }
     },
     "new_buff_1771481936095": {
       "id": "new_buff_1771481936095",
@@ -569,7 +470,8 @@
             "value": 1,
             "valueType": "flat",
             "reason": ""
-          }
+          },
+          "_payloadJson": ""
         }
       ]
     },
@@ -581,7 +483,7 @@
       "type": "buff",
       "tags": [],
       "lifecycle": {
-        "duration": 3,
+        "duration": 1,
         "maxStacks": 1,
         "stackStrategy": "refresh",
         "removeOnBattleEnd": true
@@ -593,11 +495,20 @@
           "action": "HEAL_ARMOR",
           "target": "self",
           "payload": {
-            "value": "5",
+            "value": "${ArmorGetVal}",
             "valueType": "flat"
-          }
+          },
+          "_payloadJson": ""
         }
-      ]
+      ],
+      "paramsSchema": {
+        "ArmorGetVal": {
+          "type": "int",
+          "default": 5,
+          "labelCn": "获得护甲值",
+          "overrideable": true
+        }
+      }
     },
     "new_buff_1771485041778": {
       "id": "new_buff_1771485041778",
@@ -619,11 +530,20 @@
           "action": "HEAL_ARMOR",
           "target": "self",
           "payload": {
-            "value": "5",
+            "value": "${healArmorVal}",
             "valueType": "flat"
-          }
+          },
+          "_payloadJson": ""
         }
-      ]
+      ],
+      "paramsSchema": {
+        "healArmorVal": {
+          "type": "int",
+          "default": 5,
+          "labelCn": "获甲值",
+          "overrideable": true
+        }
+      }
     },
     "new_buff_1771485482007": {
       "id": "new_buff_1771485482007",
@@ -638,18 +558,98 @@
         "stackStrategy": "refresh",
         "removeOnBattleEnd": true
       },
-      "statModifiers": [],
+      "statModifiers": [
+        {
+          "stat": "ap",
+          "type": "flat",
+          "value": 0
+        }
+      ],
       "effects": [
         {
           "trigger": "onTurnStart",
-          "action": "DAMAGE_HP",
+          "action": "AP_COST_REDUCE",
           "target": "self",
           "payload": {
             "value": 1,
             "valueType": "flat"
-          }
+          },
+          "_payloadJson": ""
         }
       ]
+    },
+    "new_buff_1771487055554": {
+      "id": "new_buff_1771487055554",
+      "name": "开销增多",
+      "description": "增加AP开销",
+      "icon": "",
+      "type": "debuff",
+      "tags": [],
+      "lifecycle": {
+        "duration": 3,
+        "maxStacks": 1,
+        "stackStrategy": "refresh",
+        "removeOnBattleEnd": true
+      },
+      "statModifiers": [],
+      "effects": [
+        {
+          "trigger": "onTurnStart",
+          "action": "AP_COST_ADD",
+          "target": "self",
+          "payload": {
+            "value": 1,
+            "valueType": "flat"
+          },
+          "_payloadJson": ""
+        }
+      ]
+    },
+    "new_buff_1771487521271": {
+      "id": "new_buff_1771487521271",
+      "name": "加速",
+      "description": "基础速度提升",
+      "icon": "",
+      "type": "buff",
+      "tags": [],
+      "lifecycle": {
+        "duration": 3,
+        "maxStacks": 1,
+        "stackStrategy": "refresh",
+        "removeOnBattleEnd": true
+      },
+      "statModifiers": [
+        {
+          "stat": "speed",
+          "type": "flat",
+          "value": "${speedUpVal}"
+        }
+      ],
+      "effects": [],
+      "paramsSchema": {
+        "speedUpVal": {
+          "type": "number",
+          "default": 2,
+          "labelCn": "加速值",
+          "overrideable": true
+        }
+      }
+    },
+    "new_buff_1771487561747": {
+      "id": "new_buff_1771487561747",
+      "name": "减速",
+      "description": "基础速度降低",
+      "icon": "",
+      "type": "debuff",
+      "tags": [],
+      "lifecycle": {
+        "duration": 3,
+        "maxStacks": 1,
+        "stackStrategy": "refresh",
+        "removeOnBattleEnd": true
+      },
+      "statModifiers": [],
+      "effects": []
     }
   }
 }

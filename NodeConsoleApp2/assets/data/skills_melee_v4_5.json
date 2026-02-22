@@ -69,10 +69,9 @@
     "defaultParts": [
       "head",
       "chest",
-      "left_arm",
-      "right_arm",
-      "left_leg",
-      "right_leg"
+      "abdomen",
+      "arm",
+      "leg"
     ],
     "enums": {
       "rarities": [
@@ -197,7 +196,12 @@
           "UNCONDITIONAL",
           "CONDITIONAL"
         ]
-      }
+      },
+      "editStates": [
+        "done",
+        "editing",
+        "deprecated"
+      ]
     }
   },
   "skills": [
@@ -218,10 +222,11 @@
         }
       },
       "editorMeta": {
-        "x": 14,
+        "x": 914,
         "y": 314,
         "group": "melee",
-        "locked": false
+        "locked": false,
+        "editState": "done"
       },
       "speed": -2,
       "target": {
@@ -232,25 +237,23 @@
           "candidateParts": [
             "head",
             "chest",
-            "left_arm",
-            "right_arm",
-            "left_leg",
-            "right_leg"
+            "abdomen",
+            "arm",
+            "leg"
           ],
           "selectedParts": [
             "head",
             "chest",
-            "left_arm",
-            "right_arm",
-            "left_leg",
-            "right_leg"
+            "abdomen",
+            "arm",
+            "leg"
           ],
-          "selectCount": 6
+          "selectCount": 5
         }
       },
       "requirements": {},
       "costs": {
-        "ap": 3,
+        "ap": 2,
         "perTurnLimit": 1
       },
       "buffRefs": {
@@ -279,17 +282,18 @@
           },
           "effect": {
             "effectType": "HEAL",
-            "amount": 30,
+            "amount": 20,
             "amountType": "ABS"
           }
         }
-      ]
+      ],
+      "tagMeta": {}
     },
     {
       "id": "skill_heavy_swing",
       "name": "重锤",
       "rarity": "Common",
-      "description": "对选中部位造成20点伤害。如果指定部位有护甲，造成1.5倍率伤害。",
+      "description": "对选中部位造成20点伤害。",
       "prerequisites": [],
       "unlock": {
         "cost": {
@@ -302,10 +306,11 @@
         }
       },
       "editorMeta": {
-        "x": 1814,
+        "x": 1614,
         "y": 314,
         "group": "melee",
-        "locked": false
+        "locked": false,
+        "editState": "done"
       },
       "speed": 0,
       "target": {
@@ -316,10 +321,9 @@
           "candidateParts": [
             "head",
             "chest",
-            "left_arm",
-            "right_arm",
-            "left_leg",
-            "right_leg"
+            "abdomen",
+            "arm",
+            "leg"
           ],
           "selectedParts": [],
           "selectCount": 1
@@ -329,16 +333,15 @@
         "selfPart": {
           "mode": "ANY",
           "parts": [
-            "left_arm",
-            "right_arm"
+            "arm"
           ],
           "mustBeUsable": true
         }
       },
       "costs": {
-        "ap": 3,
+        "ap": 2,
         "partSlot": {
-          "part": "right_arm",
+          "part": "arm",
           "slotCost": 2
         },
         "perTurnLimit": 1
@@ -373,125 +376,12 @@
           },
           "effect": {
             "effectType": "DMG_HP",
-            "amountType": "SCALING",
+            "amountType": "ABS",
             "scaling": {
               "stat": "atk",
               "multiplier": 1.2
-            }
-          }
-        }
-      ]
-    },
-    {
-      "id": "skill_headbutt",
-      "name": "蛮牛头槌",
-      "rarity": "Common",
-      "description": "攻击头部：造成伤害；自身反噬；并有概率眩晕。",
-      "prerequisites": [],
-      "unlock": {
-        "cost": {
-          "kp": 1
-        },
-        "requirements": {},
-        "exclusives": [],
-        "grants": {
-          "type": "permanent"
-        }
-      },
-      "editorMeta": {
-        "x": 1714,
-        "y": 514,
-        "group": "melee",
-        "locked": false
-      },
-      "speed": 0,
-      "target": {
-        "subject": "SUBJECT_ENEMY",
-        "scope": "SCOPE_PART",
-        "selection": {
-          "mode": "single",
-          "candidateParts": [
-            "head"
-          ],
-          "selectedParts": [
-            "head"
-          ],
-          "selectCount": 1
-        }
-      },
-      "requirements": {
-        "selfPart": {
-          "mode": "ANY",
-          "parts": [
-            "head"
-          ],
-          "mustBeUsable": true
-        }
-      },
-      "costs": {
-        "ap": 2,
-        "partSlot": {
-          "part": "head",
-          "slotCost": 1
-        },
-        "perTurnLimit": 1
-      },
-      "buffRefs": {
-        "apply": [
-          {
-            "buffId": "buff_stun",
-            "target": "enemy",
-            "chance": 0.25,
-            "duration": 1
-          }
-        ],
-        "remove": []
-      },
-      "tags": [
-        "DMG_HP",
-        "ABS",
-        "INSTANT",
-        "ONE_SHOT",
-        "UNCONDITIONAL",
-        "BUFF_APPLY",
-        "SUBJECT_ENEMY",
-        "SCOPE_PART",
-        "RES_AP",
-        "RES_SLOT",
-        "REQ_SELF_PART",
-        "MELEE"
-      ],
-      "actions": [
-        {
-          "id": "action_1",
-          "name": "Effect 1",
-          "target": {
-            "binding": {
-              "mode": "follow",
-              "ref": "skillTarget"
-            }
-          },
-          "effect": {
-            "effectType": "DMG_HP",
-            "amount": 15,
-            "amountType": "ABS"
-          }
-        },
-        {
-          "id": "action_2",
-          "name": "Effect 2",
-          "target": {
-            "binding": {
-              "mode": "follow",
-              "ref": "skillTarget"
-            }
-          },
-          "effect": {
-            "effectType": "DMG_HP",
-            "subjectOverride": "SUBJECT_SELF",
-            "amount": 5,
-            "amountType": "ABS",
-            "note": "反噬"
+            },
+            "amount": 20
           }
         }
       ]
@@ -501,7 +391,9 @@
       "name": "临期食品",
       "rarity": "Uncommon",
       "description": "扣除5点血，获得指定位置的20点护甲",
-      "prerequisites": [],
+      "prerequisites": [
+        "skill_block"
+      ],
       "unlock": {
         "cost": {
           "kp": 2
@@ -516,7 +408,8 @@
         "x": 714,
         "y": 514,
         "group": "melee",
-        "locked": false
+        "locked": false,
+        "editState": "done"
       },
       "speed": 2,
       "target": {
@@ -537,8 +430,7 @@
         "selfPart": {
           "mode": "ANY",
           "parts": [
-            "left_leg",
-            "right_leg"
+            "leg"
           ],
           "mustBeUsable": true
         }
@@ -546,20 +438,13 @@
       "costs": {
         "ap": 0,
         "partSlot": {
-          "part": "left_leg",
+          "part": "leg",
           "slotCost": 2
         },
         "perTurnLimit": 1
       },
       "buffRefs": {
-        "apply": [
-          {
-            "buffId": "buff_slow",
-            "target": "enemy",
-            "chance": 1,
-            "duration": 1
-          }
-        ],
+        "apply": [],
         "remove": []
       },
       "tags": [
@@ -580,7 +465,7 @@
       "actions": [
         {
           "id": "action_1",
-          "name": "Effect 1",
+          "name": "扣血",
           "target": {
             "binding": {
               "mode": "follow",
@@ -592,6 +477,21 @@
             "amount": 30,
             "amountType": "ABS"
           }
+        },
+        {
+          "id": "action_2",
+          "name": "加甲",
+          "target": {
+            "binding": {
+              "mode": "follow",
+              "ref": "skillTarget"
+            }
+          },
+          "effect": {
+            "effectType": "ARMOR_ADD",
+            "amountType": "ABS",
+            "amount": 20
+          }
         }
       ]
     },
@@ -599,7 +499,7 @@
       "id": "skill_skull_cracker",
       "name": "裂颅一击",
       "rarity": "Uncommon",
-      "description": "对头部造成伤害（按攻击力缩放），并额外削减头部护甲。",
+      "description": "对头部造成伤害",
       "prerequisites": [
         "skill_heavy_swing"
       ],
@@ -614,10 +514,11 @@
         }
       },
       "editorMeta": {
-        "x": 1814,
+        "x": 1614,
         "y": 514,
         "group": "melee",
-        "locked": false
+        "locked": false,
+        "editState": "done"
       },
       "speed": -3,
       "target": {
@@ -638,8 +539,7 @@
         "selfPart": {
           "mode": "ANY",
           "parts": [
-            "left_arm",
-            "right_arm"
+            "arm"
           ],
           "mustBeUsable": true
         }
@@ -647,7 +547,7 @@
       "costs": {
         "ap": 4,
         "partSlot": {
-          "part": "right_arm",
+          "part": "arm",
           "slotCost": 2
         },
         "perTurnLimit": 1
@@ -673,24 +573,6 @@
       ],
       "actions": [
         {
-          "id": "action_1",
-          "name": "Effect 1",
-          "target": {
-            "binding": {
-              "mode": "follow",
-              "ref": "skillTarget"
-            }
-          },
-          "effect": {
-            "effectType": "DMG_HP",
-            "amountType": "SCALING",
-            "scaling": {
-              "stat": "atk",
-              "multiplier": 1.5
-            }
-          }
-        },
-        {
           "id": "action_2",
           "name": "Effect 2",
           "target": {
@@ -701,7 +583,7 @@
           },
           "effect": {
             "effectType": "DMG_ARMOR",
-            "amount": 30,
+            "amount": 20,
             "amountType": "ABS",
             "partOverride": {
               "mode": "fixed",
@@ -711,13 +593,14 @@
             }
           }
         }
-      ]
+      ],
+      "tagMeta": {}
     },
     {
       "id": "skill_shockwave",
       "name": "光脚",
       "rarity": "Rare",
-      "description": "移除腿部护甲，移除所有debuff",
+      "description": "移除腿部护甲，移除所有debuff，加速",
       "prerequisites": [
         "skill_artery_slice_copy_1769789197982"
       ],
@@ -735,7 +618,8 @@
         "x": 614,
         "y": 714,
         "group": "melee",
-        "locked": false
+        "locked": false,
+        "editState": "done"
       },
       "speed": -2,
       "target": {
@@ -746,20 +630,18 @@
           "candidateParts": [
             "head",
             "chest",
-            "left_arm",
-            "right_arm",
-            "left_leg",
-            "right_leg"
+            "abdomen",
+            "arm",
+            "leg"
           ],
           "selectedParts": [
             "head",
             "chest",
-            "left_arm",
-            "right_arm",
-            "left_leg",
-            "right_leg"
+            "abdomen",
+            "arm",
+            "leg"
           ],
-          "selectCount": 6
+          "selectCount": 5
         }
       },
       "requirements": {
@@ -782,10 +664,13 @@
       "buffRefs": {
         "apply": [
           {
-            "buffId": "buff_slow",
-            "target": "enemy",
+            "buffId": "new_buff_1771487521271",
+            "target": "self",
             "chance": 1,
-            "duration": 2
+            "duration": 2,
+            "params": {
+              "speedUpVal": 3
+            }
           }
         ],
         "remove": []
@@ -808,7 +693,7 @@
       "actions": [
         {
           "id": "action_1",
-          "name": "Effect 1",
+          "name": "移除腿部护甲",
           "target": {
             "binding": {
               "mode": "follow",
@@ -820,6 +705,21 @@
             "amount": 100,
             "amountType": "PCT_MAX"
           }
+        },
+        {
+          "id": "action_2",
+          "name": "移除所有debuff",
+          "target": {
+            "binding": {
+              "mode": "follow",
+              "ref": "skillTarget"
+            }
+          },
+          "effect": {
+            "effectType": "BUFF_REMOVE",
+            "amountType": "ABS",
+            "amount": 100
+          }
         }
       ]
     },
@@ -827,7 +727,7 @@
       "id": "skill_execute",
       "name": "斩首",
       "rarity": "Epic",
-      "description": "只能对 HP < 30% 的目标使用，造成巨额伤害（按当前 HP 百分比计算）。",
+      "description": "造成巨额伤害（按当前 HP 百分比计算）。",
       "prerequisites": [
         "skill_skull_cracker"
       ],
@@ -842,10 +742,11 @@
         }
       },
       "editorMeta": {
-        "x": 1814,
+        "x": 1614,
         "y": 914,
         "group": "melee",
-        "locked": false
+        "locked": false,
+        "editState": "done"
       },
       "speed": 1,
       "target": {
@@ -856,10 +757,9 @@
           "candidateParts": [
             "head",
             "chest",
-            "left_arm",
-            "right_arm",
-            "left_leg",
-            "right_leg"
+            "abdomen",
+            "arm",
+            "leg"
           ],
           "selectedParts": [],
           "selectCount": 1
@@ -871,7 +771,7 @@
       "costs": {
         "ap": 3,
         "partSlot": {
-          "part": "right_arm",
+          "part": "arm",
           "slotCost": 2
         },
         "perTurnLimit": 1
@@ -905,12 +805,13 @@
           },
           "effect": {
             "effectType": "DMG_HP",
-            "amount": 3,
+            "amount": 30,
             "amountType": "PCT_CURRENT",
             "note": "按当前 HP 百分比造成伤害；引擎实现时可映射为 TRUE/PIERCE 以避免护甲干扰。"
           }
         }
-      ]
+      ],
+      "tagMeta": {}
     },
     {
       "id": "skill_earthquake",
@@ -931,10 +832,11 @@
         }
       },
       "editorMeta": {
-        "x": 1714,
+        "x": 1514,
         "y": 914,
         "group": "melee",
-        "locked": false
+        "locked": false,
+        "editState": "done"
       },
       "speed": -4,
       "target": {
@@ -945,10 +847,9 @@
           "candidateParts": [
             "head",
             "chest",
-            "left_arm",
-            "right_arm",
-            "left_leg",
-            "right_leg"
+            "abdomen",
+            "arm",
+            "leg"
           ],
           "selectedParts": [],
           "selectCount": 1
@@ -958,8 +859,7 @@
         "selfPart": {
           "mode": "ANY",
           "parts": [
-            "left_arm",
-            "right_arm"
+            "arm"
           ],
           "mustBeUsable": true
         }
@@ -967,7 +867,7 @@
       "costs": {
         "ap": 5,
         "partSlot": {
-          "part": "right_arm",
+          "part": "arm",
           "slotCost": 3
         },
         "perTurnLimit": 1
@@ -1019,7 +919,7 @@
       "id": "skill_ragnarok",
       "name": "诸神黄昏",
       "rarity": "Legendary",
-      "description": "对敌方所有部位造成毁灭性打击（按攻击力缩放）。",
+      "description": "对敌方所有部位造成毁灭性打击。",
       "prerequisites": [
         "skill_earthquake"
       ],
@@ -1034,10 +934,11 @@
         }
       },
       "editorMeta": {
-        "x": 1714,
+        "x": 1514,
         "y": 1114,
         "group": "melee",
-        "locked": false
+        "locked": false,
+        "editState": "done"
       },
       "speed": -5,
       "target": {
@@ -1048,36 +949,33 @@
           "candidateParts": [
             "head",
             "chest",
-            "left_arm",
-            "right_arm",
-            "left_leg",
-            "right_leg"
+            "abdomen",
+            "arm",
+            "leg"
           ],
           "selectedParts": [
             "head",
             "chest",
-            "left_arm",
-            "right_arm",
-            "left_leg",
-            "right_leg"
+            "abdomen",
+            "arm",
+            "leg"
           ],
-          "selectCount": 6
+          "selectCount": 5
         }
       },
       "requirements": {
         "selfPart": {
           "mode": "ANY",
           "parts": [
-            "left_arm",
-            "right_arm"
+            "arm"
           ],
           "mustBeUsable": true
         }
       },
       "costs": {
-        "ap": 6,
+        "ap": 3,
         "partSlot": {
-          "part": "right_arm",
+          "part": "arm",
           "slotCost": 4
         },
         "perTurnLimit": 1
@@ -1111,103 +1009,19 @@
           },
           "effect": {
             "effectType": "DMG_HP",
-            "amountType": "SCALING",
+            "amountType": "ABS",
             "scaling": {
               "stat": "atk",
               "multiplier": 2
             },
             "repeat": {
               "count": 6
-            }
+            },
+            "amount": 50
           }
         }
-      ]
-    },
-    {
-      "id": "skill_iron_will",
-      "name": "钢铁意志",
-      "rarity": "Common",
-      "description": "立刻修复自身头部与躯干护甲。",
-      "prerequisites": [],
-      "unlock": {
-        "cost": {
-          "kp": 1
-        },
-        "requirements": {},
-        "exclusives": [],
-        "grants": {
-          "type": "permanent"
-        }
-      },
-      "editorMeta": {
-        "x": 114,
-        "y": 914,
-        "group": "melee",
-        "locked": false
-      },
-      "speed": 1,
-      "target": {
-        "subject": "SUBJECT_SELF",
-        "scope": "SCOPE_MULTI_PARTS",
-        "selection": {
-          "mode": "multiple",
-          "candidateParts": [
-            "head",
-            "chest",
-            "left_arm",
-            "right_arm",
-            "left_leg",
-            "right_leg"
-          ],
-          "selectedParts": [
-            "head",
-            "chest"
-          ],
-          "selectCount": 2
-        }
-      },
-      "requirements": {},
-      "costs": {
-        "ap": 2,
-        "partSlot": {
-          "part": "chest",
-          "slotCost": 1
-        },
-        "perTurnLimit": 1
-      },
-      "buffRefs": {
-        "apply": [],
-        "remove": []
-      },
-      "tags": [
-        "ARMOR_ADD",
-        "ABS",
-        "INSTANT",
-        "ONE_SHOT",
-        "UNCONDITIONAL",
-        "SUBJECT_SELF",
-        "SCOPE_MULTI_PARTS",
-        "RES_AP",
-        "RES_SLOT",
-        "MELEE"
       ],
-      "actions": [
-        {
-          "id": "action_1",
-          "name": "Effect 1",
-          "target": {
-            "binding": {
-              "mode": "follow",
-              "ref": "skillTarget"
-            }
-          },
-          "effect": {
-            "effectType": "ARMOR_ADD",
-            "amount": 15,
-            "amountType": "ABS"
-          }
-        }
-      ]
+      "tagMeta": {}
     },
     {
       "id": "skill_block",
@@ -1229,7 +1043,8 @@
         "x": 414,
         "y": 314,
         "group": "melee",
-        "locked": false
+        "locked": false,
+        "editState": "done"
       },
       "speed": 9,
       "target": {
@@ -1240,10 +1055,9 @@
           "candidateParts": [
             "head",
             "chest",
-            "left_arm",
-            "right_arm",
-            "left_leg",
-            "right_leg"
+            "abdomen",
+            "arm",
+            "leg"
           ],
           "selectedParts": [],
           "selectCount": 6
@@ -1253,29 +1067,17 @@
         "selfPart": {
           "mode": "ANY",
           "parts": [
-            "left_arm",
-            "right_arm"
+            "arm"
           ],
           "mustBeUsable": true
         }
       },
       "costs": {
         "ap": 1,
-        "partSlot": {
-          "part": "left_arm",
-          "slotCost": 1
-        },
         "perTurnLimit": 1
       },
       "buffRefs": {
-        "apply": [
-          {
-            "buffId": "buff_block",
-            "target": "self",
-            "chance": 1,
-            "duration": 1
-          }
-        ],
+        "apply": [],
         "remove": []
       },
       "tags": [
@@ -1303,9 +1105,9 @@
             }
           },
           "effect": {
-            "effectType": "DMG_HP",
+            "effectType": "ARMOR_ADD",
             "amountType": "ABS",
-            "amount": 0
+            "amount": 10
           }
         }
       ]
@@ -1332,7 +1134,8 @@
         "x": 714,
         "y": 914,
         "group": "melee",
-        "locked": false
+        "locked": false,
+        "editState": "done"
       },
       "speed": 10,
       "target": {
@@ -1343,20 +1146,18 @@
           "candidateParts": [
             "head",
             "chest",
-            "left_arm",
-            "right_arm",
-            "left_leg",
-            "right_leg"
+            "abdomen",
+            "arm",
+            "leg"
           ],
           "selectedParts": [
             "head",
             "chest",
-            "left_arm",
-            "right_arm",
-            "left_leg",
-            "right_leg"
+            "abdomen",
+            "arm",
+            "leg"
           ],
-          "selectCount": 6
+          "selectCount": 5
         }
       },
       "requirements": {},
@@ -1369,13 +1170,16 @@
         "perTurnLimit": 1
       },
       "buffRefs": {
-        "remove": [
+        "remove": [],
+        "apply": [
           {
-            "buffId": "buff_bleed",
-            "target": "self"
+            "buffId": "new_buff_1771485041778",
+            "target": "enemy",
+            "params": {
+              "healArmorVal": 5
+            }
           }
-        ],
-        "apply": []
+        ]
       },
       "tags": [
         "ARMOR_ADD",
@@ -1397,7 +1201,7 @@
       "id": "skill_hold_the_line",
       "name": "重拳",
       "rarity": "Rare",
-      "description": "攻击消耗50%护甲，增加20点伤害。（消耗护甲这个debuff还没实现呢）",
+      "description": "攻击消耗50%右手得护甲，增加20点伤害。",
       "prerequisites": [
         "skill_artery_slice_copy_1769788322314"
       ],
@@ -1415,7 +1219,8 @@
         "x": 414,
         "y": 714,
         "group": "melee",
-        "locked": false
+        "locked": false,
+        "editState": "done"
       },
       "speed": 2,
       "target": {
@@ -1424,13 +1229,10 @@
         "selection": {
           "mode": "single",
           "candidateParts": [
-            "head",
-            "chest",
-            "left_arm",
-            "right_arm"
+            "arm"
           ],
           "selectedParts": [],
-          "selectCount": 6
+          "selectCount": 1
         }
       },
       "requirements": {
@@ -1444,27 +1246,10 @@
       },
       "costs": {
         "ap": 1,
-        "partSlot": {
-          "part": "right_arm",
-          "slotCost": 1
-        },
         "perTurnLimit": 1
       },
       "buffRefs": {
-        "apply": [
-          {
-            "buffId": "buff_shield",
-            "target": "self",
-            "chance": 1,
-            "duration": 1
-          },
-          {
-            "buffId": "buff_block",
-            "target": "self",
-            "chance": 1,
-            "duration": 1
-          }
-        ],
+        "apply": [],
         "remove": []
       },
       "tags": [
@@ -1484,7 +1269,35 @@
       "actions": [
         {
           "id": "action_1",
-          "name": "Effect 1",
+          "name": "消耗护甲",
+          "target": {
+            "binding": {
+              "mode": "explicit"
+            },
+            "spec": {
+              "subject": "SUBJECT_SELF",
+              "scope": "SCOPE_ENTITY",
+              "selection": {
+                "mode": "single",
+                "candidateParts": [
+                  "arm"
+                ],
+                "selectedParts": [
+                  "arm"
+                ],
+                "selectCount": 1
+              }
+            }
+          },
+          "effect": {
+            "effectType": "DMG_ARMOR",
+            "amountType": "PCT_CURRENT",
+            "amount": 50
+          }
+        },
+        {
+          "id": "action_2",
+          "name": "造成伤害",
           "target": {
             "binding": {
               "mode": "follow",
@@ -1503,7 +1316,7 @@
       "id": "skill_fortify",
       "name": "堡垒姿态",
       "rarity": "Epic",
-      "description": "本回合获得40点护甲，下回合获得40点护甲（需要一个buff)",
+      "description": "本回合获得40点护甲，下回合获得40点护甲。\n这里有个问题，回复的护甲不知道部位",
       "prerequisites": [
         "skill_hold_the_line"
       ],
@@ -1521,7 +1334,8 @@
         "x": 414,
         "y": 914,
         "group": "melee",
-        "locked": false
+        "locked": false,
+        "editState": "editing"
       },
       "speed": 0,
       "target": {
@@ -1532,10 +1346,9 @@
           "candidateParts": [
             "head",
             "chest",
-            "left_arm",
-            "right_arm",
-            "left_leg",
-            "right_leg"
+            "abdomen",
+            "arm",
+            "leg"
           ],
           "selectedParts": [],
           "selectCount": 1
@@ -1561,10 +1374,14 @@
       "buffRefs": {
         "apply": [
           {
-            "buffId": "buff_shield",
+            "buffId": "buff_ap_regen",
             "target": "self",
             "chance": 1,
-            "duration": 1
+            "duration": 1,
+            "params": {
+              "ArmorGetVal": 40,
+              "buffDuration": 2
+            }
           }
         ],
         "remove": []
@@ -1606,7 +1423,7 @@
       "id": "skill_aegis",
       "name": "绝对防御",
       "rarity": "Legendary",
-      "description": "对自身施加护盾与格挡（简化版）。",
+      "description": "施加护甲免伤",
       "prerequisites": [
         "skill_fortify"
       ],
@@ -1624,7 +1441,8 @@
         "x": 414,
         "y": 1114,
         "group": "melee",
-        "locked": false
+        "locked": false,
+        "editState": "done"
       },
       "speed": 10,
       "target": {
@@ -1635,19 +1453,11 @@
           "candidateParts": [
             "head",
             "chest",
-            "left_arm",
-            "right_arm",
-            "left_leg",
-            "right_leg"
+            "abdomen",
+            "arm",
+            "leg"
           ],
-          "selectedParts": [
-            "head",
-            "chest",
-            "left_arm",
-            "right_arm",
-            "left_leg",
-            "right_leg"
-          ],
+          "selectedParts": [],
           "selectCount": 6
         }
       },
@@ -1671,16 +1481,11 @@
       "buffRefs": {
         "apply": [
           {
-            "buffId": "buff_shield",
+            "buffId": "new_buff_1771481773827",
             "target": "self",
             "chance": 1,
-            "duration": 1
-          },
-          {
-            "buffId": "buff_block",
-            "target": "self",
-            "chance": 1,
-            "duration": 1
+            "duration": 1,
+            "params": {}
           }
         ],
         "remove": []
@@ -1698,7 +1503,8 @@
         "REQ_SELF_PART",
         "MELEE"
       ],
-      "actions": []
+      "actions": [],
+      "tagMeta": {}
     },
     {
       "id": "skill_artery_slice",
@@ -1722,7 +1528,8 @@
         "x": 214,
         "y": 514,
         "group": "melee",
-        "locked": false
+        "locked": false,
+        "editState": "done"
       },
       "speed": 2,
       "target": {
@@ -1743,8 +1550,7 @@
         "selfPart": {
           "mode": "ANY",
           "parts": [
-            "left_arm",
-            "right_arm"
+            "arm"
           ],
           "mustBeUsable": true
         }
@@ -1758,14 +1564,7 @@
         "perTurnLimit": 1
       },
       "buffRefs": {
-        "apply": [
-          {
-            "buffId": "buff_bleed",
-            "target": "enemy",
-            "chance": 1,
-            "duration": 3
-          }
-        ],
+        "apply": [],
         "remove": []
       },
       "tags": [
@@ -1821,7 +1620,8 @@
         "x": 1214,
         "y": 314,
         "group": "melee",
-        "locked": false
+        "locked": false,
+        "editState": "done"
       },
       "speed": 4,
       "target": {
@@ -1832,10 +1632,9 @@
           "candidateParts": [
             "head",
             "chest",
-            "left_arm",
-            "right_arm",
-            "left_leg",
-            "right_leg"
+            "abdomen",
+            "arm",
+            "leg"
           ],
           "selectedParts": [],
           "selectCount": 1
@@ -1845,8 +1644,7 @@
         "selfPart": {
           "mode": "ANY",
           "parts": [
-            "left_arm",
-            "right_arm"
+            "arm"
           ],
           "mustBeUsable": true
         }
@@ -1854,7 +1652,7 @@
       "costs": {
         "ap": 1,
         "partSlot": {
-          "part": "right_arm",
+          "part": "arm",
           "slotCost": 1
         },
         "perTurnLimit": 1
@@ -1890,14 +1688,15 @@
           },
           "effect": {
             "effectType": "DMG_HP",
-            "amountType": "SCALING",
+            "amountType": "ABS",
             "scaling": {
               "stat": "atk",
               "multiplier": 0.6
             },
             "repeat": {
               "count": 2
-            }
+            },
+            "amount": 10
           }
         }
       ]
@@ -1922,7 +1721,8 @@
       },
       "editorMeta": {
         "x": 414,
-        "y": 514
+        "y": 514,
+        "editState": "done"
       },
       "speed": 2,
       "target": {
@@ -1931,8 +1731,7 @@
         "selection": {
           "mode": "single",
           "candidateParts": [
-            "left_arm",
-            "right_arm"
+            "arm"
           ],
           "selectedParts": [],
           "selectCount": 1
@@ -1942,8 +1741,7 @@
         "selfPart": {
           "mode": "ANY",
           "parts": [
-            "left_arm",
-            "right_arm"
+            "arm"
           ],
           "mustBeUsable": true
         }
@@ -1951,20 +1749,13 @@
       "costs": {
         "ap": 1,
         "partSlot": {
-          "part": "right_arm",
+          "part": "arm",
           "slotCost": 1
         },
         "perTurnLimit": 1
       },
       "buffRefs": {
-        "apply": [
-          {
-            "buffId": "buff_bleed",
-            "target": "enemy",
-            "chance": 1,
-            "duration": 3
-          }
-        ],
+        "apply": [],
         "remove": []
       },
       "tags": [
@@ -2020,7 +1811,8 @@
       },
       "editorMeta": {
         "x": 614,
-        "y": 514
+        "y": 514,
+        "editState": "done"
       },
       "speed": 2,
       "target": {
@@ -2029,8 +1821,7 @@
         "selection": {
           "mode": "single",
           "candidateParts": [
-            "left_leg",
-            "right_leg"
+            "leg"
           ],
           "selectedParts": [],
           "selectCount": 1
@@ -2040,8 +1831,7 @@
         "selfPart": {
           "mode": "ANY",
           "parts": [
-            "left_arm",
-            "right_arm"
+            "arm"
           ],
           "mustBeUsable": true
         }
@@ -2049,20 +1839,13 @@
       "costs": {
         "ap": 1,
         "partSlot": {
-          "part": "right_leg",
+          "part": "leg",
           "slotCost": 1
         },
         "perTurnLimit": 1
       },
       "buffRefs": {
-        "apply": [
-          {
-            "buffId": "buff_bleed",
-            "target": "enemy",
-            "chance": 1,
-            "duration": 3
-          }
-        ],
+        "apply": [],
         "remove": []
       },
       "tags": [
@@ -2102,7 +1885,7 @@
       "id": "skill_hold_the_line_copy_1769790933469",
       "name": "顺手捡漏",
       "rarity": "Rare",
-      "description": "攻击回5点手部护甲（buff没有实现）",
+      "description": "造成10点伤害，回5点手部护甲",
       "prerequisites": [
         "skill_artery_slice_copy_1769788322314"
       ],
@@ -2118,7 +1901,8 @@
       },
       "editorMeta": {
         "x": 514,
-        "y": 714
+        "y": 714,
+        "editState": "done"
       },
       "speed": 2,
       "target": {
@@ -2127,10 +1911,7 @@
         "selection": {
           "mode": "single",
           "candidateParts": [
-            "head",
-            "chest",
-            "left_arm",
-            "right_arm"
+            "arm"
           ],
           "selectedParts": [],
           "selectCount": 6
@@ -2148,7 +1929,7 @@
       "costs": {
         "ap": 1,
         "partSlot": {
-          "part": "right_arm",
+          "part": "arm",
           "slotCost": 1
         },
         "perTurnLimit": 1
@@ -2156,16 +1937,13 @@
       "buffRefs": {
         "apply": [
           {
-            "buffId": "buff_shield",
+            "buffId": "new_buff_1771482673293",
             "target": "self",
             "chance": 1,
-            "duration": 1
-          },
-          {
-            "buffId": "buff_block",
-            "target": "self",
-            "chance": 1,
-            "duration": 1
+            "duration": 1,
+            "params": {
+              "ArmorGetVal": 5
+            }
           }
         ],
         "remove": []
@@ -2187,7 +1965,7 @@
       "actions": [
         {
           "id": "action_1",
-          "name": "Effect 1",
+          "name": "造成伤害",
           "target": {
             "binding": {
               "mode": "follow",
@@ -2195,9 +1973,9 @@
             }
           },
           "effect": {
-            "effectType": "DMG_ARMOR",
+            "effectType": "DMG_HP",
             "amountType": "ABS",
-            "amount": 20
+            "amount": 10
           }
         }
       ]
@@ -2206,7 +1984,7 @@
       "id": "skill_shockwave_copy_1769791396881",
       "name": "光头",
       "rarity": "Rare",
-      "description": "摘掉头盔，移除所有护甲，获得3AP",
+      "description": "摘掉头盔，移除所有头部护甲，获得3AP",
       "prerequisites": [
         "skill_artery_slice"
       ],
@@ -2222,31 +2000,20 @@
       },
       "editorMeta": {
         "x": 214,
-        "y": 714
+        "y": 714,
+        "editState": "done"
       },
       "speed": 2,
       "target": {
-        "subject": "SUBJECT_ENEMY",
-        "scope": "SCOPE_MULTI_PARTS",
+        "subject": "SUBJECT_SELF",
+        "scope": "SCOPE_PART",
         "selection": {
-          "mode": "multiple",
+          "mode": "single",
           "candidateParts": [
-            "head",
-            "chest",
-            "left_arm",
-            "right_arm",
-            "left_leg",
-            "right_leg"
+            "head"
           ],
-          "selectedParts": [
-            "head",
-            "chest",
-            "left_arm",
-            "right_arm",
-            "left_leg",
-            "right_leg"
-          ],
-          "selectCount": 6
+          "selectedParts": [],
+          "selectCount": 1
         }
       },
       "requirements": {
@@ -2260,21 +2027,10 @@
       },
       "costs": {
         "ap": 0,
-        "partSlot": {
-          "part": "chest",
-          "slotCost": 2
-        },
         "perTurnLimit": 1
       },
       "buffRefs": {
-        "apply": [
-          {
-            "buffId": "buff_slow",
-            "target": "enemy",
-            "chance": 1,
-            "duration": 2
-          }
-        ],
+        "apply": [],
         "remove": []
       },
       "tags": [
@@ -2295,7 +2051,7 @@
       "actions": [
         {
           "id": "action_1",
-          "name": "Effect 1",
+          "name": "移除护甲",
           "target": {
             "binding": {
               "mode": "follow",
@@ -2310,7 +2066,7 @@
         },
         {
           "id": "action_2",
-          "name": "Effect 2",
+          "name": "获得行动点",
           "target": {
             "binding": {
               "mode": "follow",
@@ -2346,7 +2102,8 @@
       },
       "editorMeta": {
         "x": 514,
-        "y": 914
+        "y": 914,
+        "editState": "editing"
       },
       "speed": 0,
       "target": {
@@ -2357,10 +2114,9 @@
           "candidateParts": [
             "head",
             "chest",
-            "left_arm",
-            "right_arm",
-            "left_leg",
-            "right_leg"
+            "abdomen",
+            "arm",
+            "leg"
           ],
           "selectedParts": [],
           "selectCount": 1
@@ -2447,7 +2203,8 @@
       },
       "editorMeta": {
         "x": 614,
-        "y": 914
+        "y": 914,
+        "editState": "done"
       },
       "speed": 2,
       "target": {
@@ -2458,20 +2215,18 @@
           "candidateParts": [
             "head",
             "chest",
-            "left_arm",
-            "right_arm",
-            "left_leg",
-            "right_leg"
+            "abdomen",
+            "arm",
+            "leg"
           ],
           "selectedParts": [
             "head",
             "chest",
-            "left_arm",
-            "right_arm",
-            "left_leg",
-            "right_leg"
+            "abdomen",
+            "arm",
+            "leg"
           ],
-          "selectCount": 6
+          "selectCount": 5
         }
       },
       "requirements": {
@@ -2486,26 +2241,13 @@
       "costs": {
         "ap": 2,
         "partSlot": {
-          "part": "right_arm",
+          "part": "arm",
           "slotCost": 1
         },
         "perTurnLimit": 1
       },
       "buffRefs": {
-        "apply": [
-          {
-            "buffId": "buff_shield",
-            "target": "self",
-            "chance": 1,
-            "duration": 1
-          },
-          {
-            "buffId": "buff_block",
-            "target": "self",
-            "chance": 1,
-            "duration": 1
-          }
-        ],
+        "apply": [],
         "remove": []
       },
       "tags": [
@@ -2525,7 +2267,7 @@
       "actions": [
         {
           "id": "action_1",
-          "name": "Effect 1",
+          "name": "增加护甲",
           "target": {
             "binding": {
               "mode": "follow",
@@ -2533,452 +2275,9 @@
             }
           },
           "effect": {
-            "effectType": "DMG_ARMOR",
+            "effectType": "ARMOR_ADD",
             "amountType": "ABS",
-            "amount": 20
-          }
-        }
-      ]
-    },
-    {
-      "id": "skill_shockwave_copy_1769791396881_copy_1769957170451",
-      "name": "装甲摊平",
-      "rarity": "Rare",
-      "description": "取消全部护甲，并重新平均分配到每个部位",
-      "prerequisites": [
-        "skill_artery_slice"
-      ],
-      "unlock": {
-        "cost": {
-          "kp": 3
-        },
-        "requirements": {},
-        "exclusives": [],
-        "grants": {
-          "type": "permanent"
-        }
-      },
-      "editorMeta": {
-        "x": 314,
-        "y": 714
-      },
-      "speed": 2,
-      "target": {
-        "subject": "SUBJECT_ENEMY",
-        "scope": "SCOPE_MULTI_PARTS",
-        "selection": {
-          "mode": "multiple",
-          "candidateParts": [
-            "head",
-            "chest",
-            "left_arm",
-            "right_arm",
-            "left_leg",
-            "right_leg"
-          ],
-          "selectedParts": [
-            "head",
-            "chest",
-            "left_arm",
-            "right_arm",
-            "left_leg",
-            "right_leg"
-          ],
-          "selectCount": 6
-        }
-      },
-      "requirements": {
-        "selfPart": {
-          "mode": "ANY",
-          "parts": [
-            "chest"
-          ],
-          "mustBeUsable": true
-        }
-      },
-      "costs": {
-        "ap": 1,
-        "partSlot": {
-          "part": "chest",
-          "slotCost": 2
-        },
-        "perTurnLimit": 1
-      },
-      "buffRefs": {
-        "apply": [
-          {
-            "buffId": "buff_slow",
-            "target": "enemy",
-            "chance": 1,
-            "duration": 2
-          }
-        ],
-        "remove": []
-      },
-      "tags": [
-        "DMG_HP",
-        "ABS",
-        "INSTANT",
-        "ONE_SHOT",
-        "UNCONDITIONAL",
-        "BUFF_APPLY",
-        "SUBJECT_ENEMY",
-        "SCOPE_MULTI_PARTS",
-        "RES_AP",
-        "RES_SLOT",
-        "REQ_SELF_PART",
-        "MELEE"
-      ],
-      "tagMeta": {},
-      "actions": [
-        {
-          "id": "action_1",
-          "name": "Effect 1",
-          "target": {
-            "binding": {
-              "mode": "follow",
-              "ref": "skillTarget"
-            }
-          },
-          "effect": {
-            "effectType": "DMG_ARMOR",
-            "amount": 100,
-            "amountType": "PCT_CURRENT"
-          }
-        },
-        {
-          "id": "action_2",
-          "name": "Effect 2",
-          "target": {
-            "binding": {
-              "mode": "follow",
-              "ref": "skillTarget"
-            }
-          },
-          "effect": {
-            "effectType": "AP_GAIN",
-            "amountType": "ABS",
-            "amount": 3
-          }
-        }
-      ]
-    },
-    {
-      "id": "skill_skull_cracker_copy_1769957925421",
-      "name": "腐蚀药水",
-      "rarity": "Uncommon",
-      "description": "对选定目标部位造成10点伤害，并添加中毒buff",
-      "prerequisites": [],
-      "unlock": {
-        "cost": {
-          "kp": 2
-        },
-        "requirements": {},
-        "exclusives": [],
-        "grants": {
-          "type": "permanent"
-        }
-      },
-      "editorMeta": {
-        "x": 2014,
-        "y": 514
-      },
-      "speed": -3,
-      "target": {
-        "subject": "SUBJECT_ENEMY",
-        "scope": "SCOPE_PART",
-        "selection": {
-          "mode": "single",
-          "candidateParts": [
-            "head"
-          ],
-          "selectedParts": [
-            "head"
-          ],
-          "selectCount": 1
-        }
-      },
-      "requirements": {
-        "selfPart": {
-          "mode": "ANY",
-          "parts": [
-            "left_arm",
-            "right_arm"
-          ],
-          "mustBeUsable": true
-        }
-      },
-      "costs": {
-        "ap": 1,
-        "partSlot": {
-          "part": "right_arm",
-          "slotCost": 2
-        },
-        "perTurnLimit": 1
-      },
-      "buffRefs": {
-        "apply": [],
-        "remove": []
-      },
-      "tags": [
-        "DMG_HP",
-        "DMG_ARMOR",
-        "SCALING",
-        "ABS",
-        "INSTANT",
-        "ONE_SHOT",
-        "UNCONDITIONAL",
-        "SUBJECT_ENEMY",
-        "SCOPE_PART",
-        "RES_AP",
-        "RES_SLOT",
-        "REQ_SELF_PART",
-        "MELEE"
-      ],
-      "tagMeta": {},
-      "actions": [
-        {
-          "id": "action_1",
-          "name": "Effect 1",
-          "target": {
-            "binding": {
-              "mode": "follow",
-              "ref": "skillTarget"
-            }
-          },
-          "effect": {
-            "effectType": "DMG_HP",
-            "amountType": "SCALING",
-            "scaling": {
-              "stat": "atk",
-              "multiplier": 1.5
-            }
-          }
-        },
-        {
-          "id": "action_2",
-          "name": "Effect 2",
-          "target": {
-            "binding": {
-              "mode": "follow",
-              "ref": "skillTarget"
-            }
-          },
-          "effect": {
-            "effectType": "DMG_ARMOR",
-            "amount": 30,
-            "amountType": "ABS",
-            "partOverride": {
-              "mode": "fixed",
-              "parts": [
-                "head"
-              ]
-            }
-          }
-        }
-      ]
-    },
-    {
-      "id": "skill_skull_cracker_copy_1769957925421_copy_1769961490300",
-      "name": "锯齿剑",
-      "rarity": "Uncommon",
-      "description": "对选定目标部位造成10点伤害，并添加流血buff",
-      "prerequisites": [
-        "skill_double_thrust"
-      ],
-      "unlock": {
-        "cost": {
-          "kp": 2
-        },
-        "requirements": {},
-        "exclusives": [],
-        "grants": {
-          "type": "permanent"
-        }
-      },
-      "editorMeta": {
-        "x": 1114,
-        "y": 514
-      },
-      "speed": -3,
-      "target": {
-        "subject": "SUBJECT_ENEMY",
-        "scope": "SCOPE_PART",
-        "selection": {
-          "mode": "single",
-          "candidateParts": [
-            "head"
-          ],
-          "selectedParts": [
-            "head"
-          ],
-          "selectCount": 1
-        }
-      },
-      "requirements": {
-        "selfPart": {
-          "mode": "ANY",
-          "parts": [
-            "left_arm",
-            "right_arm"
-          ],
-          "mustBeUsable": true
-        }
-      },
-      "costs": {
-        "ap": 1,
-        "partSlot": {
-          "part": "right_arm",
-          "slotCost": 2
-        },
-        "perTurnLimit": 1
-      },
-      "buffRefs": {
-        "apply": [],
-        "remove": []
-      },
-      "tags": [
-        "DMG_HP",
-        "DMG_ARMOR",
-        "SCALING",
-        "ABS",
-        "INSTANT",
-        "ONE_SHOT",
-        "UNCONDITIONAL",
-        "SUBJECT_ENEMY",
-        "SCOPE_PART",
-        "RES_AP",
-        "RES_SLOT",
-        "REQ_SELF_PART",
-        "MELEE"
-      ],
-      "tagMeta": {},
-      "actions": [
-        {
-          "id": "action_1",
-          "name": "Effect 1",
-          "target": {
-            "binding": {
-              "mode": "follow",
-              "ref": "skillTarget"
-            }
-          },
-          "effect": {
-            "effectType": "DMG_HP",
-            "amountType": "SCALING",
-            "scaling": {
-              "stat": "atk",
-              "multiplier": 1.5
-            }
-          }
-        },
-        {
-          "id": "action_2",
-          "name": "Effect 2",
-          "target": {
-            "binding": {
-              "mode": "follow",
-              "ref": "skillTarget"
-            }
-          },
-          "effect": {
-            "effectType": "DMG_ARMOR",
-            "amount": 30,
-            "amountType": "ABS",
-            "partOverride": {
-              "mode": "fixed",
-              "parts": [
-                "head"
-              ]
-            }
-          }
-        }
-      ]
-    },
-    {
-      "id": "skill_execute_copy_1769961767095",
-      "name": "松绑",
-      "rarity": "Epic",
-      "description": "随机移除对手指定部位的全部护甲",
-      "prerequisites": [
-        "skill_shockwave_copy_1770041956468"
-      ],
-      "unlock": {
-        "cost": {
-          "kp": 5
-        },
-        "requirements": {},
-        "exclusives": [],
-        "grants": {
-          "type": "permanent"
-        }
-      },
-      "editorMeta": {
-        "x": 1014,
-        "y": 914
-      },
-      "speed": 1,
-      "target": {
-        "subject": "SUBJECT_ENEMY",
-        "scope": "SCOPE_PART",
-        "selection": {
-          "mode": "single",
-          "candidateParts": [
-            "head",
-            "chest",
-            "left_arm",
-            "right_arm",
-            "left_leg",
-            "right_leg"
-          ],
-          "selectedParts": [],
-          "selectCount": 1
-        }
-      },
-      "requirements": {
-        "targetHpPercentBelow": 0.3
-      },
-      "costs": {
-        "ap": 3,
-        "partSlot": {
-          "part": "right_arm",
-          "slotCost": 2
-        },
-        "perTurnLimit": 1
-      },
-      "buffRefs": {
-        "apply": [],
-        "remove": []
-      },
-      "tags": [
-        "DMG_HP",
-        "PCT_CURRENT",
-        "INSTANT",
-        "ONE_SHOT",
-        "CONDITIONAL",
-        "SUBJECT_ENEMY",
-        "SCOPE_PART",
-        "RES_AP",
-        "RES_SLOT",
-        "REQ_SELF_PART",
-        "MELEE"
-      ],
-      "tagMeta": {},
-      "actions": [
-        {
-          "id": "action_1",
-          "name": "Effect 1",
-          "target": {
-            "binding": {
-              "mode": "follow",
-              "ref": "skillTarget"
-            }
-          },
-          "effect": {
-            "effectType": "DMG_HP",
-            "amount": 3,
-            "amountType": "PCT_CURRENT",
-            "note": "按当前 HP 百分比造成伤害；引擎实现时可映射为 TRUE/PIERCE 以避免护甲干扰。"
+            "amount": 5
           }
         }
       ]
@@ -2987,9 +2286,10 @@
       "id": "skill_shockwave_copy_1770041956468",
       "name": "后撤步",
       "rarity": "Rare",
-      "description": "扣除5点腿部护甲，获得一层免伤\n【问题：需要补充免伤buff】",
+      "description": "扣除5点腿部护甲，获得一层免伤",
       "prerequisites": [
-        "skill_skull_cracker_copy_1769957925421_copy_1769961490300"
+        "skill_skull_cracker_copy_1769957925421_copy_1769961490300",
+        "skill_1771769351059"
       ],
       "unlock": {
         "cost": {
@@ -3003,31 +2303,20 @@
       },
       "editorMeta": {
         "x": 1014,
-        "y": 714
+        "y": 714,
+        "editState": "done"
       },
       "speed": 8,
       "target": {
-        "subject": "SUBJECT_ENEMY",
-        "scope": "SCOPE_MULTI_PARTS",
+        "subject": "SUBJECT_SELF",
+        "scope": "SCOPE_PART",
         "selection": {
-          "mode": "multiple",
+          "mode": "single",
           "candidateParts": [
-            "head",
-            "chest",
-            "left_arm",
-            "right_arm",
-            "left_leg",
-            "right_leg"
+            "leg"
           ],
-          "selectedParts": [
-            "head",
-            "chest",
-            "left_arm",
-            "right_arm",
-            "left_leg",
-            "right_leg"
-          ],
-          "selectCount": 6
+          "selectedParts": [],
+          "selectCount": 5
         }
       },
       "requirements": {
@@ -3050,10 +2339,14 @@
       "buffRefs": {
         "apply": [
           {
-            "buffId": "buff_slow",
+            "buffId": "new_buff_1771481773827",
             "target": "enemy",
             "chance": 1,
-            "duration": 2
+            "duration": 2,
+            "params": {
+              "buffDuration": 2,
+              "stackNum": 1
+            }
           }
         ],
         "remove": []
@@ -3076,7 +2369,7 @@
       "actions": [
         {
           "id": "action_1",
-          "name": "Effect 1",
+          "name": "扣除护甲",
           "target": {
             "binding": {
               "mode": "follow",
@@ -3111,7 +2404,8 @@
       },
       "editorMeta": {
         "x": 1014,
-        "y": 1114
+        "y": 1114,
+        "editState": "done"
       },
       "speed": 10,
       "target": {
@@ -3122,20 +2416,12 @@
           "candidateParts": [
             "head",
             "chest",
-            "left_arm",
-            "right_arm",
-            "left_leg",
-            "right_leg"
+            "abdomen",
+            "arm",
+            "leg"
           ],
-          "selectedParts": [
-            "head",
-            "chest",
-            "left_arm",
-            "right_arm",
-            "left_leg",
-            "right_leg"
-          ],
-          "selectCount": 6
+          "selectedParts": [],
+          "selectCount": 1
         }
       },
       "requirements": {
@@ -3148,7 +2434,7 @@
         }
       },
       "costs": {
-        "ap": 5,
+        "ap": 2,
         "partSlot": {
           "part": "chest",
           "slotCost": 3
@@ -3158,16 +2444,11 @@
       "buffRefs": {
         "apply": [
           {
-            "buffId": "buff_shield",
-            "target": "self",
-            "chance": 1,
-            "duration": 1
-          },
-          {
-            "buffId": "buff_block",
-            "target": "self",
-            "chance": 1,
-            "duration": 1
+            "buffId": "new_buff_1771485482007",
+            "target": "enemy",
+            "params": {
+              "apReduceVal": 1
+            }
           }
         ],
         "remove": []
@@ -3192,7 +2473,7 @@
       "id": "skill_skull_cracker_copy_1769957925421_copy_1769961490300_copy_1770042860426",
       "name": "转进如风",
       "rarity": "Uncommon",
-      "description": "所有技能的基础速度+2\n【问题：需要一个基础加速buff】",
+      "description": "所有技能的基础速度+2",
       "prerequisites": [
         "skill_double_thrust"
       ],
@@ -3208,7 +2489,8 @@
       },
       "editorMeta": {
         "x": 1314,
-        "y": 514
+        "y": 514,
+        "editState": "done"
       },
       "speed": -3,
       "target": {
@@ -3229,8 +2511,7 @@
         "selfPart": {
           "mode": "ANY",
           "parts": [
-            "left_arm",
-            "right_arm"
+            "arm"
           ],
           "mustBeUsable": true
         }
@@ -3238,13 +2519,21 @@
       "costs": {
         "ap": 1,
         "partSlot": {
-          "part": "right_arm",
+          "part": "arm",
           "slotCost": 2
         },
         "perTurnLimit": 1
       },
       "buffRefs": {
-        "apply": [],
+        "apply": [
+          {
+            "buffId": "new_buff_1771487521271",
+            "target": "self",
+            "params": {
+              "speedUpVal": 2
+            }
+          }
+        ],
         "remove": []
       },
       "tags": [
@@ -3255,6 +2544,77 @@
         "INSTANT",
         "ONE_SHOT",
         "UNCONDITIONAL",
+        "SUBJECT_ENEMY",
+        "SCOPE_PART",
+        "RES_AP",
+        "RES_SLOT",
+        "REQ_SELF_PART",
+        "MELEE"
+      ],
+      "tagMeta": {},
+      "actions": []
+    },
+    {
+      "id": "skill_execute_copy_1769961767095",
+      "name": "松绑",
+      "rarity": "Epic",
+      "description": "移除对手指定部位的全部护甲",
+      "prerequisites": [
+        "skill_shockwave_copy_1770041956468"
+      ],
+      "unlock": {
+        "cost": {
+          "kp": 5
+        },
+        "requirements": {},
+        "exclusives": [],
+        "grants": {
+          "type": "permanent"
+        }
+      },
+      "editorMeta": {
+        "x": 1014,
+        "y": 914,
+        "editState": "done"
+      },
+      "speed": 1,
+      "target": {
+        "subject": "SUBJECT_ENEMY",
+        "scope": "SCOPE_PART",
+        "selection": {
+          "mode": "single",
+          "candidateParts": [
+            "head",
+            "chest",
+            "abdomen",
+            "arm",
+            "leg"
+          ],
+          "selectedParts": [],
+          "selectCount": 1
+        }
+      },
+      "requirements": {
+        "targetHpPercentBelow": 0.3
+      },
+      "costs": {
+        "ap": 3,
+        "partSlot": {
+          "part": "arm",
+          "slotCost": 2
+        },
+        "perTurnLimit": 1
+      },
+      "buffRefs": {
+        "apply": [],
+        "remove": []
+      },
+      "tags": [
+        "DMG_HP",
+        "PCT_CURRENT",
+        "INSTANT",
+        "ONE_SHOT",
+        "CONDITIONAL",
         "SUBJECT_ENEMY",
         "SCOPE_PART",
         "RES_AP",
@@ -3274,33 +2634,10 @@
             }
           },
           "effect": {
-            "effectType": "DMG_HP",
-            "amountType": "SCALING",
-            "scaling": {
-              "stat": "atk",
-              "multiplier": 1.5
-            }
-          }
-        },
-        {
-          "id": "action_2",
-          "name": "Effect 2",
-          "target": {
-            "binding": {
-              "mode": "follow",
-              "ref": "skillTarget"
-            }
-          },
-          "effect": {
             "effectType": "DMG_ARMOR",
-            "amount": 30,
-            "amountType": "ABS",
-            "partOverride": {
-              "mode": "fixed",
-              "parts": [
-                "head"
-              ]
-            }
+            "amount": 100,
+            "amountType": "PCT_CURRENT",
+            "note": "按当前 HP 百分比造成伤害；引擎实现时可映射为 TRUE/PIERCE 以避免护甲干扰。"
           }
         }
       ]
@@ -3311,7 +2648,8 @@
       "rarity": "Rare",
       "description": "使对方获得buff，撕裂伤口，在撕裂伤口情况下，每次行动，流血+1\n【问题：需要补充流血buff】",
       "prerequisites": [
-        "skill_skull_cracker_copy_1769957925421_copy_1769961490300"
+        "skill_skull_cracker_copy_1769957925421_copy_1769961490300",
+        "skill_1771769351059"
       ],
       "unlock": {
         "cost": {
@@ -3325,7 +2663,8 @@
       },
       "editorMeta": {
         "x": 1114,
-        "y": 714
+        "y": 714,
+        "editState": "editing"
       },
       "speed": 8,
       "target": {
@@ -3336,20 +2675,18 @@
           "candidateParts": [
             "head",
             "chest",
-            "left_arm",
-            "right_arm",
-            "left_leg",
-            "right_leg"
+            "abdomen",
+            "arm",
+            "leg"
           ],
           "selectedParts": [
             "head",
             "chest",
-            "left_arm",
-            "right_arm",
-            "left_leg",
-            "right_leg"
+            "abdomen",
+            "arm",
+            "leg"
           ],
-          "selectCount": 6
+          "selectCount": 5
         }
       },
       "requirements": {
@@ -3433,7 +2770,8 @@
       },
       "editorMeta": {
         "x": 1114,
-        "y": 914
+        "y": 914,
+        "editState": "editing"
       },
       "speed": 1,
       "target": {
@@ -3444,10 +2782,9 @@
           "candidateParts": [
             "head",
             "chest",
-            "left_arm",
-            "right_arm",
-            "left_leg",
-            "right_leg"
+            "abdomen",
+            "arm",
+            "leg"
           ],
           "selectedParts": [],
           "selectCount": 1
@@ -3459,7 +2796,7 @@
       "costs": {
         "ap": 3,
         "partSlot": {
-          "part": "right_arm",
+          "part": "arm",
           "slotCost": 2
         },
         "perTurnLimit": 1
@@ -3521,7 +2858,8 @@
       },
       "editorMeta": {
         "x": 1214,
-        "y": 914
+        "y": 914,
+        "editState": "editing"
       },
       "speed": 1,
       "target": {
@@ -3532,10 +2870,9 @@
           "candidateParts": [
             "head",
             "chest",
-            "left_arm",
-            "right_arm",
-            "left_leg",
-            "right_leg"
+            "abdomen",
+            "arm",
+            "leg"
           ],
           "selectedParts": [],
           "selectCount": 1
@@ -3547,7 +2884,7 @@
       "costs": {
         "ap": 3,
         "partSlot": {
-          "part": "right_arm",
+          "part": "arm",
           "slotCost": 2
         },
         "perTurnLimit": 1
@@ -3583,7 +2920,7 @@
           "effect": {
             "effectType": "DMG_HP",
             "amount": 3,
-            "amountType": "PCT_CURRENT",
+            "amountType": "ABS",
             "note": "按当前 HP 百分比造成伤害；引擎实现时可映射为 TRUE/PIERCE 以避免护甲干扰。"
           }
         }
@@ -3609,7 +2946,8 @@
       },
       "editorMeta": {
         "x": 1314,
-        "y": 714
+        "y": 714,
+        "editState": "done"
       },
       "speed": 4,
       "target": {
@@ -3620,10 +2958,9 @@
           "candidateParts": [
             "head",
             "chest",
-            "left_arm",
-            "right_arm",
-            "left_leg",
-            "right_leg"
+            "abdomen",
+            "arm",
+            "leg"
           ],
           "selectedParts": [],
           "selectCount": 1
@@ -3633,8 +2970,7 @@
         "selfPart": {
           "mode": "ANY",
           "parts": [
-            "left_arm",
-            "right_arm"
+            "arm"
           ],
           "mustBeUsable": true
         }
@@ -3642,7 +2978,7 @@
       "costs": {
         "ap": 1,
         "partSlot": {
-          "part": "right_arm",
+          "part": "arm",
           "slotCost": 1
         },
         "perTurnLimit": 1
@@ -3682,10 +3018,9 @@
                 "candidateParts": [
                   "head",
                   "chest",
-                  "left_arm",
-                  "right_arm",
-                  "left_leg",
-                  "right_leg"
+                  "abdomen",
+                  "arm",
+                  "leg"
                 ],
                 "selectedParts": [],
                 "selectCount": 1
@@ -3739,10 +3074,9 @@
           "candidateParts": [
             "head",
             "chest",
-            "left_arm",
-            "right_arm",
-            "left_leg",
-            "right_leg"
+            "abdomen",
+            "arm",
+            "leg"
           ],
           "selectedParts": [],
           "selectCount": 1
@@ -3757,7 +3091,8 @@
       },
       "editorMeta": {
         "x": 1314,
-        "y": 914
+        "y": 914,
+        "editState": "editing"
       },
       "description": "获得buff，每当扣除hp，获得攻击加成",
       "tags": [],
@@ -3783,10 +3118,9 @@
           "candidateParts": [
             "head",
             "chest",
-            "left_arm",
-            "right_arm",
-            "left_leg",
-            "right_leg"
+            "abdomen",
+            "arm",
+            "leg"
           ],
           "selectedParts": [],
           "selectCount": 1
@@ -3801,7 +3135,8 @@
       },
       "editorMeta": {
         "x": 1314,
-        "y": 1114
+        "y": 1114,
+        "editState": "done"
       },
       "description": "消耗2点血，对指定部位造成20点伤害",
       "tags": [],
@@ -3811,7 +3146,37 @@
       "actions": [
         {
           "id": "action_1",
-          "name": "Effect 1",
+          "name": "自己掉血",
+          "target": {
+            "binding": {
+              "mode": "explicit"
+            },
+            "spec": {
+              "subject": "SUBJECT_SELF",
+              "scope": "SCOPE_ENTITY",
+              "selection": {
+                "mode": "single",
+                "candidateParts": [
+                  "head",
+                  "chest",
+                  "abdomen",
+                  "arm",
+                  "leg"
+                ],
+                "selectedParts": [],
+                "selectCount": 1
+              }
+            }
+          },
+          "effect": {
+            "effectType": "DMG_HP",
+            "amountType": "ABS",
+            "amount": 2
+          }
+        },
+        {
+          "id": "action_2",
+          "name": "伤害敌人",
           "target": {
             "binding": {
               "mode": "follow",
@@ -3821,10 +3186,78 @@
           "effect": {
             "effectType": "DMG_HP",
             "amountType": "ABS",
-            "amount": 0
+            "amount": 20
           }
         }
       ]
+    },
+    {
+      "id": "skill_1771769351059",
+      "name": "锯齿剑",
+      "rarity": "Uncommon",
+      "costs": {
+        "ap": 1,
+        "perTurnLimit": 1
+      },
+      "speed": 0,
+      "target": {
+        "subject": "SUBJECT_ENEMY",
+        "scope": "SCOPE_PART",
+        "selection": {
+          "mode": "single",
+          "candidateParts": [
+            "head",
+            "chest",
+            "abdomen",
+            "arm",
+            "leg"
+          ],
+          "selectedParts": [],
+          "selectCount": 1
+        }
+      },
+      "prerequisites": [
+        "skill_double_thrust"
+      ],
+      "buffRefs": {
+        "apply": [
+          {
+            "buffId": "buff_bleed",
+            "target": "enemy",
+            "params": {
+              "buff_duration": 2,
+              "maxVal": 5
+            }
+          }
+        ],
+        "remove": []
+      },
+      "actions": [
+        {
+          "id": "action_1",
+          "name": "伤害",
+          "target": {
+            "binding": {
+              "mode": "follow",
+              "ref": "skillTarget"
+            }
+          },
+          "effect": {
+            "effectType": "DMG_HP",
+            "amountType": "ABS",
+            "amount": 5
+          }
+        }
+      ],
+      "editorMeta": {
+        "x": 1114,
+        "y": 514
+      },
+      "description": "",
+      "tags": [],
+      "tagMeta": {},
+      "unlock": {},
+      "requirements": {}
     }
   ]
 }

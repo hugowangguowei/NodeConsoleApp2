@@ -516,7 +516,7 @@
 
                                     <div class="hr"></div>
 
-                                 <div v-if="ef.action==='DAMAGE_HP' || ef.action==='DAMAGE_ARMOR' || ef.action==='HEAL_HP' || ef.action==='HEAL_ARMOR'">
+                                  <div v-if="ef.action==='DAMAGE_HP' || ef.action==='DAMAGE_ARMOR' || ef.action==='HEAL_HP' || ef.action==='HEAL_ARMOR' || ef.action==='AP_COST_ADD' || ef.action==='AP_COST_REDUCE'">
                                         <div class="row">
                                             <div class="col">
                                              <div class="small">payload.value（数值/公式）</div>
@@ -1192,7 +1192,7 @@
 					if (!ef.payload || typeof ef.payload !== 'object') ef.payload = {};
 
 					// minimal defaults based on action
-                    if (ef.action === 'DAMAGE_HP' || ef.action === 'DAMAGE_ARMOR' || ef.action === 'HEAL_HP' || ef.action === 'HEAL_ARMOR') {
+                           if (ef.action === 'DAMAGE_HP' || ef.action === 'DAMAGE_ARMOR' || ef.action === 'HEAL_HP' || ef.action === 'HEAL_ARMOR' || ef.action === 'AP_COST_ADD' || ef.action === 'AP_COST_REDUCE') {
                         ef.payload.value = (ef.payload.value !== undefined) ? ef.payload.value : 1;
                         ef.payload.valueType = ef.payload.valueType || this.enums.valueTypes[0];
                  } else if (ef.action === 'SKIP_TURN' || ef.action === 'PREVENT_DAMAGE_HP' || ef.action === 'PREVENT_DAMAGE_ARMOR') {
