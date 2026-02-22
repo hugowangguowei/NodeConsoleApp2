@@ -13,10 +13,8 @@
       "head": { "current": 0, "max": 0, "weakness": 1.5 },
       "chest": { "current": 5, "max": 5, "weakness": 1.0 },
       "abdomen": { "current": 0, "max": 0, "weakness": 1.2 },
-      "left_arm": { "current": 0, "max": 0, "weakness": 1.0 },
-      "right_arm": { "current": 0, "max": 0, "weakness": 1.0 },
-      "left_leg": { "current": 0, "max": 0, "weakness": 1.0 },
-      "right_leg": { "current": 0, "max": 0, "weakness": 1.0 }
+      "arm": { "current": 0, "max": 0, "weakness": 1.0 },
+      "leg": { "current": 0, "max": 0, "weakness": 1.0 }
     },
     "dropTable": "drop_goblin_common"
   },
@@ -29,10 +27,8 @@
       "head": { "current": 10, "max": 10, "weakness": 1.2 },
       "chest": { "current": 20, "max": 20, "weakness": 0.8 },
       "abdomen": { "current": 10, "max": 10, "weakness": 1.0 },
-      "left_arm": { "current": 5, "max": 5, "weakness": 1.0 },
-      "right_arm": { "current": 5, "max": 5, "weakness": 1.0 },
-      "left_leg": { "current": 5, "max": 5, "weakness": 1.0 },
-      "right_leg": { "current": 5, "max": 5, "weakness": 1.0 }
+      "arm": { "current": 10, "max": 10, "weakness": 1.0 },
+      "leg": { "current": 10, "max": 10, "weakness": 1.0 }
     }
   },
   "goblin_01": {
@@ -46,13 +42,11 @@
     },
     "skills": ["skill_bite"],
     "bodyParts": {
-        "head": { "current": 1, "max": 1, "weakness": 1.5 },
-        "chest": { "current": 2, "max": 2, "weakness": 1.0 },
-        "abdomen": { "current": 1, "max": 1, "weakness": 1.0 },
-        "left_arm": { "current": 0, "max": 0, "weakness": 1.0 },
-        "right_arm": { "current": 0, "max": 0, "weakness": 1.0 },
-        "left_leg": { "current": 0, "max": 0, "weakness": 1.0 },
-        "right_leg": { "current": 0, "max": 0, "weakness": 1.0 }
+        "head": { "current": 1, "max": 10, "weakness": 1.5 },
+        "chest": { "current": 2, "max": 20, "weakness": 1.0 },
+        "abdomen": { "current": 1, "max": 10, "weakness": 1.0 },
+        "arm": { "current": 0, "max": 10, "weakness": 1.0 },
+        "leg": { "current": 0, "max": 10, "weakness": 1.0 }
     }
   },
   "orc_berserker_lvl5": {
@@ -70,10 +64,8 @@
       "head": { "max": 0, "current": 0, "weakness": 1.5 },
       "chest": { "max": 50, "current": 50, "weakness": 0.8 },
       "abdomen": { "max": 20, "current": 20, "weakness": 1.0 },
-      "left_arm": { "max": 10, "current": 10, "weakness": 1.0 },
-      "right_arm": { "max": 10, "current": 10, "weakness": 1.0 },
-      "left_leg": { "max": 10, "current": 10, "weakness": 1.0 },
-      "right_leg": { "max": 10, "current": 10, "weakness": 1.0 }
+      "arm": { "max": 20, "current": 20, "weakness": 1.0 },
+      "leg": { "max": 20, "current": 20, "weakness": 1.0 }
     },
     "skills": ["skill_heavy_smash", "skill_rage", "skill_cleave"]
   },
@@ -92,10 +84,8 @@
       "head": { "max": 5, "current": 5, "weakness": 1.2 },
       "chest": { "max": 10, "current": 10, "weakness": 1.0 },
       "abdomen": { "max": 5, "current": 5, "weakness": 1.2 },
-      "left_arm": { "max": 0, "current": 0, "weakness": 1.0 },
-      "right_arm": { "max": 0, "current": 0, "weakness": 1.0 },
-      "left_leg": { "max": 0, "current": 0, "weakness": 0.9 },
-      "right_leg": { "max": 0, "current": 0, "weakness": 0.9 }
+      "arm": { "max": 0, "current": 0, "weakness": 1.0 },
+      "leg": { "max": 0, "current": 0, "weakness": 0.9 }
     },
     "skills": ["skill_ankle_bite", "skill_throw_stone", "skill_escape"]
   },
@@ -114,10 +104,8 @@
       "head": { "max": 20, "current": 20, "weakness": 1.1 },
       "chest": { "max": 40, "current": 40, "weakness": 0.9 },
       "abdomen": { "max": 20, "current": 20, "weakness": 1.0 },
-      "left_arm": { "max": 30, "current": 30, "weakness": 0.5 },
-      "right_arm": { "max": 10, "current": 10, "weakness": 1.0 },
-      "left_leg": { "max": 15, "current": 15, "weakness": 1.0 },
-      "right_leg": { "max": 15, "current": 15, "weakness": 1.0 }
+      "arm": { "max": 40, "current": 40, "weakness": 0.75 },
+      "leg": { "max": 30, "current": 30, "weakness": 1.0 }
     },
     "skills": ["skill_shield_bash", "skill_bone_repair"]
   }

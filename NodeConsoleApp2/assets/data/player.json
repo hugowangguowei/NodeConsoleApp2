@@ -9,19 +9,20 @@
         },
         "skills": ["skill_slash", "skill_heal", "skill_fireball"],
         "bodyParts": {
-            "head":       { "current": 0, "max": 0, "weakness": 1.5 },
-            "chest":      { "current": 10, "max": 10, "weakness": 1.0 },
-            "abdomen":    { "current": 0, "max": 0, "weakness": 1.1 },
-            "left_arm":   { "current": 0, "max": 0, "weakness": 1.0 },
-            "right_arm":  { "current": 0, "max": 0, "weakness": 1.0 },
-            "left_leg":   { "current": 20, "max": 20, "weakness": 1.0 },
-            "right_leg":  { "current": 0, "max": 0, "weakness": 1.0 }
+            "head":       { "current": 0, "max": 20, "weakness": 1.5 },
+            "chest":      { "current": 10, "max": 20, "weakness": 1.0 },
+            "abdomen":    { "current": 0, "max": 20, "weakness": 1.1 },
+            "arm":        { "current": 0, "max": 20, "weakness": 1.0 },
+            "leg":        { "current": 20, "max": 20, "weakness": 1.0 }
         },
-        "equipment": {
-            "weapon": "wp_sword_01",
-            "head": "helm_01",
-            "chest": "plate_01"
-        },
+      "equipment": {
+        "weapon": null,
+        "head": null,
+        "chest": null,
+        "abdomen": null,
+        "arm": null,
+        "leg": null
+      },
         "inventory": []
     }
 }

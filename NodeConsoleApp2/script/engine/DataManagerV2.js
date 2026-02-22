@@ -100,7 +100,7 @@ class DataManager {
             : {
                 stats: { hp: 100, maxHp: 100, ap: 4, maxAp: 6, speed: 10 },
                 skills: ['skill_slash', 'skill_heal', 'skill_fireball'],
-                equipment: { weapon: null, armor: { head: null, chest: null } },
+                equipment: { weapon: null, head: null, chest: null, abdomen: null, arm: null, leg: null },
                 inventory: []
             };
 
@@ -135,13 +135,28 @@ class DataManager {
 
     async loadConfigs() {
         try {
-            // Try to fetch JSON files
+            // Try to fetch JSON files via data sources config
             // Note: This requires the app to be served via HTTP/HTTPS. 
             // If running from file://, this will likely fail and fall back to mock data.
-            const basePath = '../assets/data/'; 
-            
-            const fetchConfig = async (filename) => {
-                const url = basePath + filename;
+            const configUrl = (typeof window !== 'undefined' && window.DATA_CONFIG_URL)
+                ? window.DATA_CONFIG_URL
+                : '../assets/data/config.json';
+
+            const configResponse = await fetch(configUrl);
+            if (!configResponse.ok) {
+                throw new Error(`HTTP error ${configResponse.status} loading ${configUrl}`);
+            }
+
+            const dataSources = await configResponse.json();
+            const basePath = dataSources.basePath || '';
+            const sources = dataSources.sources || {};
+
+            const fetchConfig = async (sourceKey) => {
+                const filename = sources[sourceKey];
+                if (!filename) {
+                    throw new Error(`Missing source path for ${sourceKey}`);
+                }
+                const url = basePath ? `${basePath}${filename}` : filename;
                 const response = await fetch(url);
                 if (!response.ok) {
                     throw new Error(`HTTP error ${response.status} loading ${url}`);
@@ -150,12 +165,12 @@ class DataManager {
             };
 
             const [skills, items, enemies, levels, player, buffs] = await Promise.all([
-                fetchConfig('skills.json'),
-                fetchConfig('items.json'),
-                fetchConfig('enemies.json'),
-                fetchConfig('levels.json'),
-                fetchConfig('player.json'),
-                fetchConfig('buffs.json')
+                fetchConfig('skills'),
+                fetchConfig('items'),
+                fetchConfig('enemies'),
+                fetchConfig('levels'),
+                fetchConfig('player'),
+                fetchConfig('buffs')
             ]);
             
             // Validate basic structure
@@ -186,7 +201,7 @@ class DataManager {
                 default: {
                     stats: { hp: 100, maxHp: 100, ap: 4, maxAp: 6, speed: 10 },
                     skills: ['skill_slash', 'skill_heal', 'skill_fireball'],
-                    equipment: { weapon: null, armor: { head: null, chest: null } },
+                    equipment: { weapon: null, head: null, chest: null, abdomen: null, arm: null, leg: null },
                     inventory: []
                 }
             },

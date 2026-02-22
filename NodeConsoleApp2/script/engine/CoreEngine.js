@@ -181,8 +181,8 @@ class CoreEngine {
     }
 
     initializePlayerBodyParts(playerData) {
-        // 1. Define standard 7 body parts
-        const partNames = ['head', 'chest', 'abdomen', 'left_arm', 'right_arm', 'left_leg', 'right_leg'];
+        // 1. Define standard 5 body parts
+        const partNames = ['head', 'chest', 'abdomen', 'arm', 'leg'];
         let bodyParts = {};
 
         // Use defined bodyParts if available, deep copy to avoid mutation

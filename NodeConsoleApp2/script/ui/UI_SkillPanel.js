@@ -31,6 +31,9 @@ export default class UI_SkillPanel {
         this.detailMeta = document.getElementById('detailMeta');
         this.detailEffect = document.getElementById('detailEffect');
         this.detailTarget = document.getElementById('detailTarget');
+        this.detailCosts = document.getElementById('detailCosts');
+        this.detailRequirements = document.getElementById('detailRequirements');
+        this.detailBuffs = document.getElementById('detailBuffs');
         this.detailTip = document.getElementById('detailTip');
         this.detailTags = document.getElementById('detailTags');
 
@@ -204,25 +207,14 @@ export default class UI_SkillPanel {
     initMatrixRows(enemyData) {
         if (!this.matrixContainer) return;
         const rows = this.matrixContainer.querySelectorAll('.matrix-row');
-        
-        // Data Design keys: head, chest, abdomen, left_arm, right_arm, left_leg, right_leg
-        
+
         rows.forEach(row => {
             const part = row.dataset.rowPart;
             if (part === 'global') return; // Always valid
 
-            // Check Enemy
-            const hasEnemyPart = enemyData.bodyParts && enemyData.bodyParts[part] && (enemyData.bodyParts[part].max > 0 || enemyData.bodyParts[part].maxHp > 0); 
-            // Note: Some enemies might have part but 0 armor max, but still hit-able? 
-            // Usually if part exists in bodyParts, it is valid. 
-            // Data Design says: "For slimes.. max set to 0, UI should hide."
-            // So if max is 0, we consider it missing/hidden? Or just unarmored?
-            // Let's assume max > 0 means armor exists, but part always exists structurally unless explicitly null?
-            // Actually Data Design says: "UI Layer should identify and hide that part".
-            // Let's check if max > 0 logic is desired, or if we need a separate flag.
-            // For now, let's treat `max > 0` as "visible part".
-            
-            const isVisible = enemyData.bodyParts && enemyData.bodyParts[part] && enemyData.bodyParts[part].max > 0;
+            const partData = enemyData.bodyParts && enemyData.bodyParts[part] ? enemyData.bodyParts[part] : null;
+            const maxVal = partData ? (partData.max !== undefined ? partData.max : (partData.maxArmor || 0)) : 0;
+            const isVisible = maxVal > 0;
 
             // We only disable the Enemy Zone if part is missing
             const enemyZone = row.querySelector('.enemy-zone');
@@ -257,8 +249,8 @@ export default class UI_SkillPanel {
             
             btn.dataset.id = skill.id;
             // Store data for tooltip/sorting
-            btn.dataset.cost = skill.cost;
-            btn.dataset.target = skill.targetType; // SINGLE, AOE, SELF...
+            btn.dataset.cost = this.getSkillApCost(skill);
+            btn.dataset.target = this.formatTargetLabel(skill);
 
             btn.textContent = skill.icon || 'Skill';
             
@@ -283,7 +275,7 @@ export default class UI_SkillPanel {
             const skill = this.cachedSkills.find(s => s.id === btn.dataset.id);
             if (!skill) return;
 
-            if (skill.cost > remainingAP) {
+            if (this.getSkillApCost(skill) > remainingAP) {
                 btn.classList.add('disabled');
                 btn.disabled = true;
             } else {
@@ -364,17 +356,11 @@ export default class UI_SkillPanel {
         if (!this.selectedSkill) return;
 
         const s = this.selectedSkill;
-        // Logic Alignment with Data:
-        // Skills have 'type' (DAMAGE, HEAL, BUFF) and 'targetType' (SINGLE_PART, GLOBAL, AOE)
-        
-        let targetZones = [];
-        // Determine Friendly vs Hostile based on Type
-        // Simply: HEAL/BUFF/DEFENSE -> Friendly (Self Zone)
-        // DAMAGE/DEBUFF/OFFENSE -> Hostile (Enemy Zone)
-        const isFriendly = ['HEAL', 'BUFF', 'DEFENSE', 'SUPPORT'].includes(s.type);
+        const targetInfo = this.getSkillTarget(s);
+        const isFriendly = targetInfo.subject === 'SUBJECT_SELF';
         const targetZoneClass = isFriendly ? 'self-zone' : 'enemy-zone';
-        
-        const isGlobal = (s.targetType === 'GLOBAL' || s.targetType === 'AOE');
+        const isGlobal = targetInfo.scope === 'SCOPE_ENTITY' || targetInfo.scope === 'SCOPE_MULTI_PARTS';
+        const fixedPart = targetInfo.selection && targetInfo.selection.part ? targetInfo.selection.part : null;
 
         const rows = this.matrixContainer.querySelectorAll('.matrix-row');
         rows.forEach(row => {
@@ -386,6 +372,7 @@ export default class UI_SkillPanel {
             } else {
                 // If Part Skill -> Skip Global Row
                 if (rowPart === 'global') return;
+                if (fixedPart && rowPart !== fixedPart) return;
             }
 
             // Check if row is disabled (Missing Part)
@@ -415,8 +402,91 @@ export default class UI_SkillPanel {
         if (!skill) return;
 
         if (this.detailName) this.detailName.textContent = skill.name;
-        if (this.detailMeta) this.detailMeta.textContent = `${skill.type} · AP ${skill.cost}`;
+        if (this.detailMeta) this.detailMeta.textContent = `${skill.type} · AP ${this.getSkillApCost(skill)}`;
         if (this.detailEffect) this.detailEffect.innerHTML = `<strong>效果</strong>：${skill.description || '无'}`;
-        // ... tags ...
+        if (this.detailTarget) this.detailTarget.innerHTML = `<strong>范围</strong>：${this.formatTargetText(skill)}`;
+        if (this.detailCosts) this.detailCosts.innerHTML = `<strong>消耗</strong>：${this.formatCostText(skill)}`;
+        if (this.detailRequirements) this.detailRequirements.innerHTML = `<strong>条件</strong>：${this.formatRequirementText(skill)}`;
+        if (this.detailBuffs) this.detailBuffs.innerHTML = `<strong>Buff</strong>：${this.formatBuffRefsText(skill)}`;
+    }
+
+    getSkillApCost(skill) {
+        if (skill.costs && skill.costs.ap !== undefined) return skill.costs.ap;
+        if (skill.cost !== undefined) return skill.cost;
+        return 0;
+    }
+
+    getSkillTarget(skill) {
+        if (skill.target) {
+            return {
+                subject: skill.target.subject || 'SUBJECT_ENEMY',
+                scope: skill.target.scope || 'SCOPE_PART',
+                selection: skill.target.selection || {}
+            };
+        }
+
+        const targetType = skill.targetType;
+        if (targetType === 'SELF') return { subject: 'SUBJECT_SELF', scope: 'SCOPE_ENTITY', selection: {} };
+        if (targetType === 'SELF_PARTS') return { subject: 'SUBJECT_SELF', scope: 'SCOPE_MULTI_PARTS', selection: { mode: 'SELECT_ALL_PARTS' } };
+        if (targetType === 'GLOBAL' || targetType === 'AOE' || targetType === 'ALL_ENEMIES') {
+            return { subject: 'SUBJECT_ENEMY', scope: 'SCOPE_MULTI_PARTS', selection: { mode: 'SELECT_ALL_PARTS' } };
+        }
+        if (targetType === 'RANDOM_PART') {
+            return { subject: 'SUBJECT_ENEMY', scope: 'SCOPE_PART', selection: { mode: 'SELECT_RANDOM_PART' } };
+        }
+        if (targetType === 'SINGLE_PART') {
+            return { subject: 'SUBJECT_ENEMY', scope: 'SCOPE_PART', selection: { mode: 'SELECT_FIXED_PART' } };
+        }
+        return { subject: 'SUBJECT_ENEMY', scope: 'SCOPE_PART', selection: {} };
+    }
+
+    formatTargetLabel(skill) {
+        const target = this.getSkillTarget(skill);
+        const subject = target.subject === 'SUBJECT_SELF' ? 'SELF' : 'ENEMY';
+        const scope = target.scope === 'SCOPE_ENTITY' ? 'ENTITY' : (target.scope === 'SCOPE_MULTI_PARTS' ? 'ALL_PARTS' : 'PART');
+        return `${subject}_${scope}`;
+    }
+
+    formatTargetText(skill) {
+        const target = this.getSkillTarget(skill);
+        const subject = target.subject === 'SUBJECT_SELF' ? '自身' : '敌方';
+        const scopeMap = {
+            SCOPE_ENTITY: '本体',
+            SCOPE_PART: '部位',
+            SCOPE_MULTI_PARTS: '多部位'
+        };
+        const selectionMode = target.selection && target.selection.mode ? target.selection.mode : '';
+        const part = target.selection && target.selection.part ? `（${target.selection.part}）` : '';
+        return `${subject} · ${scopeMap[target.scope] || target.scope} ${selectionMode}${part}`.trim();
+    }
+
+    formatCostText(skill) {
+        const parts = [];
+        parts.push(`AP ${this.getSkillApCost(skill)}`);
+        if (skill.costs && skill.costs.partSlot) {
+            const partSlot = skill.costs.partSlot;
+            parts.push(`${partSlot.part || '-'} x${partSlot.slotCost || 1}`);
+        }
+        return parts.join(' / ');
+    }
+
+    formatRequirementText(skill) {
+        if (!skill.requirements) return '-';
+        return JSON.stringify(skill.requirements);
+    }
+
+    formatBuffRefsText(skill) {
+        if (!skill.buffRefs) return '-';
+        const parts = [];
+        if (skill.buffRefs.apply && skill.buffRefs.apply.length) {
+            parts.push(`施加:${skill.buffRefs.apply.map(b => b.buffId).join(',')}`);
+        }
+        if (skill.buffRefs.applySelf && skill.buffRefs.applySelf.length) {
+            parts.push(`自施:${skill.buffRefs.applySelf.map(b => b.buffId).join(',')}`);
+        }
+        if (skill.buffRefs.remove && skill.buffRefs.remove.length) {
+            parts.push(`移除:${skill.buffRefs.remove.map(b => b.buffId).join(',')}`);
+        }
+        return parts.join(' | ') || '-';
     }
 }

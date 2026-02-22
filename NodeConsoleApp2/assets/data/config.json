@@ -1,0 +1,12 @@
+{
+  "version": "data_sources_v1",
+  "basePath": "./assets/data/",
+  "sources": {
+    "skills": "skills_melee_v4_5.json",
+    "items": "items.json",
+    "enemies": "enemies.json",
+    "levels": "levels.json",
+    "player": "player.json",
+    "buffs": "buffs_v2_7.json"
+  }
+}

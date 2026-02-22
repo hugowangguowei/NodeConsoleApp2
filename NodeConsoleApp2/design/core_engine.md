@@ -360,18 +360,44 @@ class EventBus {
 ### 7.2 静态数据加载 (Asset Loader)
 为了支持数据驱动的开发模式，游戏的核心配置（关卡、敌人、技能、物品）将从外部 JSON 文件加载，而非硬编码在代码中。
 
-#### 7.2.1 目录结构
-建议在 `assets/data/` 目录下组织配置文件：
+#### 7.2.1 数据加载入口（config.json / data_sources.json）
+为避免资源路径硬编码，推荐新增一个独立的加载入口文件（如 `assets/data/config.json` 或 `assets/data/data_sources.json`），用于声明所有数据文件路径。加载顺序固定为：先读入口文件，再按其配置加载各数据源。
+
+**示例结构：**
+```json
+{
+  "version": "data_sources_v1",
+  "basePath": "./assets/data/",
+  "sources": {
+    "skills": "skills.json",
+    "items": "items.json",
+    "enemies": "enemies.json",
+    "levels": "levels.json",
+    "player": "player.json",
+    "buffs": "buffs.json"
+  }
+}
+```
+
+**字段说明：**
+- `basePath`：默认数据根路径（可选，若为空则使用入口文件所在目录）。
+- `sources`：各数据类型的相对路径或绝对路径。
+- `version`：入口文件版本号，用于后续兼容与迁移。
+
+#### 7.2.2 目录结构
+推荐目录组织如下（示例）：
 ```
 assets/data/
+├── config.json       # 数据加载入口
 ├── skills.json       # 技能定义
 ├── items.json        # 物品定义
 ├── enemies.json      # 敌人模板定义
 ├── levels.json       # 关卡流程定义
-└── player.json       # 玩家初始配置
+├── player.json       # 玩家初始配置
+└── buffs.json        # Buff 定义
 ```
 
-#### 7.2.2 JSON 配置规范
+#### 7.2.3 JSON 配置规范
 
 **1. 玩家配置 (player.json)**
 定义玩家初始状态。
@@ -454,9 +480,9 @@ assets/data/
 }
 ```
 
-#### 7.2.3 加载流程
-1.  **初始化阶段 (`INIT`)**: `DataManager` 使用 `fetch` API 并行请求所有 JSON 配置文件。
-2.  **解析与缓存**: 将加载的 JSON 数据解析并存储在 `DataManager.gameConfig` 对象中（如 `gameConfig.enemies`, `gameConfig.levels`）。
+#### 7.2.4 加载流程
+1.  **初始化阶段 (`INIT`)**: `DataManager` 先加载入口文件（`config.json` 或 `data_sources.json`）。
+2.  **解析与缓存**: 解析 `basePath` 与 `sources`，并并行请求配置中列出的所有 JSON 数据文件。
 3.  **实例化**: 进入战斗时，根据 `levels.json` 中的 `templateId` 从 `enemies.json` 查找模板，深拷贝生成运行时的敌人实例。
 
 ### 7.3 运行时缓存 (Runtime Cache)

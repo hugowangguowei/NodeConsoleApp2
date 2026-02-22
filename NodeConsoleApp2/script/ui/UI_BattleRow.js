@@ -115,10 +115,8 @@ class BattleHUD {
                 if (partName === '头部') key = 'head';
                 else if (partName === '胸部') key = 'chest';
                 else if (partName === '腹部') key = 'abdomen'; // 或 stomach
-                else if (partName === '左臂') key = 'left_arm';
-                else if (partName === '右臂') key = 'right_arm';
-                else if (partName === '左腿') key = 'left_leg';
-                else if (partName === '右腿') key = 'right_leg';
+                else if (partName === '手部') key = 'arm';
+                else if (partName === '腿部') key = 'leg';
             }
 
             if (key && armorData[key]) {
@@ -136,6 +134,10 @@ class BattleHUD {
                     const pct = max > 0 ? (current / max) * 100 : 0;
                     barEl.style.width = `${pct}%`;
                 }
+
+                row.style.display = max > 0 ? '' : 'none';
+            } else {
+                row.style.display = 'none';
             }
         });
     }
@@ -143,23 +145,35 @@ class BattleHUD {
     updateStatusIcons(statusList, container, typeClass) {
         if (!container) return;
         container.innerHTML = ''; // 简单清空重绘
-        
-        if (statusList.length === 0) {
+
+        const list = this.normalizeStatusList(statusList);
+        if (list.length === 0) {
             // 可选：显示“无状态”占位
             return;
         }
 
-        statusList.forEach(status => {
+        list.forEach(status => {
             const icon = document.createElement('div');
             icon.className = `status-icon ${typeClass}`;
-            icon.dataset.name = status.name;
-            icon.dataset.desc = status.description;
+            const name = status.name || status.definition?.name || status.id || 'Buff';
+            const desc = status.description || status.definition?.description || '';
+            const iconUrl = status.icon || status.definition?.icon || '';
+            icon.dataset.name = name;
+            icon.dataset.desc = desc;
             // 如果有图标 URL，设置 background-image
-            if (status.icon) {
-                icon.style.backgroundImage = `url(${status.icon})`;
+            if (iconUrl) {
+                icon.style.backgroundImage = `url(${iconUrl})`;
             }
             container.appendChild(icon);
         });
+    }
+
+    normalizeStatusList(statusList) {
+        if (!statusList) return [];
+        if (Array.isArray(statusList)) return statusList;
+        if (typeof statusList.getAll === 'function') return statusList.getAll();
+        if (typeof statusList === 'object') return Object.values(statusList);
+        return [];
     }
 }
 
