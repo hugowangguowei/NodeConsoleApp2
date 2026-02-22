@@ -7,7 +7,7 @@
             "maxAp": 6,
             "speed": 10
         },
-        "skills": ["skill_slash", "skill_heal", "skill_fireball"],
+        "skills": ["skill_heal", "skill_heavy_swing", "skill_savage_charge"],
         "bodyParts": {
             "head":       { "current": 0, "max": 20, "weakness": 1.5 },
             "chest":      { "current": 10, "max": 20, "weakness": 1.0 },

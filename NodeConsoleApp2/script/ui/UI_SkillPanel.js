@@ -244,7 +244,8 @@ export default class UI_SkillPanel {
 
         this.cachedSkills.forEach(skill => {
             const btn = document.createElement('button');
-            btn.className = `skill-icon-button type-${skill.type.toLowerCase()}`; // e.g., type-offense
+            const skillType = this.getSkillTypeLabel(skill);
+            btn.className = `skill-icon-button type-${skillType.toLowerCase()}`; // e.g., type-offense
             if (this.selectedSkill && this.selectedSkill.id === skill.id) btn.classList.add('active');
             
             btn.dataset.id = skill.id;
@@ -402,12 +403,22 @@ export default class UI_SkillPanel {
         if (!skill) return;
 
         if (this.detailName) this.detailName.textContent = skill.name;
-        if (this.detailMeta) this.detailMeta.textContent = `${skill.type} · AP ${this.getSkillApCost(skill)}`;
+        if (this.detailMeta) this.detailMeta.textContent = `${this.getSkillTypeLabel(skill)} · AP ${this.getSkillApCost(skill)}`;
         if (this.detailEffect) this.detailEffect.innerHTML = `<strong>效果</strong>：${skill.description || '无'}`;
         if (this.detailTarget) this.detailTarget.innerHTML = `<strong>范围</strong>：${this.formatTargetText(skill)}`;
         if (this.detailCosts) this.detailCosts.innerHTML = `<strong>消耗</strong>：${this.formatCostText(skill)}`;
         if (this.detailRequirements) this.detailRequirements.innerHTML = `<strong>条件</strong>：${this.formatRequirementText(skill)}`;
         if (this.detailBuffs) this.detailBuffs.innerHTML = `<strong>Buff</strong>：${this.formatBuffRefsText(skill)}`;
+    }
+
+    getSkillTypeLabel(skill) {
+        if (skill && skill.type) return skill.type;
+        const tags = Array.isArray(skill?.tags) ? skill.tags : [];
+        if (tags.includes('HEAL')) return 'HEAL';
+        if (tags.includes('DMG_HP') || tags.includes('DMG_ARMOR') || tags.includes('PIERCE')) return 'DAMAGE';
+        if (tags.includes('ARMOR_ADD')) return 'DEFENSE';
+        if (tags.includes('BUFF_APPLY') || tags.includes('BUFF_REMOVE')) return 'BUFF';
+        return 'SKILL';
     }
 
     getSkillApCost(skill) {

@@ -485,6 +485,45 @@ assets/data/
 2.  **解析与缓存**: 解析 `basePath` 与 `sources`，并并行请求配置中列出的所有 JSON 数据文件。
 3.  **实例化**: 进入战斗时，根据 `levels.json` 中的 `templateId` 从 `enemies.json` 查找模板，深拷贝生成运行时的敌人实例。
 
+#### 7.2.5 新版技能数据加载与展示方案（skills_melee_v4_5.json）
+为适配新版技能数据结构（`{ meta, skills: [...] }`），加载阶段需进行一次“归一化映射”，并明确 UI 展示依赖字段。
+
+**输入结构（示例）**
+```json
+{
+  "$schemaVersion": "skills_melee_v3",
+  "meta": { "defaultParts": ["head", "chest", "abdomen", "arm", "leg"] },
+  "skills": [
+    {
+      "id": "skill_heavy_swing",
+      "name": "重锤",
+      "speed": 0,
+      "target": { "subject": "SUBJECT_ENEMY", "scope": "SCOPE_PART" },
+      "requirements": {},
+      "costs": { "ap": 2, "partSlot": { "part": "arm", "slotCost": 2 } },
+      "tags": ["DMG_HP", "SCALING", "SUBJECT_ENEMY", "SCOPE_PART"]
+    }
+  ]
+}
+```
+
+**加载归一化规则（必须）**
+1. 将 `skills` 数组转换为 `id -> skill` 的字典（Map），作为引擎运行时的 `gameConfig.skills`。
+2. 仅支持新版结构；若不满足 `{ skills: [...] }` 形态，应直接报错或拒绝加载（不再兼容旧版字典结构）。
+3. 若 `player.json` 中的 `skills` 列表包含不存在的 `skillId`，必须输出告警日志（以便快速定位配置问题）。
+
+**UI 展示依赖字段（核心映射）**
+- 名称：`skill.name`
+- AP 消耗：`skill.costs.ap`
+- 目标信息：`skill.target.subject` / `skill.target.scope` / `skill.target.selection`
+- 约束：`skill.requirements`
+- 槽位消耗：`skill.costs.partSlot`
+- 语义类型（用于图标/样式）：基于 `skill.tags` 推导（如 `DMG_HP` / `HEAL` / `BUFF_APPLY`）
+
+**与玩家技能列表对齐**
+- `player.json` 中的 `skills` 必须使用新版 `skills[].id`。
+- 若存在旧 `skill_slash` 等 ID，需在数据层先做迁移或替换。
+
 ### 7.3 运行时缓存 (Runtime Cache)
 *   **DataManager**: 维护当前活跃的游戏对象实例，避免频繁反序列化。
 

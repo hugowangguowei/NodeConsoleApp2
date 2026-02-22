@@ -172,6 +172,17 @@ class DataManager {
                 fetchConfig('player'),
                 fetchConfig('buffs')
             ]);
+
+            if (!skills || !Array.isArray(skills.skills)) {
+                throw new Error('Skills data must provide a skills array (skills_melee_v4_5.json format).');
+            }
+
+            const skillsMap = Object.create(null);
+            skills.skills.forEach(skill => {
+                if (skill && skill.id) {
+                    skillsMap[skill.id] = skill;
+                }
+            });
             
             // Validate basic structure
             if (!skills || !items || !enemies || !levels || !player || !buffs) {
@@ -179,13 +190,20 @@ class DataManager {
             }
 
             this.gameConfig = {
-                skills,
+                skills: skillsMap,
                 items,
                 enemies,
                 levels,
                 player,
                 buffs
             };
+
+            if (player && Array.isArray(player.default?.skills)) {
+                const missing = player.default.skills.filter(id => !skillsMap[id]);
+                if (missing.length > 0) {
+                    console.warn('[DataManager] Missing skills in skills data:', missing);
+                }
+            }
             
             console.log("? [DataManager] Configs successfully loaded from JSON files.", this.gameConfig);
         } catch (e) {
