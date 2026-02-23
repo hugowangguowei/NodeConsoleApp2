@@ -25,7 +25,8 @@ class CoreEngine {
             resumeGame: this.resumeGame.bind(this),
             backToTitle: this.backToTitle.bind(this),
             resetTurn: this.resetTurn.bind(this),
-            confirmSettlement: this.confirmSettlement.bind(this)
+            confirmSettlement: this.confirmSettlement.bind(this),
+            learnSkill: this.learnSkill.bind(this)
         };
 
         this.playerSkillQueue = [];
@@ -33,6 +34,47 @@ class CoreEngine {
         this.battlePhase = 'IDLE'; // IDLE, PLANNING, EXECUTION
 
         this.init();
+    }
+
+    learnSkill(skillId) {
+        const player = this.data.playerData;
+        if (!player) return;
+        if (!player.skills || typeof player.skills !== 'object') player.skills = {};
+        if (!Array.isArray(player.skills.learned)) player.skills.learned = [];
+        if (typeof player.skills.skillPoints !== 'number') player.skills.skillPoints = 0;
+
+        const def = (this.data.gameConfig && this.data.gameConfig.skills) ? this.data.gameConfig.skills[skillId] : null;
+        if (!def) {
+            console.warn('[CoreEngine] learnSkill: skill not found:', skillId);
+            return;
+        }
+
+        if (player.skills.learned.includes(skillId)) return;
+
+        const prereqs = Array.isArray(def.prerequisites) ? def.prerequisites : [];
+        const missing = prereqs.filter(p => !player.skills.learned.includes(p));
+        if (missing.length > 0) {
+            console.warn('[CoreEngine] learnSkill: missing prerequisites:', missing);
+            return;
+        }
+
+        const cost = Number(def?.unlock?.cost?.kp) || 0;
+        if (player.skills.skillPoints < cost) {
+            console.warn('[CoreEngine] learnSkill: insufficient KP');
+            return;
+        }
+
+        const exclusives = Array.isArray(def?.unlock?.exclusives) ? def.unlock.exclusives : [];
+        if (exclusives.some(x => player.skills.learned.includes(x))) {
+            console.warn('[CoreEngine] learnSkill: exclusive lock');
+            return;
+        }
+
+        player.skills.skillPoints -= cost;
+        player.skills.learned.push(skillId);
+
+        this.eventBus.emit('DATA_UPDATE', { type: 'PLAYER_SKILLS', data: player.skills });
+        this.data.saveGame();
     }
 
     async init() {

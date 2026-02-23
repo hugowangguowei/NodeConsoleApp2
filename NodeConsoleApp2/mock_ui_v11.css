@@ -185,6 +185,76 @@ main { flex: 1; padding: 16px 24px; display: grid; grid-template-rows: 546px 286
   pointer-events: auto;
 }
 
+/* Overlay (方案B) */
+.overlay-backdrop {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.65);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease;
+  z-index: 9999;
+}
+
+.overlay-backdrop.visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.overlay-panel {
+  width: min(1400px, 92vw);
+  height: min(900px, 88vh);
+  background: #1f2440;
+  border: 2px solid #81a5ff;
+  border-radius: 16px;
+  box-shadow: 0 25px 60px rgba(0,0,0,0.8);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.overlay-header {
+  padding: 14px 18px;
+  background: rgba(129, 165, 255, 0.1);
+  border-bottom: 1px solid rgba(129, 165, 255, 0.2);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.overlay-title {
+  margin: 0;
+  font-size: 1.1rem;
+  color: #fff;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.overlay-close-btn {
+  background: none;
+  border: none;
+  color: #81a5ff;
+  font-size: 1.6rem;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+}
+
+.overlay-close-btn:hover {
+  color: #fff;
+}
+
+.overlay-body {
+  flex: 1;
+  padding: 14px;
+  overflow: hidden;
+  color: #dce6ff;
+}
+
 .modal-panel {
   background: #1f2440;
   border: 2px solid #81a5ff;
@@ -249,6 +319,190 @@ main { flex: 1; padding: 16px 24px; display: grid; grid-template-rows: 546px 286
   justify-content: flex-end;
   gap: 12px;
   background: rgba(0, 0, 0, 0.2);
+}
+
+/* Skill Tree View (System Modal - 4.4.4) */
+.ui-skilltree {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.ui-skilltree__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.ui-skilltree__title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #fff;
+}
+
+.ui-skilltree__kp {
+  font-size: 0.9rem;
+  color: #7cf5d9;
+}
+
+.ui-skilltree__content {
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  gap: 12px;
+  min-height: 520px;
+}
+
+.ui-skilltree__canvasWrap {
+  position: relative;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.20);
+  overflow: hidden;
+  cursor: grab;
+}
+
+.ui-skilltree__canvasWrap:active {
+  cursor: grabbing;
+}
+
+.ui-skilltree__transform {
+  position: absolute;
+  inset: 0;
+  transform-origin: 0 0;
+}
+
+.ui-skilltree__connections {
+  position: absolute;
+  inset: 0;
+  width: 2000px;
+  height: 2000px;
+  pointer-events: none;
+}
+
+.ui-skilltree__nodes {
+  position: absolute;
+  inset: 0;
+  width: 2000px;
+  height: 2000px;
+}
+
+.ui-skilltree__line {
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.18);
+  stroke-width: 2;
+}
+
+.ui-skilltree__node {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 2px;
+  padding: 6px 10px;
+  text-align: left;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.06);
+  color: #fff;
+  cursor: pointer;
+}
+
+.ui-skilltree__node.is-selected {
+  outline: 2px solid rgba(124, 245, 217, 0.9);
+  box-shadow: 0 0 0 4px rgba(124, 245, 217, 0.15);
+}
+
+.ui-skilltree__nodeName {
+  font-size: 0.95rem;
+  font-weight: 700;
+  line-height: 1.1;
+}
+
+.ui-skilltree__nodeMeta {
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.ui-skilltree__node--learned {
+  border-color: rgba(124, 245, 217, 0.7);
+  background: rgba(124, 245, 217, 0.10);
+}
+
+.ui-skilltree__node--learnable {
+  border-color: rgba(129, 165, 255, 0.7);
+}
+
+.ui-skilltree__node--locked {
+  opacity: 0.45;
+}
+
+.ui-skilltree__node--insufficient_kp {
+  border-color: rgba(255, 210, 102, 0.7);
+  opacity: 0.75;
+}
+
+.ui-skilltree__node--exclusive_lock {
+  border-color: rgba(255, 95, 95, 0.7);
+  opacity: 0.55;
+}
+
+.ui-skilltree__detail {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.04);
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.ui-skilltree__detailTitle {
+  font-size: 1rem;
+  font-weight: 800;
+  color: #fff;
+}
+
+.ui-skilltree__detailDesc {
+  font-size: 0.85rem;
+  color: rgba(220, 230, 255, 0.95);
+  line-height: 1.35;
+  white-space: pre-wrap;
+}
+
+.ui-skilltree__detailRow {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 0.85rem;
+}
+
+.ui-skilltree__label {
+  color: rgba(255, 255, 255, 0.65);
+}
+
+.ui-skilltree__value {
+  color: rgba(255, 255, 255, 0.95);
+  text-align: right;
+}
+
+.ui-skilltree__actions {
+  display: flex;
+  gap: 10px;
+}
+
+.ui-skilltree__detailHint {
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.65);
+}
+
+.ui-skilltree__footer {
+  display: flex;
+  justify-content: flex-end;
 }
 
 /* Specific View Styles */

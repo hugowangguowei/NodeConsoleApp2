@@ -247,6 +247,142 @@ UI 通过调用引擎提供的 API 或发送事件来传达用户操作：
 | `Engine.input.resumeGame()` | `null` | 玩家点击“继续游戏”或关闭模态框。 |
 | `Engine.input.backToTitle()` | `null` | 玩家点击“注销”。引擎切换状态至 `LOGIN`。 |
 
+#### 4.4.4 技能树界面 (Skill Tree View)
+
+技能树界面用于在主流程中让玩家：
+1) 查看“已学习技能/可学习技能/未解锁技能”；
+2) 在满足条件时学习技能；
+3) 将学习结果写入存档（角色对象的 `player.skills.learned` 与 `player.skills.skillPoints`）。
+
+> **实现策略（方案 B）**：技能树界面不复用 `System Modal`。改为独立的 **Overlay 大窗**（居中大窗），以避免 `System Modal` 的固定尺寸（如 600px 宽度）限制，保证技能树画布的可视面积与交互体验。
+
+##### 4.4.4.0 视图载体：SkillTree Overlay（独立大窗）
+
+*   **定位**：全屏遮罩覆盖（Overlay），中间显示一个“居中大窗”面板。
+*   **与 System Modal 的关系**：
+    *   `System Modal` 继续用于：登录、主菜单、关卡选择、存档/读档等“系统级小窗”。
+    *   技能树使用独立 Overlay，用于“战斗内/角色成长”的“功能型大界面”。
+*   **推荐尺寸**（可响应式）：
+    *   面板宽度：`min(1400px, 92vw)`
+    *   面板高度：`min(900px, 88vh)`
+    *   面板内部为三分区：Header / Body / Footer。
+*   **关闭方式**：
+    *   右上角关闭按钮 `×`。
+    *   点击遮罩层关闭（可选，若担心误触可关闭此能力）。
+    *   `Esc` 关闭（可选）。
+*   **输入屏蔽**：Overlay 打开期间，屏蔽底层战斗界面交互（避免误操作）。
+
+##### 4.4.4.1 触发入口
+*   **入口 1**：在战斗准备/战斗界面点击 “打开技能树” 按钮（例如 `mock_ui_v11.html` 的 `btnOpenSkillTree`）。
+*   **入口 2**（可选）：`MAIN_MENU` 中增加“技能树”入口。
+
+*   **打开事件**：推荐统一事件 `UI:OPEN_SKILL_TREE`（携带可选参数，如 `focusSkillId`、`returnTo`）。
+*   **关闭事件**：推荐 `UI:CLOSE_SKILL_TREE`。
+
+##### 4.4.4.2 数据源与依赖
+*   **静态技能定义**：`assets/data/skills_melee_v4_5.json`
+    *   `skills[].id/name/description`
+    *   `skills[].prerequisites`
+    *   `skills[].unlock.cost.kp`
+    *   `skills[].unlock.exclusives`（预留互斥）
+    *   `skills[].editorMeta.x/y/group`（用于画布布局与分组过滤）
+*   **玩家技能进度（动态）**：角色对象（存档）的：
+    *   `player.skills.skillPoints`
+    *   `player.skills.learned: string[]`
+
+##### 4.4.4.3 界面布局 (Layout)
+建议使用三分区布局（Overlay 面板的“标题/内容/底部操作”结构）：
+
+1.  **Header（顶部信息栏）**
+    *   标题：技能树
+    *   KP 显示：`可用 KP: {player.skills.skillPoints}`
+    *   关闭按钮：关闭技能树并返回调用方界面
+
+2.  **Body（主内容区）**
+    *   **左侧/中部：技能树画布 (Canvas)**
+        *   节点以卡片/圆点呈现，位置由 `skills[].editorMeta.x/y` 决定（若缺失则按默认布局自动排布）。
+        *   节点连线：根据 `prerequisites` 绘制从前置 -> 当前的连线。
+        *   支持滚动/拖动画布（可选）。
+    *   **右侧：详情与操作边栏 (Detail Panel)**
+        *   显示当前选中技能：名称、描述、KP 消耗、前置列表、互斥列表（若有）、以及“学习”按钮区域。
+
+3.  **Footer（底部操作区）**
+    *   主要按钮：关闭（或“返回”）
+    *   次要按钮（可选）：筛选（按 `editorMeta.group`）、重置视图（回到原点）
+
+##### 4.4.4.4 节点状态与视觉规范 (Node States)
+技能树节点的状态不直接存储在存档中，而是由 `learned + prerequisites + skillPoints` 推导。
+
+*   **LEARNED（已学习）**
+    *   判定：`player.skills.learned` 包含该 `skillId`
+    *   视觉：高亮边框/发光；节点角标“已学”。
+*   **LEARNABLE（可学习）**
+    *   判定：未学习 && 前置全部在 `learned` 中 && `skillPoints >= unlock.cost.kp` && 不触发互斥
+    *   视觉：正常亮度 + 可交互提示；详情区显示“学习”按钮。
+*   **LOCKED（未解锁）**
+    *   判定：未学习 && 前置不满足
+    *   视觉：置灰；详情区显示锁定原因（缺少哪些前置）。
+*   **INSUFFICIENT_KP（KP 不足）**
+    *   判定：前置满足但 `skillPoints < unlock.cost.kp`
+    *   视觉：弱高亮/警告色；按钮置灰并提示“KP 不足”。
+*   **EXCLUSIVE_LOCK（互斥锁定，预留）**
+    *   判定：该技能的 `unlock.exclusives` 中任意技能已学习
+    *   视觉：置灰+互斥标记；提示互斥来源。
+
+##### 4.4.4.5 交互流程 (Interaction Flow)
+
+1.  **打开技能树**
+    *   UI：显示 SkillTree Overlay（居中大窗）。
+    *   数据：读取静态技能表 + 玩家进度，计算节点状态并渲染。
+
+2.  **查看技能**
+    *   操作：点击任意节点。
+    *   UI：右侧详情区刷新。
+
+3.  **学习技能**
+    *   前提：节点状态为 `LEARNABLE`。
+    *   操作：点击详情区“学习”。（可选：弹二次确认“消耗 X KP 学习 Y？”）
+    *   引擎：调用 `Engine.input.learnSkill(skillId)`（建议新增）。
+    *   引擎校验：
+        *   `skillId` 存在
+        *   未学习
+        *   前置满足
+        *   KP 足够
+        *   互斥满足（若启用）
+    *   引擎更新：
+        *   `player.skills.skillPoints -= unlock.cost.kp`
+        *   `player.skills.learned.push(skillId)`
+        *   触发 `DATA_UPDATE`（或新增 `PLAYER_SKILLS_UPDATED`）
+        *   触发保存（落地到存档/`localStorage`）
+    *   UI 更新：
+        *   Header KP 数值刷新
+        *   当前节点切换为 `LEARNED`
+        *   受影响的后续节点重新计算状态
+
+4.  **关闭技能树**
+    *   操作：点击关闭按钮。
+    *   UI：关闭 SkillTree Overlay。
+    *   联动：战斗界面的技能列表（Skill Pool）应刷新，使新学技能在可用技能池中可见。
+
+##### 4.4.4.6 与引擎的接口约定 (UI <-> Engine)
+
+*   **UI -> Engine**
+    *   `Engine.input.learnSkill(skillId)`：学习技能（新增接口）。
+*   **Engine -> UI**
+    *   `DATA_UPDATE`：当玩家技能点或 learned 列表变化时触发（或单独事件 `PLAYER_SKILLS_UPDATED`）。
+
+##### 4.4.4.7 UI 模块建议 (Code Architecture)
+
+为保持高内聚、低耦合，建议实现为独立 UI 组件，例如：
+
+*   `UI_SkillTreeOverlay`（推荐命名）：
+    *   管理 Overlay 容器的创建/显示/销毁。
+    *   挂载技能树画布与详情面板。
+    *   只依赖 `engine.eventBus`、`engine.input`、`engine.data`。
+*   `UI_SystemModal`：不再承载技能树 UI，仅保留系统类小窗。
+
+
+
 ### 4.5 战斗主体行接口详解 (Battle Row Interface)
 
 战斗主体行 (`.battle-row`) 是战斗画面的核心区域，包含玩家状态 (`PlayerHUD`)、战斗场景 (`BattleScene`) 和敌人状态 (`EnemyHUD`)。

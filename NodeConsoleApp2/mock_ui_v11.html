@@ -47,6 +47,17 @@
            <div class="status-icon buff" data-name="圣光护盾" data-desc="受击时减免20%伤害"></div>
          </div>
        </div>
+
+<!-- Skill Tree Overlay (方案B：独立大窗，不复用 System Modal) -->
+<div id="skillTreeOverlay" class="overlay-backdrop" aria-hidden="true">
+  <div class="overlay-panel" role="dialog" aria-modal="true" aria-label="技能树">
+    <div class="overlay-header">
+      <div class="overlay-title">技能树</div>
+      <button class="overlay-close-btn" id="skillTreeCloseBtn" type="button">×</button>
+    </div>
+    <div class="overlay-body" id="skillTreeBody"></div>
+  </div>
+</div>
        <div class="status-row">
          <span class="status-label">DEBUFF</span>
          <div class="status-icons">
@@ -368,6 +379,21 @@
         
         // Use standard init()
         if (uiSystemModal.init) uiSystemModal.init(engine);
+
+        // Skill Tree button
+        const btnOpenSkillTree = document.getElementById('btnOpenSkillTree');
+        if (btnOpenSkillTree) {
+            btnOpenSkillTree.addEventListener('click', () => {
+                if (engine && engine.eventBus) {
+                    engine.eventBus.emit('UI:OPEN_SKILL_TREE', {});
+                }
+            });
+        }
+
+        // Hook overlay UI implementation
+        import { UI_SkillTreeOverlay } from '../script/ui/UI_SkillTreeOverlay.js';
+        const uiSkillTreeOverlay = new UI_SkillTreeOverlay();
+        uiSkillTreeOverlay.init(engine);
 
         console.log('UI System Initialized');
 

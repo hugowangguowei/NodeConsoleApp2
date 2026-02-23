@@ -25,6 +25,8 @@ export class UI_SystemModal {
 
         // 引擎引用 (仅用于发送指令和监听事件)
         this.engine = null;
+
+      // Skill Tree is hosted by dedicated overlay (方案B). SystemModal does not own it.
     }
 
     /**
@@ -86,9 +88,12 @@ export class UI_SystemModal {
         // 监听 UI 请求打开模态框
         this.engine.eventBus.on('UI:OPEN_MODAL', this.handleOpenModal.bind(this));
 
+        // 技能树由独立 Overlay 处理（见 UI_SkillTreeOverlay）。
+
         // 监听关闭模态框请求
         this.engine.eventBus.on('UI:CLOSE_MODAL', () => this.hide());
     }
+
 
     /**
      * 处理状态变更事件
