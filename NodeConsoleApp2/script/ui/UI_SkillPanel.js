@@ -23,10 +23,6 @@ export default class UI_SkillPanel {
         // Detail panel might be inside or outside, assuming structure based on design
         this.detailPanel = document.querySelector('.skill-detail-column'); // Wrapper
         
-        this.btnSortCost = document.querySelector('.sort-btn[data-sort="cost"]');
-        this.btnSortTarget = document.querySelector('.sort-btn[data-sort="target"]');
-        this.btnSortDefault = document.querySelector('.sort-btn[data-sort="default"]');
-
         this.detailName = document.getElementById('detailName');
         this.detailMeta = document.getElementById('detailMeta');
         this.detailEffect = document.getElementById('detailEffect');
@@ -96,10 +92,6 @@ export default class UI_SkillPanel {
             });
         }
 
-        // Sorting
-        if (this.btnSortCost) this.btnSortCost.addEventListener('click', () => this.sortSkills('cost'));
-        if (this.btnSortTarget) this.btnSortTarget.addEventListener('click', () => this.sortSkills('target'));
-        if (this.btnSortDefault) this.btnSortDefault.addEventListener('click', () => this.renderSkillPool()); // Default order
     }
 
     bindEngineEvents() {
