@@ -5,8 +5,8 @@
  * Low coupling: depends only on an engine facade (eventBus/input/data) and a DOM mount.
  */
 
-const NODE_W = 180;
-const NODE_H = 44;
+const NODE_W = 83;
+const NODE_H = 83;
 const NODE_MARGIN = 10;
 
 function el(tag, className, text) {
@@ -282,10 +282,8 @@ export class UI_SkillTreeModal {
 
 			const node = el('button', `ui-skilltree__node ui-skilltree__node--${status.kind.toLowerCase()}`);
 			node.type = 'button';
-			node.style.left = `${pos.x}px`;
+         node.style.left = `${pos.x}px`;
 			node.style.top = `${pos.y}px`;
-			node.style.width = `${NODE_W}px`;
-			node.style.height = `${NODE_H}px`;
 			node.dataset.skillId = skill.id;
 
 			const name = el('div', 'ui-skilltree__nodeName', skill.name || skill.id);

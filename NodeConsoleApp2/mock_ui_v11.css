@@ -399,56 +399,90 @@ main { flex: 1; padding: 16px 24px; display: grid; grid-template-rows: 546px 286
 
 .ui-skilltree__node {
   position: absolute;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  gap: 2px;
-  padding: 6px 10px;
-  text-align: left;
-  border-radius: 10px;
+  width: 83px;
+  height: 83px;
+  display: grid;
+  grid-template-rows: 1fr auto;
+  align-items: center;
+  justify-items: center;
+  padding: 10px;
+  border-radius: 16px;
   border: 1px solid rgba(255, 255, 255, 0.12);
   background: rgba(255, 255, 255, 0.06);
   color: #fff;
   cursor: pointer;
+  user-select: none;
+}
+
+.ui-skilltree__node:hover {
+  border-color: rgba(255, 255, 255, 0.22);
+  background: rgba(255, 255, 255, 0.08);
 }
 
 .ui-skilltree__node.is-selected {
-  outline: 2px solid rgba(124, 245, 217, 0.9);
-  box-shadow: 0 0 0 4px rgba(124, 245, 217, 0.15);
+  outline: 2px solid rgba(255, 210, 102, 0.95);
+  box-shadow: 0 0 0 4px rgba(255, 210, 102, 0.16);
 }
 
 .ui-skilltree__nodeName {
-  font-size: 0.95rem;
-  font-weight: 700;
+  width: 100%;
+  font-size: 0.85rem;
+  font-weight: 800;
   line-height: 1.1;
+  text-align: center;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
 }
 
 .ui-skilltree__nodeMeta {
   font-size: 0.75rem;
-  color: rgba(255, 255, 255, 0.7);
+  color: rgba(255, 255, 255, 0.92);
+  background: rgba(0, 0, 0, 0.28);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 999px;
+  padding: 3px 10px;
 }
 
-.ui-skilltree__node--learned {
-  border-color: rgba(124, 245, 217, 0.7);
-  background: rgba(124, 245, 217, 0.10);
+/* Node states */
+.ui-skilltree__node--locked {
+  opacity: 0.55;
+  border-color: rgba(255, 255, 255, 0.10);
+  background: rgba(255, 255, 255, 0.04);
 }
 
 .ui-skilltree__node--learnable {
-  border-color: rgba(129, 165, 255, 0.7);
+  border-color: rgba(129, 165, 255, 0.75);
+  background: rgba(129, 165, 255, 0.12);
+  box-shadow: 0 0 0 3px rgba(129, 165, 255, 0.14);
 }
 
-.ui-skilltree__node--locked {
-  opacity: 0.45;
+.ui-skilltree__node--learnable:hover {
+  border-color: rgba(129, 165, 255, 0.92);
+  background: rgba(129, 165, 255, 0.16);
+}
+
+.ui-skilltree__node--learned {
+  border-color: rgba(124, 245, 217, 0.70);
+  background: rgba(124, 245, 217, 0.10);
+}
+
+.ui-skilltree__node--learned:hover {
+  border-color: rgba(124, 245, 217, 0.90);
+  background: rgba(124, 245, 217, 0.14);
 }
 
 .ui-skilltree__node--insufficient_kp {
-  border-color: rgba(255, 210, 102, 0.7);
-  opacity: 0.75;
+  border-color: rgba(255, 210, 102, 0.75);
+  background: rgba(255, 210, 102, 0.10);
+  opacity: 0.85;
 }
 
 .ui-skilltree__node--exclusive_lock {
-  border-color: rgba(255, 95, 95, 0.7);
-  opacity: 0.55;
+  border-color: rgba(255, 95, 95, 0.75);
+  background: rgba(255, 95, 95, 0.08);
+  opacity: 0.75;
 }
 
 .ui-skilltree__detail {
