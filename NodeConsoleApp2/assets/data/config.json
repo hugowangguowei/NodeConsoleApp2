@@ -3,6 +3,9 @@
   "basePath": "./assets/data/",
   "sources": {
     "skills": "skills_melee_v4_5.json",
+    "skillsByTree": {
+      "melee_v4_5": "skills_melee_v4_5.json"
+    },
     "items": "items.json",
     "enemies": "enemies.json",
     "levels": "levels.json",

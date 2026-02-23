@@ -164,14 +164,33 @@ class DataManager {
                 return await response.json();
             };
 
-            const [skills, items, enemies, levels, player, buffs] = await Promise.all([
-                fetchConfig('skills'),
+            // Load player first so we can decide which skill tree to load
+            const [player, items, enemies, levels, buffs] = await Promise.all([
+                fetchConfig('player'),
                 fetchConfig('items'),
                 fetchConfig('enemies'),
                 fetchConfig('levels'),
-                fetchConfig('player'),
                 fetchConfig('buffs')
             ]);
+
+            const skillTreeId = player && player.default && player.default.skills && typeof player.default.skills === 'object'
+                ? player.default.skills.skillTreeId
+                : null;
+            const skillsByTree = sources.skillsByTree || {};
+            const skillsPath = (skillTreeId && skillsByTree && skillsByTree[skillTreeId])
+                ? skillsByTree[skillTreeId]
+                : sources.skills;
+
+            if (!skillsPath) {
+                throw new Error('Missing skills source path (sources.skills or sources.skillsByTree[skillTreeId]).');
+            }
+
+            const skillsUrl = basePath ? `${basePath}${skillsPath}` : skillsPath;
+            const skillsResp = await fetch(skillsUrl);
+            if (!skillsResp.ok) {
+                throw new Error(`HTTP error ${skillsResp.status} loading ${skillsUrl}`);
+            }
+            const skills = await skillsResp.json();
 
             if (!skills || !Array.isArray(skills.skills)) {
                 throw new Error('Skills data must provide a skills array (skills_melee_v4_5.json format).');
