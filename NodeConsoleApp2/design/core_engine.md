@@ -140,8 +140,35 @@ class EventBus {
       "chest": { "id": "plate_01", "durability": 60, "maxDurability": 60, "defense": 15 }
     }
   },
-  "skills": ["skill_slash", "skill_defend"],
+  "skills": {
+    "skillTreeId": "tree_knight_v1",
+    "skillPoints": 3,
+    "learned": ["skill_slash", "skill_defend"]
+  },
   "buffs": []
+}
+```
+
+**字段说明（技能相关）**
+- `skills.skillTreeId`: 绑定当前角色使用的技能树模板 ID（静态配置）。
+- `skills.skillPoints`: 当前可用技能点。
+- `skills.learned`: 已学习技能 ID 列表，用于战斗与 UI 读取。
+
+**学习判定（来自技能数据）**
+- `skills_melee_v4_5.json` 中每个技能包含：`prerequisites` 与 `unlock.cost.kp`。
+- **已学习**：`skills.learned` 中包含该 `skillId`。
+- **可学习**：未学习且 `prerequisites` 全满足，且 `skills.skillPoints >= unlock.cost.kp`。
+- **互斥**：若 `unlock.exclusives` 中包含已学习技能，则禁止学习。
+
+**技能树静态结构（独立配置）**
+技能树关系不放在角色对象中，建议在技能配置或独立 `skill_tree.json` 中维护：
+```json
+{
+  "id": "tree_knight_v1",
+  "nodes": [
+    { "nodeId": "node_slash_01", "skillId": "skill_slash", "prerequisites": [] },
+    { "nodeId": "node_defend_01", "skillId": "skill_defend", "prerequisites": ["node_slash_01"] }
+  ]
 }
 ```
 
