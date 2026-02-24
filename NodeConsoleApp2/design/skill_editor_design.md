@@ -217,6 +217,28 @@ v4 中技能级目标选择仍统一为：
 - `target.selection.selectedParts: string[]`
 - `target.selection.selectCount: number`
 
+#### 3.5.1 UI 联动规则（Scope-driven gating & normalization）
+
+为避免 `target.scope` 与 `selection` 产生语义冲突，编辑器需要在 UI 与数据层同时做联动：
+
+1) 当 `target.scope = SCOPE_ENTITY`
+
+- UI：隐藏（或折叠并禁用）以下控件：
+  - `selection.mode`
+  - `selection.selectCount`
+  - `selection.candidateParts`
+  - `selection.selectedParts`
+- 数据规范化（保存时执行）：
+  - `selection.mode = single`
+  - `selection.selectCount = 1`
+  - `selection.candidateParts = []`
+  - `selection.selectedParts = []`
+
+2) 当 `target.scope != SCOPE_ENTITY`（如 `SCOPE_PART` / `SCOPE_MULTI_PARTS`）
+
+- UI：显示部位相关控件。
+- 数据：允许写入 `candidateParts/selectedParts/selectCount`，并在保存时补齐缺省数组。
+
 建议 UI 设计：
 
 - `candidateParts`、`selectedParts` 使用多选控件（checkbox 或 tag 多选）

@@ -222,7 +222,7 @@
         }
       },
       "editorMeta": {
-        "x": 914,
+        "x": 1014,
         "y": 314,
         "group": "melee",
         "locked": false,
@@ -233,22 +233,10 @@
         "subject": "SUBJECT_SELF",
         "scope": "SCOPE_ENTITY",
         "selection": {
-          "mode": "multiple",
-          "candidateParts": [
-            "head",
-            "chest",
-            "abdomen",
-            "arm",
-            "leg"
-          ],
-          "selectedParts": [
-            "head",
-            "chest",
-            "abdomen",
-            "arm",
-            "leg"
-          ],
-          "selectCount": 5
+          "mode": "single",
+          "candidateParts": [],
+          "selectedParts": [],
+          "selectCount": 1
         }
       },
       "requirements": {},
@@ -3252,6 +3240,155 @@
       "editorMeta": {
         "x": 1114,
         "y": 514
+      },
+      "description": "",
+      "tags": [],
+      "tagMeta": {},
+      "unlock": {},
+      "requirements": {}
+    },
+    {
+      "id": "skill_1771952067028",
+      "name": "单攻测试",
+      "rarity": "Common",
+      "costs": {
+        "ap": 1,
+        "perTurnLimit": 1
+      },
+      "speed": 0,
+      "target": {
+        "subject": "SUBJECT_ENEMY",
+        "scope": "SCOPE_PART",
+        "selection": {
+          "mode": "single",
+          "candidateParts": [
+            "head",
+            "chest",
+            "abdomen",
+            "arm",
+            "leg"
+          ],
+          "selectedParts": [],
+          "selectCount": 1
+        }
+      },
+      "prerequisites": [],
+      "buffRefs": {
+        "apply": [],
+        "remove": []
+      },
+      "actions": [
+        {
+          "id": "action_1",
+          "name": "Action 1",
+          "target": {
+            "binding": {
+              "mode": "follow",
+              "ref": "skillTarget"
+            }
+          },
+          "effect": {
+            "effectType": "DMG_ARMOR",
+            "amountType": "ABS",
+            "amount": 10
+          }
+        }
+      ],
+      "editorMeta": {
+        "x": 814,
+        "y": 314
+      },
+      "description": "攻击单个部位",
+      "tags": [],
+      "tagMeta": {},
+      "unlock": {},
+      "requirements": {}
+    },
+    {
+      "id": "skill_1771952147024",
+      "name": "多攻测试",
+      "rarity": "Common",
+      "costs": {
+        "ap": 1,
+        "perTurnLimit": 1
+      },
+      "speed": 0,
+      "target": {
+        "subject": "SUBJECT_ENEMY",
+        "scope": "SCOPE_PART",
+        "selection": {
+          "mode": "multiple",
+          "candidateParts": [
+            "head",
+            "chest",
+            "abdomen",
+            "arm",
+            "leg"
+          ],
+          "selectedParts": [],
+          "selectCount": 1
+        }
+      },
+      "prerequisites": [],
+      "buffRefs": {
+        "apply": [],
+        "remove": []
+      },
+      "actions": [
+        {
+          "id": "action_1",
+          "name": "Action 1",
+          "target": {
+            "binding": {
+              "mode": "follow",
+              "ref": "skillTarget"
+            }
+          },
+          "effect": {
+            "effectType": "DMG_ARMOR",
+            "amountType": "ABS",
+            "amount": 3
+          }
+        }
+      ],
+      "editorMeta": {
+        "x": 914,
+        "y": 314
+      },
+      "description": "",
+      "tags": [],
+      "tagMeta": {},
+      "unlock": {},
+      "requirements": {}
+    },
+    {
+      "id": "skill_1771952209174",
+      "name": "全攻测试",
+      "rarity": "Common",
+      "costs": {
+        "ap": 1,
+        "perTurnLimit": 1
+      },
+      "speed": 0,
+      "target": {
+        "subject": "SUBJECT_ENEMY",
+        "scope": "SCOPE_ENTITY",
+        "selection": {
+          "mode": "single",
+          "candidateParts": [],
+          "selectedParts": [],
+          "selectCount": 1
+        }
+      },
+      "prerequisites": [],
+      "buffRefs": {
+        "apply": [],
+        "remove": []
+      },
+      "actions": [],
+      "editorMeta": {
+        "x": 714,
+        "y": 314
       },
       "description": "",
       "tags": [],

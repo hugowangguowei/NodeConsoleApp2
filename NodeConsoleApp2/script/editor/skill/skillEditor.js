@@ -1372,6 +1372,8 @@ export class SkillEditor {
         if (this.elSelectionMode) this.elSelectionMode.value = selection?.mode || 'single';
         if (this.elSelectionSelectCount) this.elSelectionSelectCount.value = (selection && typeof selection.selectCount === 'number') ? String(selection.selectCount) : '';
 
+        this.applyTargetScopeGating?.();
+
         const setCheckedByValues = (container, values) => {
             if (!container) return;
             const set = new Set(Array.isArray(values) ? values : []);
@@ -1407,6 +1409,51 @@ export class SkillEditor {
         this.renderBuffRefTables();
         this.renderActionsList();
         this.updateSummary();
+    }
+
+    applyTargetScopeGating() {
+        const scope = (this.elTargetScope?.value || '').trim();
+        const isEntity = scope === 'SCOPE_ENTITY';
+
+        const findGridCell = (el) => {
+            if (!el) return null;
+            const scopePanel = this.elTargetScope?.closest('.panel');
+            const grid = scopePanel?.querySelector('div[style*="grid-template-columns"]') || null;
+            if (!grid) return el.closest('div');
+
+            let cur = el;
+            while (cur && cur !== grid) {
+                const parent = cur.parentElement;
+                if (parent === grid) return cur;
+                cur = parent;
+            }
+            return el.closest('div');
+        };
+
+        const setRowHidden = (el, hidden) => {
+            const row = findGridCell(el);
+            if (!row) return;
+            row.style.display = hidden ? 'none' : '';
+        };
+
+        // Hide part-related selection when targeting entity.
+        const hideParts = isEntity;
+        setRowHidden(this.elSelectionMode, hideParts);
+        setRowHidden(this.elSelectionSelectCount, hideParts);
+        setRowHidden(this.elCandidatePartsBtn, hideParts);
+        setRowHidden(this.elSelectedPartsBtn, hideParts);
+
+        // Defensive: ensure dropdown panels also close.
+        if (hideParts) {
+            if (this.elCandidatePartsDropdown) this.elCandidatePartsDropdown.style.display = 'none';
+            if (this.elSelectedPartsDropdown) this.elSelectedPartsDropdown.style.display = 'none';
+        }
+
+        // Disable inputs to prevent accidental edits via keyboard focus.
+        if (this.elSelectionMode) this.elSelectionMode.disabled = hideParts;
+        if (this.elSelectionSelectCount) this.elSelectionSelectCount.disabled = hideParts;
+        if (this.elCandidatePartsBtn) this.elCandidatePartsBtn.disabled = hideParts;
+        if (this.elSelectedPartsBtn) this.elSelectedPartsBtn.disabled = hideParts;
     }
 
     saveCurrentNode() {
@@ -1464,13 +1511,25 @@ export class SkillEditor {
         skill.target.subject = subject;
         skill.target.scope = scope;
         skill.target.selection.mode = mode;
-        if (!Number.isNaN(selectCount) && selectCount > 0) skill.target.selection.selectCount = selectCount;
 
-        this.commitSelectionPartsFromUI();
-        if (!Array.isArray(skill.target.selection.candidateParts)) skill.target.selection.candidateParts = (this.defaultParts || []).slice();
-        if (!Array.isArray(skill.target.selection.selectedParts)) skill.target.selection.selectedParts = [];
-        if (!skill.target.selection.selectCount) {
-            skill.target.selection.selectCount = Math.max(1, skill.target.selection.selectedParts.length || 1);
+        // Scope-driven normalization:
+        // - SCOPE_ENTITY does not use part-selection; keep selection fields minimal to avoid conflicts.
+        if (scope === 'SCOPE_ENTITY') {
+            skill.target.selection.mode = 'single';
+            skill.target.selection.selectCount = 1;
+            skill.target.selection.candidateParts = [];
+            skill.target.selection.selectedParts = [];
+        } else {
+            if (!Number.isNaN(selectCount) && selectCount > 0) skill.target.selection.selectCount = selectCount;
+        }
+
+        if (scope !== 'SCOPE_ENTITY') {
+            this.commitSelectionPartsFromUI();
+            if (!Array.isArray(skill.target.selection.candidateParts)) skill.target.selection.candidateParts = (this.defaultParts || []).slice();
+            if (!Array.isArray(skill.target.selection.selectedParts)) skill.target.selection.selectedParts = [];
+            if (!skill.target.selection.selectCount) {
+                skill.target.selection.selectCount = Math.max(1, skill.target.selection.selectedParts.length || 1);
+            }
         }
 
         // tags / tagMeta
@@ -1519,6 +1578,8 @@ export class SkillEditor {
         this.renderNodes();
         this.renderSkillLibrary();
         this.updateSummary();
+
+        this.applyTargetScopeGating?.();
     }
 
     openActionsJsonSync() {

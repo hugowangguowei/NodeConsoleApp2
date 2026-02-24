@@ -243,3 +243,6 @@
 2. 在skill_editor_test_v3.html中，我发现当我编辑一个技能的selection.selectCount时，数值可以编辑，但是没有生效，我点了别的技能再点回来，发现又变成了1，请分析原因，先不要修改代码。
 3. 按照你分析的结论修改代码，并更新到设计文档中。
 4. skill_editor_test_v3.html中，E. Target & Speed选项卡，如果target.scope选择了SCOPE_ENTITY,那么selection.selectCount和其他候选部位等内容应该隐藏才对吧？请分析这个设计方案是否合理，并提供具体的交互设计建议，先不要修改代码。
+5. 按照你分析的结论修改代码，并更新到设计文档中，同时修改数据skills_melee_v4_5.json文件，避免产生冲突。
+6. 这种情况下，selection.mode是不是也需要同步修改？给我一些修改建议，是设为默认的single，还是添加一种枚举类型例如“ALL"，或者其他的方案？请分析这些设计方案的合理性，先不要修改代码。
+7. 在隐藏了selection.selectCount和其他候选部位等内容后,发现还有candidateParts，selectedParts没有彻底隐藏，请分析原因，先不要修改代码。
