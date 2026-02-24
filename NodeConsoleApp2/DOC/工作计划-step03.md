@@ -152,6 +152,9 @@
 2. 根据core_engine.md中角色对象 (Character)的设计方案，修订player.json中的角色数据结构。
 3. skillTreeId字段的意思是什么？
 4. 当前已经有其他配置的字段制定了技能树的模板位置，请找到这个字段，并分析是否可以将两个结合，先不要修改代码。
+5. 技能树模态窗ui-skilltree__kp好像是写死的，能否改为根据player.json中的字段进行配置？先不要修改代码。
+6. 我已经清理了localStorage,player.json中的skillPoints设置成了10，但是依然显示0，请分析原因，先不要修改代码。
+7. overlay-close-btn按钮的功能和menu-btn（关闭）按钮的功能有什么区别吗？为什么它们都存在？
 
 
 

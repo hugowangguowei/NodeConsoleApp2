@@ -230,9 +230,7 @@ export class UI_SkillTreeModal {
 		content.appendChild(detail);
 
 		const footer = el('div', 'ui-skilltree__footer');
-		const btnClose = el('button', 'menu-btn', '关闭');
-		btnClose.addEventListener('click', () => this._handleClose());
-		footer.appendChild(btnClose);
+        footer.style.display = 'none';
 
 		root.appendChild(header);
 		root.appendChild(content);
@@ -253,7 +251,7 @@ export class UI_SkillTreeModal {
 			nodeLayer,
 			detail,
 			footer,
-			btnClose
+        btnClose: null
 		};
 
 		this._bindCanvasInteractions();

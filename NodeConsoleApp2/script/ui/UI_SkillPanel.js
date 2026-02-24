@@ -106,7 +106,8 @@ export default class UI_SkillPanel {
 
     onBattleStart(data) {
         // data.player, data.level(enemy)
-        const skillIds = data.player.skills || [];
+        const skills = data.player.skills;
+        const skillIds = Array.isArray(skills) ? skills : (Array.isArray(skills?.learned) ? skills.learned : []);
         // Use engine.data to fetch configs
         this.cachedSkills = skillIds.map(id => this.engine.data.getSkillConfig(id)).filter(s => s);
         

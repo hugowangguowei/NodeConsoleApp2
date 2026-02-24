@@ -14,6 +14,40 @@ class DataManager {
         this._currentLevelConfig = null; // Runtime cache for current level static config
     }
 
+    _normalizeSkills(skills, playerTemplate) {
+        // Desired schema: { skillTreeId, skillPoints, learned: string[] }
+        if (skills && typeof skills === 'object' && !Array.isArray(skills)) {
+            const learned = Array.isArray(skills.learned) ? skills.learned : [];
+            return {
+                skillTreeId: skills.skillTreeId ?? null,
+                skillPoints: Number.isFinite(skills.skillPoints) ? skills.skillPoints : 0,
+                learned: [...learned]
+            };
+        }
+
+        // Legacy schema: string[]
+        if (Array.isArray(skills)) {
+            const tpl = (playerTemplate && typeof playerTemplate.skills === 'object' && !Array.isArray(playerTemplate.skills))
+                ? playerTemplate.skills
+                : null;
+            return {
+                skillTreeId: tpl?.skillTreeId ?? null,
+                skillPoints: Number.isFinite(tpl?.skillPoints) ? tpl.skillPoints : 0,
+                learned: [...skills]
+            };
+        }
+
+        // Missing
+        const tpl = (playerTemplate && typeof playerTemplate.skills === 'object' && !Array.isArray(playerTemplate.skills))
+            ? playerTemplate.skills
+            : null;
+        return {
+            skillTreeId: tpl?.skillTreeId ?? null,
+            skillPoints: Number.isFinite(tpl?.skillPoints) ? tpl.skillPoints : 0,
+            learned: Array.isArray(tpl?.learned) ? [...tpl.learned] : []
+        };
+    }
+
     get playerData() {
         return this.dataConfig.global ? this.dataConfig.global.player : null;
     }
@@ -54,6 +88,9 @@ class DataManager {
         if (json) {
             try {
                 const parsed = JSON.parse(json);
+                const playerTemplate = (this.gameConfig && this.gameConfig.player && this.gameConfig.player.default)
+                    ? this.gameConfig.player.default
+                    : null;
                 
                 // Check if it's the new format or legacy format
                 if (parsed.version && parsed.global) {
@@ -73,9 +110,9 @@ class DataManager {
                     this.dataConfig.runtime = { currentScene: "MAIN_MENU", battleState: null };
                 }
 
-                // Migration: Ensure skills exist for old saves (legacy logic)
-                if (this.playerData && !this.playerData.skills) {
-                    this.playerData.skills = ['skill_slash', 'skill_heal', 'skill_fireball'];
+                // Migration/Normalization: skills schema (object) + backward compatibility
+                if (this.playerData) {
+                    this.playerData.skills = this._normalizeSkills(this.playerData.skills, playerTemplate);
                 }
                 
                 // Migration: Ensure speed exists (legacy logic)
@@ -109,7 +146,7 @@ class DataManager {
                 id: `player_${Date.now()}`,
                 name: username,
                 stats: { ...playerTemplate.stats },
-                skills: [...playerTemplate.skills],
+                skills: this._normalizeSkills(playerTemplate.skills, playerTemplate),
                 bodyParts: playerTemplate.bodyParts ? JSON.parse(JSON.stringify(playerTemplate.bodyParts)) : undefined,
                 equipment: JSON.parse(JSON.stringify(playerTemplate.equipment)),
                 inventory: [...playerTemplate.inventory],
