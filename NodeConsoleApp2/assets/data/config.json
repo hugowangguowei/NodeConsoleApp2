@@ -1,5 +1,5 @@
 {
-  "version": "data_sources_v1",
+  "version": "data_sources_v1.0.0.1",
   "basePath": "./assets/data/",
   "sources": {
     "skills": "skills_melee_v4_5.json",

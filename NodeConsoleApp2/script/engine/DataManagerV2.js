@@ -12,6 +12,11 @@ class DataManager {
         };
         this.gameConfig = {}; // To store static configs like items, skills
         this._currentLevelConfig = null; // Runtime cache for current level static config
+       this._dataSourcesVersion = null;
+    }
+
+    get dataSourcesVersion() {
+        return this._dataSourcesVersion;
     }
 
     _normalizeSkills(skills, playerTemplate) {
@@ -64,6 +69,9 @@ class DataManager {
             }
 
             this.dataConfig.timestamp = Date.now();
+            if (this._dataSourcesVersion) {
+                this.dataConfig.dataSourcesVersion = this._dataSourcesVersion;
+            }
             const json = JSON.stringify(this.dataConfig);
             localStorage.setItem('save_game', json);
             console.log('Game saved.');
@@ -80,6 +88,13 @@ class DataManager {
                     : null;
                 
                 if (!parsed.version || !parsed.global) {
+                    return false;
+                }
+
+                // Version guard: invalidate saves created from different data sources config
+                const saveSourcesVer = parsed.dataSourcesVersion || null;
+                if (this._dataSourcesVersion && saveSourcesVer && saveSourcesVer !== this._dataSourcesVersion) {
+                    console.warn(`?? [DataManager] Save dataSourcesVersion mismatch. save=${saveSourcesVer}, current=${this._dataSourcesVersion}. Ignoring save.`);
                     return false;
                 }
 
@@ -159,6 +174,7 @@ class DataManager {
             }
 
             const dataSources = await configResponse.json();
+            this._dataSourcesVersion = dataSources && typeof dataSources.version === 'string' ? dataSources.version : null;
             const basePath = dataSources.basePath || '';
             const sources = dataSources.sources || {};
 
