@@ -19,6 +19,25 @@
 
 ---
 
+## 1.1 属性面板的保存策略（Auto-save vs Explicit-save）
+
+为避免“UI 可编辑但未写回数据”的问题，属性面板字段分为两类：
+
+1) **原子字段（Atomic fields）**
+
+- 在 `blur` / `Enter` / `change` 时自动触发 `saveCurrentNode()` 写回到当前 skill。
+- 典型字段：
+  - `name`, `rarity`, `speed`, `description`
+  - `costs.ap`, `costs.perTurnLimit`, `costs.partSlot.*`
+  - `target.subject`, `target.scope`, `target.selection.mode`, `target.selection.selectCount`
+
+2) **JSON 字段（Explicit-save fields）**
+
+- 允许存在中间态；只有点击按钮（Apply/Save）后才写回到 skill。
+- 典型字段：`unlock`, `requirements`, `tags`, `tagMeta`, `actions[]`。
+
+> 说明：如果某个字段是 `<input type="number">` 但属于原子字段（如 `target.selection.selectCount`），也必须绑定 auto-save 事件，否则切换技能后会回退为旧值。
+
 ## 2. 输入输出文件与数据源
 
 ### 2.1 技能数据文件（v4）

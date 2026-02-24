@@ -37,6 +37,16 @@ export default class UI_SkillPanel {
         this.selectedSkill = null; // Object or ID
         this.cachedSkills = [];    // Loaded from DataManager
 
+        // Slot placement interaction state
+        // SINGLE: keep selection after placement; replace previous placement for same skill+targetType+part
+        // Clicking filled slot cancels (removes) that placement.
+        this.placementRules = {
+            singleKeepSelection: true,
+            singleReplace: true,
+            clickFilledToCancel: true,
+            disallowOverwriteOtherSkill: true
+        };
+
         // -- Bind --
         this.bindEvents();
         this.bindEngineEvents();
@@ -119,6 +129,15 @@ export default class UI_SkillPanel {
         this.renderSkillPool();
         this.clearMatrix();
         this.selectedSkill = null;
+    }
+
+    _getSlotSpecFromElement(slotElement) {
+        if (!slotElement) return null;
+        const part = slotElement.dataset.part;
+        const targetType = slotElement.dataset.targetType;
+        const slotIndex = Number(slotElement.dataset.slotIndex);
+        if (!part || !targetType || !Number.isFinite(slotIndex)) return null;
+        return { part, targetType, slotIndex };
     }
 
     buildMatrixFromBattleRules() {
@@ -253,8 +272,10 @@ export default class UI_SkillPanel {
         if (!this.selectedSkill) return;
         if (!slotElement.classList.contains('highlight-valid')) return; // Only allow mapped slots
 
-        const part = slotElement.dataset.part;
-        const targetType = slotElement.dataset.targetType; // 'self' or 'enemy'
+        const spec = this._getSlotSpecFromElement(slotElement);
+        if (!spec) return;
+
+        const { part, targetType, slotIndex } = spec;
         
         // Resolve Target ID
         // Simplified Logic: 
@@ -270,16 +291,35 @@ export default class UI_SkillPanel {
             return;
         }
 
+
         const finalTargetId = (targetType === 'self') ? playerId : enemyId;
 
-        // Call Engine Input
+        // SINGLE replace: remove previous placement for the same skill+side+part (if any)
+        if (this.placementRules.singleReplace) {
+            const previousIndex = this._findQueueIndexBySlotKey(this._makeSlotKey(part, targetType, slotIndex));
+            if (previousIndex !== null) {
+                // Same exact slot already filled should have been handled as filled-click,
+                // but keep it safe here.
+                this.engine.input.removeSkillFromQueue(previousIndex);
+                return;
+            }
+
+            const replaceCandidate = this._findLatestQueueIndexForSkillOnPart(this.selectedSkill.id, targetType, part);
+            if (replaceCandidate !== null) {
+                this.engine.input.removeSkillFromQueue(replaceCandidate);
+            }
+        }
+
+        // Call Engine Input (engine will reject if capacity exceeds)
         this.engine.input.addSkillToQueue(this.selectedSkill.id, finalTargetId, part);
         
         // Visual feedback handled by BATTLE_UPDATE event re-rendering matrix
     }
 
     onFilledSlotClick(slotElement) {
-        // The slot should store the queue index it represents
+        if (!this.placementRules.clickFilledToCancel) return;
+
+        // If the filled slot represents a specific queue action, remove it.
         const index = parseInt(slotElement.dataset.queueIndex);
         if (isNaN(index)) return;
 
@@ -423,8 +463,6 @@ export default class UI_SkillPanel {
             if (!zone) return;
 
             // Find first empty placeholder
-            // Note: We need to respect index order of queue? 
-            // In the "First Available" logic, we just find the first .slot-placeholder that is NOT .filled
             const emptySlot = Array.from(zone.querySelectorAll('.slot-placeholder')).find(el => !el.classList.contains('filled'));
             
             if (emptySlot) {
@@ -436,6 +474,14 @@ export default class UI_SkillPanel {
     fillSlot(slotEl, action, queueIndex) {
         slotEl.classList.add('filled');
         slotEl.dataset.queueIndex = queueIndex;
+
+        const isSelf = (action.targetId === this.engine.data.playerData.id);
+        const targetTypeStr = isSelf ? 'self' : 'enemy';
+        slotEl.dataset.occupiedSkillId = action.skillId;
+        slotEl.dataset.occupiedTargetType = targetTypeStr;
+        slotEl.dataset.occupiedPart = action.bodyPart;
+        slotEl.dataset.occupiedSlotKey = this._makeSlotKey(action.bodyPart, targetTypeStr, Number(slotEl.dataset.slotIndex));
+
         // Find skill icon
         const skill = this.cachedSkills.find(s => s.id === action.skillId);
         const skillType = (skill && typeof skill.type === 'string') ? skill.type.toLowerCase() : null;
@@ -449,7 +495,43 @@ export default class UI_SkillPanel {
             s.classList.remove('filled', 'type-offense', 'type-defense', 'type-neutral', 'type-magic');
             s.textContent = '';
             delete s.dataset.queueIndex;
+            delete s.dataset.occupiedSkillId;
+            delete s.dataset.occupiedTargetType;
+            delete s.dataset.occupiedPart;
+            delete s.dataset.occupiedSlotKey;
         });
+    }
+
+    _makeSlotKey(part, targetType, slotIndex) {
+        return `${targetType}:${part}:${slotIndex}`;
+    }
+
+    _findQueueIndexBySlotKey(slotKey) {
+        if (!slotKey) return null;
+        const queue = this.engine.playerSkillQueue || [];
+        for (let i = queue.length - 1; i >= 0; i--) {
+            const a = queue[i];
+            const isSelf = (a.targetId === this.engine.data.playerData.id);
+            const t = isSelf ? 'self' : 'enemy';
+            // We don't persist slotIndex in engine queue yet; UI only uses this for same-slot guard.
+            // So this method only works when slotKey was previously stamped on the DOM slot.
+        }
+        // Not resolvable from queue without slotIndex; keep for forward compatibility.
+        return null;
+    }
+
+    _findLatestQueueIndexForSkillOnPart(skillId, targetType, part) {
+        const queue = this.engine.playerSkillQueue || [];
+        for (let i = queue.length - 1; i >= 0; i--) {
+            const a = queue[i];
+            if (a.skillId !== skillId) continue;
+            const isSelf = (a.targetId === this.engine.data.playerData.id);
+            const t = isSelf ? 'self' : 'enemy';
+            if (t !== targetType) continue;
+            if (a.bodyPart !== part) continue;
+            return i;
+        }
+        return null;
     }
     
     clearMatrix() {

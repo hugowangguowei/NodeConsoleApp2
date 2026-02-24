@@ -649,6 +649,8 @@ export class SkillEditor {
             this.elCostsAp,
             this.elCostsPerTurnLimit,
             this.elCostsSlotCost,
+            // target.selection
+            this.elSelectionSelectCount,
         ].filter(Boolean);
         autoSaveInputs.forEach((el) => {
             el.addEventListener('blur', () => this.saveCurrentNode());
@@ -665,6 +667,7 @@ export class SkillEditor {
         this.elTargetSubject?.addEventListener('change', () => this.saveCurrentNode());
         this.elTargetScope?.addEventListener('change', () => this.saveCurrentNode());
         this.elSelectionMode?.addEventListener('change', () => this.saveCurrentNode());
+        this.elSelectionSelectCount?.addEventListener('change', () => this.saveCurrentNode());
 
         // Select fields should save on change
         this.elCostsPart?.addEventListener('change', () => this.saveCurrentNode());
