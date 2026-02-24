@@ -69,6 +69,13 @@
         *   UI 在进入战斗后根据引擎运行态快照 `runtime.battleRules.slotLayout` 动态生成 `.matrix-row` 与 `.slot-placeholder`。
         *   槽位规则由 `assets/data/slot_layouts.json` 定义，并由 `levels.json -> battleRules.slotLayoutId`（优先）或 `config.json -> battleRules.slotLayoutId`（默认）选择。
 
+    *   **排版规则（标签对齐）**:
+        *   Action Matrix 每一行使用三列布局：`self-zone | part label | enemy-zone`。
+        *   为避免由于 `self` 槽位数量不一致导致标签列横向漂移：
+            *   标签列（part label）宽度固定。
+            *   `self-zone` 列宽固定为“当前布局中 self 最大槽位数”对应的宽度。
+            *   UI 在渲染矩阵时计算 `maxSelfSlots` / `maxEnemySlots` 并写入容器 CSS 变量（如 `--matrix-self-max`），由 CSS 计算列宽。
+
 *   **右栏：动态详情 (Detail & Context)**
     *   **宽度**: 较窄，仅用于展示关键信息。
     *   **功能**: 显示选中技能的详情或待执行指令的预测结果。

@@ -144,6 +144,12 @@ export default class UI_SkillPanel {
             }
         };
 
+        const maxSelf = Math.max(0, ...rows.map(p => Number(slotCounts?.[p]?.self ?? 0) || 0));
+        const maxEnemy = Math.max(0, ...rows.map(p => Number(slotCounts?.[p]?.enemy ?? 0) || 0));
+
+        this.matrixContainer.style.setProperty('--matrix-self-max', String(maxSelf));
+        this.matrixContainer.style.setProperty('--matrix-enemy-max', String(maxEnemy));
+
         this.matrixContainer.innerHTML = '';
         rows.forEach(part => {
             const row = document.createElement('div');
