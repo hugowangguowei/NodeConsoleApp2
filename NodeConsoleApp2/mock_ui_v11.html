@@ -193,31 +193,36 @@
       <!-- 1. Left Column: Skill Pool (技能库) -->
       <div class="skill-pool-column">
         <div class="skill-grid-view" id="skillList">
-          <button type="button" class="skill-icon-button type-offense active" data-name="重斩" data-type="近战技能" data-cost="AP 2" data-speed="速度 +1" data-target="命中部位：躯干" data-effect="对目标造成 150% 物理伤害。" data-tags="单体,物理" data-tip="基础的高伤害技能" data-sort-cost="2" data-sort-target="single">⚔️</button>
-          <button type="button" class="skill-icon-button type-offense" data-name="火球术" data-type="魔法技能" data-cost="AP 3" data-speed="速度 -1" data-target="命中部位：全身" data-effect="造成 120% 火焰伤害，并附加燃烧效果。" data-tags="魔法,燃烧" data-tip="对高护甲单位有效" data-sort-cost="3" data-sort-target="single">🔥</button>
-          <button type="button" class="skill-icon-button type-defense" data-name="治愈之光" data-type="神圣技能" data-cost="AP 2" data-speed="速度 0" data-target="效果：恢复生命" data-effect="为友方单位恢复 40 点生命值。" data-tags="治疗,神圣" data-tip="保持队伍生存" data-sort-cost="2" data-sort-target="ally">✨</button>
-          <button type="button" class="skill-icon-button type-defense" data-name="钢铁防御" data-type="防御技能" data-cost="AP 1" data-speed="速度 +2" data-target="效果：提升护甲" data-effect="获得 20 点临时护甲，持续 1 回合。" data-tags="防御,护甲" data-tip="预判敌方攻击时使用" data-sort-cost="1" data-sort-target="self">🛡️</button>
-          <button type="button" class="skill-icon-button type-offense" data-name="二连击" data-type="近战技能" data-cost="AP 2" data-speed="速度 +2" data-target="命中部位：随机" data-effect="进行两次快速攻击，每次造成 60% 伤害。" data-tags="多段,物理" data-tip="适合破除闪避" data-sort-cost="2" data-sort-target="random">⚔️</button>
-          <button type="button" class="skill-icon-button type-offense" data-name="冰锥术" data-type="魔法技能" data-cost="AP 2" data-speed="速度 0" data-target="命中部位：腿部" data-effect="造成 80% 冰霜伤害，并降低目标速度。" data-tags="魔法,减速" data-tip="控制敌方行动顺序" data-sort-cost="2" data-sort-target="single">❄️</button>
-          <button type="button" class="skill-icon-button type-offense" data-name="雷击" data-type="魔法技能" data-cost="AP 4" data-speed="速度 -2" data-target="命中部位：头部" data-effect="造成 200% 雷电伤害，有几率眩晕目标。" data-tags="魔法,控制" data-tip="高消耗高回报" data-sort-cost="4" data-sort-target="single">⚡</button>
-          <button type="button" class="skill-icon-button type-offense" data-name="毒刃" data-type="盗贼技能" data-cost="AP 1" data-speed="速度 +3" data-target="命中部位：四肢" data-effect="造成 50% 伤害，并施加中毒效果。" data-tags="物理,持续伤害" data-tip="长期战斗中收益高" data-sort-cost="1" data-sort-target="single">🗡️</button>
-          <button type="button" class="skill-icon-button type-offense" data-name="盾击" data-type="防御技能" data-cost="AP 2" data-speed="速度 +1" data-target="命中部位：头部" data-effect="造成 80% 伤害，并打断目标施法。" data-tags="物理,打断" data.tip="用于反制法师" data-sort-cost="2" data-sort-target="single">🛡️</button>
-          <button type="button" class="skill-icon-button type-offense" data-name="奥术飞弹" data-type="魔法技能" data-cost="AP 3" data-speed="速度 +1" data-target="命中部位：随机" data-effect="发射 3 枚飞弹，每枚造成 40% 奥术伤害。" data-tags="魔法,多段" data-tip="稳定的输出手段" data-sort-cost="3" data-sort-target="random">🔮</button>
-          <button type="button" class="skill-icon-button type-command" data-name="战吼" data-type="战术技能" data-cost="AP 1" data-speed="立即" data-target="效果：全体增益" data-effect="友方全体攻击力提升 10%，持续 2 回合。" data-tags="增益,群体" data-tip="爆发前使用" data-sort-cost="1" data-sort-target="global">🗣️</button>
-          <button type="button" class="skill-icon-button type-offense" data-name="旋风斩" data-type="近战技能" data-cost="AP 4" data-speed="速度 -1" data-target="命中部位：群体" data-effect="对所有敌人造成 100% 物理伤害。" data-tags="物理,AOE" data_tip="面对多个敌人时使用" data-sort-cost="4" data-sort-target="aoe">🌪️</button>
-          <button type="button" class="skill-icon-button type-offense" data-name="神圣惩击" data-type="神圣技能" data-cost="AP 2" data-speed="速度 0" data-target="命中部位：躯干" data-effect="造成 130% 神圣伤害，对亡灵生物加倍。" data-tags="魔法,神圣" data-tip="针对亡灵敌人" data-sort-cost="2" data-sort-target="single">✝️</button>
-          <button type="button" class="skill-icon-button type-command" data-name="暗影步" data-type="盗贼技能" data-cost="AP 1" data-speed="立即" data-target="效果：位移" data-effect="移动到目标背后，下一次攻击必定暴击。" data-tags="位移,增益" data-tip="配合高伤技能使用" data-sort-cost="1" data-sort-target="self">👻</button>
-          <button type="button" class="skill-icon-button type-offense" data-name="生命吸取" data-type="暗影技能" data-cost="AP 3" data-speed="速度 -1" data-target="命中部位：躯干" data-effect="造成 80% 杀伤，并将伤害转化为自身生命。" data-tags="魔法,吸血" data_tip="攻守兼备" data-sort-cost="3" data-sort-target="single">🩸</button>
-          <button type="button" class="skill-icon-button type-offense" data-name="地震术" data-type="自然技能" data-cost="AP 5" data-speed="速度 -3" data-target="命中部位：群体" data-effect="对所有地面单位造成 150% 杀伤，并降低闪避。" data-tags="魔法,AOE" data_tip="强力清场技能" data-sort-cost="5" data-sort-target="aoe">🌍</button>
-          <button type="button" class="skill-icon-button type-defense" data-name="疾风步" data-type="自然技能" data-cost="AP 2" data-speed="立即" data-target="效果：隐身" data-effect="进入隐身状态，闪避率提升 50%。" data-tags="生存,隐身" data_tip="躲避致命伤害" data-sort-cost="2" data-sort-target="self">🍃</button>
-          <button type="button" class="skill-icon-button type-command" data-name="狂暴" data-type="战术技能" data-cost="AP 0" data-speed="立即" data-target="效果：自身强化" data-effect="攻击力提升 50%，但受到的伤害也增加 20%。" data-tags="增益,风险" data_tip="拼命时使用" data-sort-cost="0" data-sort-target="self">😡</button>
-          <button type="button" class="skill-icon-button type-offense" data-name="陨石术" data-type="魔法技能" data-cost="AP 6" data-speed="速度 -5" data-target="命中部位：群体" data-effect="召唤陨石，造成 300% 毁灭性伤害。" data-tags="魔法,终极" data_tip="消耗巨大但威力惊人" data-sort-cost="6" data-sort-target="aoe">☄️</button>
-          <button type="button" class="skill-icon-button type-defense" data-name="反击姿态" data-type="战术技能" data-cost="AP 2" data-speed="速度 +1" data-target="效果：反击" data-effect="受到近战攻击时，自动反击造成 80% 杀伤。" data-tags="防御,反击" data_tip="对付近战敌人" data-sort-cost="2" data-sort-target="self">🤺</button>
-          <button type="button" class="skill-icon-button type-defense" data-name="祝福" data-type="神圣技能" data-cost="AP 2" data-speed="速度 0" data-target="效果：驱散" data-effect="移除友方单位的所有负面状态。" data-tags="辅助,驱散" data_tip="应对控制和持续伤害" data-sort-cost="2" data-sort-target="ally">🙏</button>
-          <button type="button" class="skill-icon-button type-offense" data-name="诅咒" data-type="暗影技能" data-cost="AP 2" data-speed="速度 0" data-target="命中部位：精神" data-effect="使目标造成的伤害降低 30%。" data-tags="魔法,减益" data.tip="削弱强力敌人" data-sort-cost="2" data-sort-target="single">💀</button>
-          <button type="button" class="skill-icon-button type-command" data-name="召唤幽灵狼" data-type="自然技能" data-cost="AP 4" data-speed="速度 -2" data-target="效果：召唤" data-effect="召唤一只幽灵狼协助战斗。" data-tags="召唤,辅助" data_tip="增加战场单位" data-sort-cost="4" data-sort-target="global">🐺</button>
-          <button type="button" class="skill-icon-button type-defense" data-name="法力护盾" data-type="魔法技能" data-cost="AP 1" data-speed="立即" data-target="效果：护盾" data-effect="消耗法力值抵消受到的伤害。" data-tags="防御,魔法" data_tip="保护脆弱的法师" data-sort-cost="1" data-sort-target="self">🔵</button>
-          <button type="button" class="skill-icon-button type-offense" data-name="斩杀" data-type="近战技能" data-cost="AP 3" data-speed="速度 +1" data-target="命中部位：躯干" data-effect="对生命值低于 30% 的目标造成巨额伤害。" data-tags="物理,终结" data_tip="收割残血敌人" data-sort-cost="3" data-sort-target="single">☠️</button>
+          <button type="button" class="skill-icon-button rarity-common type-offense active" data-name="重斩" data-type="近战技能" data-cost="AP 2" data-speed="速度 +1" data-target="命中部位：躯干" data-effect="对目标造成 150% 物理伤害。" data-tags="单体,物理" data-tip="基础的高伤害技能" data-sort-cost="2" data-sort-target="single">
+            <span class="skill-badge-ap">2</span>
+            <span class="skill-icon-center">⚔️</span>
+            <span class="skill-name-bar">重斩</span>
+          </button>
+          <button type="button" class="skill-icon-button rarity-rare type-offense" data-name="火球术" data-type="魔法技能" data-cost="AP 3" data-speed="速度 -1" data-target="命中部位：全身" data-effect="造成 120% 火焰伤害，并附加燃烧效果。" data-tags="魔法,燃烧" data-tip="对高护甲单位有效" data-sort-cost="3" data-sort-target="single">
+            <span class="skill-badge-ap">3</span>
+            <span class="skill-icon-center">🔥</span>
+            <span class="skill-name-bar">火球术</span>
+          </button>
+          <button type="button" class="skill-icon-button rarity-uncommon type-defense" data-name="治愈之光" data-type="神圣技能" data-cost="AP 2" data-speed="速度 0" data-target="效果：恢复生命" data-effect="为友方单位恢复 40 点生命值。" data-tags="治疗,神圣" data-tip="保持队伍生存" data-sort-cost="2" data-sort-target="ally">
+            <span class="skill-badge-ap">2</span>
+            <span class="skill-icon-center">✨</span>
+            <span class="skill-name-bar">治愈之光</span>
+          </button>
+          <button type="button" class="skill-icon-button rarity-epic type-offense" data-name="雷击" data-type="魔法技能" data-cost="AP 4" data-speed="速度 -2" data-target="命中部位：头部" data-effect="造成 200% 雷电伤害，有几率眩晕目标。" data-tags="魔法,控制" data-tip="高消耗高回报" data-sort-cost="4" data-sort-target="single">
+            <span class="skill-badge-ap">4</span>
+            <span class="skill-icon-center">⚡</span>
+            <span class="skill-name-bar">雷击</span>
+          </button>
+          <button type="button" class="skill-icon-button rarity-legendary type-offense" data-name="陨石术" data-type="魔法技能" data-cost="AP 6" data-speed="速度 -5" data-target="命中部位：群体" data-effect="召唤陨石，造成 300% 毁灭性伤害。" data-tags="魔法,终极" data-tip="消耗巨大但威力惊人" data-sort-cost="6" data-sort-target="aoe">
+            <span class="skill-badge-ap">6</span>
+            <span class="skill-icon-center">☄️</span>
+            <span class="skill-name-bar">陨石术</span>
+          </button>
+          <button type="button" class="skill-icon-button rarity-common type-defense disabled" data-name="钢铁防御" data-type="防御技能" data-cost="AP 1" data-speed="速度 +2" data-target="效果：提升护甲" data-effect="获得 20 点临时护甲，持续 1 回合。" data-tags="防御,护甲" data-tip="预判敌方攻击时使用" data-sort-cost="1" data-sort-target="self">
+            <span class="skill-badge-ap">1</span>
+            <span class="skill-icon-center">🛡️</span>
+            <span class="skill-name-bar">钢铁防御</span>
+          </button>
         </div>
         <div class="skill-sort-bar">
           <button type="button" class="sort-btn" id="btnOpenSkillTree">打开技能树</button>

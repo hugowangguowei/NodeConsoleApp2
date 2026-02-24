@@ -704,9 +704,10 @@ main { flex: 1; padding: 16px 24px; display: grid; grid-template-rows: 546px 286
 .skill-grid-view {
   flex: 1;
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(64px, 1fr));
-  grid-auto-rows: 64px;
+  grid-template-columns: repeat(auto-fill, 55px);
+  grid-auto-rows: 55px;
   gap: 8px;
+  justify-content: start;
   overflow-y: auto;
   padding-right: 4px;
 }
@@ -714,29 +715,84 @@ main { flex: 1; padding: 16px 24px; display: grid; grid-template-rows: 546px 286
 .skill-grid-view::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 4px; }
 
 .skill-icon-button {
-  border: 2px solid #4a4a4a; border-radius: 8px; height: 100%;
+  width: 100%;
+  height: 100%;
+  border: 1px solid #4a4a4a; 
+  border-radius: 4px; 
   background: radial-gradient(circle at center, #3a4055, #1a1e2e);
-  display: flex; align-items: center; justify-content: center;
-  cursor: pointer; transition: all .15s ease;
-  color: #fff; font-size: 1.2rem; position: relative;
-  box-shadow: inset 0 0 0 1px rgba(0,0,0,0.5), 0 4px 8px rgba(0,0,0,0.3);
+  cursor: pointer; 
+  transition: all .15s ease;
+  position: relative;
+  overflow: hidden;
+  padding: 0;
+  box-shadow: inset 0 0 0 1px rgba(0,0,0,0.5), 0 2px 4px rgba(0,0,0,0.3);
 }
+
+/* Rarity Borders */
+.skill-icon-button.rarity-common { border-color: #9e9e9e; }
+.skill-icon-button.rarity-uncommon { border-color: #4caf50; }
+.skill-icon-button.rarity-rare { border-color: #2196f3; box-shadow: inset 0 0 6px rgba(33, 150, 243, 0.3); }
+.skill-icon-button.rarity-epic { border-color: #9c27b0; box-shadow: inset 0 0 6px rgba(156, 39, 176, 0.3); }
+.skill-icon-button.rarity-legendary { border-color: #ff9800; box-shadow: inset 0 0 6px rgba(255, 152, 0, 0.3); }
+
 .skill-icon-button:hover {
-  border-color: #ffd700;
-  box-shadow: 0 0 12px rgba(255, 215, 0, 0.4), inset 0 0 0 1px rgba(255, 215, 0, 0.2);
-  transform: scale(1.05); z-index: 2;
+  filter: brightness(1.2);
+  transform: scale(1.05); 
+  z-index: 2;
 }
 .skill-icon-button.active {
-  border-color: #7cf5d9;
-  box-shadow: 0 0 12px rgba(124, 245, 217, 0.5), inset 0 0 0 1px rgba(124, 245, 217, 0.3);
+  border-color: #ffd700;
+  box-shadow: 0 0 8px rgba(255, 215, 0, 0.8), inset 0 0 0 1px rgba(255, 215, 0, 0.3);
 }
-.skill-icon-button::after {
- content: attr(data-name); position: absolute; bottom: 0; left: 0; right: 0; background: rgba(0,0,0,0.75); font-size: 0.55rem; padding: 2px 0; color: #ddd; border-radius: 0 0 6px 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
 .skill-icon-button.disabled {
     opacity: 0.5;
     cursor: not-allowed;
     filter: grayscale(100%);
+}
+.skill-icon-button.disabled .skill-badge-ap {
+    color: #ff4d4d;
+}
+
+/* New Inner Elements */
+.skill-badge-ap {
+  position: absolute;
+  top: 2px;
+  right: 3px;
+  font-size: 11px;
+  font-weight: bold;
+  color: #ffd700;
+  text-shadow: 1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000;
+  line-height: 1;
+  z-index: 2;
+}
+
+.skill-icon-center {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -60%);
+  font-size: 24px;
+  line-height: 1;
+  z-index: 1;
+}
+
+.skill-name-bar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  background: rgba(0, 0, 0, 0.75);
+  color: #fff;
+  font-size: 10px;
+  line-height: 16px;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding: 0 2px;
+  box-sizing: border-box;
+  z-index: 2;
 }
 
 .enemy-part-missing .enemy-zone {

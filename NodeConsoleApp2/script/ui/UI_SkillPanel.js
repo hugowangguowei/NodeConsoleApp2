@@ -238,16 +238,37 @@ export default class UI_SkillPanel {
         this.cachedSkills.forEach(skill => {
             const btn = document.createElement('button');
             const skillType = this.getSkillTypeLabel(skill);
-            btn.className = `skill-icon-button type-${skillType.toLowerCase()}`; // e.g., type-offense
+
+            // Add rarity class if available, default to common
+            const rarityClass = skill.rarity ? `rarity-${skill.rarity.toLowerCase()}` : 'rarity-common';
+
+            btn.className = `skill-icon-button ${rarityClass} type-${skillType.toLowerCase()}`;
             if (this.selectedSkill && this.selectedSkill.id === skill.id) btn.classList.add('active');
-            
+
             btn.dataset.id = skill.id;
             // Store data for tooltip/sorting
             btn.dataset.cost = this.getSkillApCost(skill);
             btn.dataset.target = this.formatTargetLabel(skill);
 
-            btn.textContent = skill.icon || 'Skill';
-            
+            // Create AP Badge
+            const badgeAp = document.createElement('span');
+            badgeAp.className = 'skill-badge-ap';
+            badgeAp.textContent = this.getSkillApCost(skill);
+
+            // Create Center Icon
+            const iconCenter = document.createElement('span');
+            iconCenter.className = 'skill-icon-center';
+            iconCenter.textContent = skill.icon || '⚔️';
+
+            // Create Name Bar
+            const nameBar = document.createElement('span');
+            nameBar.className = 'skill-name-bar';
+            nameBar.textContent = skill.name || '未知技能';
+
+            btn.appendChild(badgeAp);
+            btn.appendChild(iconCenter);
+            btn.appendChild(nameBar);
+
             this.poolContainer.appendChild(btn);
         });
 
