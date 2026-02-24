@@ -221,6 +221,49 @@ class EventBus {
 }
 ```
 
+---
+
+## 7. 战斗规则：行动槽位布局 (Battle Rules: Action Slot Layout)
+
+### 7.1 设计目标
+
+行动槽位（Slot）是战斗机制的核心约束：它限制“每回合在不同目标/部位上可规划的技能数量”。
+
+为保证**引擎逻辑**与**UI 展示**一致，槽位容量不再由静态 DOM 决定，而由数据驱动：
+- 规则来自 `slot_layouts.json`（可复用模板）。
+- 关卡通过 `levels.json -> battleRules.slotLayoutId` 选择布局。
+- 若关卡未指定，则使用 `config.json -> battleRules.slotLayoutId` 默认值。
+
+### 7.2 数据加载
+
+`DataManagerV2.loadConfigs()` 额外加载 `sources.slotLayouts`，存入：
+- `gameConfig.slotLayouts`
+
+### 7.3 规则解析优先级
+
+当进入战斗（`startBattle()`）后，当前战斗使用的 `slotLayoutId` 按以下优先级解析：
+1. `levels[levelId].battleRules.slotLayoutId`
+2. `dataConfig.battleRules.slotLayoutId`（来自 `config.json`）
+3. fallback：`default_v1`
+
+### 7.4 运行态快照（用于回放/一致性）
+
+战斗开始时将规则写入运行态（建议视为本场战斗的不可变快照）：
+- `runtime.battleRules.slotLayoutId`
+- `runtime.battleRules.slotLayout`（深拷贝布局对象）
+
+这样可以避免后续热更新/数据变更导致同一存档在不同版本下产生不一致的槽位约束。
+
+### 7.5 机制约束：入队校验
+
+在 `addSkillToQueue(skillId, targetId, bodyPart)` 中，除 AP 校验外，增加槽位容量校验：
+- 计算该 action 对应的 `side`（`self` / `enemy`）与 `bodyPart`
+- 查询 `slotCounts[bodyPart][side]` 得到容量
+- 统计当前队列中同 `side+bodyPart` 的已用数量
+- 若已满，则拒绝入队并通过 `BATTLE_LOG` 输出原因
+
+> 注：这使“槽位”从 UI 展示限制升级为引擎级规则，AI 与玩家同源约束。
+
 ### 6.2 ?洢??汾??????? (Save/Load Version Guard)
 
 ???????????迭?????? `player.json` / `skills_*.json` / `buffs_*.json` / `config.json` ??????????

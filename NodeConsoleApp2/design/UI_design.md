@@ -64,6 +64,11 @@
         *   **Enemy Zone**: 针对敌人的攻击技能卡槽（分部位）。
         *   **Placeholders**: 空置卡槽，选中技能时高亮提示插入位置。
 
+    *   **槽位容量来源（重要）**:
+        *   行动槽位是战斗机制核心约束，其数量不由静态 HTML 写死。
+        *   UI 在进入战斗后根据引擎运行态快照 `runtime.battleRules.slotLayout` 动态生成 `.matrix-row` 与 `.slot-placeholder`。
+        *   槽位规则由 `assets/data/slot_layouts.json` 定义，并由 `levels.json -> battleRules.slotLayoutId`（优先）或 `config.json -> battleRules.slotLayoutId`（默认）选择。
+
 *   **右栏：动态详情 (Detail & Context)**
     *   **宽度**: 较窄，仅用于展示关键信息。
     *   **功能**: 显示选中技能的详情或待执行指令的预测结果。

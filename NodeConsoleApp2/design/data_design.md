@@ -105,6 +105,82 @@
 }
 ```
 
+---
+
+## 7. 行动槽位布局 (Action Slot Layout)
+
+行动槽位（Slot）是战斗机制的核心概念：它约束敌我双方在一个回合内可以“规划/组合释放”的技能数量与分布，从而直接定义策略空间。
+
+本项目将槽位分为两类数据：
+1) **规则（Rule）**：槽位拓扑与容量（设计期配置，随关卡/模式变化）。
+2) **状态（State）**：本回合已占用/已规划的行动队列（运行态数据，存档/回放可选）。
+
+### 7.1 规则数据：`slot_layouts.json`
+
+文件：`assets/data/slot_layouts.json`
+
+```json
+{
+  "version": "slot_layouts_v1.0.0",
+  "layouts": {
+    "default_v1": {
+      "id": "default_v1",
+      "name": "默认行动槽位布局",
+      "rows": ["head", "chest", "abdomen", "arm", "leg", "global"],
+      "sides": ["self", "enemy"],
+      "slotCounts": {
+        "head": { "self": 2, "enemy": 3 },
+        "chest": { "self": 2, "enemy": 3 },
+        "abdomen": { "self": 2, "enemy": 3 },
+        "arm": { "self": 2, "enemy": 3 },
+        "leg": { "self": 1, "enemy": 3 },
+        "global": { "self": 2, "enemy": 3 }
+      }
+    }
+  }
+}
+```
+
+字段说明：
+- `rows`：行动矩阵的行枚举（与部位枚举保持一致，并包含 `global` 通用行）。
+- `sides`：阵营/区域枚举（当前为 `self` / `enemy`）。
+- `slotCounts[row][side]`：该行在该阵营下的槽位容量（整数）。
+
+### 7.2 关卡绑定：`levels.json` -> `battleRules.slotLayoutId`
+
+关卡可声明战斗规则中的槽位布局：
+
+```json
+{
+  "level_1_1": {
+    "id": "level_1_1",
+    "battleRules": {
+      "slotLayoutId": "default_v1"
+    }
+  }
+}
+```
+
+### 7.3 默认规则入口：`config.json`
+
+`assets/data/config.json` 作为数据加载入口，同时提供默认战斗规则：
+
+```json
+{
+  "sources": {
+    "slotLayouts": "slot_layouts.json"
+  },
+  "battleRules": {
+    "slotLayoutId": "default_v1"
+  }
+}
+```
+
+### 7.4 状态数据（运行态）建议
+
+运行态队列目前位于引擎 `runtime.queues` 中（player/enemy）。
+若需要做“断点续玩/回放一致性”，建议将每个 action 绑定到稳定的 `slotKey`（如 `enemy:head:2`），避免 UI 调整导致旧存档无法复现。
+
 ## 3. 技能数据结构 (Skill Data)
 
 为了支持 UI 的丰富显示（Tip、标签、排序参数），技能数据结构需要扩展。`assets/data/skills.json`。
