@@ -350,6 +350,65 @@ main { flex: 1; padding: 16px 24px; display: grid; grid-template-rows: 546px 286
   color: #7cf5d9;
 }
 
+.ui-skilltree__headerActions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  margin-left: auto;
+}
+
+.ui-skilltree__headerButtons {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.ui-skilltree__headerBtn {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #fff;
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.ui-skilltree__headerBtn:hover:not(:disabled) {
+  border-color: rgba(255, 255, 255, 0.4);
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.ui-skilltree__headerBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.ui-skilltree__headerBtn--primary {
+  background: #81a5ff;
+  border-color: #81a5ff;
+  color: #0b0f1d;
+}
+
+.ui-skilltree__headerBtn--primary:hover:not(:disabled) {
+  background: #9ab8ff;
+  border-color: #9ab8ff;
+}
+
+.ui-skilltree__headerBtn--danger {
+  background: rgba(255, 95, 95, 0.15);
+  border-color: rgba(255, 95, 95, 0.6);
+  color: #ff9b9b;
+}
+
+.ui-skilltree__headerBtn--danger:hover:not(:disabled) {
+  background: rgba(255, 95, 95, 0.25);
+  border-color: rgba(255, 95, 95, 0.9);
+  color: #ffd2d2;
+}
+
 .ui-skilltree__content {
   display: grid;
   grid-template-columns: 1fr 320px;

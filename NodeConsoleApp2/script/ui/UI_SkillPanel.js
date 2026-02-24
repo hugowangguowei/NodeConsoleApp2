@@ -100,6 +100,7 @@ export default class UI_SkillPanel {
         this.eventBus.on('TURN_START', this.onTurnStart.bind(this));
         // If engine emits specific event for AP change
         this.eventBus.on('PLAYER_STATS_UPDATED', this.updateSkillAvailability.bind(this));
+        this.eventBus.on('DATA_UPDATE', this.onDataUpdate.bind(this));
     }
 
     // --- Event Handlers ---
@@ -132,6 +133,28 @@ export default class UI_SkillPanel {
         const playerQueue = this.engine.playerSkillQueue || [];
         this.renderMatrixQueue(playerQueue);
         this.updateSkillAvailability();
+    }
+
+    onDataUpdate(payload) {
+        const type = payload && typeof payload === 'object' ? payload.type : null;
+        if (type && type !== 'PLAYER_SKILLS') return;
+
+        const player = this.engine?.data?.playerData;
+        if (!player || !player.skills) return;
+
+        this.refreshSkillsFromPlayer(player);
+        this.renderSkillPool();
+    }
+
+    refreshSkillsFromPlayer(player) {
+        const skills = player?.skills;
+        const skillIds = Array.isArray(skills) ? skills : (Array.isArray(skills?.learned) ? skills.learned : []);
+        this.cachedSkills = skillIds.map(id => this.engine.data.getSkillConfig(id)).filter(s => s);
+
+        if (this.selectedSkill && !this.cachedSkills.find(s => s.id === this.selectedSkill.id)) {
+            this.selectedSkill = null;
+            this.clearHighlights();
+        }
     }
 
     onSkillClick(btn) {
@@ -346,8 +369,9 @@ export default class UI_SkillPanel {
         slotEl.dataset.queueIndex = queueIndex;
         // Find skill icon
         const skill = this.cachedSkills.find(s => s.id === action.skillId);
+        const skillType = (skill && typeof skill.type === 'string') ? skill.type.toLowerCase() : null;
         slotEl.textContent = skill ? (skill.icon || 'S') : '?';
-        slotEl.classList.add(skill ? `type-${skill.type.toLowerCase()}` : 'type-neutral');
+        slotEl.classList.add(skillType ? `type-${skillType}` : 'type-neutral');
     }
 
     clearMatrixSlots() {

@@ -50,8 +50,11 @@ export class UI_SkillTreeOverlay {
 		if (!this.engine || !this.engine.eventBus) return;
 		this.engine.eventBus.on('UI:OPEN_SKILL_TREE', (payload) => this.show(payload));
 		this.engine.eventBus.on('UI:CLOSE_SKILL_TREE', () => this.hide());
-		this.engine.eventBus.on('DATA_UPDATE', () => {
-			if (this.isVisible()) this._refresh();
+      this.engine.eventBus.on('DATA_UPDATE', (payload) => {
+			if (!this.isVisible()) return;
+			if (this.view && typeof this.view.refreshFromEngine === 'function') {
+				this.view.refreshFromEngine(payload);
+			}
 		});
 	}
 
@@ -91,13 +94,9 @@ export class UI_SkillTreeOverlay {
 	}
 
 	_refresh() {
-		// Re-mount to recompute derived states (cheap for MVP)
-		if (!this.dom.body || !this.view) return;
-		this.dom.body.innerHTML = '';
-		this.view.mountTo(this.dom.body, {
-			title: '技能树',
-			onClose: () => this.hide(),
-		});
+     if (this.view && typeof this.view.refreshFromEngine === 'function') {
+			this.view.refreshFromEngine();
+		}
 	}
 
 	_onKeyDown(e) {

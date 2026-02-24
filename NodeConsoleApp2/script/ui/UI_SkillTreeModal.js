@@ -50,12 +50,21 @@ export class UI_SkillTreeModal {
 		this._skillsMap = Object.create(null);
 		this._skillsList = [];
 		this._selectedSkillId = null;
+       this._sessionSnapshot = null;
+		this._stagedLearned = new Set();
+		this._isDirty = false;
 
 		this._dom = {
 			root: null,
 			header: null,
 			title: null,
 			kp: null,
+          headerActions: null,
+			headerButtons: null,
+			btnResetAll: null,
+            btnResetSelection: null,
+			btnStageLearn: null,
+			btnCommitAndClose: null,
 			content: null,
 			canvasWrap: null,
 			transformLayer: null,
@@ -93,6 +102,14 @@ export class UI_SkillTreeModal {
 
 		this._renderShell(options.title || '技能树');
 		this._loadDataFromEngine();
+     this._initSessionState();
+		this._renderAll();
+	}
+
+	refreshFromEngine(payload) {
+		const type = payload && typeof payload === 'object' ? payload.type : null;
+		if (type && type !== 'PLAYER_SKILLS') return;
+		this._loadDataFromEngine();
 		this._renderAll();
 	}
 
@@ -107,6 +124,12 @@ export class UI_SkillTreeModal {
 			header: null,
 			title: null,
 			kp: null,
+          headerActions: null,
+			headerButtons: null,
+			btnResetAll: null,
+            btnResetSelection: null,
+			btnStageLearn: null,
+			btnCommitAndClose: null,
 			content: null,
 			canvasWrap: null,
 			transformLayer: null,
@@ -116,6 +139,9 @@ export class UI_SkillTreeModal {
 			footer: null,
 			btnClose: null
 		};
+       this._sessionSnapshot = null;
+     this._stagedLearned = new Set();
+		this._isDirty = false;
 	}
 
 	// ----------------- Data -----------------
@@ -128,6 +154,51 @@ export class UI_SkillTreeModal {
 		// Default selection: first learned, else first skill
 		const learned = this._getLearned();
 		this._selectedSkillId = learned[0] || (this._skillsList[0] ? this._skillsList[0].id : null);
+	}
+
+	_initSessionState() {
+		this._sessionSnapshot = {
+			skillPoints: this._getSkillPoints(),
+			learned: this._getLearned(),
+			selectedSkillId: this._selectedSkillId
+		};
+     this._stagedLearned = new Set();
+		this._isDirty = false;
+	}
+
+	_getSessionLearned() {
+		const base = this._sessionSnapshot ? this._sessionSnapshot.learned : this._getLearned();
+		return unique([...toArray(base), ...Array.from(this._stagedLearned)]);
+	}
+
+	_getStagedCostKp() {
+		let sum = 0;
+		for (const id of this._stagedLearned) {
+			sum += Number(this._getSkillById(id)?.unlock?.cost?.kp) || 0;
+		}
+		return sum;
+	}
+
+	_getRemainingKp() {
+		const base = this._sessionSnapshot ? this._sessionSnapshot.skillPoints : this._getSkillPoints();
+		return base - this._getStagedCostKp();
+	}
+
+	_updateDirtyState() {
+      if (!this._sessionSnapshot) {
+			this._isDirty = false;
+			return;
+		}
+
+     const snapshotSelected = this._sessionSnapshot.selectedSkillId;
+		this._isDirty = this._stagedLearned.size > 0 || this._selectedSkillId !== snapshotSelected;
+	}
+
+   _restoreSnapshotState() {
+		if (!this._sessionSnapshot) return;
+		this._selectedSkillId = this._sessionSnapshot.selectedSkillId;
+     this._stagedLearned = new Set();
+		this._updateDirtyState();
 	}
 
 	_getPlayerSkillsObj() {
@@ -167,8 +238,8 @@ export class UI_SkillTreeModal {
 	 */
 	_getStatus(skillId) {
 		const skill = this._getSkillById(skillId);
-		const learned = this._getLearned();
-		const kp = this._getSkillPoints();
+     const learned = this._getSessionLearned();
+		const kp = this._getRemainingKp();
 
 		const prereqs = unique(toArray(skill?.prerequisites));
 		const missingPrereqs = prereqs.filter(p => !learned.includes(p));
@@ -176,7 +247,10 @@ export class UI_SkillTreeModal {
 		const exclusives = unique(toArray(skill?.unlock?.exclusives));
 		const exclusivesHit = exclusives.filter(x => learned.includes(x));
 
-		if (learned.includes(skillId)) {
+        if (this._stagedLearned.has(skillId)) {
+			return { kind: 'PENDING', missingPrereqs: [], kpCost, exclusivesHit: [] };
+		}
+		if (toArray(this._sessionSnapshot?.learned).includes(skillId)) {
 			return { kind: 'LEARNED', missingPrereqs: [], kpCost, exclusivesHit: [] };
 		}
 		if (exclusivesHit.length > 0) {
@@ -202,8 +276,26 @@ export class UI_SkillTreeModal {
 		const header = el('div', 'ui-skilltree__header');
 		const title = el('div', 'ui-skilltree__title', titleText);
 		const kp = el('div', 'ui-skilltree__kp', '可用 KP: 0');
+      const headerActions = el('div', 'ui-skilltree__headerActions');
+		const headerButtons = el('div', 'ui-skilltree__headerButtons');
+		const btnResetAll = el('button', 'ui-skilltree__headerBtn ui-skilltree__headerBtn--danger', '重置所有技能');
+        const btnResetSelection = el('button', 'ui-skilltree__headerBtn', '撤销未提交更改');
+		const btnCommitAndClose = el('button', 'ui-skilltree__headerBtn ui-skilltree__headerBtn--primary', '提交并关闭');
+		btnResetAll.type = 'button';
+		btnResetSelection.type = 'button';
+        btnCommitAndClose.type = 'button';
+
+		btnResetAll.addEventListener('click', () => this._handleResetAllSkills());
+		btnResetSelection.addEventListener('click', () => this._handleResetSelection());
+        btnCommitAndClose.addEventListener('click', () => this._handleCommitAndClose());
+
+		headerButtons.appendChild(btnResetAll);
+		headerButtons.appendChild(btnResetSelection);
+     headerButtons.appendChild(btnCommitAndClose);
+		headerActions.appendChild(kp);
+		headerActions.appendChild(headerButtons);
 		header.appendChild(title);
-		header.appendChild(kp);
+		header.appendChild(headerActions);
 
 		const content = el('div', 'ui-skilltree__content');
 		const canvasWrap = el('div', 'ui-skilltree__canvasWrap');
@@ -244,6 +336,12 @@ export class UI_SkillTreeModal {
 			header,
 			title,
 			kp,
+            headerActions,
+			headerButtons,
+			btnResetAll,
+			btnResetSelection,
+            btnStageLearn: null,
+			btnCommitAndClose,
 			content,
 			canvasWrap,
 			transformLayer,
@@ -267,7 +365,15 @@ export class UI_SkillTreeModal {
 	}
 
 	_renderHeader() {
-		if (this._dom.kp) this._dom.kp.textContent = `可用 KP: ${this._getSkillPoints()}`;
+        if (this._dom.kp) this._dom.kp.textContent = `可用 KP: ${this._getRemainingKp()}`;
+		const learned = this._sessionSnapshot ? this._sessionSnapshot.learned : this._getLearned();
+		const hasSelection = !!this._selectedSkillId;
+		const status = hasSelection ? this._getStatus(this._selectedSkillId) : null;
+
+		if (this._dom.btnResetAll) this._dom.btnResetAll.disabled = learned.length === 0;
+       if (this._dom.btnResetSelection) this._dom.btnResetSelection.disabled = !this._isDirty;
+		if (this._dom.btnCommitAndClose) this._dom.btnCommitAndClose.disabled = this._stagedLearned.size === 0;
+		if (this._dom.btnStageLearn) this._dom.btnStageLearn.disabled = !hasSelection || status?.kind !== 'LEARNABLE';
 	}
 
 	_renderNodes() {
@@ -278,7 +384,8 @@ export class UI_SkillTreeModal {
 			const pos = this._getNodePos(skill);
 			const status = this._getStatus(skill.id);
 
-			const node = el('button', `ui-skilltree__node ui-skilltree__node--${status.kind.toLowerCase()}`);
+           const kindClass = String(status.kind || '').toLowerCase();
+			const node = el('button', `ui-skilltree__node ui-skilltree__node--${kindClass}`);
 			node.type = 'button';
          node.style.left = `${pos.x}px`;
 			node.style.top = `${pos.y}px`;
@@ -355,7 +462,7 @@ export class UI_SkillTreeModal {
 		}
 
 		const status = this._getStatus(skill.id);
-		const learned = this._getLearned();
+     const learned = this._getSessionLearned();
 
 		const h = el('div', 'ui-skilltree__detailTitle', skill.name || skill.id);
 		const desc = el('div', 'ui-skilltree__detailDesc', skill.description || '');
@@ -374,16 +481,18 @@ export class UI_SkillTreeModal {
 		statusRow.appendChild(el('div', 'ui-skilltree__label', '状态'));
 		statusRow.appendChild(el('div', 'ui-skilltree__value', status.kind));
 
-		const btnArea = el('div', 'ui-skilltree__actions');
+     const btnArea = el('div', 'ui-skilltree__actions');
 		const btnLearn = el('button', 'menu-btn', '学习');
 		btnLearn.disabled = status.kind !== 'LEARNABLE';
-		btnLearn.addEventListener('click', () => this._handleLearn(skill.id));
+		btnLearn.addEventListener('click', () => this._handleStageLearn(skill.id));
+		this._dom.btnStageLearn = btnLearn;
 
 		const hint = el('div', 'ui-skilltree__detailHint');
 		if (status.kind === 'LOCKED') hint.textContent = `缺少前置：${status.missingPrereqs.join(', ')}`;
 		else if (status.kind === 'INSUFFICIENT_KP') hint.textContent = `KP 不足：需要 ${status.kpCost}`;
 		else if (status.kind === 'EXCLUSIVE_LOCK') hint.textContent = `互斥锁定：已学习 ${status.exclusivesHit.join(', ')}`;
 		else if (status.kind === 'LEARNED') hint.textContent = '已学习';
+		else if (status.kind === 'PENDING') hint.textContent = '已暂存（待提交）';
 
 		btnArea.appendChild(btnLearn);
 
@@ -400,18 +509,75 @@ export class UI_SkillTreeModal {
 
 	_selectSkill(skillId) {
 		this._selectedSkillId = skillId;
+		this._updateDirtyState();
 		this._renderNodes();
 		this._renderDetail();
+       this._renderHeader();
 	}
 
-	_handleLearn(skillId) {
-		if (!this.engine || !this.engine.input) return;
-		if (typeof this.engine.input.learnSkill !== 'function') {
-			console.warn('[UI_SkillTreeModal] Engine.input.learnSkill is not implemented.');
-			return;
+ _handleStageLearn(skillId) {
+		const status = this._getStatus(skillId);
+		if (status.kind !== 'LEARNABLE') return;
+		this._stagedLearned.add(skillId);
+		this._updateDirtyState();
+		this._renderAll();
+	}
+
+	_handleCommitAndClose() {
+		if (this._stagedLearned.size === 0) return;
+		const skillsObj = this._getPlayerSkillsObj();
+		if (!skillsObj) return;
+
+		const basePoints = this._sessionSnapshot ? this._sessionSnapshot.skillPoints : this._getSkillPoints();
+		const baseLearned = this._sessionSnapshot ? this._sessionSnapshot.learned : this._getLearned();
+		const nextPoints = basePoints - this._getStagedCostKp();
+		if (nextPoints < 0) return;
+
+		const nextLearned = unique([...toArray(baseLearned), ...Array.from(this._stagedLearned)]);
+		skillsObj.learned = nextLearned;
+		skillsObj.skillPoints = nextPoints;
+
+		if (this.engine?.eventBus) {
+			this.engine.eventBus.emit('DATA_UPDATE', { type: 'PLAYER_SKILLS', data: skillsObj });
 		}
-		this.engine.input.learnSkill(skillId);
-		// UI will be refreshed on DATA_UPDATE; also refresh optimistically
+		if (this.engine?.data && typeof this.engine.data.saveGame === 'function') {
+			this.engine.data.saveGame();
+		}
+
+		this._stagedLearned = new Set();
+		this._initSessionState();
+		this._renderAll();
+		this._handleClose();
+	}
+
+	_handleResetSelection() {
+        this._restoreSnapshotState();
+		this._renderAll();
+	}
+
+	_handleResetAllSkills() {
+		const skillsObj = this._getPlayerSkillsObj();
+		if (!skillsObj) return;
+		const learned = this._getLearned();
+		if (learned.length === 0) return;
+
+		const refund = learned.reduce((sum, skillId) => {
+			const cost = Number(this._getSkillById(skillId)?.unlock?.cost?.kp) || 0;
+			return sum + cost;
+		}, 0);
+
+		skillsObj.learned = [];
+		skillsObj.skillPoints = (Number(skillsObj.skillPoints) || 0) + refund;
+       this._selectedSkillId = this._skillsList[0] ? this._skillsList[0].id : null;
+		this._initSessionState();
+
+		if (this.engine?.eventBus) {
+			this.engine.eventBus.emit('DATA_UPDATE', { type: 'PLAYER_SKILLS', data: skillsObj });
+		}
+		if (this.engine?.data && typeof this.engine.data.saveGame === 'function') {
+			this.engine.data.saveGame();
+		}
+
 		this._renderAll();
 	}
 
@@ -431,8 +597,11 @@ export class UI_SkillTreeModal {
 		this._dom.canvasWrap.addEventListener('click', () => {
 			// click empty area clears selection
 			this._selectedSkillId = null;
+            this._pendingSelection = new Set();
+			this._updateDirtyState();
 			this._renderNodes();
 			this._renderDetail();
+         this._renderHeader();
 		});
 		this._dom.canvasWrap.addEventListener('wheel', this._bound.onWheel, { passive: false });
 	}

@@ -358,6 +358,7 @@ UI 通过调用引擎提供的 API 或发送事件来传达用户操作：
         *   Header KP 数值刷新
         *   当前节点切换为 `LEARNED`
         *   受影响的后续节点重新计算状态
+        *   主界面技能池（Skill Pool）收到 `DATA_UPDATE` 后立即刷新
 
 4.  **关闭技能树**
     *   操作：点击关闭按钮。
@@ -380,6 +381,62 @@ UI 通过调用引擎提供的 API 或发送事件来传达用户操作：
     *   挂载技能树画布与详情面板。
     *   只依赖 `engine.eventBus`、`engine.input`、`engine.data`。
 *   `UI_SystemModal`：不再承载技能树 UI，仅保留系统类小窗。
+
+##### 4.4.4.8 状态管理结构与事件流建议
+
+**状态结构（SkillTree Session State，推荐：会话暂存 / staging）**
+
+为避免 `DATA_UPDATE` 导致 UI 被“重挂载”而丢失会话选择，本界面将状态分为 **持久数据**（Engine 数据）与 **会话暂存**（Overlay 内部）。
+
+*   **持久数据（Engine / Save）**
+    *   `player.skills.skillPoints`：当前可用 KP（已提交）
+    *   `player.skills.learned: string[]`：已学习技能（已提交）
+*   **会话基线（Session Snapshot，打开时创建一次）**
+    *   `baseSkillPoints`：打开时的 KP
+    *   `baseLearned`：打开时的 learned（深拷贝）
+    *   `baseSelectedSkillId`：打开时默认选中（可空）
+*   **会话暂存（Session Staging）**
+    *   `stagedLearned: Set<string>`：本次打开期间“学习(暂存)”的技能集合（未提交）
+    *   `stagedCostKp: number`：本次暂存消耗 KP 合计（派生值，或缓存）
+    *   `selectedSkillId`：当前选中技能（仅 UI）
+    *   `isDirty`：是否存在未提交更改（例如 `stagedLearned.size > 0` 或 `selectedSkillId !== baseSelectedSkillId`）
+
+**关键交互事件流（两阶段：学习 / 提交并关闭）**
+
+1.  **打开技能树**：
+    *   创建 `Session Snapshot`（baseKP/baseLearned/baseSelectedSkillId），并初始化 `stagedLearned = ?`。
+2.  **选择节点**：
+    *   仅更新 `selectedSkillId`（不会改动 Engine 数据）。
+3.  **学习（会话内）**：
+    *   点击详情区“学习”按钮，将技能加入 `stagedLearned`。
+    *   UI 立刻以 `baseLearned + stagedLearned` 推导节点状态（增加 `PENDING` 状态，表示“已暂存待提交”）。
+    *   KP 显示为 **剩余 KP（基线 KP - stagedCostKp）**。
+4.  **撤销本次未提交更改（原“重置本次选择”）**：
+    *   清空 `stagedLearned`，`selectedSkillId` 恢复为 `baseSelectedSkillId`，`isDirty=false`。
+    *   不触发 `DATA_UPDATE`，因为未提交更改不应影响全局。
+5.  **提交并关闭（新增按钮）**：
+    *   对 `stagedLearned` 做最终校验（前置、互斥、KP）。
+    *   写入 Engine 持久数据：
+        *   `player.skills.learned = unique(baseLearned ∪ stagedLearned)`
+        *   `player.skills.skillPoints = baseSkillPoints - stagedCostKp`
+    *   触发 `DATA_UPDATE(type=PLAYER_SKILLS)`，并持久化保存。
+    *   关闭 Overlay。
+6.  **重置所有技能**：
+    *   清空 `player.skills.learned` 并返还全部 KP，触发 `DATA_UPDATE` 与保存。
+    *   若技能树 Overlay 正在打开：重置 `Session Snapshot` 与 `stagedLearned`，并刷新 UI。
+
+**按钮启用/禁用建议（两阶段模型）**
+
+*   “撤销本次未提交更改”：`stagedLearned.size === 0 && selectedSkillId === baseSelectedSkillId` 时置灰。
+*   “学习”：当前选中技能状态为 `LEARNABLE` 且剩余 KP 足够时可用。
+*   “提交并关闭”：`stagedLearned.size > 0` 时可用；若最终校验失败则提示原因。
+*   “重置所有技能”：已学习为空时置灰。
+
+**节点状态补充（新增 PENDING）**
+
+*   `PENDING`（已暂存待提交）
+    *   判定：技能不在 `baseLearned`，但在 `stagedLearned`
+    *   视觉：区别于 `LEARNED`（例如虚线边框/不同高亮），并在详情区标注“待提交”
 
 
 

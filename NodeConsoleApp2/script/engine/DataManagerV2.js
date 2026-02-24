@@ -15,36 +15,23 @@ class DataManager {
     }
 
     _normalizeSkills(skills, playerTemplate) {
-        // Desired schema: { skillTreeId, skillPoints, learned: string[] }
-        if (skills && typeof skills === 'object' && !Array.isArray(skills)) {
-            const learned = Array.isArray(skills.learned) ? skills.learned : [];
+        const tpl = (playerTemplate && typeof playerTemplate.skills === 'object' && !Array.isArray(playerTemplate.skills))
+            ? playerTemplate.skills
+            : null;
+        const source = (skills && typeof skills === 'object' && !Array.isArray(skills)) ? skills : tpl;
+        if (source && typeof source === 'object' && !Array.isArray(source)) {
+            const learned = Array.isArray(source.learned) ? source.learned : [];
             return {
-                skillTreeId: skills.skillTreeId ?? null,
-                skillPoints: Number.isFinite(skills.skillPoints) ? skills.skillPoints : 0,
+                skillTreeId: source.skillTreeId ?? null,
+                skillPoints: Number.isFinite(source.skillPoints) ? source.skillPoints : 0,
                 learned: [...learned]
             };
         }
 
-        // Legacy schema: string[]
-        if (Array.isArray(skills)) {
-            const tpl = (playerTemplate && typeof playerTemplate.skills === 'object' && !Array.isArray(playerTemplate.skills))
-                ? playerTemplate.skills
-                : null;
-            return {
-                skillTreeId: tpl?.skillTreeId ?? null,
-                skillPoints: Number.isFinite(tpl?.skillPoints) ? tpl.skillPoints : 0,
-                learned: [...skills]
-            };
-        }
-
-        // Missing
-        const tpl = (playerTemplate && typeof playerTemplate.skills === 'object' && !Array.isArray(playerTemplate.skills))
-            ? playerTemplate.skills
-            : null;
         return {
-            skillTreeId: tpl?.skillTreeId ?? null,
-            skillPoints: Number.isFinite(tpl?.skillPoints) ? tpl.skillPoints : 0,
-            learned: Array.isArray(tpl?.learned) ? [...tpl.learned] : []
+            skillTreeId: null,
+            skillPoints: 0,
+            learned: []
         };
     }
 
@@ -92,22 +79,17 @@ class DataManager {
                     ? this.gameConfig.player.default
                     : null;
                 
-                // Check if it's the new format or legacy format
-                if (parsed.version && parsed.global) {
-                    this.dataConfig = parsed;
-                    
-                    // Restore runtime level data
-                    if (this.dataConfig.runtime && this.dataConfig.runtime.levelData) {
-                        this._currentLevelConfig = this.dataConfig.runtime.levelData;
-                    }
+                if (!parsed.version || !parsed.global) {
+                    return false;
+                }
+
+                this.dataConfig = parsed;
+
+                // Restore runtime level data
+                if (this.dataConfig.runtime && this.dataConfig.runtime.levelData) {
+                    this._currentLevelConfig = this.dataConfig.runtime.levelData;
                 } else {
-                    // Migration: Legacy save was just the player object
-                    console.log("Migrating legacy save...");
-                    this.dataConfig.global = {
-                        player: parsed,
-                        progress: { unlockedLevels: ['level_1_1'], completedQuests: [], flags: {} }
-                    };
-                    this.dataConfig.runtime = { currentScene: "MAIN_MENU", battleState: null };
+                    this._currentLevelConfig = null;
                 }
 
                 // Migration/Normalization: skills schema (object) + backward compatibility
@@ -115,11 +97,6 @@ class DataManager {
                     this.playerData.skills = this._normalizeSkills(this.playerData.skills, playerTemplate);
                 }
                 
-                // Migration: Ensure speed exists (legacy logic)
-                if (this.playerData && this.playerData.stats && this.playerData.stats.speed === undefined) {
-                    this.playerData.stats.speed = 10;
-                }
-
                 console.log('Game loaded.');
                 return true;
             } catch (e) {
@@ -131,15 +108,12 @@ class DataManager {
     }
 
     createNewGame(username) {
-        // Use loaded player config or fallback to hardcoded default
         const playerTemplate = (this.gameConfig && this.gameConfig.player && this.gameConfig.player.default) 
             ? this.gameConfig.player.default 
-            : {
-                stats: { hp: 100, maxHp: 100, ap: 4, maxAp: 6, speed: 10 },
-                skills: ['skill_slash', 'skill_heal', 'skill_fireball'],
-                equipment: { weapon: null, head: null, chest: null, abdomen: null, arm: null, leg: null },
-                inventory: []
-            };
+            : null;
+        if (!playerTemplate) {
+            throw new Error('Missing player default config.');
+        }
 
         this.dataConfig.global = {
             player: {
@@ -210,9 +184,12 @@ class DataManager {
                 fetchConfig('buffs')
             ]);
 
-            const skillTreeId = player && player.default && player.default.skills && typeof player.default.skills === 'object'
-                ? player.default.skills.skillTreeId
-                : null;
+            const playerSkills = player && player.default ? player.default.skills : null;
+            if (!playerSkills || typeof playerSkills !== 'object' || Array.isArray(playerSkills)) {
+                throw new Error('Player skills must be an object schema.');
+            }
+
+            const skillTreeId = playerSkills.skillTreeId;
             const skillsByTree = sources.skillsByTree || {};
             const skillsPath = (skillTreeId && skillsByTree && skillsByTree[skillTreeId])
                 ? skillsByTree[skillTreeId]
@@ -254,13 +231,6 @@ class DataManager {
                 buffs
             };
 
-            if (player && Array.isArray(player.default?.skills)) {
-                const missing = player.default.skills.filter(id => !skillsMap[id]);
-                if (missing.length > 0) {
-                    console.warn('[DataManager] Missing skills in skills data:', missing);
-                }
-            }
-            
             console.log("? [DataManager] Configs successfully loaded from JSON files.", this.gameConfig);
         } catch (e) {
             console.warn("?? [DataManager] Failed to load JSON configs. Reason:", e.message);
@@ -274,7 +244,11 @@ class DataManager {
             player: {
                 default: {
                     stats: { hp: 100, maxHp: 100, ap: 4, maxAp: 6, speed: 10 },
-                    skills: ['skill_slash', 'skill_heal', 'skill_fireball'],
+                    skills: {
+                        skillTreeId: 'melee_v4_5',
+                        skillPoints: 0,
+                        learned: ['skill_slash', 'skill_heal', 'skill_fireball']
+                    },
                     equipment: { weapon: null, head: null, chest: null, abdomen: null, arm: null, leg: null },
                     inventory: []
                 }
@@ -369,9 +343,6 @@ class DataManager {
                     runtimeLevel.enemies.push(enemyInstance);
                 }
             });
-        } else if (levelConfig.enemies) {
-             // Legacy support for direct definition (if any)
-             runtimeLevel.enemies = JSON.parse(JSON.stringify(levelConfig.enemies));
         }
 
         return runtimeLevel;
