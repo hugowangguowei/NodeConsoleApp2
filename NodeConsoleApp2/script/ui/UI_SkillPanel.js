@@ -113,11 +113,74 @@ export default class UI_SkillPanel {
         this.cachedSkills = skillIds.map(id => this.engine.data.getSkillConfig(id)).filter(s => s);
         
         // Initialize Matrix Rows (Missing Parts Logic)
+        this.buildMatrixFromBattleRules();
         this.initMatrixRows(data.level.enemies[0]); // Assume single enemy focus for MVP
         
         this.renderSkillPool();
         this.clearMatrix();
         this.selectedSkill = null;
+    }
+
+    buildMatrixFromBattleRules() {
+        if (!this.matrixContainer) return;
+
+        const layout = this.engine?.data?.dataConfig?.runtime?.battleRules?.slotLayout
+            || this.engine?.data?.gameConfig?.slotLayouts?.layouts?.[(this.engine?.data?.dataConfig?.battleRules?.slotLayoutId) || 'default_v1']
+            || null;
+
+        const rows = Array.isArray(layout?.rows) ? layout.rows : null;
+        const slotCounts = layout?.slotCounts && typeof layout.slotCounts === 'object' ? layout.slotCounts : null;
+        if (!rows || !slotCounts) return;
+
+        const makeZoneSlots = (zoneEl, part, targetType, count) => {
+            zoneEl.innerHTML = '';
+            for (let i = 0; i < count; i++) {
+                const slot = document.createElement('div');
+                slot.className = 'slot-placeholder';
+                slot.dataset.part = part;
+                slot.dataset.targetType = targetType;
+                slot.dataset.slotIndex = String(i);
+                zoneEl.appendChild(slot);
+            }
+        };
+
+        this.matrixContainer.innerHTML = '';
+        rows.forEach(part => {
+            const row = document.createElement('div');
+            row.className = 'matrix-row';
+            row.dataset.rowPart = part;
+
+            const selfZone = document.createElement('div');
+            selfZone.className = 'matrix-zone self-zone';
+            const enemyZone = document.createElement('div');
+            enemyZone.className = 'matrix-zone enemy-zone';
+
+            const label = document.createElement('div');
+            label.className = 'matrix-label';
+            label.textContent = this.formatPartLabel(part);
+
+            const selfCount = Number(slotCounts?.[part]?.self ?? 0) || 0;
+            const enemyCount = Number(slotCounts?.[part]?.enemy ?? 0) || 0;
+            makeZoneSlots(selfZone, part, 'self', selfCount);
+            makeZoneSlots(enemyZone, part, 'enemy', enemyCount);
+
+            row.appendChild(selfZone);
+            row.appendChild(label);
+            row.appendChild(enemyZone);
+            this.matrixContainer.appendChild(row);
+        });
+    }
+
+    formatPartLabel(part) {
+        const map = {
+            head: '头部',
+            chest: '胸部',
+            abdomen: '腹部',
+            arm: '手部',
+            leg: '腿部',
+            global: '通用'
+        };
+        return map[part] || part;
     }
 
     onTurnStart() {

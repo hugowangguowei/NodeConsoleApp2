@@ -1,5 +1,5 @@
 {
-  "version": "data_sources_v1.0.0.1",
+  "version": "data_sources_v1.0.0.2",
   "basePath": "./assets/data/",
   "sources": {
     "skills": "skills_melee_v4_5.json",
@@ -10,6 +10,10 @@
     "enemies": "enemies.json",
     "levels": "levels.json",
     "player": "player.json",
-    "buffs": "buffs_v2_7.json"
+    "buffs": "buffs_v2_7.json",
+    "slotLayouts": "slot_layouts.json"
+  },
+  "battleRules": {
+    "slotLayoutId": "default_v1"
   }
 }

@@ -4,6 +4,9 @@
     "name": "幽暗森林边缘",
     "description": "森林外围，常有哥布林出没。",
     "background": "bg_forest_01",
+    "battleRules": {
+      "slotLayoutId": "default_v1"
+    },
     "waves": [
       {
         "enemies": [

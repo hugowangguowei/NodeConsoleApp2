@@ -33,7 +33,55 @@ class CoreEngine {
         this.enemySkillQueue = [];
         this.battlePhase = 'IDLE'; // IDLE, PLANNING, EXECUTION
 
+        this._battleSlotLayout = null;
+
         this.init();
+    }
+
+    // ----------------- Battle Rules: Slot Layout -----------------
+
+    _getSlotLayoutsRoot() {
+        return (this.data && this.data.gameConfig) ? this.data.gameConfig.slotLayouts : null;
+    }
+
+    _resolveSlotLayoutIdForCurrentBattle() {
+        const levelId = this.data && this.data.currentLevelData ? this.data.currentLevelData.id : null;
+        const levelCfg = levelId && this.data.gameConfig && this.data.gameConfig.levels ? this.data.gameConfig.levels[levelId] : null;
+        const fromLevel = levelCfg && levelCfg.battleRules ? levelCfg.battleRules.slotLayoutId : null;
+        const fromConfig = (this.data && this.data.dataConfig && this.data.dataConfig.battleRules)
+            ? this.data.dataConfig.battleRules.slotLayoutId
+            : null;
+        const fromSourcesConfig = (this.data && this.data._dataSourcesVersion) // keep method side-effect free
+            ? null
+            : null;
+
+        return fromLevel || fromConfig || 'default_v1';
+    }
+
+    _getBattleSlotLayout() {
+        if (this._battleSlotLayout) return this._battleSlotLayout;
+
+        const root = this._getSlotLayoutsRoot();
+        const layoutId = this._resolveSlotLayoutIdForCurrentBattle();
+        const layout = root && root.layouts ? root.layouts[layoutId] : null;
+        this._battleSlotLayout = layout || null;
+        return this._battleSlotLayout;
+    }
+
+    _getSlotCapacity(side, bodyPart) {
+        const layout = this._getBattleSlotLayout();
+        if (!layout || !layout.slotCounts) return Infinity;
+        const row = layout.slotCounts[bodyPart];
+        const cap = row && row[side] !== undefined ? Number(row[side]) : Infinity;
+        return Number.isFinite(cap) ? cap : Infinity;
+    }
+
+    _getUsedSlotsCount(queue, side, bodyPart) {
+        return (queue || []).filter(a => {
+            const isSelf = (a.targetId === this.data.playerData.id);
+            const aSide = isSelf ? 'self' : 'enemy';
+            return aSide === side && a.bodyPart === bodyPart;
+        }).length;
     }
 
     learnSkill(skillId) {
@@ -191,6 +239,17 @@ class CoreEngine {
             player: [],
             enemy: []
         };
+
+        // 3.1 Battle rules snapshot (slots)
+        runtime.battleRules = runtime.battleRules || {};
+        const slotLayoutId = this._resolveSlotLayoutIdForCurrentBattle();
+        runtime.battleRules.slotLayoutId = slotLayoutId;
+        const layoutRoot = this._getSlotLayoutsRoot();
+        runtime.battleRules.slotLayout = (layoutRoot && layoutRoot.layouts && layoutRoot.layouts[slotLayoutId])
+            ? JSON.parse(JSON.stringify(layoutRoot.layouts[slotLayoutId]))
+            : null;
+
+        this._battleSlotLayout = runtime.battleRules.slotLayout;
 
         // 4. 玩家临时状态
         runtime.playerBattleState = {
@@ -486,6 +545,16 @@ class CoreEngine {
         }
 
         const cost = skillConfig.cost;
+
+        // Slot capacity validation (core mechanic)
+        const isSelfTarget = (targetId === this.data.playerData.id);
+        const side = isSelfTarget ? 'self' : 'enemy';
+        const capacity = this._getSlotCapacity(side, bodyPart);
+        const used = this._getUsedSlotsCount(this.playerSkillQueue, side, bodyPart);
+        if (used >= capacity) {
+            this.eventBus.emit('BATTLE_LOG', { text: `No available slot for ${side}:${bodyPart} (capacity ${capacity}).` });
+            return;
+        }
 
         // 计算当前 AP 使用量
         const currentQueueCost = this.playerSkillQueue.reduce((sum, action) => sum + action.cost, 0);

@@ -1,0 +1,19 @@
+{
+  "version": "slot_layouts_v1.0.0",
+  "layouts": {
+    "default_v1": {
+      "id": "default_v1",
+      "name": "默认行动槽位布局",
+      "rows": ["head", "chest", "abdomen", "arm", "leg", "global"],
+      "sides": ["self", "enemy"],
+      "slotCounts": {
+        "head": { "self": 2, "enemy": 3 },
+        "chest": { "self": 2, "enemy": 3 },
+        "abdomen": { "self": 2, "enemy": 3 },
+        "arm": { "self": 2, "enemy": 3 },
+        "leg": { "self": 1, "enemy": 3 },
+        "global": { "self": 2, "enemy": 3 }
+      }
+    }
+  }
+}

@@ -200,6 +200,16 @@ class DataManager {
                 fetchConfig('buffs')
             ]);
 
+            let slotLayouts = null;
+            if (sources.slotLayouts) {
+                try {
+                    slotLayouts = await fetchConfig('slotLayouts');
+                } catch (e) {
+                    console.warn('?? [DataManager] Failed to load slotLayouts. Reason:', e.message);
+                    slotLayouts = null;
+                }
+            }
+
             const playerSkills = player && player.default ? player.default.skills : null;
             if (!playerSkills || typeof playerSkills !== 'object' || Array.isArray(playerSkills)) {
                 throw new Error('Player skills must be an object schema.');
@@ -244,7 +254,8 @@ class DataManager {
                 enemies,
                 levels,
                 player,
-                buffs
+                buffs,
+                slotLayouts
             };
 
             console.log("? [DataManager] Configs successfully loaded from JSON files.", this.gameConfig);
