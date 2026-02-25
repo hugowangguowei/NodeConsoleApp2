@@ -1,0 +1,17 @@
+{
+  "version": "0.2.0",
+  "defaults": {},
+  "configurations": [
+    {
+      "type": "node",
+      "name": "NodeConsoleApp2 (node app.js)",
+      "project": "NodeConsoleApp2",
+      "program": "${workspaceFolder}\\NodeConsoleApp2\\app.js",
+      "cwd": "${workspaceFolder}\\NodeConsoleApp2",
+      "console": "integratedTerminal",
+      "env": {
+        "PORT": "3000"
+      }
+    }
+  ]
+}

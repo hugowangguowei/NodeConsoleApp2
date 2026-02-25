@@ -547,13 +547,21 @@ UI 通过调用引擎提供的 API 或发送事件来传达用户操作：
         *   **若为进攻技能**: 中间栏 **敌方队列 zone** 中对应部位行的空槽高亮闪烁。
         *   **若为增益技能**: 中间栏 **玩家队列 zone** 中对应部位行的空槽高亮闪烁。
 2.  **Confirm Target**: 玩家点击中间栏高亮的某个 **占位符** `P`。
-    *   数据更新: 调用 `Engine.input.addSkillToQueue(S, P.targetPart, P.targetType)` (需区分是打人还是加血)。
+    *   数据更新（slotKey-based planning）:
+        *   UI 为占位符构造 `slotKey = "{side}:{part}:{index}"`（例如 `enemy:head:0`）。
+        *   调用 `Engine.input.assignSkillToSlot({ slotKey, skillId: S, targetId, bodyPart, replaceIfAlreadyPlaced: true })`。
     *   UI 更新: 技能 `S` 的图标填入该占位符。AP 条扣除对应消耗。
 
 **流程 B: 撤销指令 (Dequeue)**
 1.  玩家点击 **待执行队列** 中已填入技能的卡槽。
-2.  数据更新: 调用 `Engine.input.removeSkillFromQueue(index)`。
+2.  数据更新: 调用 `Engine.input.unassignSlot(slotKey)`。
 3.  UI 更新: 卡槽变回空的占位符，AP 返还。
+
+> 规则说明（由引擎 Planning 模块统一保证）：
+> - **替换（单选技能）**：保持技能选中，点击另一个可用槽位，若该技能允许的最大放置数 `maxSlots=1`，则替换旧绑定。
+> - **取消**：点击已占用槽位即取消该槽位。
+> - **不允许覆盖**：槽位已被其它动作占用时，引擎拒绝放置。
+> - **多选上限**：由 `skill.placement.maxSlots` 控制，达到上限后拒绝继续放置。
 
 **流程 C: 回合结束 (Commit)**
 1.  玩家点击 **回合控制面板** 的 "开始 (Start)" 按钮。
@@ -589,16 +597,16 @@ UI 通过调用引擎提供的 API 或发送事件来传达用户操作：
     *   **点击空槽 (Placeholder Click)**:
         *   **条件**: 必须已有 `selectedSkill`，且该槽位高亮（符合部位/目标限制）。
         *   **结果**: 将技能填入该槽位，前端预扣除 AP。
-        *   **指令**: `Engine.input.addSkillToQueue(skillId, partId, targetType)`。
+        *   **指令**: `Engine.input.assignSkillToSlot({ slotKey, skillId, targetId, bodyPart })`。
     *   **点击已占槽 (Filled Slot Click)**:
         *   **结果**: 移除该行动，返还 AP。
-        *   **指令**: `Engine.input.removeSkillFromQueue(actionIndex)`。
+        *   **指令**: `Engine.input.unassignSlot(slotKey)`。
 *   **区域联动 (Linkage)**:
     *   **-> 技能库**: 当 AP 变化时，通知技能库刷新可用状态（如 AP 从 2 降为 0，消耗 1 AP 的技能变灰）。
     *   **-> 动态详情区**: 鼠标悬停在已填充的行动块上时，详情区显示该行动的上下文信息（例如：预计对该部位造成的最终伤害区间、命中率修正）。
 *   **引擎交互 (Engine Interface)**:
-    *   `addSkillToQueue`: 验证合法性后更新 `plannedActions`。
-    *   `removeSkillFromQueue`: 移除行动。
+    *   `assignSkillToSlot`: 验证 slotKey/容量/AP/上限/覆盖规则后更新 planning。
+    *   `unassignSlot`: 移除 planning 中对应的动作。
 
 #### 4.6.6 交互细节：动态详情区 (Context Detail Logic)
 

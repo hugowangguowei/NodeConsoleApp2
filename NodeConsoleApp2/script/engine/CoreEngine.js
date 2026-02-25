@@ -3,6 +3,7 @@ import GameFSM from './GameFSM.js';
 import GameLoop from './GameLoop.js';
 import DataManager from './DataManagerV2.js';
 import { BuffRegistry, BuffManager, BuffSystem } from './buff/index.js';
+import TurnPlanner from './TurnPlanner.js';
 
 class CoreEngine {
     constructor() {
@@ -13,12 +14,22 @@ class CoreEngine {
 
 		this.buffRegistry = new BuffRegistry();
 		this.buffSystem = new BuffSystem(this.eventBus, this.buffRegistry);
+
+        this.turnPlanner = new TurnPlanner({
+            getSlotLayout: () => this._getBattleSlotLayout(),
+            getPlayerId: () => (this.data && this.data.playerData ? this.data.playerData.id : null),
+            getSkillConfig: (skillId) => this.data.getSkillConfig(skillId),
+            getCurrentAp: () => (this.data && this.data.playerData && this.data.playerData.stats ? this.data.playerData.stats.ap : 0),
+            getUsedAp: () => (this.playerSkillQueue || []).reduce((sum, a) => sum + (Number(a.cost) || 0), 0)
+        });
         
         this.input = {
             login: this.login.bind(this),
             selectLevel: this.selectLevel.bind(this),
             addSkillToQueue: this.addSkillToQueue.bind(this),
             removeSkillFromQueue: this.removeSkillFromQueue.bind(this),
+         assignSkillToSlot: this.assignSkillToSlot.bind(this),
+            unassignSlot: this.unassignSlot.bind(this),
             commitTurn: this.commitTurn.bind(this),
             saveGame: this.saveGame.bind(this),
             loadGame: this.loadGame.bind(this),
@@ -238,6 +249,16 @@ class CoreEngine {
         runtime.queues = {
             player: [],
             enemy: []
+        };
+
+        // 3.2 Planning state (slot-key based)
+        runtime.planning = {
+            player: {
+                assigned: {},
+                actionsById: {},
+                order: [],
+                skillCounts: {}
+            }
         };
 
         // 3.1 Battle rules snapshot (slots)
@@ -483,6 +504,8 @@ class CoreEngine {
 
         this.playerSkillQueue = [];
         this.enemySkillQueue = [];
+        this.turnPlanner.reset();
+        this._syncPlannerToRuntime();
 
         // 重置 AP
         if (this.data.playerData) {
@@ -577,6 +600,79 @@ class CoreEngine {
         this.emitBattleUpdate();
     }
 
+    // slotKey-based planning API
+    assignSkillToSlot({ slotKey, skillId, targetId, bodyPart, replaceIfAlreadyPlaced = true }) {
+        if (this.fsm.currentState !== 'BATTLE_LOOP' || this.battlePhase !== 'PLANNING') return;
+
+        const skillConfig = this.data.getSkillConfig(skillId);
+        if (!skillConfig) {
+            this.eventBus.emit('BATTLE_LOG', { text: `Unknown skill: ${skillId}` });
+            return;
+        }
+
+        // reuse old validations (target/body part)
+        const requiresBodyPart = (skillConfig.type === 'DAMAGE' || skillConfig.type === 'HEAL' || skillConfig.type === 'BUFF') && skillConfig.targetType !== 'GLOBAL' && skillConfig.targetType !== 'AOE';
+        if (requiresBodyPart && !bodyPart) {
+            this.eventBus.emit('BATTLE_LOG', { text: `Skill ${skillConfig.name} requires a target body part.` });
+            return;
+        }
+
+        const cost = skillConfig.cost;
+        const speed = (this.data.playerData.stats.speed || 10) + (skillConfig.speed || 0);
+
+        const res = this.turnPlanner.assign({
+            slotKey,
+            skillId,
+            targetId,
+            bodyPart,
+            cost,
+            speed,
+            replaceIfAlreadyPlaced
+        });
+
+        if (!res.ok) {
+            this.eventBus.emit('BATTLE_LOG', { text: res.reason || 'Cannot assign to slot.' });
+            return;
+        }
+
+        this._freezePlannerToQueue();
+        this._syncPlannerToRuntime();
+        this.eventBus.emit('BATTLE_LOG', { text: `Placed skill: ${skillConfig.name}` });
+        this.emitBattleUpdate();
+    }
+
+    unassignSlot(slotKey) {
+        if (this.fsm.currentState !== 'BATTLE_LOOP' || this.battlePhase !== 'PLANNING') return;
+        const res = this.turnPlanner.unassign(slotKey);
+        if (!res.ok) {
+            this.eventBus.emit('BATTLE_LOG', { text: res.reason || 'Cannot unassign slot.' });
+            return;
+        }
+        if (res.removed) {
+            this._freezePlannerToQueue();
+            this._syncPlannerToRuntime();
+            this.eventBus.emit('BATTLE_LOG', { text: `Removed action from ${slotKey}` });
+            this.emitBattleUpdate();
+        }
+    }
+
+    _freezePlannerToQueue() {
+        this.playerSkillQueue = this.turnPlanner.getPlannedActions().map(a => ({
+            ...a
+        }));
+    }
+
+    _syncPlannerToRuntime() {
+        const rt = this.data && this.data.dataConfig ? this.data.dataConfig.runtime : null;
+        if (!rt) return;
+        if (!rt.planning) rt.planning = {};
+        if (!rt.planning.player) rt.planning.player = {};
+        rt.planning.player.assigned = { ...this.turnPlanner.assigned };
+        rt.planning.player.actionsById = { ...this.turnPlanner.actionsById };
+        rt.planning.player.order = [...this.turnPlanner.order];
+        rt.planning.player.skillCounts = { ...this.turnPlanner.skillCounts };
+    }
+
     removeSkillFromQueue(index) {
         if (this.fsm.currentState !== 'BATTLE_LOOP' || this.battlePhase !== 'PLANNING') return;
         
@@ -592,6 +688,9 @@ class CoreEngine {
 
         console.log('Player committed turn.');
         this.battlePhase = 'EXECUTION';
+
+        // Freeze planner to queue snapshot for execution
+        this._freezePlannerToQueue();
         
         // 生成敌人行动（模拟')
         if (this.data.currentLevelData && this.data.currentLevelData.enemies) {

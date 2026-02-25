@@ -294,24 +294,20 @@ export default class UI_SkillPanel {
 
         const finalTargetId = (targetType === 'self') ? playerId : enemyId;
 
-        // SINGLE replace: remove previous placement for the same skill+side+part (if any)
-        if (this.placementRules.singleReplace) {
-            const previousIndex = this._findQueueIndexBySlotKey(this._makeSlotKey(part, targetType, slotIndex));
-            if (previousIndex !== null) {
-                // Same exact slot already filled should have been handled as filled-click,
-                // but keep it safe here.
-                this.engine.input.removeSkillFromQueue(previousIndex);
-                return;
-            }
-
-            const replaceCandidate = this._findLatestQueueIndexForSkillOnPart(this.selectedSkill.id, targetType, part);
-            if (replaceCandidate !== null) {
-                this.engine.input.removeSkillFromQueue(replaceCandidate);
-            }
+        const slotKey = this._makeSlotKey(part, targetType, slotIndex);
+        // slotKey-based planning (engine enforces: single replace / cannot overwrite / max placements)
+        if (this.engine?.input?.assignSkillToSlot) {
+            this.engine.input.assignSkillToSlot({
+                slotKey,
+                skillId: this.selectedSkill.id,
+                targetId: finalTargetId,
+                bodyPart: part,
+                replaceIfAlreadyPlaced: true
+            });
+        } else {
+            // Fallback (legacy)
+            this.engine.input.addSkillToQueue(this.selectedSkill.id, finalTargetId, part);
         }
-
-        // Call Engine Input (engine will reject if capacity exceeds)
-        this.engine.input.addSkillToQueue(this.selectedSkill.id, finalTargetId, part);
         
         // Visual feedback handled by BATTLE_UPDATE event re-rendering matrix
     }
@@ -319,11 +315,18 @@ export default class UI_SkillPanel {
     onFilledSlotClick(slotElement) {
         if (!this.placementRules.clickFilledToCancel) return;
 
-        // If the filled slot represents a specific queue action, remove it.
-        const index = parseInt(slotElement.dataset.queueIndex);
-        if (isNaN(index)) return;
+        const spec = this._getSlotSpecFromElement(slotElement);
+        if (!spec) return;
+        const slotKey = this._makeSlotKey(spec.part, spec.targetType, spec.slotIndex);
 
-        this.engine.input.removeSkillFromQueue(index);
+        if (this.engine?.input?.unassignSlot) {
+            this.engine.input.unassignSlot(slotKey);
+        } else {
+            // Legacy fallback
+            const index = parseInt(slotElement.dataset.queueIndex);
+            if (isNaN(index)) return;
+            this.engine.input.removeSkillFromQueue(index);
+        }
     }
 
     // --- Render Logic ---
@@ -504,34 +507,6 @@ export default class UI_SkillPanel {
 
     _makeSlotKey(part, targetType, slotIndex) {
         return `${targetType}:${part}:${slotIndex}`;
-    }
-
-    _findQueueIndexBySlotKey(slotKey) {
-        if (!slotKey) return null;
-        const queue = this.engine.playerSkillQueue || [];
-        for (let i = queue.length - 1; i >= 0; i--) {
-            const a = queue[i];
-            const isSelf = (a.targetId === this.engine.data.playerData.id);
-            const t = isSelf ? 'self' : 'enemy';
-            // We don't persist slotIndex in engine queue yet; UI only uses this for same-slot guard.
-            // So this method only works when slotKey was previously stamped on the DOM slot.
-        }
-        // Not resolvable from queue without slotIndex; keep for forward compatibility.
-        return null;
-    }
-
-    _findLatestQueueIndexForSkillOnPart(skillId, targetType, part) {
-        const queue = this.engine.playerSkillQueue || [];
-        for (let i = queue.length - 1; i >= 0; i--) {
-            const a = queue[i];
-            if (a.skillId !== skillId) continue;
-            const isSelf = (a.targetId === this.engine.data.playerData.id);
-            const t = isSelf ? 'self' : 'enemy';
-            if (t !== targetType) continue;
-            if (a.bodyPart !== part) continue;
-            return i;
-        }
-        return null;
     }
     
     clearMatrix() {

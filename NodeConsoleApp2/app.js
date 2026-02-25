@@ -47,7 +47,11 @@ function tryFile(filePath, res) {
       return;
     }
 
-    res.writeHead(200, { 'Content-Type': getContentType(filePath) });
+    res.writeHead(200, {
+      'Content-Type': getContentType(filePath),
+      'X-Content-Type-Options': 'nosniff',
+      'Cache-Control': 'no-store'
+    });
     fs.createReadStream(filePath).pipe(res);
   });
 }

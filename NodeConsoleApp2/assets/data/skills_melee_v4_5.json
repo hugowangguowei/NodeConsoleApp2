@@ -301,6 +301,9 @@
         "editState": "done"
       },
       "speed": 0,
+      "placement": {
+        "maxSlots": 1
+      },
       "target": {
         "subject": "SUBJECT_ENEMY",
         "scope": "SCOPE_PART",
