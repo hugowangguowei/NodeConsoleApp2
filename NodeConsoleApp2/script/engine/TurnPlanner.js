@@ -91,21 +91,25 @@ export default class TurnPlanner {
 		if (!skillCfg) return { ok: false, reason: `Unknown skill: ${skillId}` };
 
 		const maxPlacements = this._getSkillMaxPlacements(skillCfg);
-		const placed = this._getActionCountForSkill(skillId);
-		if (placed >= maxPlacements) return { ok: false, reason: `Reached max placements for skill (${maxPlacements}).` };
+       const placed = this._getActionCountForSkill(skillId);
 
-		const currentAp = this._getCurrentAp ? this._getCurrentAp() : null;
-		const usedAp = this._getUsedAp ? this._getUsedAp() : 0;
-		if (typeof currentAp === 'number' && typeof cost === 'number' && currentAp < usedAp + cost) {
-			return { ok: false, reason: 'Not enough AP.' };
-		}
-
-		if (replaceIfAlreadyPlaced && maxPlacements === 1) {
+		// Single-placement skill: support "replace" semantics by auto-unassigning the previous slot.
+		// This must happen BEFORE the max placement guard, otherwise placing into a new slot is blocked.
+		if (replaceIfAlreadyPlaced && maxPlacements === 1 && placed >= 1) {
 			const prevId = this._findLastActionIdForSkill(skillId);
 			if (prevId) {
 				const prevAction = this.actionsById[prevId];
 				if (prevAction && prevAction.slotKey) this.unassign(prevAction.slotKey);
 			}
+		}
+
+		const placedAfterReplace = this._getActionCountForSkill(skillId);
+		if (placedAfterReplace >= maxPlacements) return { ok: false, reason: `Reached max placements for skill (${maxPlacements}).` };
+
+		const currentAp = this._getCurrentAp ? this._getCurrentAp() : null;
+		const usedAp = this._getUsedAp ? this._getUsedAp() : 0;
+		if (typeof currentAp === 'number' && typeof cost === 'number' && currentAp < usedAp + cost) {
+			return { ok: false, reason: 'Not enough AP.' };
 		}
 
 		const action = {
