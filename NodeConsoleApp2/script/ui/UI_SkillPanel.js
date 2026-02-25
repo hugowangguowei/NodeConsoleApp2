@@ -50,8 +50,39 @@ export default class UI_SkillPanel {
         // -- Bind --
         this.bindEvents();
         this.bindEngineEvents();
+        this.bindGlobalDismiss();
 
         console.log('UI_SkillPanel initialized.');
+    }
+
+    bindGlobalDismiss() {
+        // Click-on-blank dismiss: if a skill is currently selected (armed), clicking anywhere
+        // outside actionable UI (skill buttons / slots / overlays) will exit selection.
+        // Use capture phase so we can observe the click even if inner handlers stop propagation.
+        document.addEventListener('click', (e) => {
+            if (!this.selectedSkill) return;
+            const target = e.target;
+            if (!target) return;
+
+            // Do not dismiss when interacting with skill buttons or slots
+            if (target.closest('.skill-icon-button')) return;
+            if (target.closest('.slot-placeholder')) return;
+
+            // Do not dismiss when interacting with overlays/modals (e.g. skill tree)
+            if (target.closest('.overlay-backdrop') || target.closest('.overlay-panel')) return;
+            if (target.closest('.modal-backdrop') || target.closest('.modal-panel')) return;
+
+            this._clearSkillSelection();
+        }, true);
+    }
+
+    _clearSkillSelection() {
+        if (this.poolContainer) {
+            const btn = this.poolContainer.querySelector('.skill-icon-button.active');
+            if (btn) btn.classList.remove('active');
+        }
+        this.selectedSkill = null;
+        this.clearHighlights();
     }
 
     bindEvents() {
