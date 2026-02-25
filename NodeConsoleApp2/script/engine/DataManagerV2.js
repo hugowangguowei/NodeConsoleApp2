@@ -260,67 +260,16 @@ class DataManager {
 
             console.log("? [DataManager] Configs successfully loaded from JSON files.", this.gameConfig);
         } catch (e) {
-            console.warn("?? [DataManager] Failed to load JSON configs. Reason:", e.message);
-            console.log("?? [DataManager] Falling back to internal MOCK data.");
-            this.loadMockConfigs();
+            // Fail fast: during development we want configuration/data issues to surface immediately
+            // instead of silently falling back to mock data.
+            console.error("[DataManager] Failed to load JSON configs. Aborting init.", e);
+            this.gameConfig = {};
+            throw e;
         }
     }
 
     loadMockConfigs() {
-        this.gameConfig = {
-            player: {
-                default: {
-                    stats: { hp: 100, maxHp: 100, ap: 4, maxAp: 6, speed: 10 },
-                    skills: {
-                        skillTreeId: 'melee_v4_5',
-                        skillPoints: 0,
-                        learned: ['skill_slash', 'skill_heal', 'skill_fireball']
-                    },
-                    equipment: { weapon: null, head: null, chest: null, abdomen: null, arm: null, leg: null },
-                    inventory: []
-                }
-            },
-            buffs: {
-                buff_poison: {
-                    id: 'buff_poison',
-                    name: '÷–∂æ',
-                    type: 'debuff',
-                    tags: ['poison', 'dot'],
-                    lifecycle: { duration: 3, maxStacks: 5, stackStrategy: 'refresh', removeOnBattleEnd: true },
-                    effects: [{ trigger: 'onTurnEnd', action: 'damage', value: 'maxHp * 0.05', valueType: 'formula', target: 'self' }]
-                }
-            },
-            skills: {
-                'skill_slash': { id: 'skill_slash', name: '’∂ª˜', cost: 2, type: 'DAMAGE', value: 20, "speed": 0 },
-                'skill_heal': { id: 'skill_heal', name: '÷Œ¡∆', cost: 3, type: 'HEAL', value: 30, "speed": -2 },
-                'skill_fireball': { id: 'skill_fireball', name: 'ª«Ú ı', cost: 4, type: 'DAMAGE', value: 40, "speed": -5 },
-                'skill_bite': { id: 'skill_bite', name: 'À∫“ß', cost: 2, type: 'DAMAGE', value: 15, "speed": 2 }
-            },
-            items: {
-                'wp_sword_01': { id: 'wp_sword_01', name: 'Ã˙Ω£', type: 'WEAPON', value: 10 }
-            },
-            enemies: {
-                'goblin_01': {
-                    id: 'goblin_01',
-                    name: '∏Á≤º¡÷’Ω ø',
-                    stats: { hp: 50, maxHp: 50, speed: 8, ap: 3 },
-                    skills: ['skill_bite'],
-                    bodyParts: {
-                        head: { max: 0, weakness: 1.5 },
-                        chest: { max: 2, weakness: 1.0 }
-                    }
-                }
-            },
-            levels: {
-                'level_1_1': { 
-                    id: 'level_1_1', 
-                    name: '”ƒ∞µ…≠¡÷±ﬂ‘µ', 
-                    waves: [
-                        { enemies: [{ templateId: 'goblin_01', position: 1 }] }
-                    ]
-                }
-            }
-        };
+        throw new Error('[DataManager] Mock mode has been removed. Fix data loading errors instead of falling back.');
     }
 
     getSkillConfig(skillId) {
