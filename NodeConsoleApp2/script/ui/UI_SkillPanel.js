@@ -37,6 +37,10 @@ export default class UI_SkillPanel {
         this.selectedSkill = null; // Object or ID
         this.cachedSkills = [];    // Loaded from DataManager
 
+        // Edit mode: prevents accidental modification of already-placed slots while a skill is armed.
+        // When enabled, clicking filled slots will remove that slot assignment instead of being locked.
+        this.isEditMode = false;
+
         // Slot placement interaction state
         // SINGLE: keep selection after placement; replace previous placement for same skill+targetType+part
         // Clicking filled slot cancels (removes) that placement.
@@ -52,7 +56,34 @@ export default class UI_SkillPanel {
         this.bindEngineEvents();
         this.bindGlobalDismiss();
 
+        this._ensureEditModeToggle();
+
         console.log('UI_SkillPanel initialized.');
+    }
+
+    _ensureEditModeToggle() {
+        const bar = this.root ? this.root.querySelector('.skill-sort-bar') : null;
+        if (!bar) return;
+
+        let btn = bar.querySelector('#btnToggleEditMode');
+        if (!btn) {
+            btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'sort-btn';
+            btn.id = 'btnToggleEditMode';
+            bar.appendChild(btn);
+        }
+
+        const render = () => {
+            btn.textContent = this.isEditMode ? '编辑模式：开' : '编辑模式：关';
+            btn.classList.toggle('active', this.isEditMode);
+        };
+
+        render();
+        btn.addEventListener('click', () => {
+            this.isEditMode = !this.isEditMode;
+            render();
+        });
     }
 
     bindGlobalDismiss() {
@@ -344,6 +375,13 @@ export default class UI_SkillPanel {
     }
 
     onFilledSlotClick(slotElement) {
+        // Option B: existing placements are locked while a skill is armed, to avoid accidental edits.
+        // Editing/removal requires explicitly enabling Edit Mode.
+        if (this.selectedSkill && !this.isEditMode) {
+            this.eventBus?.emit?.('BATTLE_LOG', { text: '已占用槽位已锁定（选择了技能时）。如需修改，请先开启“编辑模式”。' });
+            return;
+        }
+
         if (!this.placementRules.clickFilledToCancel) return;
 
         const spec = this._getSlotSpecFromElement(slotElement);
