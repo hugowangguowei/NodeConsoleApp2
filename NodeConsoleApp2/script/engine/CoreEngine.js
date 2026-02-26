@@ -4,6 +4,7 @@ import GameLoop from './GameLoop.js';
 import DataManager from './DataManagerV2.js';
 import { BuffRegistry, BuffManager, BuffSystem } from './buff/index.js';
 import TurnPlanner from './TurnPlanner.js';
+import TimelineManager from './TimelineManager.js';
 
 class CoreEngine {
     constructor() {
@@ -21,6 +22,11 @@ class CoreEngine {
             getSkillConfig: (skillId) => this.data.getSkillConfig(skillId),
             getCurrentAp: () => (this.data && this.data.playerData && this.data.playerData.stats ? this.data.playerData.stats.ap : 0),
             getUsedAp: () => (this.playerSkillQueue || []).reduce((sum, a) => sum + (Number(a.cost) || 0), 0)
+        });
+
+        this.timeline = new TimelineManager({
+            eventBus: this.eventBus,
+            executeEntry: async (entry) => this._executeTimelineEntry(entry)
         });
         
         this.input = {
@@ -506,6 +512,7 @@ class CoreEngine {
         this.playerSkillQueue = [];
         this.enemySkillQueue = [];
         this.turnPlanner.reset();
+        this.timeline.reset();
         this._syncPlannerToRuntime();
 
         // 重置 AP
@@ -788,53 +795,76 @@ class CoreEngine {
         this.saveBattleState(); // 同步状态（包括队列）
         this.emitBattleUpdate(); // 更新 UI 以禁用控件
 
+        const loadRes = this.timeline.loadRoundActions({
+            roundId: this.currentTurn,
+            selfPlans: this.playerSkillQueue,
+            enemyPlans: this.enemySkillQueue,
+            rules: {
+                tieBreak: 'selfFirst'
+            }
+        });
+
+        if (!loadRes.ok) {
+            this.battlePhase = 'PLANNING';
+            this.eventBus.emit('BATTLE_LOG', { text: `Timeline build failed: ${loadRes.reason}` });
+            this.emitBattleUpdate();
+            return;
+        }
+
         this.executeTurn();
     }
 
     async executeTurn() {
-        // 合并和排序
-        const allActions = [
-            ...this.playerSkillQueue,
-            ...this.enemySkillQueue
-        ];
-
-        // 按速度降序排序
-        allActions.sort((a, b) => b.speed - a.speed);
-
         this.eventBus.emit('BATTLE_LOG', { text: `--- Execution Phase ---` });
 
-        let actionOrder = 0;
-        for (const action of allActions) {
-            // 检查战斗是否在上一个动作中结束
-            if (this.fsm.currentState !== 'BATTLE_LOOP') break;
+        const timelineRes = await this.timeline.start({
+            stepDelayMs: 1000,
+            canContinue: () => this.fsm.currentState === 'BATTLE_LOOP'
+        });
 
-            await new Promise(resolve => setTimeout(resolve, 1000)); // 延迟动画
-            
-            actionOrder++;
-            let result = null;
-
-            if (action.source === 'PLAYER') {
-                result = this.executePlayerSkill(action);
-            } else {
-                result = this.executeEnemySkill(action);
-            }
-            
-            // 将动作记录到历史记录
-            if (this.currentHistoryEntry) {
-                this.currentHistoryEntry.actions.push({
-                    order: actionOrder,
-                    ...action,
-                    result: result
-                });
-            }
-
-            this.checkBattleStatus();
+        if (!timelineRes.ok) {
+            this.battlePhase = 'PLANNING';
+            this.eventBus.emit('BATTLE_LOG', { text: `Timeline execute failed: ${timelineRes.reason}` });
+            this.emitBattleUpdate();
+            return;
         }
 
 		// Turn end hooks (DoT / duration tick)
 		if (this.fsm.currentState === 'BATTLE_LOOP') {
 			this.eventBus.emit('TURN_END', { turn: this.currentTurn });
 		}
+
+    _executeTimelineEntry(entry) {
+        if (!entry || !entry.sourceAction) {
+            throw new Error('Invalid timeline entry: missing sourceAction.');
+        }
+
+        // 检查战斗是否已经结束
+        if (this.fsm.currentState !== 'BATTLE_LOOP') {
+            return { skipped: true, reason: 'Battle loop ended.' };
+        }
+
+        const action = entry.sourceAction;
+        const actionOrder = this.timeline.currentIndex + 1;
+
+        let result = null;
+        if (entry.side === 'self' || action.source === 'PLAYER') {
+            result = this.executePlayerSkill(action);
+        } else {
+            result = this.executeEnemySkill(action);
+        }
+
+        if (this.currentHistoryEntry) {
+            this.currentHistoryEntry.actions.push({
+                order: actionOrder,
+                ...action,
+                result
+            });
+        }
+
+        this.checkBattleStatus();
+        return result;
+    }
 
         if (this.fsm.currentState === 'BATTLE_LOOP') {
             this.startTurn();
@@ -1096,6 +1126,7 @@ class CoreEngine {
     }
 
     endBattle(isVictory) {
+        this.timeline.stop();
         const result = isVictory ? 'Victory' : 'Defeat';
         this.eventBus.emit('BATTLE_LOG', { text: `Battle Ended: ${result}!` });
         

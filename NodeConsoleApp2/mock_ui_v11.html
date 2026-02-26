@@ -12,22 +12,25 @@
     <div class="area-tag">场景区</div>
     <section class="timeline labeled-block">
       <div class="sub-area-tag">行动顺序区域</div>
-      <div class="timeline-item">
-        玩家 · 重斩
-        <span>速度 14</span>
+      <div class="timeline-head">
+        <div class="timeline-meta">
+          <span id="timelineRoundLabel">回合 -</span>
+          <span id="timelinePhaseLabel">IDLE</span>
+        </div>
+        <div class="timeline-controls">
+          <button type="button" id="timelineStartBtn">开始</button>
+          <button type="button" id="timelinePauseBtn">暂停</button>
+          <button type="button" id="timelineStepBtn">单步</button>
+          <select id="timelineSpeedSelect">
+            <option value="1x" selected>1x</option>
+            <option value="2x">2x</option>
+            <option value="4x">4x</option>
+          </select>
+        </div>
       </div>
-      <div class="timeline-item">
-        敌人 · 毒刃
-        <span>速度 10</span>
-      </div>
-      <div class="timeline-item">
-        玩家 · 钢铁防御
-        <span>速度 9</span>
-      </div>
-      <div class="timeline-item">
-        敌人 · 防御
-        <span>速度 8</span>
-      </div>
+      <div class="timeline-list" id="timelineList"></div>
+      <div class="timeline-empty" id="timelineEmpty">暂无行动队列</div>
+      <ul class="timeline-log-list" id="timelineLogList"></ul>
     </section>
     <div class="battle-row">
       <section class="hud-panel player-hud labeled-block">
@@ -364,6 +367,7 @@
         import { UI_SystemModal } from '../script/ui/UI_SystemModal.js';
         import UI_SkillPanel from '../script/ui/UI_SkillPanel.js';
         import UI_TurnPanel from '../script/ui/UI_TurnPanel.js';
+        import { UI_TimelineBlock } from '../script/ui/UI_TimelineBlock.js';
 
         // Initialize Engine
         const engine = new CoreEngine();
@@ -376,6 +380,7 @@
         const uiSystemModal = new UI_SystemModal();
         const uiSkillPanel = new UI_SkillPanel(engine); // Constructor injection
         const uiTurnPanel = new UI_TurnPanel(engine);
+        const uiTimelineBlock = new UI_TimelineBlock(engine);
 
         // Bind UI to Engine
         uiBattleRow.init(engine);
