@@ -96,8 +96,8 @@
 1. `selectSkill(skillId)`：进入/切换到 `armed(skillId)`
    - UI 根据 `skill.target`（subject/scope/selection）高亮合法槽位（可选 slotKey 集合）
 2. `clickSlot(slotKey)`：
-   - `mode=single`：直接提交一次规划输入
-   - `mode=multiple`：进入/推进 `drafting`（累计 `selectedParts`，满 `selectCount` 后提交一次规划输入）
+   - `mode=single`：在 UI 草稿中写入/替换该技能的唯一槽位（不提交给 Engine）
+   - `mode=multiple`：进入/推进 `drafting`（累计 `selectedParts` 与草稿槽位，满 `selectCount` 后写入草稿集合，不提交给 Engine）
 3. `clickBlank/cancel` 或 `selectSkill(otherSkillId)`：取消当前 armed/draft，并开始下一轮循环
 
 > 说明：这一层状态机属于 UI/交互体验；合法性与最终权威状态必须由 Planner/Engine 兜底。
@@ -115,6 +115,17 @@
 因此，`PLANNING_ACTIVE` 阶段 UI 不调用 `assignSkillToSlot(...)`；而是在 UI 内维护一份草稿集合：
 
 - `planningDraftBySkill: Record<skillId, DraftPlannedAction>`
+
+其中 `DraftPlannedAction` 的关键字段建议明确为：
+
+- `skillId: string`
+- `targetId: string`
+- `placedSlots: slotKey[]`（用于 UI 映射/落点；**单选技能此数组长度必须为 1**）
+- `selectionResult?: { mode, scope, selectCount, selectedParts: string[] }`（对多选技能必须存在；单选可省略或以默认补齐）
+
+> 解释：
+> - `placedSlots` 是“UI 视图”的信息；提交后 Planner 会维护 `skillToSlots` 作为可回放/可渲染的映射。
+> - 规划权威维度最终应当以 `skillId + targetId + selectionResult` 为准，而不是 `slotKey`。
 
 当进入 `PLANNING_COMMIT` 时，UI 一次性提交草稿集合（建议新增入口）：
 
@@ -253,6 +264,105 @@ UI 渲染 `Action Matrix` 主要依赖此队列。
 
 > 当前代码尚未实现该规则；建议在 `TurnPlanner.assign()` 中以 `plannedBySkill[skillId]` 为权威做 hard constraint（替换语义）。
 
+### 6.3 单选技能（`selection.mode=single`）在草稿期的完整规则（补齐）
+
+本节用于补齐此前遗漏的边界，避免“单选技能可以连续占多个槽位”。
+
+#### 6.3.1 UI 草稿期规则（PLANNING_ACTIVE）
+
+当 `mode=single` 时：
+
+- 每次 `clickSlot(slotKey)` 的结果必须是 **替换**：
+  - `planningDraftBySkill[skillId].placedSlots` 被设置为 `[slotKey]`（覆盖旧值，而不是 push 累加）
+- 若用户点击已选中的同一个 `slotKey`：
+  - 建议作为“toggle 取消”（清空草稿该技能），或保持不变（二选一，产品可配置）
+
+> 注：单选“放置后不退出选择”是交互体验，不影响“placedSlots 必须只有一个”的约束。
+
+#### 6.3.2 提交期规则（PLANNING_COMMIT）
+
+在 `engine.input.commitPlanning({ planningDraftBySkill })` 处，Engine/Planner 必须兜底：
+
+- 即使 UI 草稿出错（`placedSlots.length > 1`），Planner 也必须按单选语义裁剪/拒绝：
+  - 推荐：裁剪为第一个槽位，并记录 warning（或在 `res.errors[]` 返回原因）
+
+#### 6.3.3 与“编辑模式/误触保护”的关系
+
+为避免“技能 B 的操作循环误触影响技能 A 的既有规划”：
+
+- 正常模式（非编辑模式）下：点击已占用槽位不应直接移除既有规划
+- 只有在显式进入编辑模式时，才允许对已占用槽位执行移除/替换
+
+这条规则属于 UI 体验层，但 Planner 的“每技能每回合仅 1 次（replace）”可以确保提交后的权威状态一致。
+
+### 6.4 多选技能（`selection.mode=multiple`）在草稿期的完整规则（补齐）
+
+本节用于补齐此前遗漏的边界，避免“多选技能在草稿期可无限选择槽位/部位”。
+
+#### 6.4.1 UI 草稿期规则（PLANNING_ACTIVE）
+
+当 `mode=multiple` 时：
+
+- 上限：`max = skill.target.selection.selectCount`（必须是正整数，<=0 视为 1）
+- `clickSlot(slotKey)`：
+  - 若该 `slotKey` 已在 `placedSlots` 中：视为 toggle，移除该 `slotKey`（并同步移除对应 `part`）
+  - 若该 `slotKey` 不在 `placedSlots` 中：
+    - 当 `placedSlots.length < max`：允许加入
+    - 当 `placedSlots.length === max`：禁止加入（提示“已达上限”），只允许对已选项做 toggle
+
+> 说明：
+> - 草稿期的“上限判断”是交互状态机的一部分，必须在 UI 执行；在 draft-first 模式下，commit 不承担交互限流职责。
+> - `placedSlots` 是 UI 映射维度；对应的 `selectionResult.selectedParts` 应由 UI 在草稿期同步维护（或在 commit 由 Engine 根据 slotKey/part 反推生成）。
+
+#### 6.4.2 提交期规则（PLANNING_COMMIT）
+
+Engine/Planner 必须兜底：
+
+- 若草稿传入的 `placedSlots.length > max`：
+  - 推荐：裁剪为前 `max` 个（但要返回 warning）
+- 若 `placedSlots` 与 `selectionResult.selectedParts` 不一致：
+  - 推荐：以 `placedSlots` 反推 parts 并重建 `selectionResult`（或直接拒绝并提示数据不一致）
+
+> 注意：兜底是为了保证权威规划态合法，不用于弥补 UI 交互期的缺失。
+
+### 6.5 draft-first（草稿期不提交）是否还会造成其它判断缺失（清单）
+
+本节用于记录：一旦采用“草稿期不提交”，哪些判断必须迁移到草稿期状态机，否则会出现体验与逻辑漏洞。
+
+#### 6.5.1 目标一致性（targetId / targetType）
+
+- 在 `armed/drafting` 周期内，草稿必须锁定 `targetId`。
+- 若允许 UI 切换“当前敌人/目标”，应当：
+  - 要么丢弃当前草稿并重新 armed
+  - 要么把 targetId 维度提升为 `planningDraftBySkill[skillId][targetId]`（更复杂，不建议 MVP）
+
+否则会出现：一个 skill 的草稿同时引用多个 target 的 slotKey/parts，commit 时才暴露不一致。
+
+#### 6.5.2 与已提交规划的冲突策略（draft vs committed）
+
+草稿预览通常会与已提交规划合并渲染，因此必须定义：
+
+- 草稿是否允许选择已被“已提交规划”占用的槽位？
+  - 推荐：默认禁止（提示“槽位已占用”），除非进入编辑模式
+
+否则会出现：用户在草稿期能点上去，commit 时才失败，形成高成本回滚。
+
+#### 6.5.3 编辑模式的边界（误触保护）
+
+为满足“技能 B 的操作循环不应影响技能 A 已完成规划”这一产品要求：
+
+- 非编辑模式：点击 filled slot 不应移除/替换已提交规划
+- 编辑模式：才允许对已提交规划做移除/替换
+
+该规则属于 UI 层；Planner 的替换约束只能保证 commit 后一致，但无法降低误触成本。
+
+#### 6.5.4 草稿预览与合法性校验的职责边界
+
+- 草稿预览（UI）：必须做基础合法性与交互约束（上限、toggle、冲突、目标锁定）。
+- commit（Engine/Planner）：只做权威校验与落盘，不负责“补齐交互判断输入”。
+
+> 解释：commit 只能处理最终提交的结构（例如裁剪/拒绝/生成 selectionResult），无法替用户在交互期做决策，也无法避免误触造成的预览污染。
+
 ---
 
 ## 7. UI 多选（产品定义 B）建议交互状态（概念）
@@ -306,6 +416,12 @@ UI 渲染 `Action Matrix` 主要依赖此队列。
 - 若 `part` 尚未选中：加入 `selectionDraft.selectedParts`
 - 若 `part` 已选中：视为“toggle”，从 `selectedParts` 移除（便于修正误点）
 
+同时建议维护草稿落点（UI 映射维度）：
+
+- `selectionDraft.placedSlots: slotKey[]`
+  - `part` 被加入时：对应 `slotKey` 也加入（用于预览）
+  - `part` 被移除时：对应 `slotKey` 也移除
+
 UI 在每次点击后更新提示：
 
 - `已选 n / selectCount`
@@ -314,6 +430,12 @@ UI 在每次点击后更新提示：
 
 - 当 `n < selectCount`：继续保持 `drafting(skillId)`，允许继续点其它部位
 - 当 `n === selectCount`：进入下一步“提交”
+
+并且必须有“上限后的交互限制”：
+
+- 当 `n === selectCount` 时：
+  - 禁止对新的未选 `slotKey` 继续添加
+  - 仅允许对已选 `slotKey` 做 toggle（减少）
 
 #### 7.1.4 提交：一次提交生成一条 action
 
@@ -325,7 +447,7 @@ UI 在每次点击后更新提示：
 
 - `selectionResult = { mode:'multiple', scope:'SCOPE_PART', selectCount, selectedParts:[...] }`
 - `bodyPart = selectedParts[0]`（仅作为 UI/旧字段映射；执行器不应依赖它）
-- `slotKey` 仅作为 UI 映射字段（用于 Action Matrix 的落点/展示），权威维度来自 `skillId + selectionResult`
+- `placedSlots = [...]`：仅作为 UI 映射字段（用于 Action Matrix 的落点/展示），权威维度来自 `skillId + selectionResult`
 
 写入草稿后（建议体验）：
 

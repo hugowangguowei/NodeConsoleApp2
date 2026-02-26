@@ -30,6 +30,7 @@ class CoreEngine {
             removeSkillFromQueue: this.removeSkillFromQueue.bind(this),
          assignSkillToSlot: this.assignSkillToSlot.bind(this),
             unassignSlot: this.unassignSlot.bind(this),
+            commitPlanning: this.commitPlanning.bind(this),
             commitTurn: this.commitTurn.bind(this),
             saveGame: this.saveGame.bind(this),
             loadGame: this.loadGame.bind(this),
@@ -641,6 +642,65 @@ class CoreEngine {
         this.emitBattleUpdate();
     }
 
+    // Draft-first planning API (batch commit)
+    commitPlanning({ planningDraftBySkill }) {
+        if (this.fsm.currentState !== 'BATTLE_LOOP' || this.battlePhase !== 'PLANNING') return;
+
+        const drafts = planningDraftBySkill && typeof planningDraftBySkill === 'object'
+            ? Object.values(planningDraftBySkill)
+            : [];
+
+        const normalized = Object.create(null);
+        for (const d of drafts) {
+            if (!d || !d.skillId) continue;
+
+            const skillConfig = this.data.getSkillConfig(d.skillId);
+            if (!skillConfig) {
+                this.eventBus.emit('BATTLE_LOG', { text: `Unknown skill: ${d.skillId}` });
+                return;
+            }
+
+            const cost = Number(skillConfig.cost) || 0;
+            const speed = (this.data.playerData.stats.speed || 10) + (Number(skillConfig.speed) || 0);
+            normalized[d.skillId] = {
+                ...d,
+                cost,
+                speed
+            };
+        }
+
+        const currentAp = Number(this.data?.playerData?.stats?.ap ?? 0) || 0;
+        const totalCost = Object.values(normalized).reduce((sum, a) => sum + (Number(a.cost) || 0), 0);
+        if (currentAp < totalCost) {
+            this.eventBus.emit('BATTLE_LOG', { text: 'Not enough AP.' });
+            return;
+        }
+
+        const res = this.turnPlanner.planMany({ planningDraftBySkill: normalized });
+        if (!res.ok) {
+            this.eventBus.emit('BATTLE_LOG', { text: res.reason || 'Cannot commit planning.' });
+            return;
+        }
+
+        // Dev-only visibility: print submitted planning input/output to console for verification.
+        try {
+            const safeNormalized = JSON.parse(JSON.stringify(normalized));
+            const planned = this.turnPlanner.getPlannedActions();
+            const safePlanned = JSON.parse(JSON.stringify(planned));
+            console.groupCollapsed('[Planning Commit]');
+            console.log('input.planningDraftBySkill(normalized)=', safeNormalized);
+            console.log('output.plannedActions=', safePlanned);
+            console.groupEnd();
+        } catch (e) {
+            console.log('[Planning Commit] (log failed)', e);
+        }
+
+        this._freezePlannerToQueue();
+        this._syncPlannerToRuntime();
+        this.eventBus.emit('BATTLE_LOG', { text: 'Planning committed.' });
+        this.emitBattleUpdate();
+    }
+
     unassignSlot(slotKey) {
         if (this.fsm.currentState !== 'BATTLE_LOOP' || this.battlePhase !== 'PLANNING') return;
         const res = this.turnPlanner.unassign(slotKey);
@@ -671,6 +731,9 @@ class CoreEngine {
         rt.planning.player.actionsById = { ...this.turnPlanner.actionsById };
         rt.planning.player.order = [...this.turnPlanner.order];
         rt.planning.player.skillCounts = { ...this.turnPlanner.skillCounts };
+
+        rt.planning.player.plannedBySkill = { ...this.turnPlanner.plannedBySkill };
+        rt.planning.player.skillToSlots = { ...this.turnPlanner.skillToSlots };
     }
 
     removeSkillFromQueue(index) {

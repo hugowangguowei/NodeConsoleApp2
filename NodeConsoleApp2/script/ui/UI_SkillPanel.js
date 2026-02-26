@@ -37,6 +37,12 @@ export default class UI_SkillPanel {
         this.selectedSkill = null; // Object or ID
         this.cachedSkills = [];    // Loaded from DataManager
 
+        // Draft-first planning (UI-local). Keyed by skillId.
+        this.planningDraftBySkill = Object.create(null);
+
+        // UI-only preview queue built from draft (so user sees placements before commit)
+        this.draftQueue = [];
+
         // Deterministic icon cache (avoid icon changing across re-renders)
         this._skillIconCache = new Map();
 
@@ -60,8 +66,30 @@ export default class UI_SkillPanel {
         this.bindGlobalDismiss();
 
         this._ensureEditModeToggle();
+        this._ensurePlanningCommitButton();
 
         console.log('UI_SkillPanel initialized.');
+    }
+
+    _ensurePlanningCommitButton() {
+        const bar = this.root ? this.root.querySelector('.skill-sort-bar') : null;
+        if (!bar) return;
+
+        let btn = bar.querySelector('#btnCommitPlanning');
+        if (!btn) {
+            btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'sort-btn';
+            btn.id = 'btnCommitPlanning';
+            btn.textContent = '提交规划';
+            bar.appendChild(btn);
+        }
+
+        btn.addEventListener('click', () => {
+            if (this.engine?.input?.commitPlanning) {
+                this.engine.input.commitPlanning({ planningDraftBySkill: this.planningDraftBySkill });
+            }
+        });
     }
 
     _getSkillSlotLabel(skill) {
@@ -229,7 +257,15 @@ export default class UI_SkillPanel {
                 if (slot) {
                     // Check if it's a filled slot (action removal) or empty slot (action add)
                     if (slot.classList.contains('filled')) {
-                        this.onFilledSlotClick(slot);
+                        // Draft-preview slots are rendered as "filled" but should still be toggleable
+                        // during planning (multi-select cancel / single-select toggle).
+                        const occupiedSkillId = slot.dataset.occupiedSkillId;
+                        const isDraft = slot.dataset.queueIndex === 'draft' || slot.dataset.isDraft === '1';
+                        if (this.selectedSkill && isDraft && occupiedSkillId === this.selectedSkill.id) {
+                            this.onEmptySlotClick(slot);
+                        } else {
+                            this.onFilledSlotClick(slot);
+                        }
                     } else {
                         this.onEmptySlotClick(slot);
                     }
@@ -254,6 +290,17 @@ export default class UI_SkillPanel {
         // If engine emits specific event for AP change
         this.eventBus.on('PLAYER_STATS_UPDATED', this.updateSkillAvailability.bind(this));
         this.eventBus.on('DATA_UPDATE', this.onDataUpdate.bind(this));
+
+        // When planning is committed, UI draft preview must be cleared to avoid double-rendering
+        // (committed queue + stale draftQueue).
+        this.eventBus.on('BATTLE_LOG', (payload) => {
+            const text = payload && typeof payload === 'object' ? payload.text : '';
+            if (text === 'Planning committed.') {
+                this.planningDraftBySkill = Object.create(null);
+                this.draftQueue = [];
+                this._clearSkillSelection();
+            }
+        });
     }
 
     // --- Event Handlers ---
@@ -354,6 +401,8 @@ export default class UI_SkillPanel {
     onTurnStart() {
         this.selectedSkill = null;
         this.clearHighlights();
+        this.planningDraftBySkill = Object.create(null);
+       this.draftQueue = [];
         // Matrix cleared via Engine BATTLE_UPDATE usually, but let's be safe
         this.updateSkillAvailability();
     }
@@ -361,8 +410,12 @@ export default class UI_SkillPanel {
     onBattleUpdate(data) {
         // Refresh Queue Visualization based on engine state
         // Engine might pass 'queues' in data, or we access engine instance
-        const playerQueue = this.engine.playerSkillQueue || [];
-        this.renderMatrixQueue(playerQueue);
+        const committed = this.engine.playerSkillQueue || [];
+        const merged = [...committed];
+        if (Array.isArray(this.draftQueue) && this.draftQueue.length > 0) {
+            merged.push(...this.draftQueue);
+        }
+        this.renderMatrixQueue(merged);
         this.updateSkillAvailability();
     }
 
@@ -438,19 +491,54 @@ export default class UI_SkillPanel {
         const finalTargetId = (targetType === 'self') ? playerId : enemyId;
 
         const slotKey = this._makeSlotKey(part, targetType, slotIndex);
-        // slotKey-based planning (engine enforces: single replace / cannot overwrite / max placements)
-        if (this.engine?.input?.assignSkillToSlot) {
-            this.engine.input.assignSkillToSlot({
-                slotKey,
-                skillId: this.selectedSkill.id,
-                targetId: finalTargetId,
-                bodyPart: part,
-                replaceIfAlreadyPlaced: true
-            });
+
+        // Draft-first: store into UI draft, commit later at PLANNING_COMMIT.
+        // Engine batch commit expects `placedSlots`.
+        const id = this.selectedSkill.id;
+        const prev = this.planningDraftBySkill[id];
+        const prevSlots = Array.isArray(prev?.placedSlots) ? prev.placedSlots : [];
+
+        const targetInfo = this.getSkillTarget(this.selectedSkill);
+        const mode = String(targetInfo?.selection?.mode || 'single');
+     let sc = Number(targetInfo?.selection?.selectCount ?? 1);
+        if (!Number.isFinite(sc) || sc <= 0) sc = 1;
+        const isSingle = (mode === 'single') || (sc <= 1);
+
+        let nextSlots = [];
+        if (isSingle) {
+            // Single-select: replace; clicking the same slot toggles cancel.
+            if (prevSlots.length === 1 && prevSlots[0] === slotKey) {
+                nextSlots = [];
+            } else {
+                nextSlots = [slotKey];
+            }
         } else {
-            // Fallback (legacy)
-            this.engine.input.addSkillToQueue(this.selectedSkill.id, finalTargetId, part);
+            // Multi-select: toggle remove; add only up to selectCount.
+            if (prevSlots.includes(slotKey)) {
+                nextSlots = prevSlots.filter(k => k !== slotKey);
+            } else if (prevSlots.length >= sc) {
+                this.eventBus?.emit?.('BATTLE_LOG', { text: `已达上限：该技能最多选择 ${sc} 个槽位。` });
+                return;
+            } else {
+                nextSlots = [...prevSlots, slotKey];
+            }
         }
+
+        if (nextSlots.length === 0) {
+            delete this.planningDraftBySkill[id];
+        } else {
+            this.planningDraftBySkill[id] = {
+                skillId: id,
+                placedSlots: nextSlots,
+                targetId: finalTargetId,
+                bodyPart: part
+            };
+        }
+
+        this._rebuildDraftQueue();
+        this.renderMatrixQueue([...(this.engine.playerSkillQueue || []), ...this.draftQueue]);
+
+        this.eventBus?.emit?.('BATTLE_LOG', { text: `已加入草稿：${this.selectedSkill.name || this.selectedSkill.id}（待提交）` });
         
         // Visual feedback handled by BATTLE_UPDATE event re-rendering matrix
     }
@@ -601,11 +689,25 @@ export default class UI_SkillPanel {
 
         // Re-populate
         queue.forEach((action, index) => {
-            // Find first available slot for this part & target
-            // action: { skillId, bodyPart, targetId ... }
+            // Prefer rendering by slotKey to preserve exact placements.
+            const slotKey = action && typeof action.slotKey === 'string' ? action.slotKey : null;
+            if (slotKey && this.engine?.turnPlanner?.parseSlotKey) {
+                const parsed = this.engine.turnPlanner.parseSlotKey(slotKey);
+                if (parsed) {
+                    const row = this.matrixContainer.querySelector(`.matrix-row[data-row-part="${parsed.part}"]`);
+                    const zone = row ? row.querySelector(`.matrix-zone.${parsed.side}-zone`) : null;
+                    const slotEl = zone ? zone.querySelector(`.slot-placeholder[data-slot-index="${parsed.index}"]`) : null;
+                    if (slotEl) {
+                        this.fillSlot(slotEl, action, index);
+                        return;
+                    }
+                }
+            }
+
+            // Fallback (legacy): place into first empty slot in the row.
             const isSelf = (action.targetId === this.engine.data.playerData.id);
             const targetTypeStr = isSelf ? 'self' : 'enemy';
-            
+
             const row = this.matrixContainer.querySelector(`.matrix-row[data-row-part="${action.bodyPart}"]`);
             if (!row) {
                 console.warn(`Row not found for part: ${action.bodyPart}`);
@@ -615,18 +717,20 @@ export default class UI_SkillPanel {
             const zone = row.querySelector(`.matrix-zone.${targetTypeStr}-zone`);
             if (!zone) return;
 
-            // Find first empty placeholder
             const emptySlot = Array.from(zone.querySelectorAll('.slot-placeholder')).find(el => !el.classList.contains('filled'));
-            
-            if (emptySlot) {
-                this.fillSlot(emptySlot, action, index);
-            }
+            if (emptySlot) this.fillSlot(emptySlot, action, index);
         });
     }
 
     fillSlot(slotEl, action, queueIndex) {
         slotEl.classList.add('filled');
-        slotEl.dataset.queueIndex = queueIndex;
+        if (action && action.__draft) {
+            slotEl.dataset.queueIndex = 'draft';
+            slotEl.dataset.isDraft = '1';
+        } else {
+            slotEl.dataset.queueIndex = queueIndex;
+            delete slotEl.dataset.isDraft;
+        }
 
         const isSelf = (action.targetId === this.engine.data.playerData.id);
         const targetTypeStr = isSelf ? 'self' : 'enemy';
@@ -649,6 +753,7 @@ export default class UI_SkillPanel {
             s.classList.remove('filled', 'type-offense', 'type-defense', 'type-neutral', 'type-magic');
             s.textContent = '';
             delete s.dataset.queueIndex;
+            delete s.dataset.isDraft;
             delete s.dataset.occupiedSkillId;
             delete s.dataset.occupiedTargetType;
             delete s.dataset.occupiedPart;
@@ -658,6 +763,34 @@ export default class UI_SkillPanel {
 
     _makeSlotKey(part, targetType, slotIndex) {
         return `${targetType}:${part}:${slotIndex}`;
+    }
+
+    _rebuildDraftQueue() {
+        this.draftQueue = [];
+        if (!this.planningDraftBySkill || typeof this.planningDraftBySkill !== 'object') return;
+
+        for (const d of Object.values(this.planningDraftBySkill)) {
+            if (!d || !d.skillId) continue;
+            const placedSlots = Array.isArray(d.placedSlots) ? d.placedSlots : [];
+            for (const slotKey of placedSlots) {
+                const parsed = this.engine?.turnPlanner?.parseSlotKey
+                    ? this.engine.turnPlanner.parseSlotKey(slotKey)
+                    : null;
+                if (!parsed) continue;
+
+                const action = {
+                    source: 'PLAYER',
+                    skillId: d.skillId,
+                    targetId: d.targetId,
+                    bodyPart: parsed.part,
+                    cost: 0,
+                    speed: 0,
+                    slotKey,
+                    __draft: true
+                };
+                this.draftQueue.push(action);
+            }
+        }
     }
     
     clearMatrix() {

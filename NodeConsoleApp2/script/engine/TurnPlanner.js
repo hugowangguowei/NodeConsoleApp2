@@ -13,6 +13,8 @@ export default class TurnPlanner {
 		this.actionsById = Object.create(null); // actionId -> action
 		this.order = []; // actionId[]
 		this.skillCounts = Object.create(null); // skillId -> count
+       this.plannedBySkill = Object.create(null); // skillId -> action
+		this.skillToSlots = Object.create(null); // skillId -> slotKey[]
 		this._nextId = 1;
 	}
 
@@ -38,10 +40,33 @@ export default class TurnPlanner {
 		return { ok: true, parsed };
 	}
 
-	_getSkillMaxPlacements(skillConfig) {
-		const n = Number(skillConfig?.placement?.maxSlots);
-		if (!Number.isFinite(n) || n <= 0) return 1;
-		return Math.floor(n);
+   _getSkillMaxPlacements(skillConfig, draft) {
+		const nFromPlacement = Number(skillConfig?.placement?.maxSlots);
+		let n = Number.isFinite(nFromPlacement) && nFromPlacement > 0 ? Math.floor(nFromPlacement) : 1;
+
+		// Prefer selection.selectCount (design: multi-select) when present in skill config.
+		// This acts as the "max placements" for draft commit.
+		const sel = skillConfig?.target?.selection;
+		const sc = Number(sel?.selectCount);
+		if (Number.isFinite(sc) && sc > 0) n = Math.floor(sc);
+
+		// Draft may include explicit selectedParts list; cap by its length when present.
+		const parts = Array.isArray(draft?.selectionResult?.selectedParts) ? draft.selectionResult.selectedParts : null;
+		if (parts && parts.length > 0) n = Math.min(n, parts.length);
+
+		return n;
+	}
+
+	_rebuildSkillViews() {
+		this.plannedBySkill = Object.create(null);
+		this.skillToSlots = Object.create(null);
+		for (const id of this.order) {
+			const a = this.actionsById[id];
+			if (!a || !a.skillId) continue;
+			this.plannedBySkill[a.skillId] = a;
+			if (!this.skillToSlots[a.skillId]) this.skillToSlots[a.skillId] = [];
+			if (a.slotKey) this.skillToSlots[a.skillId].push(a.slotKey);
+		}
 	}
 
 	_getActionCountForSkill(skillId) {
@@ -65,6 +90,7 @@ export default class TurnPlanner {
 		this.assigned[slotKey] = actionId;
 		this.order.push(actionId);
 		this.skillCounts[action.skillId] = this._getActionCountForSkill(action.skillId) + 1;
+        this._rebuildSkillViews();
 		return actionId;
 	}
 
@@ -80,6 +106,7 @@ export default class TurnPlanner {
 		if (action && action.skillId) {
 			this.skillCounts[action.skillId] = Math.max(0, this._getActionCountForSkill(action.skillId) - 1);
 		}
+       this._rebuildSkillViews();
 		return { ok: true, removed: true, actionId };
 	}
 
@@ -125,6 +152,73 @@ export default class TurnPlanner {
 
 		const actionId = this._assignInternal(slotKey, action);
 		return { ok: true, actionId };
+	}
+
+	planMany({ planningDraftBySkill, replace = true }) {
+		const draftRoot = planningDraftBySkill && typeof planningDraftBySkill === 'object'
+			? planningDraftBySkill
+			: null;
+		if (!draftRoot) return { ok: true, placed: 0, errors: [] };
+
+		const errors = [];
+		let placed = 0;
+
+		for (const [skillId, draft] of Object.entries(draftRoot)) {
+			const skillCfg = this._getSkillConfig ? this._getSkillConfig(skillId) : null;
+			if (!skillCfg) {
+				errors.push({ skillId, reason: `Unknown skill: ${skillId}` });
+				continue;
+			}
+
+			const slotKeys = Array.isArray(draft?.placedSlots) ? draft.placedSlots : [];
+			if (slotKeys.length === 0) continue;
+
+			if (replace) {
+				const prevSlots = this.skillToSlots?.[skillId] || [];
+				for (const sk of prevSlots) this.unassign(sk);
+			}
+
+			const maxPlacements = this._getSkillMaxPlacements(skillCfg, draft);
+			const take = slotKeys.slice(0, maxPlacements);
+
+			for (const slotKey of take) {
+				const v = this._validateSlotKey(slotKey);
+				if (!v.ok) {
+					errors.push({ skillId, slotKey, reason: v.reason });
+					continue;
+				}
+				if (this.assigned[slotKey]) {
+					errors.push({ skillId, slotKey, reason: 'Slot already occupied.' });
+					continue;
+				}
+
+				const cost = Number(draft?.cost ?? skillCfg?.cost ?? 0) || 0;
+				const speed = Number(draft?.speed ?? skillCfg?.speed ?? 0) || 0;
+				const action = {
+					source: 'PLAYER',
+					sourceId: this._getPlayerId ? this._getPlayerId() : null,
+					skillId,
+					targetId: draft?.targetId,
+					bodyPart: draft?.bodyPart,
+					cost,
+					speed,
+					selectionResult: draft?.selectionResult,
+					meta: { side: v.parsed.side, part: v.parsed.part, slotIndex: v.parsed.index }
+				};
+
+				const currentAp = this._getCurrentAp ? this._getCurrentAp() : null;
+				const usedAp = this._getUsedAp ? this._getUsedAp() : 0;
+				if (typeof currentAp === 'number' && currentAp < usedAp + cost) {
+					errors.push({ skillId, slotKey, reason: 'Not enough AP.' });
+					continue;
+				}
+
+				this._assignInternal(slotKey, action);
+				placed++;
+			}
+		}
+
+		return { ok: errors.length === 0, placed, errors };
 	}
 
 	getPlannedActions() {
