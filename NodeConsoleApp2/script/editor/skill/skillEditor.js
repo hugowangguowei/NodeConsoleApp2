@@ -24,8 +24,8 @@ export class SkillEditor {
         this.enums = {
             rarities: ['Common','Uncommon','Rare','Epic','Legendary'],
             targetSubjects: ['SUBJECT_SELF','SUBJECT_ENEMY','SUBJECT_BOTH'],
-            targetScopes: ['SCOPE_ENTITY','SCOPE_PART','SCOPE_MULTI_PARTS'],
-            selectionModes: ['single','multiple','random_single','random_multiple'],
+            targetScopes: ['SCOPE_ENTITY','SCOPE_PART'],
+            selectionModes: ['single','multiple'],
             effectTypes: ['DMG_HP','DMG_ARMOR','PIERCE','HEAL','ARMOR_ADD','AP_GAIN','SPEED','BUFF_APPLY','BUFF_REMOVE'],
             amountTypes: ['ABS','PCT_MAX','PCT_CURRENT','SCALING'],
             editStates: ['done','editing','deprecated'],

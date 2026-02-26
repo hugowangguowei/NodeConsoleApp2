@@ -55,9 +55,8 @@
 - `target.scope`：
   - `SCOPE_ENTITY`：目标本体
   - `SCOPE_PART`：单部位
-  - `SCOPE_MULTI_PARTS`：多部位（用于多选或全体概念的扩展）
-- `target.selection.mode`：`single | multiple | ...`
-- `target.selection.selectCount: number`：当 `scope=SCOPE_MULTI_PARTS` 且 `mode=multiple` 时表示一次施放要选多少个部位
+- `target.selection.mode`：`single | multiple`
+- `target.selection.selectCount: number`：当 `mode=multiple` 时表示一次施放要选多少个部位
 
 > 备注：执行阶段由 `skill.actions[]` 决定如何消费 `selectionResult`，规划阶段只负责产出 selection。
 

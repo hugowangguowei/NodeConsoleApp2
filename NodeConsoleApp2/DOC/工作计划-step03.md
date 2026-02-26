@@ -303,8 +303,13 @@
 **执行效果**
 【GPT5.2】；在执行时出现了串行的问题，一个已经解决的问题又被提到。
 
-### 任务 3：多选技能槽功能实现
+### 任务 3：技能对象的重构
 
 **开始时间**
-26.02.26-17:21
+26.02.26-20:55
 1. 选用【GPT5.2】
+2. 请帮我分析- `target.scope`：
+  - `SCOPE_ENTITY`：目标本体
+  - `SCOPE_PART`：单部位
+  - `SCOPE_MULTI_PARTS`：多部位（用于多选或全体概念的扩展）和- `target.selection.mode`：`single | multiple | ...`在层次和语义上是否有重叠？如果有，你的修改建议是什么？
+3. 总体按照你的建议来：1）target.scope移除 SCOPE_MULTI_PARTS ；2）target.selection只保留single和multiple两类（随机移除）。我希望基于这个设计进行彻底更新（包括代码，数据，设计文档），我不需要兼容性的操作。

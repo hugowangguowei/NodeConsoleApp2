@@ -88,14 +88,11 @@
       ],
       "targetScopes": [
         "SCOPE_ENTITY",
-        "SCOPE_PART",
-        "SCOPE_MULTI_PARTS"
+        "SCOPE_PART"
       ],
       "selectionModes": [
         "single",
-        "multiple",
-        "random_single",
-        "random_multiple"
+        "multiple"
       ],
       "effectTypes": [
         "DMG_HP",
@@ -172,8 +169,7 @@
         ],
         "scope": [
           "SCOPE_ENTITY",
-          "SCOPE_PART",
-          "SCOPE_MULTI_PARTS"
+          "SCOPE_PART"
         ],
         "selectionLegacy": [
           "SELECT_FIXED_PART",

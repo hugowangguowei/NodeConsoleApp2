@@ -752,16 +752,17 @@ export default class UI_SkillPanel {
         }
 
         const targetType = skill.targetType;
-        if (targetType === 'SELF') return { subject: 'SUBJECT_SELF', scope: 'SCOPE_ENTITY', selection: {} };
-        if (targetType === 'SELF_PARTS') return { subject: 'SUBJECT_SELF', scope: 'SCOPE_MULTI_PARTS', selection: { mode: 'SELECT_ALL_PARTS' } };
+        if (targetType === 'SELF') return { subject: 'SUBJECT_SELF', scope: 'SCOPE_ENTITY', selection: { mode: 'single', selectCount: 1 } };
+        if (targetType === 'SELF_PARTS') return { subject: 'SUBJECT_SELF', scope: 'SCOPE_PART', selection: { mode: 'multiple', selectCount: 99 } };
         if (targetType === 'GLOBAL' || targetType === 'AOE' || targetType === 'ALL_ENEMIES') {
-            return { subject: 'SUBJECT_ENEMY', scope: 'SCOPE_MULTI_PARTS', selection: { mode: 'SELECT_ALL_PARTS' } };
+            return { subject: 'SUBJECT_ENEMY', scope: 'SCOPE_PART', selection: { mode: 'multiple', selectCount: 99 } };
         }
+        // random removed by schema. fall back to single-part.
         if (targetType === 'RANDOM_PART') {
-            return { subject: 'SUBJECT_ENEMY', scope: 'SCOPE_PART', selection: { mode: 'SELECT_RANDOM_PART' } };
+            return { subject: 'SUBJECT_ENEMY', scope: 'SCOPE_PART', selection: { mode: 'single', selectCount: 1 } };
         }
         if (targetType === 'SINGLE_PART') {
-            return { subject: 'SUBJECT_ENEMY', scope: 'SCOPE_PART', selection: { mode: 'SELECT_FIXED_PART' } };
+            return { subject: 'SUBJECT_ENEMY', scope: 'SCOPE_PART', selection: { mode: 'single', selectCount: 1 } };
         }
         return { subject: 'SUBJECT_ENEMY', scope: 'SCOPE_PART', selection: {} };
     }
@@ -769,7 +770,7 @@ export default class UI_SkillPanel {
     formatTargetLabel(skill) {
         const target = this.getSkillTarget(skill);
         const subject = target.subject === 'SUBJECT_SELF' ? 'SELF' : 'ENEMY';
-        const scope = target.scope === 'SCOPE_ENTITY' ? 'ENTITY' : (target.scope === 'SCOPE_MULTI_PARTS' ? 'ALL_PARTS' : 'PART');
+        const scope = target.scope === 'SCOPE_ENTITY' ? 'ENTITY' : 'PART';
         return `${subject}_${scope}`;
     }
 
@@ -778,8 +779,7 @@ export default class UI_SkillPanel {
         const subject = target.subject === 'SUBJECT_SELF' ? '自身' : '敌方';
         const scopeMap = {
             SCOPE_ENTITY: '本体',
-            SCOPE_PART: '部位',
-            SCOPE_MULTI_PARTS: '多部位'
+            SCOPE_PART: '部位'
         };
         const selectionMode = target.selection && target.selection.mode ? target.selection.mode : '';
         const part = target.selection && target.selection.part ? `（${target.selection.part}）` : '';
