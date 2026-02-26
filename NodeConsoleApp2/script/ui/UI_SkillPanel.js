@@ -37,6 +37,9 @@ export default class UI_SkillPanel {
         this.selectedSkill = null; // Object or ID
         this.cachedSkills = [];    // Loaded from DataManager
 
+        // Deterministic icon cache (avoid icon changing across re-renders)
+        this._skillIconCache = new Map();
+
         // Edit mode: prevents accidental modification of already-placed slots while a skill is armed.
         // When enabled, clicking filled slots will remove that slot assignment instead of being locked.
         this.isEditMode = false;
@@ -59,6 +62,84 @@ export default class UI_SkillPanel {
         this._ensureEditModeToggle();
 
         console.log('UI_SkillPanel initialized.');
+    }
+
+    _getSkillSlotLabel(skill) {
+        if (!skill) return '?';
+        const name = String(skill.name || '').trim();
+        if (!name) return '?';
+
+        // Prefer 2-char abbreviation for readability; fallback to 1.
+        // Chinese: first 2 chars; Latin: first 2 letters uppercased.
+        const latin = name.match(/[A-Za-z0-9]+/g);
+        if (latin && latin.length) {
+            const token = latin[0];
+            return token.slice(0, 2).toUpperCase();
+        }
+
+        return name.length >= 2 ? name.slice(0, 2) : name.slice(0, 1);
+    }
+
+    _pickSkillIcon(skill) {
+        if (!skill) return '⚔️';
+
+        const id = skill.id || '';
+        if (id && this._skillIconCache.has(id)) return this._skillIconCache.get(id);
+
+        const name = String(skill.name || '').toLowerCase();
+        const desc = String(skill.description || skill.desc || '').toLowerCase();
+        const tags = Array.isArray(skill.tags) ? skill.tags.map(t => String(t).toLowerCase()) : [];
+        const typeLabel = String(this.getSkillTypeLabel(skill) || '').toLowerCase();
+
+        const hay = [name, desc, typeLabel, ...tags].join(' ');
+
+        const rules = [
+            { re: /(he(al|al))|治疗|恢复|regen|revive|复活|药/, icon: '✨' },
+            { re: /(shield|block|guard|defen)|护盾|格挡|防御|减伤|免伤/, icon: '🛡️' },
+            { re: /(taunt|provoke)|嘲讽/, icon: '📢' },
+            { re: /(stun|daze)|眩晕|击晕/, icon: '💫' },
+            { re: /(bleed)|流血/, icon: '🩸' },
+            { re: /(poison)|中毒|毒/, icon: '☠️' },
+            { re: /(burn|fire)|燃烧|火/, icon: '🔥' },
+            { re: /(ice|frost|freeze)|冰|冻结|霜/, icon: '🧊' },
+            { re: /(thunder|lightning|electric)|雷|电/, icon: '⚡' },
+            { re: /(wind)|风/, icon: '🌪️' },
+            { re: /(earth|stone)|土|岩/, icon: '🪨' },
+            { re: /(holy|light)|圣|光/, icon: '🌟' },
+            { re: /(shadow|dark)|暗|影/, icon: '🌑' },
+            { re: /(stealth|hide)|潜行|隐身/, icon: '🥷' },
+            { re: /(buff)|增益|强化|提升/, icon: '📈' },
+            { re: /(debuff)|减益|削弱|降低/, icon: '📉' },
+            { re: /(summon)|召唤/, icon: '🧙' },
+            { re: /(bow|arrow)|弓|箭/, icon: '🏹' },
+            { re: /(gun)|枪|弹/, icon: '🔫' },
+            { re: /(dagger|knife)|匕首|短刀|刀/, icon: '🗡️' },
+            { re: /(sword|slash)|剑|斩|劈|砍/, icon: '⚔️' },
+            { re: /(axe)|斧/, icon: '🪓' },
+            { re: /(hammer|mace)|锤|槌/, icon: '🔨' },
+            { re: /(spear|lance)|枪|矛|戟/, icon: '🔱' },
+            { re: /(punch|fist)|拳|掌/, icon: '👊' },
+            { re: /(kick)|踢|腿法/, icon: '🦵' },
+            { re: /(dash|step|move|retreat)|冲刺|突进|位移|后撤|闪避/, icon: '💨' },
+            { re: /(focus|aim)|专注|瞄准/, icon: '🎯' }
+        ];
+
+        let icon = null;
+        for (const r of rules) {
+            if (r.re.test(hay)) {
+                icon = r.icon;
+                break;
+            }
+        }
+
+        if (!icon) {
+            if (typeLabel.includes('def')) icon = '🛡️';
+            else if (typeLabel.includes('sup') || typeLabel.includes('heal')) icon = '✨';
+            else icon = '⚔️';
+        }
+
+        if (id) this._skillIconCache.set(id, icon);
+        return icon;
     }
 
     _ensureEditModeToggle() {
@@ -462,7 +543,7 @@ export default class UI_SkillPanel {
             // Create Center Icon
             const iconCenter = document.createElement('span');
             iconCenter.className = 'skill-icon-center';
-            iconCenter.textContent = skill.icon || '⚔️';
+            iconCenter.textContent = skill.icon || this._pickSkillIcon(skill);
 
             // Create Name Bar
             const nameBar = document.createElement('span');
@@ -557,7 +638,8 @@ export default class UI_SkillPanel {
         // Find skill icon
         const skill = this.cachedSkills.find(s => s.id === action.skillId);
         const skillType = (skill && typeof skill.type === 'string') ? skill.type.toLowerCase() : null;
-        slotEl.textContent = skill ? (skill.icon || 'S') : '?';
+        slotEl.textContent = skill ? (skill.icon || this._getSkillSlotLabel(skill)) : '?';
+        if (skill?.name) slotEl.title = skill.name;
         slotEl.classList.add(skillType ? `type-${skillType}` : 'type-neutral');
     }
 

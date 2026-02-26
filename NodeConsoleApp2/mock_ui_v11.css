@@ -886,11 +886,16 @@ main { flex: 1; padding: 16px 24px; display: grid; grid-template-rows: 546px 286
 .slot-placeholder.filled {
     background: rgba(255, 255, 255, 0.1);
     color: #fff;
-    font-size: 0.9rem;
+    font-size: 0.82rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
     display: flex;
     align-items: center;
     justify-content: center;
     border-color: #fff;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .filled.type-damage, .filled.type-offense { color: #ff5f5f; border-color: #ff5f5f; }
@@ -921,7 +926,7 @@ main { flex: 1; padding: 16px 24px; display: grid; grid-template-rows: 546px 286
 }
 .matrix-row {
   display: grid;
-  grid-template-columns: calc(var(--matrix-self-max, 2) * 25px + (max(0, (var(--matrix-self-max, 2) - 1)) * 8px) + 12px) 24px 1fr;
+  grid-template-columns: calc(var(--matrix-self-max, 2) * 35px + (max(0, (var(--matrix-self-max, 2) - 1)) * 8px) + 12px) 24px 1fr;
   align-items: center;
   background: rgba(255,255,255,0.03);
   border: 1px solid rgba(255,255,255,0.05);
@@ -954,8 +959,8 @@ main { flex: 1; padding: 16px 24px; display: grid; grid-template-rows: 546px 286
 }
 
 .slot-placeholder {
-  width: 25px;
-  height: 25px;
+  width: 35px;
+  height: 35px;
   background: rgba(0,0,0,0.2);
   border: 1px dashed rgba(255,255,255,0.2);
   border-radius: 6px;
