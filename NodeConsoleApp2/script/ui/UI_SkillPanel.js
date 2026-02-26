@@ -50,16 +50,6 @@ export default class UI_SkillPanel {
         // When enabled, clicking filled slots will remove that slot assignment instead of being locked.
         this.isEditMode = false;
 
-        // Slot placement interaction state
-        // SINGLE: keep selection after placement; replace previous placement for same skill+targetType+part
-        // Clicking filled slot cancels (removes) that placement.
-        this.placementRules = {
-            singleKeepSelection: true,
-            singleReplace: true,
-            clickFilledToCancel: true,
-            disallowOverwriteOtherSkill: true
-        };
-
         // -- Bind --
         this.bindEvents();
         this.bindEngineEvents();
@@ -291,15 +281,16 @@ export default class UI_SkillPanel {
         this.eventBus.on('PLAYER_STATS_UPDATED', this.updateSkillAvailability.bind(this));
         this.eventBus.on('DATA_UPDATE', this.onDataUpdate.bind(this));
 
-        // When planning is committed, UI draft preview must be cleared to avoid double-rendering
-        // (committed queue + stale draftQueue).
-        this.eventBus.on('BATTLE_LOG', (payload) => {
-            const text = payload && typeof payload === 'object' ? payload.text : '';
-            if (text === 'Planning committed.') {
-                this.planningDraftBySkill = Object.create(null);
-                this.draftQueue = [];
-                this._clearSkillSelection();
-            }
+        this.eventBus.on('PLANNING_COMMITTED', () => {
+            this.planningDraftBySkill = Object.create(null);
+            this.draftQueue = [];
+            this._clearSkillSelection();
+        });
+
+        this.eventBus.on('PLANNING_COMMIT_FAILED', (payload) => {
+            const reason = payload && typeof payload === 'object' ? payload.reason : 'unknown';
+            console.error('[UI_SkillPanel] Planning commit failed:', reason, payload);
+            this.eventBus?.emit?.('BATTLE_LOG', { text: `规划提交失败：${reason}` });
         });
     }
 
@@ -499,6 +490,10 @@ export default class UI_SkillPanel {
         const prevSlots = Array.isArray(prev?.placedSlots) ? prev.placedSlots : [];
 
         const targetInfo = this.getSkillTarget(this.selectedSkill);
+        if (!targetInfo) {
+            this.eventBus?.emit?.('BATTLE_LOG', { text: `技能配置错误：${this.selectedSkill?.id || 'unknown'} 缺少合法 target。` });
+            return;
+        }
         const mode = String(targetInfo?.selection?.mode || 'single');
      let sc = Number(targetInfo?.selection?.selectCount ?? 1);
         if (!Number.isFinite(sc) || sc <= 0) sc = 1;
@@ -551,8 +546,6 @@ export default class UI_SkillPanel {
             return;
         }
 
-        if (!this.placementRules.clickFilledToCancel) return;
-
         const spec = this._getSlotSpecFromElement(slotElement);
         if (!spec) return;
         const slotKey = this._makeSlotKey(spec.part, spec.targetType, spec.slotIndex);
@@ -560,10 +553,8 @@ export default class UI_SkillPanel {
         if (this.engine?.input?.unassignSlot) {
             this.engine.input.unassignSlot(slotKey);
         } else {
-            // Legacy fallback
-            const index = parseInt(slotElement.dataset.queueIndex);
-            if (isNaN(index)) return;
-            this.engine.input.removeSkillFromQueue(index);
+            console.error('[UI_SkillPanel] Missing engine.input.unassignSlot, cannot remove slot assignment.', { slotKey });
+            this.eventBus?.emit?.('BATTLE_LOG', { text: '移除失败：引擎未提供 unassignSlot 接口。' });
         }
     }
 
@@ -704,21 +695,8 @@ export default class UI_SkillPanel {
                 }
             }
 
-            // Fallback (legacy): place into first empty slot in the row.
-            const isSelf = (action.targetId === this.engine.data.playerData.id);
-            const targetTypeStr = isSelf ? 'self' : 'enemy';
-
-            const row = this.matrixContainer.querySelector(`.matrix-row[data-row-part="${action.bodyPart}"]`);
-            if (!row) {
-                console.warn(`Row not found for part: ${action.bodyPart}`);
-                return;
-            }
-
-            const zone = row.querySelector(`.matrix-zone.${targetTypeStr}-zone`);
-            if (!zone) return;
-
-            const emptySlot = Array.from(zone.querySelectorAll('.slot-placeholder')).find(el => !el.classList.contains('filled'));
-            if (emptySlot) this.fillSlot(emptySlot, action, index);
+            console.error('[UI_SkillPanel] Invalid planned action: missing or unparsable slotKey.', action);
+            this.eventBus?.emit?.('BATTLE_LOG', { text: `渲染失败：技能 ${action?.skillId || 'unknown'} 缺少有效 slotKey。` });
         });
     }
 
@@ -806,9 +784,13 @@ export default class UI_SkillPanel {
 
         const s = this.selectedSkill;
         const targetInfo = this.getSkillTarget(s);
+        if (!targetInfo) {
+            this.eventBus?.emit?.('BATTLE_LOG', { text: `技能配置错误：${s?.id || 'unknown'} 缺少合法 target。` });
+            return;
+        }
         const isFriendly = targetInfo.subject === 'SUBJECT_SELF';
         const targetZoneClass = isFriendly ? 'self-zone' : 'enemy-zone';
-        const isGlobal = targetInfo.scope === 'SCOPE_ENTITY' || targetInfo.scope === 'SCOPE_MULTI_PARTS';
+        const isGlobal = targetInfo.scope === 'SCOPE_ENTITY';
         const fixedPart = targetInfo.selection && targetInfo.selection.part ? targetInfo.selection.part : null;
 
         const rows = this.matrixContainer.querySelectorAll('.matrix-row');
@@ -876,32 +858,31 @@ export default class UI_SkillPanel {
     }
 
     getSkillTarget(skill) {
-        if (skill.target) {
-            return {
-                subject: skill.target.subject || 'SUBJECT_ENEMY',
-                scope: skill.target.scope || 'SCOPE_PART',
-                selection: skill.target.selection || {}
-            };
+        if (!skill?.target || typeof skill.target !== 'object') {
+            console.error('[UI_SkillPanel] Invalid skill target config: missing target object.', skill);
+            return null;
         }
 
-        const targetType = skill.targetType;
-        if (targetType === 'SELF') return { subject: 'SUBJECT_SELF', scope: 'SCOPE_ENTITY', selection: { mode: 'single', selectCount: 1 } };
-        if (targetType === 'SELF_PARTS') return { subject: 'SUBJECT_SELF', scope: 'SCOPE_PART', selection: { mode: 'multiple', selectCount: 99 } };
-        if (targetType === 'GLOBAL' || targetType === 'AOE' || targetType === 'ALL_ENEMIES') {
-            return { subject: 'SUBJECT_ENEMY', scope: 'SCOPE_PART', selection: { mode: 'multiple', selectCount: 99 } };
+        const subject = skill.target.subject;
+        const scope = skill.target.scope;
+        const selection = skill.target.selection || {};
+
+        if (!subject || (scope !== 'SCOPE_ENTITY' && scope !== 'SCOPE_PART')) {
+            console.error('[UI_SkillPanel] Invalid skill target config: invalid subject/scope.', skill);
+            return null;
         }
-        // random removed by schema. fall back to single-part.
-        if (targetType === 'RANDOM_PART') {
-            return { subject: 'SUBJECT_ENEMY', scope: 'SCOPE_PART', selection: { mode: 'single', selectCount: 1 } };
+
+        if (selection.mode && selection.mode !== 'single' && selection.mode !== 'multiple') {
+            console.error('[UI_SkillPanel] Invalid skill target config: invalid selection.mode.', skill);
+            return null;
         }
-        if (targetType === 'SINGLE_PART') {
-            return { subject: 'SUBJECT_ENEMY', scope: 'SCOPE_PART', selection: { mode: 'single', selectCount: 1 } };
-        }
-        return { subject: 'SUBJECT_ENEMY', scope: 'SCOPE_PART', selection: {} };
+
+        return { subject, scope, selection };
     }
 
     formatTargetLabel(skill) {
         const target = this.getSkillTarget(skill);
+        if (!target) return 'INVALID_TARGET';
         const subject = target.subject === 'SUBJECT_SELF' ? 'SELF' : 'ENEMY';
         const scope = target.scope === 'SCOPE_ENTITY' ? 'ENTITY' : 'PART';
         return `${subject}_${scope}`;
@@ -909,6 +890,7 @@ export default class UI_SkillPanel {
 
     formatTargetText(skill) {
         const target = this.getSkillTarget(skill);
+        if (!target) return '目标配置错误';
         const subject = target.subject === 'SUBJECT_SELF' ? '自身' : '敌方';
         const scopeMap = {
             SCOPE_ENTITY: '本体',

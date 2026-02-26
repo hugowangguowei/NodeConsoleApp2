@@ -41,11 +41,9 @@ export default class TurnPlanner {
 	}
 
    _getSkillMaxPlacements(skillConfig, draft) {
-		const nFromPlacement = Number(skillConfig?.placement?.maxSlots);
-		let n = Number.isFinite(nFromPlacement) && nFromPlacement > 0 ? Math.floor(nFromPlacement) : 1;
+        let n = 1;
 
-		// Prefer selection.selectCount (design: multi-select) when present in skill config.
-		// This acts as the "max placements" for draft commit.
+		// Source of truth: target.selection.selectCount
 		const sel = skillConfig?.target?.selection;
 		const sc = Number(sel?.selectCount);
 		if (Number.isFinite(sc) && sc > 0) n = Math.floor(sc);

@@ -657,6 +657,7 @@ class CoreEngine {
             const skillConfig = this.data.getSkillConfig(d.skillId);
             if (!skillConfig) {
                 this.eventBus.emit('BATTLE_LOG', { text: `Unknown skill: ${d.skillId}` });
+                this.eventBus.emit('PLANNING_COMMIT_FAILED', { reason: `Unknown skill: ${d.skillId}`, skillId: d.skillId });
                 return;
             }
 
@@ -673,12 +674,17 @@ class CoreEngine {
         const totalCost = Object.values(normalized).reduce((sum, a) => sum + (Number(a.cost) || 0), 0);
         if (currentAp < totalCost) {
             this.eventBus.emit('BATTLE_LOG', { text: 'Not enough AP.' });
+            this.eventBus.emit('PLANNING_COMMIT_FAILED', { reason: 'Not enough AP.' });
             return;
         }
 
         const res = this.turnPlanner.planMany({ planningDraftBySkill: normalized });
         if (!res.ok) {
-            this.eventBus.emit('BATTLE_LOG', { text: res.reason || 'Cannot commit planning.' });
+            const reason = Array.isArray(res.errors) && res.errors.length > 0
+                ? (res.errors[0].reason || 'Cannot commit planning.')
+                : (res.reason || 'Cannot commit planning.');
+            this.eventBus.emit('BATTLE_LOG', { text: reason });
+            this.eventBus.emit('PLANNING_COMMIT_FAILED', { reason, errors: res.errors || [] });
             return;
         }
 
@@ -697,6 +703,10 @@ class CoreEngine {
 
         this._freezePlannerToQueue();
         this._syncPlannerToRuntime();
+        this.eventBus.emit('PLANNING_COMMITTED', {
+            planningDraftBySkill: JSON.parse(JSON.stringify(normalized)),
+            plannedActions: JSON.parse(JSON.stringify(this.turnPlanner.getPlannedActions()))
+        });
         this.eventBus.emit('BATTLE_LOG', { text: 'Planning committed.' });
         this.emitBattleUpdate();
     }
@@ -737,13 +747,12 @@ class CoreEngine {
     }
 
     removeSkillFromQueue(index) {
-        if (this.fsm.currentState !== 'BATTLE_LOOP' || this.battlePhase !== 'PLANNING') return;
-        
-        if (index >= 0 && index < this.playerSkillQueue.length) {
-            const removed = this.playerSkillQueue.splice(index, 1)[0];
-            this.eventBus.emit('BATTLE_LOG', { text: `Removed skill: ${removed.skillId}` });
-            this.emitBattleUpdate();
-        }
+        console.error('[CoreEngine] Deprecated input.removeSkillFromQueue called. Use input.unassignSlot(slotKey).', { index });
+        this.eventBus.emit('BATTLE_LOG', { text: '已禁用旧接口 removeSkillFromQueue，请使用槽位取消接口。' });
+        this.eventBus.emit('PLANNING_COMMIT_FAILED', {
+            reason: 'Deprecated API removeSkillFromQueue called.',
+            api: 'removeSkillFromQueue'
+        });
     }
 
     commitTurn() {
