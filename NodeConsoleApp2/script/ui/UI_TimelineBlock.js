@@ -7,6 +7,8 @@ export class UI_TimelineBlock {
             root: document.querySelector('.timeline'),
             track: document.getElementById('timelineTrack'),
             list: document.getElementById('timelineList'),
+            trackLayer: document.getElementById('timelineTrackLayer'),
+            nodeLayer: document.getElementById('timelineNodeLayer'),
             empty: document.getElementById('timelineEmpty'),
             round: document.getElementById('timelineRoundLabel'),
             phase: document.getElementById('timelinePhaseLabel'),
@@ -30,7 +32,7 @@ export class UI_TimelineBlock {
         this.nodeSize = 42;
         this.nodeGap = 6;
 
-        if (!this.dom.root || !this.dom.list) {
+        if (!this.dom.root || (!this.dom.nodeLayer && !this.dom.list)) {
             console.warn('[UI_TimelineBlock] Timeline root/list not found.');
             return;
         }
@@ -119,9 +121,10 @@ export class UI_TimelineBlock {
     }
 
     renderRuler() {
-        if (!this.dom.list) return;
+        const host = this.dom.trackLayer;
+        if (!host) return;
 
-        const old = this.dom.list.querySelector('.timeline-ruler');
+        const old = host.querySelector('.timeline-ruler');
         if (old) old.remove();
 
         const ruler = document.createElement('div');
@@ -142,7 +145,7 @@ export class UI_TimelineBlock {
             ruler.appendChild(tick);
         }
 
-        this.dom.list.appendChild(ruler);
+        host.appendChild(ruler);
     }
 
     renderHeader(snapshot) {
@@ -151,23 +154,20 @@ export class UI_TimelineBlock {
     }
 
     renderList(snapshot) {
-        if (!this.dom.list) return;
+        const host = this.dom.nodeLayer || this.dom.list;
+        if (!host) return;
 
-        const ruler = this.dom.list.querySelector('.timeline-ruler');
-        this.dom.list.innerHTML = '';
-        if (ruler) this.dom.list.appendChild(ruler);
+        host.innerHTML = '';
 
         const entries = Array.isArray(snapshot.entries) ? snapshot.entries : [];
         if (entries.length === 0) {
             if (this.dom.empty) this.dom.empty.style.display = '';
-            this.dom.list.style.minHeight = '56px';
             return;
         }
 
         if (this.dom.empty) this.dom.empty.style.display = 'none';
 
         const placements = this._buildPlacements(entries);
-        this.dom.list.style.minHeight = '56px';
 
         placements.forEach((p, index) => {
             const entry = p.entry;
@@ -224,14 +224,15 @@ export class UI_TimelineBlock {
                 this.render();
             });
 
-            this.dom.list.appendChild(item);
+            host.appendChild(item);
         });
     }
 
     _buildPlacements(entries) {
-        if (!this.dom.list) return [];
+        const host = this.dom.nodeLayer || this.dom.list;
+        if (!host) return [];
 
-        const width = this.dom.list.clientWidth || 640;
+        const width = host.clientWidth || 640;
         const sidePad = 12;
         const usable = Math.max(1, width - sidePad * 2);
 
@@ -258,8 +259,11 @@ export class UI_TimelineBlock {
                 offset = (count % 2 === 1 ? 1 : -1) * k * step;
             }
 
-            const leftPx = baseLeftPx + offset;
-            placements.push({ entry, leftPx, bottomPx: 14 });
+            const minX = sidePad + Math.round(this.nodeSize / 2);
+            const maxX = sidePad + usable - Math.round(this.nodeSize / 2);
+            const leftPx = Math.max(minX, Math.min(maxX, baseLeftPx + offset));
+
+            placements.push({ entry, leftPx, bottomPx: 22 });
         }
 
         return placements;
