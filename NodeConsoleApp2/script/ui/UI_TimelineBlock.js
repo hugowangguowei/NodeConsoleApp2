@@ -23,10 +23,16 @@ export class UI_TimelineBlock {
         };
 
         this.logs = [];
+        this.selectedEntryId = null;
+        this.showInlineLogs = false;
 
         if (!this.dom.root || !this.dom.list) {
             console.warn('[UI_TimelineBlock] Timeline root/list not found.');
             return;
+        }
+
+        if (this.dom.logs && !this.showInlineLogs) {
+            this.dom.logs.style.display = 'none';
         }
 
         this.bindDOMEvents();
@@ -98,6 +104,8 @@ export class UI_TimelineBlock {
 
     render() {
         const snapshot = this.engine.timeline.getSnapshot();
+        const exists = Array.isArray(snapshot.entries) && snapshot.entries.some(e => e.entryId === this.selectedEntryId);
+        if (!exists) this.selectedEntryId = null;
         this.renderHeader(snapshot);
         this.renderList(snapshot);
         this.renderControls(snapshot);
@@ -132,20 +140,36 @@ export class UI_TimelineBlock {
             if (index === snapshot.currentIndex) item.classList.add('is-current');
             if (entry.executionState === 'DONE') item.classList.add('is-done');
             if (entry.executionState === 'ERROR') item.classList.add('is-error');
+            if (entry.executionState === 'RUNNING') item.classList.add('is-running');
+            if (this.selectedEntryId === entry.entryId) item.classList.add('is-selected');
 
             const actor = entry.side === 'self' ? '玩家' : '敌人';
+            const sideBadge = document.createElement('span');
+            sideBadge.className = `timeline-item-side ${entry.side === 'self' ? 'self' : 'enemy'}`;
+            sideBadge.textContent = entry.side === 'self' ? '我方' : '敌方';
+
+            const icon = document.createElement('span');
+            icon.className = 'timeline-item-icon';
+            icon.textContent = this._pickSkillGlyph(entry);
+
             const title = document.createElement('div');
             title.className = 'timeline-item-title';
-            title.textContent = `${actor} · ${entry.meta?.label || entry.skillId}`;
+            title.textContent = this._shortLabel(entry.meta?.label || entry.skillId);
 
             const sub = document.createElement('span');
             const speed = Number(entry.meta?.speed) || 0;
+            sub.className = 'timeline-item-sub';
             sub.textContent = `速度 ${speed} · ${entry.executionState}`;
 
+            item.title = `${actor} · ${entry.meta?.label || entry.skillId}\n状态: ${entry.executionState}`;
+
+            item.appendChild(sideBadge);
+            item.appendChild(icon);
             item.appendChild(title);
             item.appendChild(sub);
 
             item.addEventListener('click', () => {
+                this.selectedEntryId = entry.entryId;
                 const info = {
                     entryId: entry.entryId,
                     side: entry.side,
@@ -155,6 +179,7 @@ export class UI_TimelineBlock {
                 };
                 console.log('[Timeline Entry]', info);
                 this.eventBus.emit('BATTLE_LOG', { text: `时间轴条目：${entry.skillId} (${entry.executionState})` });
+                this.render();
             });
 
             this.dom.list.appendChild(item);
@@ -173,17 +198,41 @@ export class UI_TimelineBlock {
     }
 
     renderLogs() {
-        if (!this.dom.logs) return;
-        this.dom.logs.innerHTML = '';
-        for (const line of this.logs) {
-            const li = document.createElement('li');
-            li.textContent = line;
-            this.dom.logs.appendChild(li);
+        if (!Array.isArray(this.logs)) return;
+
+        if (this.logs.length > 0) {
+            const latest = this.logs[this.logs.length - 1];
+            console.log('[TimelineLog]', latest);
+        }
+
+        if (this.showInlineLogs && this.dom.logs) {
+            this.dom.logs.innerHTML = '';
+            for (const line of this.logs) {
+                const li = document.createElement('li');
+                li.textContent = line;
+                this.dom.logs.appendChild(li);
+            }
         }
     }
 
     _getSelectedDelay() {
         const key = this.dom.speed && this.dom.speed.value ? this.dom.speed.value : '1x';
         return this.speedMap[key] ?? 300;
+    }
+
+    _shortLabel(label) {
+        const text = String(label || '').trim();
+        if (text.length <= 8) return text;
+        return `${text.slice(0, 8)}…`;
+    }
+
+    _pickSkillGlyph(entry) {
+        const text = String(entry?.meta?.label || entry?.skillId || '').toLowerCase();
+        if (/heal|治疗|恢复|圣光/.test(text)) return '✨';
+        if (/shield|guard|防御|护甲|减伤/.test(text)) return '🛡️';
+        if (/fire|火|燃烧/.test(text)) return '🔥';
+        if (/ice|冰|冻/.test(text)) return '🧊';
+        if (/lightning|雷|电/.test(text)) return '⚡';
+        return '⚔️';
     }
 }
