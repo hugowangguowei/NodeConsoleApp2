@@ -818,7 +818,7 @@ class CoreEngine {
         this.eventBus.emit('BATTLE_LOG', { text: `--- Execution Phase ---` });
 
         const timelineRes = await this.timeline.start({
-            stepDelayMs: 1000,
+            stepDelayMs: 300,
             canContinue: () => this.fsm.currentState === 'BATTLE_LOOP'
         });
 
@@ -833,6 +833,11 @@ class CoreEngine {
 		if (this.fsm.currentState === 'BATTLE_LOOP') {
 			this.eventBus.emit('TURN_END', { turn: this.currentTurn });
 		}
+
+        if (this.fsm.currentState === 'BATTLE_LOOP') {
+            this.startTurn();
+        }
+    }
 
     _executeTimelineEntry(entry) {
         if (!entry || !entry.sourceAction) {
@@ -864,11 +869,6 @@ class CoreEngine {
 
         this.checkBattleStatus();
         return result;
-    }
-
-        if (this.fsm.currentState === 'BATTLE_LOOP') {
-            this.startTurn();
-        }
     }
 
     executePlayerSkill(action) {

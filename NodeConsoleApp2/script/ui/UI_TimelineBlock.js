@@ -17,9 +17,9 @@ export class UI_TimelineBlock {
         };
 
         this.speedMap = {
-            '1x': 1000,
-            '2x': 500,
-            '4x': 250
+            '1x': 300,
+            '2x': 150,
+            '4x': 75
         };
 
         this.logs = [];
@@ -184,6 +184,6 @@ export class UI_TimelineBlock {
 
     _getSelectedDelay() {
         const key = this.dom.speed && this.dom.speed.value ? this.dom.speed.value : '1x';
-        return this.speedMap[key] ?? 1000;
+        return this.speedMap[key] ?? 300;
     }
 }
