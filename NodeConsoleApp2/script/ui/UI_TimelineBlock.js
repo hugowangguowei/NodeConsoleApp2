@@ -5,6 +5,7 @@ export class UI_TimelineBlock {
 
         this.dom = {
             root: document.querySelector('.timeline'),
+            track: document.getElementById('timelineTrack'),
             list: document.getElementById('timelineList'),
             empty: document.getElementById('timelineEmpty'),
             round: document.getElementById('timelineRoundLabel'),
@@ -25,6 +26,9 @@ export class UI_TimelineBlock {
         this.logs = [];
         this.selectedEntryId = null;
         this.showInlineLogs = false;
+        this.speedRange = { min: -15, max: 15 };
+        this.nodeSize = 42;
+        this.nodeGap = 6;
 
         if (!this.dom.root || !this.dom.list) {
             console.warn('[UI_TimelineBlock] Timeline root/list not found.');
@@ -37,6 +41,7 @@ export class UI_TimelineBlock {
 
         this.bindDOMEvents();
         this.bindEngineEvents();
+        window.addEventListener('resize', () => this.render());
         this.render();
     }
 
@@ -107,9 +112,37 @@ export class UI_TimelineBlock {
         const exists = Array.isArray(snapshot.entries) && snapshot.entries.some(e => e.entryId === this.selectedEntryId);
         if (!exists) this.selectedEntryId = null;
         this.renderHeader(snapshot);
+        this.renderRuler();
         this.renderList(snapshot);
         this.renderControls(snapshot);
         this.renderLogs();
+    }
+
+    renderRuler() {
+        if (!this.dom.list) return;
+
+        const old = this.dom.list.querySelector('.timeline-ruler');
+        if (old) old.remove();
+
+        const ruler = document.createElement('div');
+        ruler.className = 'timeline-ruler';
+
+        const marks = [-15, -10, -5, 0, 5, 10, 15];
+        for (const v of marks) {
+            const tick = document.createElement('div');
+            tick.className = 'timeline-tick';
+            if (v === 0) tick.classList.add('is-center');
+            tick.style.left = `${this._speedToPercent(v)}%`;
+
+            const label = document.createElement('span');
+            label.className = 'timeline-tick-label';
+            label.textContent = v > 0 ? `+${v}` : `${v}`;
+            tick.appendChild(label);
+
+            ruler.appendChild(tick);
+        }
+
+        this.dom.list.appendChild(ruler);
     }
 
     renderHeader(snapshot) {
@@ -120,22 +153,31 @@ export class UI_TimelineBlock {
     renderList(snapshot) {
         if (!this.dom.list) return;
 
+        const ruler = this.dom.list.querySelector('.timeline-ruler');
         this.dom.list.innerHTML = '';
+        if (ruler) this.dom.list.appendChild(ruler);
 
         const entries = Array.isArray(snapshot.entries) ? snapshot.entries : [];
         if (entries.length === 0) {
             if (this.dom.empty) this.dom.empty.style.display = '';
+            this.dom.list.style.minHeight = '56px';
             return;
         }
 
         if (this.dom.empty) this.dom.empty.style.display = 'none';
 
-        entries.forEach((entry, index) => {
+        const placements = this._buildPlacements(entries);
+        this.dom.list.style.minHeight = '56px';
+
+        placements.forEach((p, index) => {
+            const entry = p.entry;
             const item = document.createElement('button');
             item.type = 'button';
             item.className = 'timeline-item';
             item.dataset.entryId = entry.entryId;
             item.dataset.executionState = entry.executionState;
+            item.style.left = `${p.leftPx}px`;
+            item.style.bottom = `${p.bottomPx}px`;
 
             if (index === snapshot.currentIndex) item.classList.add('is-current');
             if (entry.executionState === 'DONE') item.classList.add('is-done');
@@ -186,6 +228,43 @@ export class UI_TimelineBlock {
         });
     }
 
+    _buildPlacements(entries) {
+        if (!this.dom.list) return [];
+
+        const width = this.dom.list.clientWidth || 640;
+        const sidePad = 12;
+        const usable = Math.max(1, width - sidePad * 2);
+
+        const placements = [];
+
+        // For same-speed collisions, spread horizontally by execution order.
+        const bucketByX = new Map();
+
+        for (const entry of entries) {
+            const speed = Number(entry?.meta?.speed);
+            const clamped = this._clampSpeed(Number.isFinite(speed) ? speed : 0);
+            const pct = (clamped - this.speedRange.min) / (this.speedRange.max - this.speedRange.min);
+            const baseLeftPx = Math.round(sidePad + pct * usable);
+
+            const key = String(baseLeftPx);
+            const count = bucketByX.get(key) ?? 0;
+            bucketByX.set(key, count + 1);
+
+            // Symmetric offsets: 0, +d, -d, +2d, -2d...
+            const step = this.nodeSize + this.nodeGap;
+            let offset = 0;
+            if (count > 0) {
+                const k = Math.ceil(count / 2);
+                offset = (count % 2 === 1 ? 1 : -1) * k * step;
+            }
+
+            const leftPx = baseLeftPx + offset;
+            placements.push({ entry, leftPx, bottomPx: 14 });
+        }
+
+        return placements;
+    }
+
     renderControls(snapshot) {
         const phase = snapshot.phase;
         const isReady = phase === 'READY';
@@ -234,5 +313,14 @@ export class UI_TimelineBlock {
         if (/ice|冰|冻/.test(text)) return '🧊';
         if (/lightning|雷|电/.test(text)) return '⚡';
         return '⚔️';
+    }
+
+    _clampSpeed(v) {
+        return Math.max(this.speedRange.min, Math.min(this.speedRange.max, v));
+    }
+
+    _speedToPercent(v) {
+        const clamped = this._clampSpeed(v);
+        return ((clamped - this.speedRange.min) / (this.speedRange.max - this.speedRange.min)) * 100;
     }
 }
