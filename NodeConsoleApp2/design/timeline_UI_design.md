@@ -125,6 +125,89 @@ Canvas 轴线要求：
   - 负责 renderer 生命周期：init / resize / repaint
   - 使用 `speedToX()` 与 `axisY` 定位 NodeLayer 节点（以三角锚点尖端对齐轴线）
 
+### 4.1.3 TrackLayer 工程化模块化设计（TimelineAxisRenderer）
+
+目标：将 TrackLayer 封装成“标准、工程化强”的独立模块（建议命名 `script/ui/TimelineAxisRenderer.js`），提供两项基础能力：
+
+1) **接收参数绘制坐标轴**（TrackLayer 渲染）
+2) **接收坐标轴输入，输出可用于 DOM 定位的坐标**（坐标换算服务）
+
+该方案可行，且能从架构上消除“刻度飘 / 两条线 / padding 影响导致错位 / 重绘时需要保留子树”等 UI 问题：绘制与换算必须共享同一套权威几何参数（范围、padding、轴线 y、宽高）。
+
+#### A. 职责边界（强内聚 / 低耦合）
+
+`TimelineAxisRenderer` 只做两件事：
+
+- **Axis Paint（绘制）**：在 `canvas` 上绘制 baseline、ticks、labels。
+- **Axis Geometry（几何/坐标换算）**：提供 `speed -> x(px)` 与 `axisY(px)`，用于 NodeLayer 以“锚点尖端”对齐。
+
+明确禁止/不负责：
+
+- 不依赖 `TimelineManager`、不读取 Timeline 可变结构，只接受纯参数。
+- 不管理节点 DOM，不处理重叠拍开策略（那属于 NodeLayer 布局器）。
+- 不在 NodeLayer 或容器上绘制任何“第二条轴线/刻度”。
+
+#### B. 坐标系定义与“全局 div 位置”的工程化解释
+
+为保证模块可复用与可测试，Renderer 输出的坐标应优先定义为：
+
+- **Host-local 坐标（推荐）**：相对于 `timelineTrack`（宿主容器）的坐标系；该坐标直接用于 NodeLayer 的 `position:absolute`（left/top）。
+
+若业务确实需要“全局/视口坐标”（例如 tooltip、浮层/引导线锚定），建议由上层做一次显式转换：
+
+- 由 `UI_TimelineBlock` 使用 `host.getBoundingClientRect()` 将 host-local 坐标转换为 viewport 坐标。
+
+原因：DOM 全局坐标受滚动、缩放、transform、布局变化影响较大，把这类环境耦合塞进 Renderer 会降低模块稳定性。
+
+约定：
+
+- `speedToX()` 和 `getAxisY()` 返回 **host-local px**。
+- 上层若需要 viewport：`viewport = hostRect + local`。
+
+#### C. 推荐配置项（输入参数）
+
+- `speedMin/speedMax`：速度区间（默认 `-15..15`）
+- `majorTicks`：关键刻度列表（默认 `[-15,-10,-5,0,5,10,15]`）
+- `minorTickStep`（可选）：次刻度步长（如 `1` 或 `2`）
+- `paddingLeft/paddingRight`：轴线可用绘制区 padding（用于绘制与 `speedToX()` 的共同约束）
+- `axisYRatio`：轴线位置比例（默认 `0.9`）
+- `theme`（可选）：颜色、字体、线宽等
+
+#### D. 推荐 API（最小稳定接口）
+
+建议对外暴露以下方法（命名允许根据现有代码风格调整）：
+
+- `constructor(canvas, config)`
+- `setConfig(config)`：更新范围/刻度/padding/theme 等
+- `resize(width, height, dpr?)`：宿主容器尺寸变化时调用
+- `render()`：重绘轴线（TrackLayer 只重绘 canvas）
+- `speedToX(speed)`：将速度映射为 host-local x
+- `getAxisY()`：返回 host-local 轴线 y（NodeLayer 三角锚点尖端对齐该 y）
+- `getAnchorPoint(speed)`（可选）：返回 `{ x, y }`，等价于 `{ speedToX(speed), getAxisY() }`
+
+#### E. 生命周期与一致性约束（必须遵守）
+
+1) **`resize()` 与 `render()` 必须先于节点布局**
+
+- NodeLayer 计算节点位置前，必须保证 Renderer 的 width/height/padding/axisY 已更新。
+- 否则会出现：轴线正确但节点偏移（节点仍用旧宽度映射）。
+
+2) **Canvas 像素尺寸必须与显示尺寸一致（含 DPR）**
+
+- 必须在 `resize()` 中设置 `canvas.width/height`（考虑 `devicePixelRatio`），并同步更新绘制缩放。
+- 否则会出现：轴线/刻度模糊或坐标换算与视觉不一致。
+
+3) **绘制与换算共享同一套几何参数**
+
+- `paddingLeft/paddingRight`、`axisYRatio`、`speedMin/speedMax` 必须同时作用于绘制和 `speedToX()`。
+
+#### F. 与 NodeLayer 的对接要点（锚点对齐）
+
+- NodeLayer 节点使用“**三角锚点尖端**”作为几何对齐点。
+- 对齐规则：锚点尖端 `y == getAxisY()`，锚点尖端 `x == speedToX(speed)`。
+
+建议 NodeLayer 仅持有 Renderer 的只读输出（`speedToX/getAxisY`），禁止自行定义轴线 y 或重复实现映射公式。
+
 ### 4.2 运行与展示解耦（核心规则）
 
 - **运行层**：保持离散固定频率（例如每 `0.3s/action`）
