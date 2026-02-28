@@ -103,6 +103,28 @@
 - **横向滚动条离谱**：当节点采用绝对定位且同 speed 横向拍开会把节点推到容器可视区外，`overflow-x: auto` 会触发滚动条，这属于容器行为而非控件语义
 - **清空/重绘时的补丁**：把刻度、轴线、节点塞入同一容器会导致每次刷新都需要“保留刻度子树”等维护性补丁；分层后可独立刷新 NodeLayer 而不影响 TrackLayer
 
+### 4.1.2 TrackLayer 轴线渲染实现（Canvas 方案，推荐）
+
+为彻底消除“轴线/刻度/标签因 DOM/CSS 参照系不一致导致的错位”（两条线、刻度飘、padding 影响等），TrackLayer 建议改为使用 `canvas` 绘制速度轴。
+
+目标：
+- TrackLayer 提供**单一权威坐标系**：输入 `speed` 输出 `x(px)`，并提供 `axisY(px)` 供 NodeLayer 做锚点对齐。
+- NodeLayer 继续使用 DOM 渲染技能节点（便于交互与状态样式），但**不得**再绘制任何“第二条轴线/刻度”。
+
+Canvas 轴线要求：
+- 坐标原点在中间，速度区间 `[-15, +15]`
+- 轴线在 `timelineTrack` 靠下位置：`axisY = trackHeight * 0.9`（即离底部约 10% 的位置）
+- 刻度线全部在轴线上方，数字在刻度线上方
+- 关键刻度：`-15, -10, -5, 0, +5, +10, +15`
+
+工程约束（高内聚/低耦合）：
+- 新增 1 个独立 UI 渲染器（例如 `script/ui/TimelineAxisRenderer.js`）：
+  - 只负责 TrackLayer canvas 绘制与坐标换算（`speedToX()`、`getAxisY()`）
+  - 不依赖 `TimelineManager` 内部结构，仅依赖 `speedRange` 与宿主容器尺寸
+- `UI_TimelineBlock`：
+  - 负责 renderer 生命周期：init / resize / repaint
+  - 使用 `speedToX()` 与 `axisY` 定位 NodeLayer 节点（以三角锚点尖端对齐轴线）
+
 ### 4.2 运行与展示解耦（核心规则）
 
 - **运行层**：保持离散固定频率（例如每 `0.3s/action`）

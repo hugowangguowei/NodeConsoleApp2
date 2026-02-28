@@ -366,3 +366,4 @@
 11.我已经找了这条线，其实就是 .timeline-track-layer::before的background配置，请分析这个设计是否有实际意义，如果没有，就去掉，画一条真正的线。
 12. 为什么要timeline-track-layer::before这个div画线？我觉得将刻度和线统一放到timeline-ruler中也是可行的，之前是因为错误理解了那条线的意义，现在用timeline-track-layer::before化纤依然做不到刻度在线下面，所以我希望你能彻底分析画背景线和刻度的逻辑，进行系统性的修改，满足应用要求。
 13. 1）你现在刻度线画的不太对，刻度线应当也在轴下面，刻度线下面是数字；2）现在节点的锚点小三角形对不到坐标轴上了，我觉得坐标轴在节点的锚点小三角形的y轴位置比较合适。分析我的建议是否合理
+14. 我很难理解为什么timelineTrack里面的两个div组件你都不能正确画好，现在timelineTrack里面有两个div,timelineTrackLayer是背景层，timelineNodeLayer是节点层。背景层timelineTrackLayer实际上是个坐标背景板，我觉得让你用dom元素绘制实在是有些困难，我甚至建议你用canvas绘制一个x坐标轴，坐标原点在中间，坐标区间为（-15，15），这个x坐标轴的线位于timelineTrack靠下的位置，大概为为timelineTrack高度的10%的位置。这个timelineTrackLayer能够提供输入speed数据，输出坐标位置的能力，这样timelineNodeLayer的技能节点可以定位到坐标轴上。你觉得这个方案合理吗？比较与当前实现的复杂度
