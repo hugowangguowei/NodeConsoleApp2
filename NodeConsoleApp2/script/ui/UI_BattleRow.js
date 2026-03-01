@@ -14,8 +14,6 @@ class BattleHUD {
             name: element.querySelector('h2'),
             hpBar: element.querySelector('.bar.hp span'),
             hpText: element.querySelector('.hud-stat:nth-of-type(1) > span'), // 假设第一个 stats 是 HP
-            apBar: element.querySelector('.bar.ap span'),
-            apText: element.querySelector('.hud-stat:nth-of-type(2) > span'), // 假设第二个 stats 是 AP
             buffContainer: element.querySelector('.status-row:nth-child(1) .status-icons'), // 需根据实际 DOM 结构调整选择器
             debuffContainer: element.querySelector('.status-row:nth-child(2) .status-icons'),
             armorList: element.querySelector('.armor-list-wrapper')
@@ -37,10 +35,6 @@ class BattleHUD {
                 this.dom.hpText = stat.querySelector('span');
                 this.dom.hpBar = stat.querySelector('.bar.hp span');
             }
-            if (text.includes('行动力') || text.includes('AP')) {
-                this.dom.apText = stat.querySelector('span');
-                this.dom.apBar = stat.querySelector('.bar.ap span');
-            }
         });
     }
 
@@ -52,16 +46,14 @@ class BattleHUD {
         if (!data) return;
 
         // Normalize data access to handle both flat structure (Enemy) and nested stats (Player)
-        const getStat = (prop) => {
+        const getStatStrict = (prop) => {
             if (data[prop] !== undefined) return data[prop];
             if (data.stats && data.stats[prop] !== undefined) return data.stats[prop];
-            return 0; // default
+            throw new Error(`[BattleHUD.update] Missing required stat: ${prop}`);
         };
 
-        const hp = getStat('hp');
-        const maxHp = getStat('maxHp');
-        const ap = getStat('ap');
-        const maxAp = getStat('maxAp');
+        const hp = getStatStrict('hp');
+        const maxHp = getStatStrict('maxHp');
 
         // 更新名称
         if (this.dom.name && data.name) {
@@ -76,13 +68,6 @@ class BattleHUD {
             const hpPercent = Math.max(0, Math.min(100, (hp / maxHp) * 100));
             this.dom.hpBar.style.width = `${hpPercent}%`;
             this.dom.hpText.textContent = `HP ${hp} / ${maxHp}`;
-        }
-
-        // 更新 AP
-        if (this.dom.apBar && maxAp > 0) {
-            const apPercent = Math.max(0, Math.min(100, (ap / maxAp) * 100));
-            this.dom.apBar.style.width = `${apPercent}%`;
-            this.dom.apText.textContent = `行动力（AP） ${ap} / ${maxAp}`;
         }
 
         // 更新护甲

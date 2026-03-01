@@ -484,3 +484,4 @@
 12. 我在测试中，将一个AP开销为2的技能放入了技能槽，为什么规划期 AP 预算没有相应的减少？分析原因。
 13. 你所说的“TurnPlanner.enterPlanning(...) 目前是靠 CoreEngine.startTurn() 里调用 _enterPlanningBudgetSnapshot() 来初始化的；如果你的测试路径没有真正跑到 startTurn() / TURN_START 那条链路（例如还没进入战斗回合、或 planner 被 reset 后未重新 enterPlanning），就会出现这个现象。”，但是在console.log中已经显示Turn Started: 1，这个不会出发进入规划阶段吗？如果不会，PLANNING_ENTER是什么时候触发的呢？
 14. 只有 costs: { ap: 2 }，cost:2这已经是一个过时的设计了，我建议基于严格模式，不考虑兼容的情况，去掉cost:2相关的逻辑，升级处理逻辑。
+15. 我想把battle-row中敌我双方的行动力展示的条目取消。请分析合理性
