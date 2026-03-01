@@ -24,8 +24,8 @@
     "stats": { "hp": 120, "maxHp": 120, "speed": 8, "ap": 4 },
     "skills": ["skill_smash", "skill_warcry"],
     "bodyParts": {
-      "head": { "current": 10, "max": 10, "weakness": 1.2 },
-      "chest": { "current": 20, "max": 20, "weakness": 0.8 },
+      "head": { "current": 10, "max": 10, "weakness": 1.0 },
+      "chest": { "current": 18, "max": 18, "weakness": 1.0 },
       "abdomen": { "current": 10, "max": 10, "weakness": 1.0 },
       "arm": { "current": 10, "max": 10, "weakness": 1.0 },
       "leg": { "current": 10, "max": 10, "weakness": 1.0 }
@@ -42,11 +42,11 @@
     },
     "skills": ["skill_bite"],
     "bodyParts": {
-        "head": { "current": 1, "max": 10, "weakness": 1.5 },
-        "chest": { "current": 2, "max": 20, "weakness": 1.0 },
-        "abdomen": { "current": 1, "max": 10, "weakness": 1.0 },
-        "arm": { "current": 0, "max": 10, "weakness": 1.0 },
-        "leg": { "current": 0, "max": 10, "weakness": 1.0 }
+        "head": { "current": 10, "max": 10, "weakness": 1.0 },
+        "chest": { "current": 18, "max": 18, "weakness": 1.0 },
+        "abdomen": { "current": 10, "max": 10, "weakness": 1.0 },
+        "arm": { "current": 10, "max": 10, "weakness": 1.0 },
+        "leg": { "current": 10, "max": 10, "weakness": 1.0 }
     }
   },
   "orc_berserker_lvl5": {

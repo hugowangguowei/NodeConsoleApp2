@@ -498,3 +498,7 @@
 3. 通过打断点我发现this.eventBus.emit('TIMELINE_FINISHED', { roundId: this.roundId, count: this.entries.length });这句话置成了IDLE,请分析问题的原因，是否是核心逻辑问题，该如何修改
 4. 现在不报错了，但是我发现timeLine在新回合不清除上回合已执行的节点，请分析原因。
 5. 请按照当前的技术体系，结合你的建议，修改这个问题，并补充设计方案。 
+6. 当前并没有解决攻击护甲的溢出伤害扣减血量的问题，是因为没有考虑护甲本身为0的情况吗？
+7. 你在这里又使用了回退机制“新增 CoreEngine._getSkillBaseDamageValue(skillConfig)：从 skillConfig.actions[] 中提取第一个 DMG_HP 的 amount 作为基础伤害（若没有则退到 DMG_ARMOR，再不行才读旧字段 skillConfig.value）”，我明确要求，绝对不允许使用回退机制！而且一律不准兼容旧的结构，基于这个原则检查并修改引擎。 
+8. 为什么skill_heavy_swing护甲击穿后的伤害也变成了20？应该是扣除了护甲抵挡后的伤害进行计算
+9. 你分析错了，我说的伤害变成了20，是因为我看到敌方hud-stat血量减少了20，而不是你所谓的baseDamage，或者说hud-stat绑定的数据绑定错了？
