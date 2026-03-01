@@ -8,7 +8,7 @@
             "maxHp": 100,
             "ap": 4,
             "maxAp": 6,
-            "speed": 10
+            "speed": 1
         },
         "skills": {
             "skillTreeId": "melee_v4_5",

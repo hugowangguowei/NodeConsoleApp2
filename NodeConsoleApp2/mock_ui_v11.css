@@ -685,7 +685,7 @@ main { flex: 1; padding: 16px 24px; display: grid; grid-template-rows: 546px 286
 /* Floating Menu Button */
 .system-menu-btn {
   position: fixed;
-  top: 20px;
+  top: 12px;
   right: 20px;
   width: 48px;
   height: 48px;

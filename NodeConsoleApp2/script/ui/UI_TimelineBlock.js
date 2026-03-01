@@ -15,7 +15,6 @@ export class UI_TimelineBlock {
             list: document.getElementById('timelineList'),
             trackLayer: document.getElementById('timelineTrackLayer'),
             nodeLayer: document.getElementById('timelineNodeLayer'),
-            empty: document.getElementById('timelineEmpty'),
             round: document.getElementById('timelineRoundLabel'),
             phase: document.getElementById('timelinePhaseLabel'),
             start: document.getElementById('timelineStartBtn'),
@@ -172,11 +171,8 @@ export class UI_TimelineBlock {
 
         const entries = Array.isArray(snapshot.entries) ? snapshot.entries : [];
         if (entries.length === 0) {
-            if (this.dom.empty) this.dom.empty.style.display = '';
             return;
         }
-
-        if (this.dom.empty) this.dom.empty.style.display = 'none';
 
         const placements = this._buildPlacements(entries);
 
