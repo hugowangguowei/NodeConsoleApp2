@@ -80,13 +80,11 @@ export default class UI_TurnPanel {
         let canReset = false;
 
         if (phase === 'PLANNING') {
-            if (queueLength > 0) {
-                canExecute = true; // Queue has actions
-                canReset = true;
-            } else {
-                canExecute = false; // Queue empty
-                canReset = false;   // Queue empty, nothing to reset
-            }
+            // Execute = start timeline playback. Only enabled when timeline is already built (READY/PAUSED).
+            const tlPhase = data.timelinePhase;
+            const canRunTimeline = tlPhase === 'READY' || tlPhase === 'PAUSED';
+            canExecute = canRunTimeline;
+            canReset = queueLength > 0 || canRunTimeline;
         } else if (phase === 'EXECUTION') {
             // Everything disabled during execution (Spectator Mode)
             canExecute = false;

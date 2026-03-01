@@ -710,6 +710,41 @@ class CoreEngine {
 
         this._freezePlannerToQueue();
         this._syncPlannerToRuntime();
+
+        // Build timeline immediately so UI can preview the round order after planning commit.
+        // This keeps "提交规划" (commit) decoupled from "执行" (playback).
+        this.enemySkillQueue = [];
+        if (this.data.currentLevelData && this.data.currentLevelData.enemies) {
+            this.data.currentLevelData.enemies.forEach(enemy => {
+                if (enemy.hp > 0) {
+                    const skillId = (enemy.skills && enemy.skills.length > 0) ? enemy.skills[0] : 'skill_bite';
+                    const skillConfig = this.data.getSkillConfig(skillId);
+                    const speed = (enemy.speed || 10) + (skillConfig ? skillConfig.speed : 0);
+                    this.enemySkillQueue.push({
+                        source: 'ENEMY',
+                        sourceId: enemy.id,
+                        skillId: skillId,
+                        targetId: this.data.playerData.id,
+                        cost: 0,
+                        speed: speed
+                    });
+                }
+            });
+        }
+
+        const loadRes = this.timeline.loadRoundActions({
+            roundId: this.currentTurn,
+            selfPlans: this.playerSkillQueue,
+            enemyPlans: this.enemySkillQueue,
+            rules: { tieBreak: 'selfFirst' }
+        });
+
+        if (!loadRes.ok) {
+            this.eventBus.emit('BATTLE_LOG', { text: `Timeline build failed: ${loadRes.reason}` });
+            // Fail-fast: do not continue with an inconsistent preview state.
+            return;
+        }
+
         this.eventBus.emit('PLANNING_COMMITTED', {
             planningDraftBySkill: JSON.parse(JSON.stringify(normalized)),
             plannedActions: JSON.parse(JSON.stringify(this.turnPlanner.getPlannedActions()))
@@ -765,51 +800,16 @@ class CoreEngine {
     commitTurn() {
         if (this.fsm.currentState !== 'BATTLE_LOOP' || this.battlePhase !== 'PLANNING') return;
 
-        console.log('Player committed turn.');
-        this.battlePhase = 'EXECUTION';
-
-        // Freeze planner to queue snapshot for execution
-        this._freezePlannerToQueue();
-        
-        // 生成敌人行动（模拟')
-        if (this.data.currentLevelData && this.data.currentLevelData.enemies) {
-            this.data.currentLevelData.enemies.forEach(enemy => {
-                if (enemy.hp > 0) {
-                    // 简单 AI：选择第一个可用技能或默认技能
-                    const skillId = (enemy.skills && enemy.skills.length > 0) ? enemy.skills[0] : 'skill_bite';
-                    const skillConfig = this.data.getSkillConfig(skillId);
-                    const speed = (enemy.speed || 10) + (skillConfig ? skillConfig.speed : 0);
-
-                    this.enemySkillQueue.push({
-                        source: 'ENEMY',
-                        sourceId: enemy.id,
-                        skillId: skillId,
-                        targetId: this.data.playerData.id, // 目标玩家
-                        cost: 0, // 敌人在这个简单版本中可能不使用 AP
-                        speed: speed
-                    });
-                }
-            });
-        }
-
-        this.saveBattleState(); // 同步状态（包括队列）
-        this.emitBattleUpdate(); // 更新 UI 以禁用控件
-
-        const loadRes = this.timeline.loadRoundActions({
-            roundId: this.currentTurn,
-            selfPlans: this.playerSkillQueue,
-            enemyPlans: this.enemySkillQueue,
-            rules: {
-                tieBreak: 'selfFirst'
-            }
-        });
-
-        if (!loadRes.ok) {
-            this.battlePhase = 'PLANNING';
-            this.eventBus.emit('BATTLE_LOG', { text: `Timeline build failed: ${loadRes.reason}` });
-            this.emitBattleUpdate();
+        const tlPhase = this.timeline.phase;
+        if (tlPhase !== 'READY' && tlPhase !== 'PAUSED') {
+            this.eventBus.emit('BATTLE_LOG', { text: `Cannot execute: timeline is not READY (phase=${tlPhase}). Please commit planning first.` });
             return;
         }
+
+        console.log('Execute turn (timeline playback).');
+        this.battlePhase = 'EXECUTION';
+        this.saveBattleState();
+        this.emitBattleUpdate();
 
         this.executeTurn();
     }
@@ -818,7 +818,6 @@ class CoreEngine {
         this.eventBus.emit('BATTLE_LOG', { text: `--- Execution Phase ---` });
 
         const timelineRes = await this.timeline.start({
-            stepDelayMs: 300,
             canContinue: () => this.fsm.currentState === 'BATTLE_LOOP'
         });
 
@@ -1148,13 +1147,20 @@ class CoreEngine {
     }
 
     resetTurn() {
-         if (this.battlePhase !== 'PLANNING') {
-             this.eventBus.emit('BATTLE_LOG', { text: `Cannot reset turn during ${this.battlePhase} phase.` });
-             return;
-         }
-         this.playerSkillQueue = [];
-         this.eventBus.emit('BATTLE_LOG', { text: `Turn actions reset.` });
-         this.emitBattleUpdate();
+        if (this.battlePhase !== 'PLANNING') {
+            this.eventBus.emit('BATTLE_LOG', { text: `Cannot reset turn during ${this.battlePhase} phase.` });
+            return;
+        }
+
+        // Clear planning (slots), queues, and timeline preview.
+        this.turnPlanner.reset();
+        this.playerSkillQueue = [];
+        this.enemySkillQueue = [];
+        this.timeline.reset();
+        this._syncPlannerToRuntime();
+
+        this.eventBus.emit('BATTLE_LOG', { text: 'Turn planning and timeline cleared.' });
+        this.emitBattleUpdate();
     }
     
     saveBattleState() {
@@ -1186,6 +1192,7 @@ class CoreEngine {
             enemies: this.data.currentLevelData ? this.data.currentLevelData.enemies : [],
             turn: this.currentTurn,
             phase: this.battlePhase,
+            timelinePhase: this.timeline ? this.timeline.phase : undefined,
             queue: this.playerSkillQueue
         });
     }

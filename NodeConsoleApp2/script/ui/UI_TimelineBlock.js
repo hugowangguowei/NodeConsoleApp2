@@ -18,7 +18,6 @@ export class UI_TimelineBlock {
             round: document.getElementById('timelineRoundLabel'),
             phase: document.getElementById('timelinePhaseLabel'),
             start: document.getElementById('timelineStartBtn'),
-            pause: document.getElementById('timelinePauseBtn'),
             step: document.getElementById('timelineStepBtn'),
             finish: document.getElementById('timelineFinishBtn'),
             speed: document.getElementById('timelineSpeedSelect'),
@@ -26,9 +25,9 @@ export class UI_TimelineBlock {
         };
 
         this.speedMap = {
-            '1x': 300,
-            '2x': 150,
-            '4x': 75
+            '1x': 1000,
+            '2x': 500,
+            '4x': 250
         };
 
         this.logs = [];
@@ -79,8 +78,19 @@ export class UI_TimelineBlock {
     bindDOMEvents() {
         if (this.dom.start) {
             this.dom.start.addEventListener('click', async () => {
+                if (this.engine.battlePhase !== 'EXECUTION') return;
+
+                const phase = this.engine.timeline.phase;
+                if (phase === 'PLAYING') {
+                    this.engine.timeline.pause();
+                    return;
+                }
+
                 const delay = this._getSelectedDelay();
-                const result = await this.engine.timeline.start({
+                const action = phase === 'PAUSED'
+                    ? this.engine.timeline.resume.bind(this.engine.timeline)
+                    : this.engine.timeline.start.bind(this.engine.timeline);
+                const result = await action({
                     stepDelayMs: delay,
                     canContinue: () => this.engine.fsm.currentState === 'BATTLE_LOOP'
                 });
@@ -91,14 +101,9 @@ export class UI_TimelineBlock {
             });
         }
 
-        if (this.dom.pause) {
-            this.dom.pause.addEventListener('click', () => {
-                this.engine.timeline.pause();
-            });
-        }
-
         if (this.dom.step) {
             this.dom.step.addEventListener('click', async () => {
+                if (this.engine.battlePhase !== 'EXECUTION') return;
                 const phase = this.engine.timeline.phase;
                 if (phase === 'READY' || phase === 'PAUSED') {
                     const res = await this.engine.timeline.step();
@@ -111,6 +116,7 @@ export class UI_TimelineBlock {
 
         if (this.dom.finish) {
             this.dom.finish.addEventListener('click', async () => {
+                if (this.engine.battlePhase !== 'EXECUTION') return;
                 const phase = this.engine.timeline.phase;
                 if (phase !== 'READY' && phase !== 'PAUSED') return;
 
@@ -302,10 +308,26 @@ export class UI_TimelineBlock {
         const isPlaying = phase === 'PLAYING';
         const isPaused = phase === 'PAUSED';
 
-        if (this.dom.start) this.dom.start.disabled = !(isReady || isPaused);
-        if (this.dom.pause) this.dom.pause.disabled = !isPlaying;
+        const isExecution = this.engine.battlePhase === 'EXECUTION';
+
+        if (this.dom.start) {
+            this.dom.start.textContent = isPlaying ? '暂停' : '开始';
+            this.dom.start.classList.toggle('is-paused', !isPlaying);
+        }
+
+        // Playback controls are only available during EXECUTION.
+        if (!isExecution) {
+            if (this.dom.start) this.dom.start.disabled = true;
+            if (this.dom.step) this.dom.step.disabled = true;
+            if (this.dom.finish) this.dom.finish.disabled = true;
+            if (this.dom.speed) this.dom.speed.disabled = true;
+            return;
+        }
+
+        if (this.dom.start) this.dom.start.disabled = !(isReady || isPaused || isPlaying);
         if (this.dom.step) this.dom.step.disabled = !(isReady || isPaused);
         if (this.dom.finish) this.dom.finish.disabled = !(isReady || isPaused);
+        if (this.dom.speed) this.dom.speed.disabled = false;
     }
 
     renderLogs() {

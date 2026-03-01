@@ -70,7 +70,7 @@ export default class TimelineManager {
         return { ok: true, count: this.entries.length };
     }
 
-    async start({ stepDelayMs = 300, canContinue } = {}) {
+    async start({ stepDelayMs = 1000, canContinue } = {}) {
         if (this.phase !== 'READY' && this.phase !== 'PAUSED') {
             return this._fail(`Cannot start timeline in phase ${this.phase}.`, { phase: this.phase });
         }
@@ -112,7 +112,7 @@ export default class TimelineManager {
         this.eventBus.emit('TIMELINE_SNAPSHOT', this.getSnapshot());
     }
 
-    async resume({ stepDelayMs = 300, canContinue } = {}) {
+    async resume({ stepDelayMs = 1000, canContinue } = {}) {
         if (this.phase !== 'PAUSED') {
             return this._fail(`Cannot resume timeline in phase ${this.phase}.`, { phase: this.phase });
         }
