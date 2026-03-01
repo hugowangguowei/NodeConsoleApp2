@@ -28,7 +28,7 @@ export default class UI_SkillPanel {
         this.detailEffect = document.getElementById('detailEffect');
         this.detailTarget = document.getElementById('detailTarget');
         this.detailCosts = document.getElementById('detailCosts');
-        this.detailRequirements = document.getElementById('detailRequirements');
+        this.detailSpeed = document.getElementById('detailSpeed');
         this.detailBuffs = document.getElementById('detailBuffs');
         this.detailTip = document.getElementById('detailTip');
         this.detailTags = document.getElementById('detailTags');
@@ -833,12 +833,18 @@ export default class UI_SkillPanel {
         if (!skill) return;
 
         if (this.detailName) this.detailName.textContent = skill.name;
-        if (this.detailMeta) this.detailMeta.textContent = `${this.getSkillTypeLabel(skill)} · AP ${this.getSkillApCost(skill)}`;
+        if (this.detailMeta) this.detailMeta.textContent = `${this.getSkillTypeLabel(skill)} · AP ${this.getSkillApCost(skill)} · 速度 ${this.formatSpeedText(skill)}`;
         if (this.detailEffect) this.detailEffect.innerHTML = `<strong>效果</strong>：${skill.description || '无'}`;
         if (this.detailTarget) this.detailTarget.innerHTML = `<strong>范围</strong>：${this.formatTargetText(skill)}`;
         if (this.detailCosts) this.detailCosts.innerHTML = `<strong>消耗</strong>：${this.formatCostText(skill)}`;
-        if (this.detailRequirements) this.detailRequirements.innerHTML = `<strong>条件</strong>：${this.formatRequirementText(skill)}`;
+        if (this.detailSpeed) this.detailSpeed.innerHTML = `<strong>速度</strong>：${this.formatSpeedText(skill)}`;
         if (this.detailBuffs) this.detailBuffs.innerHTML = `<strong>Buff</strong>：${this.formatBuffRefsText(skill)}`;
+    }
+
+    formatSpeedText(skill) {
+        if (skill && typeof skill.speed !== 'undefined') return String(skill.speed);
+        if (skill && typeof skill.initiative !== 'undefined') return String(skill.initiative);
+        return '-';
     }
 
     getSkillTypeLabel(skill) {
