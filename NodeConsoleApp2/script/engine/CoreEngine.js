@@ -58,6 +58,57 @@ class CoreEngine {
         this.init();
     }
 
+    _buildEffectiveApCostBySkill(skillIds) {
+        const out = Object.create(null);
+        const ids = Array.isArray(skillIds) ? skillIds : [];
+        for (const id of ids) {
+            const cfg = this.data.getSkillConfig(id);
+            if (!cfg) continue;
+            // Current stage: treat cost as stable during PLANNING.
+            // Future: apply buff-adjusted modifiers here once, at PLANNING_ENTER.
+            out[id] = Number(cfg.cost) || 0;
+        }
+        return out;
+    }
+
+    _buildEffectiveApCostForAllSkills() {
+        const root = this.data?.gameConfig?.skills;
+        if (!root || typeof root !== 'object') return Object.create(null);
+        const ids = Object.keys(root);
+      const out = Object.create(null);
+        for (const id of ids) {
+            const cfg = this.data.getSkillConfig(id);
+            if (!cfg) continue;
+            out[id] = this._getSkillApCostStrict(cfg, id);
+        }
+        return out;
+    }
+
+    _getSkillApCostStrict(skillConfig, skillIdForLog = null) {
+        const ap = Number(skillConfig?.costs?.ap);
+        if (!Number.isFinite(ap) || ap < 0) {
+            const name = skillConfig?.name ? ` (${skillConfig.name})` : '';
+            const id = skillIdForLog || skillConfig?.id || 'unknown';
+            throw new Error(`[CoreEngine] Invalid skill AP cost: skillId=${id}${name}. Expected skill.costs.ap number.`);
+        }
+        return ap;
+    }
+
+    _enterPlanningBudgetSnapshot() {
+        const availableAp = Number(this.data?.playerData?.stats?.ap ?? 0) || 0;
+      // Important: UI may present skills not strictly limited to `player.skills.learned`
+        // (e.g. mock UI static buttons / debug injection). To keep the planning budget
+        // consistent, build a cost map that covers all known skills.
+        const effectiveApCostBySkill = this._buildEffectiveApCostForAllSkills();
+        if (!effectiveApCostBySkill || Object.keys(effectiveApCostBySkill).length === 0) {
+            this.eventBus.emit('BATTLE_LOG', { text: 'Planning init warning: effectiveApCostBySkill is empty (skills not loaded?)' });
+        }
+        const res = this.turnPlanner.enterPlanning({ availableAp, effectiveApCostBySkill });
+        if (!res.ok) {
+            this.eventBus.emit('BATTLE_LOG', { text: `Planning init failed: ${res.reason || 'unknown'}` });
+        }
+    }
+
     _bindTimelineEvents() {
         if (!this.eventBus || typeof this.eventBus.on !== 'function') {
             throw new Error('[CoreEngine] EventBus must support .on(event, handler).');
@@ -546,6 +597,10 @@ class CoreEngine {
             this.data.playerData.stats.ap = this.data.playerData.stats.maxAp;
             this.eventBus.emit('DATA_UPDATE', this.data.playerData);
         }
+
+        // Planning-enter snapshot: initialize AP budget FSM once per planning phase.
+        this._enterPlanningBudgetSnapshot();
+
         this.eventBus.emit('TURN_START', { turn: this.currentTurn });
         this.emitBattleUpdate();
         this.eventBus.emit('BATTLE_LOG', { text: `Turn ${this.currentTurn} started. Please configure skills.` });
@@ -601,7 +656,7 @@ class CoreEngine {
             }
         }
 
-        const cost = skillConfig.cost;
+        const cost = this._getSkillApCostStrict(skillConfig, skillId);
 
         // Slot capacity validation (core mechanic)
         const isSelfTarget = (targetId === this.data.playerData.id);
@@ -651,7 +706,7 @@ class CoreEngine {
             return;
         }
 
-        const cost = skillConfig.cost;
+        const cost = this._getSkillApCostStrict(skillConfig, skillId);
         const speed = (this.data.playerData.stats.speed || 10) + (skillConfig.speed || 0);
 
         const res = this.turnPlanner.assign({
@@ -684,6 +739,7 @@ class CoreEngine {
             : [];
 
         const normalized = Object.create(null);
+       const apBudget = this.turnPlanner?.getApBudgetState ? this.turnPlanner.getApBudgetState() : null;
         for (const d of drafts) {
             if (!d || !d.skillId) continue;
 
@@ -694,21 +750,18 @@ class CoreEngine {
                 return;
             }
 
-            const cost = Number(skillConfig.cost) || 0;
+            const cost = Number(apBudget?.effectiveApCostBySkill?.[d.skillId]);
+            if (!Number.isFinite(cost)) {
+                // Strict mode: AP budget snapshot must provide cost for all skills.
+                // If missing, treat as hard data/config error.
+                throw new Error(`[CoreEngine] Missing effective AP cost for skillId=${d.skillId} (planning budget not initialized correctly).`);
+            }
             const speed = (this.data.playerData.stats.speed || 10) + (Number(skillConfig.speed) || 0);
             normalized[d.skillId] = {
                 ...d,
                 cost,
                 speed
             };
-        }
-
-        const currentAp = Number(this.data?.playerData?.stats?.ap ?? 0) || 0;
-        const totalCost = Object.values(normalized).reduce((sum, a) => sum + (Number(a.cost) || 0), 0);
-        if (currentAp < totalCost) {
-            this.eventBus.emit('BATTLE_LOG', { text: 'Not enough AP.' });
-            this.eventBus.emit('PLANNING_COMMIT_FAILED', { reason: 'Not enough AP.' });
-            return;
         }
 
         const res = this.turnPlanner.planMany({ planningDraftBySkill: normalized });

@@ -253,7 +253,74 @@ UI 渲染 `Action Matrix` 主要依赖此队列。
 
 因此，**Engine/Planner 必须保证状态合法**；UI 的限制属于“体验增强”。
 
-### 6.2 本次已确认规则：每个技能每回合允许规划 1 次
+### 6.2 AP 预算（按 skill/turn 扣一次）子状态机（规划阶段专用）
+
+本节用于把“规划阶段 AP 预算”的职责边界与状态变化写清楚。
+
+#### 6.2.1 已确认规则（本项目当前口径）
+
+- **扣费粒度**：AP 是按“skill per turn”扣一次（不是按 slot、不是按 action 子步骤）。
+- **成本来源**：规划阶段使用的 `effectiveApCost` 来自 skill 数据的 cost（并允许在“规划阶段开始”一次性应用 buff 进行重算）。
+- **成本稳定性**：在同一个规划阶段生命周期内（`PLANNING_ENTER -> PLANNING_COMMIT`），`effectiveApCost` 视为稳定值；规划过程中 UI 的增删改查不会触发再次重算。
+
+#### 6.2.2 状态机与职责划分
+
+将 AP 预算视为“技能规划子模块（Skill Planning Module）”内部的一个子状态机，它只在 `PLANNING_*` 阶段存在。
+
+状态：
+
+- `AP_BUDGET_UNINITIALIZED`
+- `AP_BUDGET_READY`
+- `AP_BUDGET_INVALID`（草稿导致超预算）
+
+输入（事件）：
+
+- `ON_PLANNING_ENTER(turnContext)`：进入规划阶段
+- `ON_DRAFT_CHANGED(planningDraftBySkill)`：草稿集合变化（放置/取消/替换/切目标等）
+- `ON_PLANNING_COMMIT_REQUEST(planningDraftBySkill)`：玩家点击提交规划
+
+输出：
+
+- `apBudgetSnapshot`：`{ availableAp: number }`（进入规划阶段时从 `turnContext` 获取一次快照）
+- `effectiveApCostBySkill`：`Record<skillId, number>`（进入规划阶段时预计算）
+- `apUsage`：`{ plannedCost: number, remaining: number, ok: boolean }`
+
+#### 6.2.3 关键算法（全量重算，而非增量 +/-）
+
+为避免草稿状态频繁增删改查引入累加误差，AP 预算应采用“任何变化都触发全量重算”的策略：
+
+1) `plannedCost = sum(effectiveApCostBySkill[skillId])`，其中 `skillId` 来自当前草稿集合的 key（**一技能一条草稿**）。
+2) `remaining = availableAp - plannedCost`
+3) `ok = remaining >= 0`
+
+约束：
+
+- 若某个 skill 在草稿中出现多次（理论上不应发生，因为已规定“每技能每回合规划 1 次”），应在草稿层/commit 层先裁剪为 1 次或直接报错。
+
+#### 6.2.4 各阶段行为
+
+1) `PLANNING_ENTER`：
+
+- 从 `turnContext` 获取 `availableAp` 快照（规划期内不再变动）。
+- 预计算 `effectiveApCostBySkill`（将 buff 影响一次性折算进 cost；规划期内稳定）。
+- 初始化 `apUsage = { plannedCost: 0, remaining: availableAp, ok: true }`
+- AP 子状态进入 `AP_BUDGET_READY`
+
+2) `PLANNING_ACTIVE`（草稿期）：
+
+- 每次 `planningDraftBySkill` 变化都触发一次全量重算。
+- 当 `ok === false`：
+  - UI 必须在体验层阻止“进一步增加成本”的操作（例如禁止再放置造成超预算的技能），并明确提示。
+  - 模块保持在 `AP_BUDGET_INVALID`，直到草稿被修改回到 `ok === true`。
+
+3) `PLANNING_COMMIT`（提交期）：
+
+- 若 `ok === false`：必须拒绝提交并返回明确错误（遵循项目准则：关键数据缺失/非法时 fail-fast，不走回退路径）。
+- 若 `ok === true`：允许提交。
+
+> 备注：即使把“预算约束”主要放在 skill 模块内部，Engine/Planner 仍建议保留断言式校验（防止外部调用绕过 UI/模块）。这类校验应当是硬失败并提示，而不是静默兜底。
+
+### 6.3 本次已确认规则：每个技能每回合允许规划 1 次
 
 建议定义为 Planner 级规则：
 

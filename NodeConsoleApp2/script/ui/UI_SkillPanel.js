@@ -70,14 +70,38 @@ export default class UI_SkillPanel {
         const player = this.engine?.data?.playerData;
         const cur = Number(player?.stats?.ap ?? 0);
         const max = Number(player?.stats?.maxAp ?? 0);
+
+        const budget = this.engine?.turnPlanner?.getApBudgetState?.();
+        if (budget && budget.phase && budget.phase !== 'AP_BUDGET_UNINITIALIZED') {
+            const available = Number(budget.availableAp ?? 0) || 0;
+            const plannedCost = Number(budget.plannedCost ?? 0) || 0;
+            const remaining = Number(budget.remaining ?? (available - plannedCost)) || 0;
+            return {
+                current: available,
+                max: Number.isFinite(max) ? max : 0,
+                used: plannedCost,
+                remaining: Math.max(0, remaining),
+                withinBudget: !!budget.ok,
+                mode: 'planningBudget'
+            };
+        }
+
         const used = (this.engine?.playerSkillQueue || []).reduce((sum, item) => sum + (Number(item?.cost) || 0), 0);
         const remaining = Math.max(0, cur - used);
         return {
             current: Number.isFinite(cur) ? cur : 0,
             max: Number.isFinite(max) ? max : 0,
             used: Number.isFinite(used) ? used : 0,
-            remaining
+            remaining,
+            withinBudget: true,
+            mode: 'playerStats'
         };
+    }
+
+    _recalcPlanningApBudget() {
+        const planner = this.engine?.turnPlanner;
+        if (!planner?.recalcApBudgetForDraft) return { ok: true };
+        return planner.recalcApBudgetForDraft({ planningDraftBySkill: this.planningDraftBySkill });
     }
 
     renderApMeter() {
@@ -581,6 +605,7 @@ export default class UI_SkillPanel {
             }
         }
 
+        // Apply draft mutation first...
         if (nextSlots.length === 0) {
             delete this.planningDraftBySkill[id];
         } else {
@@ -592,8 +617,30 @@ export default class UI_SkillPanel {
             };
         }
 
+        // ...then recompute planning AP budget (skill-per-turn) and block over-budget drafts.
+        const apRes = this._recalcPlanningApBudget();
+        const budget = this.engine?.turnPlanner?.getApBudgetState?.();
+        if (budget && budget.phase === 'AP_BUDGET_INVALID') {
+            // Rollback the last change (fail-fast; avoid inconsistent preview).
+            if (prevSlots.length === 0) {
+                delete this.planningDraftBySkill[id];
+            } else {
+                this.planningDraftBySkill[id] = {
+                    skillId: id,
+                    placedSlots: prevSlots,
+                    targetId: prev?.targetId ?? finalTargetId,
+                    bodyPart: prev?.bodyPart ?? part
+                };
+            }
+            this._recalcPlanningApBudget();
+            this.eventBus?.emit?.('BATTLE_LOG', { text: `AP 预算不足：无法加入该技能（plannedCost=${budget.plannedCost}, availableAp=${budget.availableAp}）。` });
+            this.renderApMeter();
+            return;
+        }
+
         this._rebuildDraftQueue();
         this.renderMatrixQueue([...(this.engine.playerSkillQueue || []), ...this.draftQueue]);
+        this.renderApMeter();
 
         this.eventBus?.emit?.('BATTLE_LOG', { text: `已加入草稿：${this.selectedSkill.name || this.selectedSkill.id}（待提交）` });
         

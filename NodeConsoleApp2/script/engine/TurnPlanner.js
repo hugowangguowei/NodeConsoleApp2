@@ -5,6 +5,14 @@ export default class TurnPlanner {
 		this._getSkillConfig = getSkillConfig;
 		this._getCurrentAp = getCurrentAp;
 		this._getUsedAp = getUsedAp;
+       this._apBudget = {
+			phase: 'AP_BUDGET_UNINITIALIZED',
+			availableAp: 0,
+			effectiveApCostBySkill: Object.create(null),
+			plannedCost: 0,
+			remaining: 0,
+			ok: true
+		};
 		this.reset();
 	}
 
@@ -16,6 +24,61 @@ export default class TurnPlanner {
        this.plannedBySkill = Object.create(null); // skillId -> action
 		this.skillToSlots = Object.create(null); // skillId -> slotKey[]
 		this._nextId = 1;
+       this._resetApBudget();
+	}
+
+	_resetApBudget() {
+		this._apBudget = {
+			phase: 'AP_BUDGET_UNINITIALIZED',
+			availableAp: 0,
+			effectiveApCostBySkill: Object.create(null),
+			plannedCost: 0,
+			remaining: 0,
+			ok: true
+		};
+	}
+
+	enterPlanning({ availableAp, effectiveApCostBySkill }) {
+		const ap = Number(availableAp);
+		if (!Number.isFinite(ap) || ap < 0) {
+			return { ok: false, reason: 'Invalid availableAp for planning.' };
+		}
+		if (!effectiveApCostBySkill || typeof effectiveApCostBySkill !== 'object') {
+			return { ok: false, reason: 'effectiveApCostBySkill is required.' };
+		}
+
+		this._apBudget.phase = 'AP_BUDGET_READY';
+		this._apBudget.availableAp = ap;
+		this._apBudget.effectiveApCostBySkill = { ...effectiveApCostBySkill };
+		this._apBudget.plannedCost = 0;
+		this._apBudget.remaining = ap;
+		this._apBudget.ok = true;
+		return { ok: true };
+	}
+
+	recalcApBudgetForDraft({ planningDraftBySkill }) {
+		if (this._apBudget.phase === 'AP_BUDGET_UNINITIALIZED') {
+			return { ok: false, reason: 'AP budget not initialized (call enterPlanning first).' };
+		}
+
+		const root = planningDraftBySkill && typeof planningDraftBySkill === 'object' ? planningDraftBySkill : null;
+		const skillIds = root ? Object.keys(root) : [];
+		let plannedCost = 0;
+		for (const skillId of skillIds) {
+			const cost = Number(this._apBudget.effectiveApCostBySkill?.[skillId] ?? 0);
+			plannedCost += Number.isFinite(cost) ? cost : 0;
+		}
+		const remaining = this._apBudget.availableAp - plannedCost;
+		const ok = remaining >= 0;
+		this._apBudget.plannedCost = plannedCost;
+		this._apBudget.remaining = remaining;
+		this._apBudget.ok = ok;
+		this._apBudget.phase = ok ? 'AP_BUDGET_READY' : 'AP_BUDGET_INVALID';
+		return { ok: true, plannedCost, remaining, withinBudget: ok };
+	}
+
+	getApBudgetState() {
+		return { ...this._apBudget, effectiveApCostBySkill: { ...this._apBudget.effectiveApCostBySkill } };
 	}
 
 	makeSlotKey(side, part, index) {
@@ -157,6 +220,22 @@ export default class TurnPlanner {
 			? planningDraftBySkill
 			: null;
 		if (!draftRoot) return { ok: true, placed: 0, errors: [] };
+
+		// Hard guard: AP budget must be initialized and within budget at commit time.
+		if (this._apBudget.phase === 'AP_BUDGET_UNINITIALIZED') {
+			return { ok: false, placed: 0, errors: [{ reason: 'AP budget not initialized (call enterPlanning first).' }] };
+		}
+		const apRes = this.recalcApBudgetForDraft({ planningDraftBySkill: draftRoot });
+		if (!apRes.ok) {
+			return { ok: false, placed: 0, errors: [{ reason: apRes.reason || 'AP budget calculation failed.' }] };
+		}
+		if (!this._apBudget.ok) {
+			return {
+				ok: false,
+				placed: 0,
+				errors: [{ reason: `Not enough AP (plannedCost=${this._apBudget.plannedCost}, availableAp=${this._apBudget.availableAp}).` }]
+			};
+		}
 
 		const errors = [];
 		let placed = 0;
