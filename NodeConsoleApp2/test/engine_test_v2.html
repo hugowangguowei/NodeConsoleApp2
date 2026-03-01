@@ -417,8 +417,11 @@
                         const opt = document.createElement('option');
                         opt.value = part;
                         const partData = target.bodyParts[part];
-                        // Show Armor instead of HP
-                        opt.textContent = `${part} (Armor: ${partData.armor}/${partData.maxArmor})`;
+                         if (partData.current === undefined || partData.max === undefined) {
+                             throw new Error(`Missing required armor fields for bodyParts['${part}']: expected { current, max }`);
+                         }
+                         // Show Armor instead of HP
+                         opt.textContent = `${part} (Armor: ${partData.current}/${partData.max})`;
                         partSelect.appendChild(opt);
                     }
                 } else if (target.equipment && target.equipment.armor) {

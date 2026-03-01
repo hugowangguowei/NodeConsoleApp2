@@ -589,7 +589,11 @@ class CoreEngine {
         this.playerSkillQueue = [];
         this.enemySkillQueue = [];
         this.turnPlanner.reset();
-        this.timeline.reset();
+        // IMPORTANT (strict): do NOT reset timeline here (reset would force IDLE inside
+        // TIMELINE_FINISHED listener chains). Instead, clear entries for the new turn.
+        if (this.timeline && typeof this.timeline.clearForNextTurn === 'function') {
+            this.timeline.clearForNextTurn({ roundId: this.currentTurn });
+        }
         this._syncPlannerToRuntime();
 
         // 重置 AP

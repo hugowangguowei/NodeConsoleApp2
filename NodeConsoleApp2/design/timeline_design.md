@@ -405,6 +405,29 @@ c) Footer：
 
 ## 9. MVP 落地清单
 
+### 9.0 严格生命周期契约（必须遵守）
+
+为保证 `CoreEngine.executeTurn()` 可以做严格断言（fail-fast），Timeline 必须满足以下契约：
+
+1) `TimelineManager.start()` 返回 `ok:true` 时，播放结束后的稳定相位只能是：
+   - `FINISHED`（自然播完）
+   - `PAUSED`（被 host 的 `canContinue()` / 外部 stop/pause 打断）
+
+2) **禁止**在 `TIMELINE_FINISHED` 的同步监听回调链路中调用 `timeline.reset()` 或任何会把 phase 改回 `IDLE` 的操作。
+   - 原因：`eventBus.emit()` 为同步分发时，监听器内 reset 会在 `start()`/`step()` 调用栈尚未返回前破坏 phase，导致引擎端出现
+     `Timeline ended in unexpected phase=IDLE` 这类契约错误。
+
+3) 新回合 timeline 的进入方式：
+   - 在下一回合进入执行阶段时，通过 `timeline.loadRoundActions(...)` 直接覆盖 entries，并将 phase 置为 `READY`。
+   - `reset()` 仅允许在“离开战斗/回到标题/彻底初始化”的边界使用，而不是作为“下一回合”的常规路径。
+
+4) 新回合 UI 清空（不破坏相位契约）：
+   - 回合开始（进入 PLANNING）时，如果希望时间轴不显示上一回合已执行节点，使用 `timeline.clearForNextTurn({ roundId })`。
+   - 语义：仅清空 `entries/currentIndex` 并发出 `TIMELINE_SNAPSHOT`（可选额外事件 `TIMELINE_CLEARED`），但不调用 `reset()`。
+   - 重要：`clearForNextTurn()` **不得**把相位强制改为 `READY/IDLE`；相位必须保持 `FINISHED/PAUSED` 以满足引擎严格断言。
+     下一回合真正进入 `READY` 由 `loadRoundActions(...)` 负责。
+   - 设计目的：避免 `TIMELINE_FINISHED` 同步回调链路里 reset 造成 phase=IDLE，同时满足“新回合时间轴为空”的 UX 预期。
+
 1) 新增 `TimelineManager`：
 - `reset()`
 - `loadRoundActions(selfPlans, enemyPlans, rules)`（严格校验）

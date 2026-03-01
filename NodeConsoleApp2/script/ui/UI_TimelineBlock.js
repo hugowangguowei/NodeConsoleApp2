@@ -124,7 +124,21 @@ export class UI_TimelineBlock {
             this.dom.step.addEventListener('click', async () => {
                 if (this.engine.battlePhase !== 'EXECUTION') return;
                 const phase = this.engine.timeline.phase;
+                // TimelineManager.step() is only valid in PLAYING. For single-step UX,
+                // start playback then immediately pause after one step via canContinue.
                 if (phase === 'READY' || phase === 'PAUSED') {
+                    const delay = 0;
+                    const res = await this.engine.timeline.start({
+                        stepDelayMs: delay,
+                        canContinue: () => false
+                    });
+                    if (!res.ok) {
+                        this.eventBus.emit('BATTLE_LOG', { text: `时间轴单步失败：${res.reason}` });
+                    }
+                    return;
+                }
+
+                if (phase === 'PLAYING') {
                     const res = await this.engine.timeline.step();
                     if (!res.ok) {
                         this.eventBus.emit('BATTLE_LOG', { text: `时间轴单步失败：${res.reason}` });
@@ -158,6 +172,7 @@ export class UI_TimelineBlock {
         this.eventBus.on('TIMELINE_PAUSE', refresh);
         this.eventBus.on('TIMELINE_RESUME', refresh);
         this.eventBus.on('TIMELINE_FINISHED', refresh);
+        this.eventBus.on('TIMELINE_CLEARED', refresh);
         this.eventBus.on('TIMELINE_SNAPSHOT', refresh);
 
         // Keep header/controls in sync with host phase transitions (PLANNING/EXECUTION) too.

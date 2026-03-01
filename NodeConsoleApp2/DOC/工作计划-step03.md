@@ -485,3 +485,16 @@
 13. 你所说的“TurnPlanner.enterPlanning(...) 目前是靠 CoreEngine.startTurn() 里调用 _enterPlanningBudgetSnapshot() 来初始化的；如果你的测试路径没有真正跑到 startTurn() / TURN_START 那条链路（例如还没进入战斗回合、或 planner 被 reset 后未重新 enterPlanning），就会出现这个现象。”，但是在console.log中已经显示Turn Started: 1，这个不会出发进入规划阶段吗？如果不会，PLANNING_ENTER是什么时候触发的呢？
 14. 只有 costs: { ap: 2 }，cost:2这已经是一个过时的设计了，我建议基于严格模式，不考虑兼容的情况，去掉cost:2相关的逻辑，升级处理逻辑。
 15. 我想把battle-row中敌我双方的行动力展示的条目取消。请分析合理性
+
+**执行效果**
+【GPT5.2】：完成的比较理想，得益于优先考虑的状态机的问题。
+
+### 任务 6：攻击过程测试
+
+**开始时间**
+26.03.01-22:22
+1. 选用【GPT5.2】
+2. 我发现攻击护甲的技能在护甲减到0之后没有继续扣减血量。我希望引擎在进行运算的时候，扣减护甲到0，溢出的伤害直接扣减血量。请分析合理性；
+3. 通过打断点我发现this.eventBus.emit('TIMELINE_FINISHED', { roundId: this.roundId, count: this.entries.length });这句话置成了IDLE,请分析问题的原因，是否是核心逻辑问题，该如何修改
+4. 现在不报错了，但是我发现timeLine在新回合不清除上回合已执行的节点，请分析原因。
+5. 请按照当前的技术体系，结合你的建议，修改这个问题，并补充设计方案。 

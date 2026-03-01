@@ -5,6 +5,20 @@ export default class TimelineManager {
         this.reset();
     }
 
+    clearForNextTurn({ roundId = null } = {}) {
+        // Strict rule: never force phase back to IDLE/READY from within a
+        // TIMELINE_FINISHED synchronous callback chain.
+        // Clear entries so UI won't render previous turn nodes, but preserve the
+        // current phase (PAUSED/FINISHED) to satisfy CoreEngine.executeTurn() contract.
+        this.entries = [];
+        this.currentIndex = -1;
+        this.roundId = roundId;
+        this._isPlaying = false;
+        this._lastError = null;
+        this.eventBus.emit('TIMELINE_CLEARED', { roundId: this.roundId, phase: this.phase });
+        this.eventBus.emit('TIMELINE_SNAPSHOT', this.getSnapshot());
+    }
+
     reset() {
         this.roundId = null;
         this.phase = 'IDLE';
@@ -75,6 +89,13 @@ export default class TimelineManager {
             return this._fail(`Cannot start timeline in phase ${this.phase}.`, { phase: this.phase });
         }
 
+        if (!Array.isArray(this.entries) || this.entries.length === 0) {
+            return this._fail('Cannot start timeline: no entries loaded for this round.', {
+                roundId: this.roundId,
+                entriesLength: Array.isArray(this.entries) ? this.entries.length : null
+            });
+        }
+
         this.phase = 'PLAYING';
         this._isPlaying = true;
         this.eventBus.emit('TIMELINE_START', { roundId: this.roundId });
@@ -82,8 +103,10 @@ export default class TimelineManager {
 
         while (this._isPlaying && this.currentIndex + 1 < this.entries.length) {
             if (typeof canContinue === 'function' && !canContinue()) {
-                this.stop();
-                return { ok: false, reason: 'Timeline stopped by host state guard.' };
+                // Treat host guard failure as a PAUSE (not a hard error), so engine-level
+                // strict contract can rely on a stable end phase (PAUSED/FINISHED).
+                this.pause();
+                return { ok: true, paused: true, reason: 'Timeline paused by host state guard.' };
             }
 
             const stepRes = await this.step();
@@ -116,6 +139,8 @@ export default class TimelineManager {
         if (this.phase !== 'PAUSED') {
             return this._fail(`Cannot resume timeline in phase ${this.phase}.`, { phase: this.phase });
         }
+        this.eventBus.emit('TIMELINE_RESUME', { roundId: this.roundId });
+        this.eventBus.emit('TIMELINE_SNAPSHOT', this.getSnapshot());
         return this.start({ stepDelayMs, canContinue });
     }
 
