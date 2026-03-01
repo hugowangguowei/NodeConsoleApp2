@@ -109,6 +109,138 @@ UI 渲染只依赖快照，避免拿到可变引用。
 - `PLAYING` → `FINISHED`：执行到末尾
 - 任意 → `ERROR`：输入校验失败、执行器报错等
 
+---
+
+## 9. 工程化：执行按钮（TurnPanel“执行”）后的联合状态机设计
+
+> 结论：Timeline 不能只靠 UI 的 `start/pause/resume` 交互自己“跑”，也不能在 `CoreEngine` 中通过零散的临时标记变量去猜测“这次 start 返回是暂停还是完成”。
+>
+> 必须工程化地定义**两个状态机的协作边界**：
+>
+> - **主状态机（Host）**：`CoreEngine.battlePhase`（`PLANNING`/`EXECUTION`）负责“这个回合是否在执行”。
+> - **子状态机（Timeline）**：`TimelineManager.phase`（`READY/PLAYING/PAUSED/FINISHED/ERROR`）负责“这个回合的动作序列推进到哪里”。
+
+### 9.1 现状痛点（来自迭代中的真实问题）
+
+在之前的迭代中出现过以下典型症状：
+
+1) UI 显示 `PAUSED`，但“开始/执行”点击无效（通常是 host phase 与 timeline phase 脱节）。
+2) 执行中点击“暂停”，`CoreEngine` 误以为回合已结束，直接进入下一回合。
+3) 暂停后恢复并执行完，`CoreEngine` 由于“粘性标记”仍认为是暂停退出，导致不进入下一回合。
+
+这些问题本质上都来自：**缺少对“执行按钮”之后生命周期的工程化定义**，使得代码只能用临时变量补丁化判断。
+
+### 9.2 统一术语：一次回合执行的生命周期（Execution Session）
+
+定义“执行会话（Execution Session）”为：
+
+1) `TurnPanel.执行` 被点击
+2) Timeline 从 `READY/PAUSED` 开始播放
+3) 最终进入 `PAUSED`（用户暂停）或 `FINISHED/ERROR`（会话结束）
+
+该会话期间，Host 状态固定为：`CoreEngine.battlePhase === 'EXECUTION'`。
+
+### 9.3 权威状态与决策点（避免临时标记）
+
+工程约束：**回合是否进入下一回合**只由以下条件决定：
+
+- `TimelineManager.phase === 'FINISHED'`  → 必须进入下一回合（`CoreEngine.startTurn()`）
+- `TimelineManager.phase === 'PAUSED'`    → 必须停留在当前回合的执行阶段（等待 resume）
+- `TimelineManager.phase === 'ERROR'`     → 必须暴露错误（系统弹窗/日志），并停止推进（禁止 silent fallback）
+
+补充约定（推荐）：**回合推进以事件为准**。
+
+- `CoreEngine` 不应依赖“`await timeline.start()` 返回后立刻检查 phase”来决定是否 `startTurn()`，因为 Timeline 可能在一次执行会话中被 `pause/resume` 多次打断。
+- `CoreEngine` 应以 `TIMELINE_FINISHED` / `TIMELINE_ERROR` 作为**执行会话的权威结束信号**：
+  - 收到 `TIMELINE_FINISHED` → 执行本回合 `TURN_END` hooks，然后 `startTurn()`。
+  - 收到 `TIMELINE_ERROR` → 暴露错误并保持在 `EXECUTION`（或进入专用错误态，后续可扩展）。
+
+禁止做法：
+
+- 不允许 `CoreEngine` 通过额外 boolean（例如“是否曾经暂停过”）来决定是否推进回合。
+- 不允许 UI 以 `battlePhase !== EXECUTION` 为由阻止“从 PAUSED 恢复播放”，因为 host/child 脱节时会导致无法恢复。
+
+### 9.4 联合状态迁移表（Host × Timeline）
+
+> 下面表格描述“执行按钮”之后的合法迁移。任何不在表中的迁移都视为 BUG，应进入 `ERROR` 或打印明确日志。
+
+澄清（低耦合原则）：
+
+- 文档中的联合状态写法（例如 `EXECUTION + READY`）是**系统视角/约束视角**：
+  - `EXECUTION` 表示 Host（`CoreEngine.battlePhase`）
+  - `READY/PLAYING/PAUSED/...` 表示 Timeline（`TimelineManager.phase`）
+  - 其用途是描述“此刻系统整体允许哪些动作/哪些 UI 控制可用/Host 是否应推进回合”等跨模块约束。
+- `TimelineManager` **不拥有**也**不应读取/依赖** Host 的 `battlePhase`（避免把 Host 枚举耦合进子状态机）。
+- Host 与 Timeline 的协作应通过以下方式完成：
+  - 显式调用：`timeline.loadRoundActions()` / `timeline.start()` / `timeline.pause()` / `timeline.resume()` / `timeline.reset()`
+  - 播放守卫：`timeline.start({ canContinue })` 由 Host 提供可继续条件
+  - 事件通知：`TIMELINE_*` 事件回传快照与 finished/error，Host 决定是否推进回合
+
+#### 9.4.1 从规划到执行
+
+前置条件：
+
+- Host：`battlePhase === 'PLANNING'`
+- Timeline：`phase === 'READY'`
+
+动作：`commitTurn()`
+
+结果：
+
+- Host：`PLANNING → EXECUTION`
+- Timeline：保持 `READY`（由随后的 `executeTurn()` 启动播放）
+
+说明：
+
+- 在当前交互定义中，“回合控制”的「执行」按钮是 **`PLANNING → EXECUTION` 的唯一入口**。
+- 一旦进入 `EXECUTION` 会话，Host 不应再次触发 `commitTurn()`；播放的暂停/继续/结算完全由 Timeline 子状态机在 `EXECUTION` 内部控制（见 9.4.2）。
+- 因此 `commitTurn()` 不接受 `Timeline.phase === 'PAUSED'` 作为入口条件；`PAUSED → PLAYING` 只允许经由 `timeline.resume()`。
+
+#### 9.4.2 执行阶段内播放控制
+
+- `EXECUTION + READY`  --(timeline.start)--> `EXECUTION + PLAYING`
+- `EXECUTION + PAUSED` --(timeline.resume)--> `EXECUTION + PLAYING`
+- `EXECUTION + PLAYING`--(timeline.pause)--> `EXECUTION + PAUSED`
+
+约束：播放控制只在 `EXECUTION` 开放（见 UI 设计文档），但“从 PAUSED 恢复”必须以 Timeline phase 为准，避免 host phase 漂移造成不可恢复。
+
+#### 9.4.3 执行会话结束
+
+当 `timeline.start/resume` 的内部循环退出后：
+
+- 若 Timeline 最终 `phase === 'PAUSED'`：
+  - Host 保持 `EXECUTION`
+  - 不推进回合（等待用户恢复）
+
+- 若 Timeline 最终 `phase === 'FINISHED'`：
+  - Host 立即调用 `startTurn()` 进入下一回合
+  - `startTurn()` 内部会做：Host `EXECUTION → PLANNING` 且 `timeline.reset()`
+
+- 若 Timeline 最终 `phase === 'ERROR'`：
+  - Host 保持 `EXECUTION` 或进入专用错误态（后续可扩展）
+  - UI 必须明确展示错误
+
+### 9.5 推荐的工程落地规则（对当前代码的约束）
+
+1) `CoreEngine.executeTurn()` 负责“发起播放”，但**不负责**“等待播放完成后推进回合”。
+   - 回合推进（`startTurn()`）必须由 `TIMELINE_FINISHED` 驱动。
+   - 禁止为了解决 pause/resume 引入额外 boolean 标记。
+
+2) `TimelineManager.start()` / `pause()` / `resume()` 必须保证：
+   - `pause()` 只可能从 `PLAYING` 进入 `PAUSED`
+   - `resume()` 只可能从 `PAUSED` 进入 `PLAYING`
+   - `start()` 在 `PAUSED` 时视为恢复（或显式要求外部调用 `resume`，二选一但必须统一）
+
+3) 事件协议：
+   - `TIMELINE_START`：开始/恢复播放
+   - `TIMELINE_PAUSE`：用户暂停
+   - `TIMELINE_FINISHED`：仅在 `FINISHED` 时发出（禁止暂停时发出）
+   - `TIMELINE_SNAPSHOT`：任意相位变化都应发出，供 UI 刷新
+
+4) UI 刷新源：
+   - Timeline UI 不应只监听 `TIMELINE_*`，也应监听 `BATTLE_UPDATE`，避免 host phase 改变时 UI 卡在旧 phase。
+
+
 ### 4.3 关键约束
 - `loadRoundActions()` 必须严格校验：缺字段即 `ERROR`，并发出 `TIMELINE_ERROR`。
 - Timeline 不得在加载失败时回退到 mock 队列。

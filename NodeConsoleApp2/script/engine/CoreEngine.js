@@ -51,11 +51,35 @@ class CoreEngine {
         this.enemySkillQueue = [];
         this.battlePhase = 'IDLE'; // IDLE, PLANNING, EXECUTION
 
-        this._isTimelinePausedByUser = false;
+        this._bindTimelineEvents();
 
         this._battleSlotLayout = null;
 
         this.init();
+    }
+
+    _bindTimelineEvents() {
+        if (!this.eventBus || typeof this.eventBus.on !== 'function') {
+            throw new Error('[CoreEngine] EventBus must support .on(event, handler).');
+        }
+
+        this.eventBus.on('TIMELINE_FINISHED', ({ roundId } = {}) => {
+            if (this.fsm.currentState !== 'BATTLE_LOOP') return;
+            if (this.battlePhase !== 'EXECUTION') return;
+            if (roundId !== this.timeline.roundId) return;
+
+            // Turn end hooks (DoT / duration tick)
+            this.eventBus.emit('TURN_END', { turn: this.currentTurn });
+            this.startTurn();
+        });
+
+        this.eventBus.on('TIMELINE_ERROR', ({ message, details } = {}) => {
+            if (this.fsm.currentState !== 'BATTLE_LOOP') return;
+            if (this.battlePhase !== 'EXECUTION') return;
+
+            this.eventBus.emit('BATTLE_LOG', { text: `Timeline execute failed: ${message}` });
+            this.emitBattleUpdate();
+        });
     }
 
     // ----------------- Battle Rules: Slot Layout -----------------
@@ -803,14 +827,13 @@ class CoreEngine {
         if (this.fsm.currentState !== 'BATTLE_LOOP' || this.battlePhase !== 'PLANNING') return;
 
         const tlPhase = this.timeline.phase;
-        if (tlPhase !== 'READY' && tlPhase !== 'PAUSED') {
+        if (tlPhase !== 'READY') {
             this.eventBus.emit('BATTLE_LOG', { text: `Cannot execute: timeline is not READY (phase=${tlPhase}). Please commit planning first.` });
             return;
         }
 
         console.log('Execute turn (timeline playback).');
         this.battlePhase = 'EXECUTION';
-        this._isTimelinePausedByUser = false;
         this.saveBattleState();
         this.emitBattleUpdate();
 
@@ -820,40 +843,31 @@ class CoreEngine {
     async executeTurn() {
         this.eventBus.emit('BATTLE_LOG', { text: `--- Execution Phase ---` });
 
-        this._isTimelinePausedByUser = false;
-
-        const onPause = () => {
-            this._isTimelinePausedByUser = true;
-        };
-        const unsubscribePause = this.eventBus.on('TIMELINE_PAUSE', onPause);
-
         const timelineRes = await this.timeline.start({
             canContinue: () => this.fsm.currentState === 'BATTLE_LOOP'
         });
 
-        if (typeof unsubscribePause === 'function') unsubscribePause();
-
         if (!timelineRes.ok) {
-            this.battlePhase = 'PLANNING';
-            this.eventBus.emit('BATTLE_LOG', { text: `Timeline execute failed: ${timelineRes.reason}` });
+            // TimelineManager will emit TIMELINE_ERROR; keep host in EXECUTION and expose issue.
+            this.eventBus.emit('BATTLE_LOG', { text: `Timeline start failed: ${timelineRes.reason}` });
             this.emitBattleUpdate();
             return;
         }
 
-		// Turn end hooks (DoT / duration tick)
-		if (this.fsm.currentState === 'BATTLE_LOOP') {
-			this.eventBus.emit('TURN_END', { turn: this.currentTurn });
-		}
+        // If paused, stay in EXECUTION and wait for UI to resume.
+        if (this.fsm.currentState === 'BATTLE_LOOP' && this.timeline.phase === 'PAUSED') {
+            this.eventBus.emit('BATTLE_LOG', { text: 'Timeline paused.' });
+            this.emitBattleUpdate();
+            return;
+        }
+
+        // If FINISHED, the authoritative turn-advance is handled by TIMELINE_FINISHED event.
+        if (this.fsm.currentState === 'BATTLE_LOOP' && this.timeline.phase === 'FINISHED') {
+            return;
+        }
 
         if (this.fsm.currentState === 'BATTLE_LOOP') {
-            // User paused: keep in EXECUTION so timeline controls can resume; do not advance turn.
-            if (this.timeline.phase === 'PAUSED' || this._isTimelinePausedByUser) {
-                this.eventBus.emit('BATTLE_LOG', { text: 'Timeline paused.' });
-                this.emitBattleUpdate();
-                return;
-            }
-
-            this.startTurn();
+            throw new Error(`Timeline ended in unexpected phase=${this.timeline.phase}`);
         }
     }
 

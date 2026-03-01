@@ -121,14 +121,15 @@ export default class TimelineManager {
 
     stop() {
         this._isPlaying = false;
-        if (this.phase === 'PLAYING' || this.phase === 'PAUSED' || this.phase === 'READY') {
-            this.phase = 'FINISHED';
+        if (this.phase === 'PLAYING') {
+            this.phase = 'PAUSED';
+            this.eventBus.emit('TIMELINE_PAUSE', { roundId: this.roundId });
             this.eventBus.emit('TIMELINE_SNAPSHOT', this.getSnapshot());
         }
     }
 
     async step() {
-        if (this.phase !== 'PLAYING' && this.phase !== 'READY' && this.phase !== 'PAUSED') {
+        if (this.phase !== 'PLAYING') {
             return this._fail(`Cannot step timeline in phase ${this.phase}.`, { phase: this.phase });
         }
 
