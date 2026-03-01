@@ -993,6 +993,27 @@ main { flex: 1; padding: 16px 24px; display: grid; grid-template-rows: 546px 286
 
 .turn-panel { flex: 1; background: rgba(15,20,35,0.85); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; padding: 16px; box-shadow: 0 12px 24px rgba(0,0,0,0.45); display: flex; flex-direction: column; gap: 12px; justify-content: center; align-items: stretch; }
 .turn-panel h4 { margin: 0; font-size: 0.95rem; letter-spacing: 0.08em; color: #f7fbff; text-align: center; }
+.turn-panel-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 10px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(20,24,42,0.55);
+}
+.turn-panel-meta__label {
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  color: rgba(245, 248, 255, 0.75);
+}
+.turn-panel-meta__value {
+  font-size: 0.95rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: #7cf5d9;
+}
 .turn-buttons { display: flex; flex-direction: column; gap: 10px; }
 .turn-button { background: linear-gradient(135deg, #1f2540, #2f3b64); border: 2px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 12px; font-size: 0.9rem; font-weight: 600; letter-spacing: 0.08em; color: #f4f8ff; cursor: pointer; transition: transform .15s ease, border-color .15s ease, box-shadow .15s ease; }
 .turn-button:hover { transform: translateY(-2px); border-color: #7cf5d9; box-shadow: 0 10px 20px rgba(0,0,0,0.35); }

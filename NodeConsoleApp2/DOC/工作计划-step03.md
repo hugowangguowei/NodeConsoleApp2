@@ -446,10 +446,14 @@
 16. 在这个文档中反复出现的“EXECUTION + READY”，这个execution是谁的状态？
 17. 你在timeLine的子状态机里用主状态机的状态Execution + 子状态机的状态READY 进行状态表示是否合理？这是否符合低耦合的原则？理论上子状态机的运行态默认就是主状态机的execute,如果主状态机发生了状态变化，应该是timeLine通过监听来动态改变当前状态。请分析我的意见是否合理 ；
 18. 帮我分析为什么在timeLine中点击暂停，再点击开始，等回合结束时，不能进入回合2；
-19. 你的这个执行策略：
-TimelineManager.start() 的 while 循环条件 this._isPlaying && ... 立刻失败，跳出 while
-跳出后由于 this.phase !== 'PLAYING'（已是 PAUSED），不会进入 FINISHED 分支
-start() 最终 return { ok: true }符合timeline状态机设计吗？
+19. 你的这个执行策略：1）TimelineManager.start() 的 while 循环条件 this._isPlaying && ... 立刻失败，跳出 while；2）跳出后由于 this.phase !== 'PLAYING'（已是 PAUSED），不会进入 FINISHED 分支；3）start() 最终 return { ok: true }符合timeline状态机设计吗？
 
+**执行效果**
+【GPT5.2】；执行效果理想。
 
 ### 任务 4：整体界面设计
+
+**开始时间**
+26.03.01-17:02
+1. 选用【GPT5.2】
+2. 在turn-panel面板中，我希望能够增加一个显示当前是第几回合的组件。

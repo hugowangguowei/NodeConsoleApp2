@@ -15,6 +15,7 @@ export default class UI_TurnPanel {
         this.btnExecute = document.getElementById('btnExecute');
         this.btnReset = document.getElementById('btnReset');
         this.btnMenu = document.getElementById('btnMenu');
+        this.turnNumberLabel = document.getElementById('turnNumberLabel');
 
         if (!this.btnExecute || !this.btnReset || !this.btnMenu) {
             console.warn('UI_TurnPanel: One or more buttons not found in DOM.');
@@ -31,7 +32,9 @@ export default class UI_TurnPanel {
         // We can simulate an empty update to set initial button states
         this.render({
             phase: this.engine.battlePhase || 'IDLE',
-            queue: this.engine.playerSkillQueue || []
+            queue: this.engine.playerSkillQueue || [],
+            turn: this.engine.currentTurn || 0,
+            timelinePhase: this.engine.timeline ? this.engine.timeline.phase : undefined
         });
     }
 
@@ -75,6 +78,11 @@ export default class UI_TurnPanel {
         const phase = data.phase;
         const queueLength = (data.queue || []).length;
 
+        if (this.turnNumberLabel) {
+            const t = Number(data.turn);
+            this.turnNumberLabel.textContent = Number.isFinite(t) && t > 0 ? String(t) : '-';
+        }
+
         // Logic 4.7.2
         let canExecute = false;
         let canReset = false;
@@ -82,7 +90,7 @@ export default class UI_TurnPanel {
         if (phase === 'PLANNING') {
             // Execute = start timeline playback. Only enabled when timeline is already built (READY/PAUSED).
             const tlPhase = data.timelinePhase;
-            const canRunTimeline = tlPhase === 'READY' || tlPhase === 'PAUSED';
+            const canRunTimeline = tlPhase === 'READY';
             canExecute = canRunTimeline;
             canReset = queueLength > 0 || canRunTimeline;
         } else if (phase === 'EXECUTION') {
