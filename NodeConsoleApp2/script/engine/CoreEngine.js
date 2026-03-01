@@ -51,6 +51,8 @@ class CoreEngine {
         this.enemySkillQueue = [];
         this.battlePhase = 'IDLE'; // IDLE, PLANNING, EXECUTION
 
+        this._isTimelinePausedByUser = false;
+
         this._battleSlotLayout = null;
 
         this.init();
@@ -808,6 +810,7 @@ class CoreEngine {
 
         console.log('Execute turn (timeline playback).');
         this.battlePhase = 'EXECUTION';
+        this._isTimelinePausedByUser = false;
         this.saveBattleState();
         this.emitBattleUpdate();
 
@@ -817,9 +820,18 @@ class CoreEngine {
     async executeTurn() {
         this.eventBus.emit('BATTLE_LOG', { text: `--- Execution Phase ---` });
 
+        this._isTimelinePausedByUser = false;
+
+        const onPause = () => {
+            this._isTimelinePausedByUser = true;
+        };
+        const unsubscribePause = this.eventBus.on('TIMELINE_PAUSE', onPause);
+
         const timelineRes = await this.timeline.start({
             canContinue: () => this.fsm.currentState === 'BATTLE_LOOP'
         });
+
+        if (typeof unsubscribePause === 'function') unsubscribePause();
 
         if (!timelineRes.ok) {
             this.battlePhase = 'PLANNING';
@@ -834,6 +846,13 @@ class CoreEngine {
 		}
 
         if (this.fsm.currentState === 'BATTLE_LOOP') {
+            // User paused: keep in EXECUTION so timeline controls can resume; do not advance turn.
+            if (this.timeline.phase === 'PAUSED' || this._isTimelinePausedByUser) {
+                this.eventBus.emit('BATTLE_LOG', { text: 'Timeline paused.' });
+                this.emitBattleUpdate();
+                return;
+            }
+
             this.startTurn();
         }
     }

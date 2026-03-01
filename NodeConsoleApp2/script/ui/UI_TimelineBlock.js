@@ -31,6 +31,7 @@ export class UI_TimelineBlock {
         };
 
         this.logs = [];
+        this._lastPrintedLogIndex = -1;
         this.selectedEntryId = null;
         this.showInlineLogs = false;
         this.speedRange = { min: -15, max: 15 };
@@ -78,21 +79,39 @@ export class UI_TimelineBlock {
     bindDOMEvents() {
         if (this.dom.start) {
             this.dom.start.addEventListener('click', async () => {
-                if (this.engine.battlePhase !== 'EXECUTION') return;
-
                 const phase = this.engine.timeline.phase;
                 if (phase === 'PLAYING') {
                     this.engine.timeline.pause();
                     return;
                 }
 
+                // Playback controls are primarily for EXECUTION. However, allow resuming a paused
+                // timeline even if the host phase drifted (e.g. UI desync) so the user can recover.
+                if (phase !== 'PAUSED' && this.engine.battlePhase !== 'EXECUTION') return;
+
                 const delay = this._getSelectedDelay();
                 const action = phase === 'PAUSED'
                     ? this.engine.timeline.resume.bind(this.engine.timeline)
                     : this.engine.timeline.start.bind(this.engine.timeline);
+
+                const debug = {
+                    hostBattlePhase: this.engine.battlePhase,
+                    hostFsmState: this.engine.fsm.currentState,
+                    timelinePhaseBefore: phase,
+                    delay
+                };
+                console.log('[UI_TimelineBlock] startBtn click', debug);
                 const result = await action({
                     stepDelayMs: delay,
                     canContinue: () => this.engine.fsm.currentState === 'BATTLE_LOOP'
+                });
+
+                console.log('[UI_TimelineBlock] start/resume result', {
+                    ...debug,
+                    ok: result?.ok,
+                    reason: result?.reason,
+                    timelinePhaseAfter: this.engine.timeline.phase,
+                    currentIndex: this.engine.timeline.currentIndex
                 });
 
                 if (!result.ok) {
@@ -140,6 +159,9 @@ export class UI_TimelineBlock {
         this.eventBus.on('TIMELINE_RESUME', refresh);
         this.eventBus.on('TIMELINE_FINISHED', refresh);
         this.eventBus.on('TIMELINE_SNAPSHOT', refresh);
+
+        // Keep header/controls in sync with host phase transitions (PLANNING/EXECUTION) too.
+        this.eventBus.on('BATTLE_UPDATE', refresh);
 
         this.eventBus.on('TIMELINE_ENTRY_END', (payload) => {
             const item = payload && payload.entry ? payload.entry : null;
@@ -333,8 +355,9 @@ export class UI_TimelineBlock {
     renderLogs() {
         if (!Array.isArray(this.logs)) return;
 
-        if (this.logs.length > 0) {
+        if (this.logs.length > 0 && this._lastPrintedLogIndex !== this.logs.length - 1) {
             const latest = this.logs[this.logs.length - 1];
+            this._lastPrintedLogIndex = this.logs.length - 1;
             console.log('[TimelineLog]', latest);
         }
 
