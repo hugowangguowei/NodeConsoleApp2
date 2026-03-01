@@ -242,6 +242,20 @@ c) Footer：
 - 点击某条 entry：展示 `plan` 摘要（目标、部位/槽位）+ 执行结果摘要
 - 若 `ERROR`：调用系统模态框显示错误详情（不做兜底回退）
 
+#### 8.2.1 “直接结算”（Fast-forward）
+
+目的：用于调试/验证回合结果，在不需要观看逐条播放时，一次性把本回合剩余条目全部执行完。
+
+交互规则：
+- 按钮文案：`直接结算`
+- 可用相位：`READY` / `PAUSED`
+- 不可用相位：`IDLE` / `PLAYING` / `FINISHED` / `ERROR`
+
+执行语义（对应代码实现约定）：
+- 本质等价于调用 `TimelineManager.start({ stepDelayMs: 0, canContinue })`
+- `stepDelayMs = 0` 代表不做“展示节奏等待”，但仍按 `step()` 的顺序逐条执行（仍会发出 `TIMELINE_ENTRY_START/END` 等事件）
+- 必须遵守“暴露问题”原则：执行异常进入 `ERROR`，并通过 `TIMELINE_ERROR` / 系统日志提示原因
+
 ---
 
 ## 9. MVP 落地清单

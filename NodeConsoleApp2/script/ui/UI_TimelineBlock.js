@@ -20,6 +20,7 @@ export class UI_TimelineBlock {
             start: document.getElementById('timelineStartBtn'),
             pause: document.getElementById('timelinePauseBtn'),
             step: document.getElementById('timelineStepBtn'),
+            finish: document.getElementById('timelineFinishBtn'),
             speed: document.getElementById('timelineSpeedSelect'),
             logs: document.getElementById('timelineLogList')
         };
@@ -104,6 +105,22 @@ export class UI_TimelineBlock {
                     if (!res.ok) {
                         this.eventBus.emit('BATTLE_LOG', { text: `时间轴单步失败：${res.reason}` });
                     }
+                }
+            });
+        }
+
+        if (this.dom.finish) {
+            this.dom.finish.addEventListener('click', async () => {
+                const phase = this.engine.timeline.phase;
+                if (phase !== 'READY' && phase !== 'PAUSED') return;
+
+                const result = await this.engine.timeline.start({
+                    stepDelayMs: 0,
+                    canContinue: () => this.engine.fsm.currentState === 'BATTLE_LOOP'
+                });
+
+                if (!result.ok) {
+                    this.eventBus.emit('BATTLE_LOG', { text: `时间轴直接结算失败：${result.reason}` });
                 }
             });
         }
@@ -288,6 +305,7 @@ export class UI_TimelineBlock {
         if (this.dom.start) this.dom.start.disabled = !(isReady || isPaused);
         if (this.dom.pause) this.dom.pause.disabled = !isPlaying;
         if (this.dom.step) this.dom.step.disabled = !(isReady || isPaused);
+        if (this.dom.finish) this.dom.finish.disabled = !(isReady || isPaused);
     }
 
     renderLogs() {
