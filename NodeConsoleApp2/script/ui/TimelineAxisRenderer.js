@@ -1,5 +1,5 @@
 export class TimelineAxisRenderer {
-    constructor({ canvas, speedRange = { min: -15, max: 15 } } = {}) {
+    constructor({ canvas, config } = {}) {
         if (!canvas) {
             throw new Error('[TimelineAxisRenderer] canvas is required');
         }
@@ -10,9 +10,10 @@ export class TimelineAxisRenderer {
             throw new Error('[TimelineAxisRenderer] 2D context not available');
         }
 
-        this.speedRange = speedRange;
-        this.paddingX = 12;
-        this.axisHeightRatioFromBottom = 0.10;
+        this.speedRange = { min: -15, max: 15 };
+        this.paddingLeft = 12;
+        this.paddingRight = 12;
+        this.axisYRatio = 0.9;
         this.axisLineWidth = 2;
 
         this.tickValues = [-15, -10, -5, 0, 5, 10, 15];
@@ -36,9 +37,55 @@ export class TimelineAxisRenderer {
             xMin: 0,
             xMax: 0
         };
+
+        if (config) {
+            this.setConfig(config);
+        }
     }
 
-    layoutFromHostRect({ width, height } = {}) {
+    setConfig(config) {
+        if (!config || typeof config !== 'object') {
+            throw new Error('[TimelineAxisRenderer] config must be an object');
+        }
+
+        const speedMin = Number(config.speedMin);
+        const speedMax = Number(config.speedMax);
+        if (!Number.isFinite(speedMin) || !Number.isFinite(speedMax) || speedMin >= speedMax) {
+            throw new Error('[TimelineAxisRenderer] invalid speed range');
+        }
+
+        const axisYRatio = Number(config.axisYRatio);
+        if (!Number.isFinite(axisYRatio) || axisYRatio <= 0 || axisYRatio >= 1) {
+            throw new Error('[TimelineAxisRenderer] invalid axisYRatio');
+        }
+
+        const paddingLeft = Number(config.paddingLeft);
+        const paddingRight = Number(config.paddingRight);
+        if (!Number.isFinite(paddingLeft) || paddingLeft < 0 || !Number.isFinite(paddingRight) || paddingRight < 0) {
+            throw new Error('[TimelineAxisRenderer] invalid padding');
+        }
+
+        if (!Array.isArray(config.majorTicks) || config.majorTicks.length === 0) {
+            throw new Error('[TimelineAxisRenderer] majorTicks is required');
+        }
+
+        this.speedRange = { min: speedMin, max: speedMax };
+        this.axisYRatio = axisYRatio;
+        this.paddingLeft = paddingLeft;
+        this.paddingRight = paddingRight;
+        this.tickValues = [...config.majorTicks];
+
+        if (config.theme && typeof config.theme === 'object') {
+            this.colors = {
+                axis: config.theme.axis ?? this.colors.axis,
+                tick: config.theme.tick ?? this.colors.tick,
+                tickCenter: config.theme.tickCenter ?? this.colors.tickCenter,
+                label: config.theme.label ?? this.colors.label
+            };
+        }
+    }
+
+    resize(width, height) {
         const w = Number(width);
         const h = Number(height);
         const cssWidth = Number.isFinite(w) && w > 0 ? w : this.canvas.clientWidth;
@@ -57,12 +104,13 @@ export class TimelineAxisRenderer {
         this.canvas.style.width = `${cssWidth}px`;
         this.canvas.style.height = `${cssHeight}px`;
 
-        const pad = this.paddingX * dpr;
-        this._layout.xMin = pad;
-        this._layout.xMax = Math.max(pad + 1, this._layout.pxWidth - pad);
+        const padL = this.paddingLeft * dpr;
+        const padR = this.paddingRight * dpr;
+        this._layout.xMin = padL;
+        this._layout.xMax = Math.max(padL + 1, this._layout.pxWidth - padR);
 
-        const axisBottom = Math.max(0, Math.round(cssHeight * this.axisHeightRatioFromBottom));
-        this._layout.axisY = Math.max(0, Math.round(axisBottom * dpr));
+        const axisY = Math.max(0, Math.round(cssHeight * this.axisYRatio));
+        this._layout.axisY = Math.max(0, Math.round(axisY * dpr));
 
         return this._layout;
     }
@@ -81,7 +129,7 @@ export class TimelineAxisRenderer {
 
     render() {
         if (!this._layout.pxWidth || !this._layout.pxHeight) {
-            this.layoutFromHostRect();
+            this.resize();
         }
 
         const ctx = this.ctx;

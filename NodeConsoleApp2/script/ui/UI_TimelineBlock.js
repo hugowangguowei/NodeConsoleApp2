@@ -1,7 +1,13 @@
+import { TimelineAxisRenderer } from './TimelineAxisRenderer.js';
+import { timelineAxis } from './TimelineUIConfig.js';
+
 export class UI_TimelineBlock {
     constructor(engine) {
         this.engine = engine;
         this.eventBus = engine.eventBus;
+
+        this.axisRenderer = null;
+        this.axisCanvas = null;
 
         this.dom = {
             root: document.querySelector('.timeline'),
@@ -43,8 +49,31 @@ export class UI_TimelineBlock {
 
         this.bindDOMEvents();
         this.bindEngineEvents();
+
+        this._initAxisRenderer();
         window.addEventListener('resize', () => this.render());
         this.render();
+    }
+
+    _initAxisRenderer() {
+        if (!this.dom.trackLayer) {
+            throw new Error('[UI_TimelineBlock] timelineTrackLayer not found');
+        }
+
+        const existingCanvas = this.dom.trackLayer.querySelector('canvas.timeline-axis-canvas');
+        if (existingCanvas) existingCanvas.remove();
+
+        const canvas = document.createElement('canvas');
+        canvas.className = 'timeline-axis-canvas';
+        canvas.setAttribute('aria-hidden', 'true');
+        canvas.style.display = 'block';
+        canvas.style.width = '100%';
+        canvas.style.height = '100%';
+        this.dom.trackLayer.appendChild(canvas);
+        this.axisCanvas = canvas;
+
+        this.axisRenderer = new TimelineAxisRenderer({ canvas, config: timelineAxis });
+        this.speedRange = { min: timelineAxis.speedMin, max: timelineAxis.speedMax };
     }
 
     bindDOMEvents() {
@@ -114,38 +143,20 @@ export class UI_TimelineBlock {
         const exists = Array.isArray(snapshot.entries) && snapshot.entries.some(e => e.entryId === this.selectedEntryId);
         if (!exists) this.selectedEntryId = null;
         this.renderHeader(snapshot);
-        this.renderRuler();
+        this._renderAxis();
         this.renderList(snapshot);
         this.renderControls(snapshot);
         this.renderLogs();
     }
 
-    renderRuler() {
-        const host = this.dom.trackLayer;
-        if (!host) return;
-
-        const old = host.querySelector('.timeline-ruler');
-        if (old) old.remove();
-
-        const ruler = document.createElement('div');
-        ruler.className = 'timeline-ruler';
-
-        const marks = [-15, -10, -5, 0, 5, 10, 15];
-        for (const v of marks) {
-            const tick = document.createElement('div');
-            tick.className = 'timeline-tick';
-            if (v === 0) tick.classList.add('is-center');
-            tick.style.left = `${this._speedToPercent(v)}%`;
-
-            const label = document.createElement('span');
-            label.className = 'timeline-tick-label';
-            label.textContent = v > 0 ? `+${v}` : `${v}`;
-            tick.appendChild(label);
-
-            ruler.appendChild(tick);
+    _renderAxis() {
+        if (!this.axisRenderer || !this.dom.track) {
+            throw new Error('[UI_TimelineBlock] axisRenderer not initialized');
         }
 
-        host.appendChild(ruler);
+        const rect = this.dom.track.getBoundingClientRect();
+        this.axisRenderer.resize(rect.width, rect.height);
+        this.axisRenderer.render();
     }
 
     renderHeader(snapshot) {
@@ -177,7 +188,7 @@ export class UI_TimelineBlock {
             item.dataset.entryId = entry.entryId;
             item.dataset.executionState = entry.executionState;
             item.style.left = `${p.leftPx}px`;
-            item.style.bottom = `${p.bottomPx}px`;
+            item.style.top = `${p.topPx}px`;
 
             if (index === snapshot.currentIndex) item.classList.add('is-current');
             if (entry.executionState === 'DONE') item.classList.add('is-done');
@@ -232,20 +243,22 @@ export class UI_TimelineBlock {
         const host = this.dom.nodeLayer || this.dom.list;
         if (!host) return [];
 
-        const width = host.clientWidth || 640;
-        const sidePad = 12;
-        const usable = Math.max(1, width - sidePad * 2);
+        if (!this.axisRenderer) {
+            throw new Error('[UI_TimelineBlock] axisRenderer not initialized');
+        }
 
         const placements = [];
 
         // For same-speed collisions, spread horizontally by execution order.
         const bucketByX = new Map();
 
+        const axisY = this.axisRenderer.getAxisY();
+        const anchorH = 8;
+
         for (const entry of entries) {
             const speed = Number(entry?.meta?.speed);
-            const clamped = this._clampSpeed(Number.isFinite(speed) ? speed : 0);
-            const pct = (clamped - this.speedRange.min) / (this.speedRange.max - this.speedRange.min);
-            const baseLeftPx = Math.round(sidePad + pct * usable);
+            const baseX = this.axisRenderer.speedToX(Number.isFinite(speed) ? speed : 0);
+            const baseLeftPx = Math.round(baseX);
 
             const key = String(baseLeftPx);
             const count = bucketByX.get(key) ?? 0;
@@ -259,11 +272,12 @@ export class UI_TimelineBlock {
                 offset = (count % 2 === 1 ? 1 : -1) * k * step;
             }
 
-            const minX = sidePad + Math.round(this.nodeSize / 2);
-            const maxX = sidePad + usable - Math.round(this.nodeSize / 2);
-            const leftPx = Math.max(minX, Math.min(maxX, baseLeftPx + offset));
+            const leftPx = baseLeftPx + offset;
 
-            placements.push({ entry, leftPx, bottomPx: 22 });
+            // axisY is top-based. Place the bubble so that the triangle tip lands on axisY.
+            const topPx = Math.round(axisY - (this.nodeSize + anchorH));
+
+            placements.push({ entry, leftPx, topPx });
         }
 
         return placements;

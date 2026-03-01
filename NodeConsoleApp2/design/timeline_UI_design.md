@@ -114,7 +114,7 @@
 Canvas 轴线要求：
 - 坐标原点在中间，速度区间 `[-15, +15]`
 - 轴线在 `timelineTrack` 靠下位置：`axisY = trackHeight * 0.9`（即离底部约 10% 的位置）
-- 刻度线全部在轴线上方，数字在刻度线上方
+- 刻度线全部在轴线下方，数字在刻度线上方
 - 关键刻度：`-15, -10, -5, 0, +5, +10, +15`
 
 工程约束（高内聚/低耦合）：
@@ -161,8 +161,15 @@ Canvas 轴线要求：
 
 约定：
 
-- `speedToX()` 和 `getAxisY()` 返回 **host-local px**。
+- `speedToX()` 返回 **host-local x(px)**。
+- `getAxisY()` 返回 **host-local y(px, top-based)**，即“从宿主容器顶部向下的像素距离”。
 - 上层若需要 viewport：`viewport = hostRect + local`。
+
+注意：NodeLayer 若使用 `bottom` 作为定位基准（bottom-based），则必须进行坐标系转换：
+
+- `bottom = hostHeight - axisY`
+
+为避免 top/bottom 混用导致 y 方向翻转（`r` 与 `1-r` 对调），NodeLayer 推荐直接使用 `top` 来定位节点锚点。
 
 #### C. 推荐配置项（输入参数）
 
@@ -172,6 +179,40 @@ Canvas 轴线要求：
 - `paddingLeft/paddingRight`：轴线可用绘制区 padding（用于绘制与 `speedToX()` 的共同约束）
 - `axisYRatio`：轴线位置比例（默认 `0.9`）
 - `theme`（可选）：颜色、字体、线宽等
+
+#### C.1 配置输入方式（推荐：方案 B - 集中 UI 配置模块）
+
+结论：**不建议为 Timeline TrackLayer 单独引入 JSON 配置文件作为首选**；更工程化、可维护的方式是采用“集中 UI 配置模块（JS）”。
+
+原则：
+
+- `TimelineAxisRenderer` 只消费一个纯 `config` 对象（POJO），不负责配置加载。
+- `UI_TimelineBlock`（或更高层 UI 组合模块）负责从集中配置模块读取 Timeline 配置并注入 Renderer。
+- 配置缺失/非法时：**直接抛错并在 UI 给出明确提示**，禁止 silent fallback（与工程约束：尽量暴露问题一致）。
+
+推荐落地形式：新增一个集中配置文件（命名按工程习惯二选一即可）：
+
+- `script/ui/TimelineUIConfig.js`
+- 或 `script/ui/ui_config.js`（包含多个 UI 模块配置，Timeline 作为其中一段）
+
+集中配置模块应导出：
+
+- `timelineAxis`：供 `TimelineAxisRenderer` 使用的轴配置（speedRange、ticks、padding、theme 等）
+- （可选）`timelineLayout`：NodeLayer 相关布局参数（节点尺寸、拍开间距、最小间距等），但与 AxisRenderer 保持解耦
+
+示例（概念，不要求当前实现一比一照抄）：
+
+- `export const timelineAxis = { speedMin: -15, speedMax: 15, majorTicks: [-15,-10,-5,0,5,10,15], axisYRatio: 0.9, paddingLeft: 24, paddingRight: 24, theme: {...} }`
+
+采用 JS 模块的工程收益：
+
+- 允许表达派生值与默认值（例如根据 `devicePixelRatio`、主题色、容器尺寸动态生成线宽/字体大小）
+- 版本控制友好，变更可代码审查
+- 无“配置文件网络加载失败/路径错误”导致 UI 半坏的风险
+
+与 JSON 相比的取舍：
+
+- 若未来确实需要“多套皮肤/非开发调参/热切换”，可以在上层引入 JSON，但不改变 Renderer 接口；JSON 仅作为 `TimelineUIConfig` 的一种来源。
 
 #### D. 推荐 API（最小稳定接口）
 
@@ -205,6 +246,12 @@ Canvas 轴线要求：
 
 - NodeLayer 节点使用“**三角锚点尖端**”作为几何对齐点。
 - 对齐规则：锚点尖端 `y == getAxisY()`，锚点尖端 `x == speedToX(speed)`。
+
+实现提示：若节点使用伪元素 `::after` 绘制三角锚点，且锚点高度为 `anchorH`，则节点容器（方形气泡）定位可按：
+
+- `nodeTop = axisY - (nodeHeight + anchorH)`
+
+从而保证三角尖端落在 `axisY`。
 
 建议 NodeLayer 仅持有 Renderer 的只读输出（`speedToX/getAxisY`），禁止自行定义轴线 y 或重复实现映射公式。
 
