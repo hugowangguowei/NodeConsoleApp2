@@ -63,6 +63,74 @@ main { flex: 1; padding: 16px 24px; display: grid; grid-template-rows: 546px 286
 .armor-value { min-width: 72px; font-size: 0.85rem; font-weight: 600; color: #e5eaff; text-align: right; }
 .enemy-hud .armor-value { text-align: left; }
 .enemy-hud .armor-bar span { background: linear-gradient(90deg, #ff9dbb, #ff6584); }
+
+/* AP Meter (Skill Pool Column) */
+.ap-meter {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 10px 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(129, 165, 255, 0.28);
+  background: linear-gradient(180deg, rgba(31, 36, 64, 0.92), rgba(18, 22, 38, 0.72));
+  box-shadow: 0 10px 22px rgba(0,0,0,0.35), inset 0 0 0 1px rgba(255,255,255,0.04);
+  display: grid;
+  grid-template-columns: 140px 1fr auto;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.ap-meter__label {
+  font-size: 0.86rem;
+  color: rgba(225, 236, 255, 0.9);
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+.ap-meter__value {
+  font-size: 0.82rem;
+  color: rgba(203, 214, 255, 0.85);
+  letter-spacing: 0.02em;
+  min-width: 64px;
+  text-align: right;
+}
+
+.ap-meter__slots {
+  display: grid;
+  grid-template-columns: repeat(10, minmax(0, 1fr));
+  gap: 6px;
+  align-items: center;
+}
+
+.ap-meter__slot {
+  height: 14px;
+  border-radius: 4px;
+  border: 1px solid rgba(172, 210, 255, 0.32);
+  background: rgba(20, 24, 42, 0.5);
+  box-shadow: inset 0 0 10px rgba(0,0,0,0.35);
+}
+
+.ap-meter__slot.is-on {
+  background: linear-gradient(180deg, rgba(200, 235, 255, 0.95), rgba(100, 180, 255, 0.55));
+  border-color: rgba(140, 205, 255, 0.9);
+  box-shadow:
+    0 0 10px rgba(120, 200, 255, 0.45),
+    0 0 18px rgba(120, 200, 255, 0.22),
+    inset 0 0 0 1px rgba(255,255,255,0.12);
+}
+
+.ap-meter__slot.is-off {
+  background: rgba(16, 18, 30, 0.25);
+  border-color: rgba(140, 205, 255, 0.35);
+  border-style: dashed;
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.03);
+}
+
+.ap-meter__slot.is-na {
+  opacity: 0.2;
+  border-style: solid;
+  border-color: rgba(255,255,255,0.12);
+}
 .battle-scene { background: #1a1e2e; border-radius: 20px; border: 2px solid #ffd266; position: relative; overflow: hidden; box-shadow: inset 0 0 50px rgba(5,8,25,0.6); padding: 0; height: 100%; box-sizing: border-box; }
 .battle-scene .sub-area-tag { color: #ffd266; z-index: 10; }
 .stage-background {

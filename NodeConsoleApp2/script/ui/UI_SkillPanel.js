@@ -33,6 +33,10 @@ export default class UI_SkillPanel {
         this.detailTip = document.getElementById('detailTip');
         this.detailTags = document.getElementById('detailTags');
 
+        this.apMeter = document.getElementById('apMeter');
+        this.apMeterSlots = document.getElementById('apMeterSlots');
+        this.apMeterValue = document.getElementById('apMeterValue');
+
         // -- State --
         this.selectedSkill = null; // Object or ID
         this.cachedSkills = [];    // Loaded from DataManager
@@ -60,6 +64,47 @@ export default class UI_SkillPanel {
         this._emitArmedState();
 
         console.log('UI_SkillPanel initialized.');
+    }
+
+    _calcApBudget() {
+        const player = this.engine?.data?.playerData;
+        const cur = Number(player?.stats?.ap ?? 0);
+        const max = Number(player?.stats?.maxAp ?? 0);
+        const used = (this.engine?.playerSkillQueue || []).reduce((sum, item) => sum + (Number(item?.cost) || 0), 0);
+        const remaining = Math.max(0, cur - used);
+        return {
+            current: Number.isFinite(cur) ? cur : 0,
+            max: Number.isFinite(max) ? max : 0,
+            used: Number.isFinite(used) ? used : 0,
+            remaining
+        };
+    }
+
+    renderApMeter() {
+        if (!this.apMeter || !this.apMeterSlots || !this.apMeterValue) return;
+
+        const { current, max, used, remaining } = this._calcApBudget();
+        const slotCount = 10;
+        const cap = Math.max(0, Math.min(max || slotCount, slotCount));
+        const filled = cap > 0 ? Math.max(0, Math.min(cap, Math.round((remaining / (max || cap)) * cap))) : 0;
+
+        this.apMeterSlots.innerHTML = '';
+        for (let i = 0; i < slotCount; i++) {
+            const el = document.createElement('span');
+            el.className = 'ap-meter__slot';
+            if (i < cap) {
+                el.classList.add(i < filled ? 'is-on' : 'is-off');
+            } else {
+                el.classList.add('is-na');
+            }
+            this.apMeterSlots.appendChild(el);
+        }
+
+        this.apMeterValue.textContent = `${remaining} / ${current || max || '-'}`;
+        this.apMeter.dataset.apCurrent = String(current);
+        this.apMeter.dataset.apMax = String(max);
+        this.apMeter.dataset.apUsed = String(used);
+        this.apMeter.dataset.apRemaining = String(remaining);
     }
 
     _ensurePlanningCommitButton() {
@@ -319,6 +364,7 @@ export default class UI_SkillPanel {
         this.renderSkillPool();
         this.clearMatrix();
         this.selectedSkill = null;
+        this.renderApMeter();
     }
 
     _getSlotSpecFromElement(slotElement) {
@@ -406,6 +452,7 @@ export default class UI_SkillPanel {
         this._emitArmedState();
         // Matrix cleared via Engine BATTLE_UPDATE usually, but let's be safe
         this.updateSkillAvailability();
+        this.renderApMeter();
     }
 
     onBattleUpdate(data) {
@@ -418,6 +465,7 @@ export default class UI_SkillPanel {
         }
         this.renderMatrixQueue(merged);
         this.updateSkillAvailability();
+        this.renderApMeter();
     }
 
     onDataUpdate(payload) {
@@ -429,6 +477,7 @@ export default class UI_SkillPanel {
 
         this.refreshSkillsFromPlayer(player);
         this.renderSkillPool();
+        this.renderApMeter();
     }
 
     refreshSkillsFromPlayer(player) {
@@ -650,6 +699,7 @@ export default class UI_SkillPanel {
         });
 
         this.updateSkillAvailability();
+        this.renderApMeter();
     }
 
     // Gray out skills if AP not enough
@@ -675,6 +725,8 @@ export default class UI_SkillPanel {
                 btn.disabled = false;
             }
         });
+
+        this.renderApMeter();
     }
 
     sortSkills(criteria) {

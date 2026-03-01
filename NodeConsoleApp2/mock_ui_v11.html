@@ -196,6 +196,11 @@
     <div class="skill-panel skill-deck-layout">
       <!-- 1. Left Column: Skill Pool (技能库) -->
       <div class="skill-pool-column">
+        <div class="ap-meter" id="apMeter" aria-label="行动力（AP）" role="group">
+          <div class="ap-meter__label">行动力（AP）</div>
+          <div class="ap-meter__slots" id="apMeterSlots" aria-hidden="true"></div>
+          <div class="ap-meter__value" id="apMeterValue">- / -</div>
+        </div>
         <div class="skill-grid-view" id="skillList">
           <button type="button" class="skill-icon-button rarity-common type-offense active" data-name="重斩" data-type="近战技能" data-cost="AP 2" data-speed="速度 +1" data-target="命中部位：躯干" data-effect="对目标造成 150% 物理伤害。" data-tags="单体,物理" data-tip="基础的高伤害技能" data-sort-cost="2" data-sort-target="single">
             <span class="skill-badge-ap">2</span>
