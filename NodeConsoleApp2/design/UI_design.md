@@ -401,7 +401,7 @@ UI 通过调用引擎提供的 API 或发送事件来传达用户操作：
 
 ##### 4.4.4.5 交互流程 (Interaction Flow)
 
-1.  **打开技能树**
+1.  **打开技能树**：
     *   UI：显示 SkillTree Overlay（居中大窗）。
     *   数据：读取静态技能表 + 玩家进度，计算节点状态并渲染。
 
@@ -664,7 +664,7 @@ UI 通过调用引擎提供的 API 或发送事件来传达用户操作：
     *   **-> 动态详情区**: 鼠标悬停在已填充的行动块上时，详情区显示该行动的上下文信息（例如：预计对该部位造成的最终伤害区间、命中率修正）。
 *   **引擎交互 (Engine Interface)**:
     *   `assignSkillToSlot`: 验证 slotKey/容量/AP/上限/覆盖规则后更新 planning。
-    *   `unassignSlot`: 移除 planning 中对应的动作。
+    *   `unassignSlot`: 秼除 planning 中对应的动作。
 
 #### 4.6.6 交互细节：动态详情区 (Context Detail Logic)
 
@@ -754,4 +754,34 @@ UI 通过调用引擎提供的 API 或发送事件来传达用户操作：
 *   **统一管理**:
     *   若需联动（如选择技能时高亮目标），应通过 **引擎事件** 中转。
     *   或者由一个父级控制器（`UIManager`）统一协调子组件的状态。
+
+### 5.6 阶段化注意力机制（Phase-based Attention Guidance）
+
+为降低多阶段流程中的认知成本，UI 增加“阶段驱动”的视觉引导：
+
+1. **阶段来源（Single Source of Truth）**
+   - 主阶段来源：`BATTLE_UPDATE.phase`（`IDLE | PLANNING | EXECUTION`）
+   - 子状态来源：`UI:SKILL_ARMED_CHANGED`（是否已选中技能）
+   - Timeline 子状态来源：`engine.timeline.phase`
+
+2. **状态映射（UI State Mapping）**
+   - 页面根节点使用数据属性：
+     - `body[data-ui-phase="planning|execution|idle"]`
+     - `body[data-ui-skill-armed="0|1"]`
+     - `body[data-ui-timeline-phase="ready|playing|paused|finished|error"]`
+   - UI 模块不得自行推断阶段，仅消费上述统一状态。
+
+3. **视觉策略（Visual Guidance）**
+   - `PLANNING`：强化 `action-panel` / `skill-panel` / `turn-panel`，弱化 `timeline`。
+   - `PLANNING + skill armed`：进一步强化 `action-matrix` 与可放置语义。
+   - `EXECUTION`：强化 `timeline` 与其控制区，弱化技能规划区域。
+
+4. **按钮层级与可交互性**
+   - 主操作按钮（Primary）使用更高对比度；次要按钮（Secondary）保持低饱和。
+   - 禁用按钮必须保留禁用态视觉，不做 silent fallback。
+
+5. **工程约束**
+   - 引导机制实现为独立 UI 模块（建议：`UI_AttentionGuide`）。
+   - 该模块只做“状态 -> DOM 数据属性”映射，不参与业务逻辑。
+   - 所有高亮效果优先通过 CSS 完成，避免在业务模块散落判断分支。
 

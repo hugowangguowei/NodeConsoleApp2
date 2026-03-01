@@ -7,6 +7,7 @@
 </head>
 <body>
 <div class="app-shell">
+<div id="uiAttentionBadge" class="ui-attention-badge" aria-live="polite">阶段：IDLE</div>
 <main>
   <section class="scene-wrapper labeled-block">
     <div class="area-tag">场景区</div>
@@ -374,6 +375,7 @@
         import UI_SkillPanel from '../script/ui/UI_SkillPanel.js';
         import UI_TurnPanel from '../script/ui/UI_TurnPanel.js';
         import { UI_TimelineBlock } from '../script/ui/UI_TimelineBlock.js';
+        import { UI_AttentionGuide } from '../script/ui/UI_AttentionGuide.js';
 
         // Initialize Engine
         const engine = new CoreEngine();
@@ -387,6 +389,7 @@
         const uiSkillPanel = new UI_SkillPanel(engine); // Constructor injection
         const uiTurnPanel = new UI_TurnPanel(engine);
         const uiTimelineBlock = new UI_TimelineBlock(engine);
+        const uiAttentionGuide = new UI_AttentionGuide(engine);
 
         // Bind UI to Engine
         uiBattleRow.init(engine);

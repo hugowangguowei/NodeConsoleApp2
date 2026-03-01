@@ -1,6 +1,20 @@
 @charset "UTF-8";
 body { margin: 0; background: radial-gradient(circle at top, rgba(78,139,255,0.35), transparent 55%), linear-gradient(160deg, #1f2440, #151a2b); color: #f4f6ff; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
 .app-shell { width: 1920px; height: 1080px; background: rgba(32,38,63,0.94); display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 25px 60px rgba(8,12,40,0.65); border: 1px solid rgba(120,150,255,0.15); backdrop-filter: blur(6px); max-width: 100%; max-height: 100vh; }
+.ui-attention-badge {
+  position: absolute;
+  top: 12px;
+  left: 20px;
+  z-index: 950;
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(124, 245, 217, 0.52);
+  background: rgba(10, 16, 30, 0.88);
+  color: #d7fff4;
+  font-size: 0.74rem;
+  letter-spacing: 0.06em;
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.35);
+}
 main { flex: 1; padding: 16px 24px; display: grid; grid-template-rows: 546px 286px 186px; gap: 16px; height: calc(1080px - 56px); overflow: visible; }
 .scene-wrapper { background: #252b45; border-radius: 18px; padding: 20px 24px 24px; border: 2px solid #81a5ff; box-shadow: 0 18px 36px rgba(6,10,35,0.45); min-height: 0; display: flex; flex-direction: column; overflow: visible; }
 .scene-wrapper .area-tag { color: #81a5ff; }
@@ -1179,4 +1193,84 @@ main { flex: 1; padding: 16px 24px; display: grid; grid-template-rows: 546px 286
 }
 
 .timeline-log-list { margin: 0; padding: 0 0 0 16px; color: #b7c2f2; font-size: 0.66rem; max-height: 52px; overflow: auto; }
+
+/* Phase-based attention guidance */
+.timeline,
+.action-panel,
+.skill-pool-column,
+.action-matrix-column,
+.skill-detail-column,
+.turn-panel,
+.timeline-controls button,
+.timeline-controls select,
+.turn-button,
+.sort-btn {
+  transition: box-shadow 0.2s ease, border-color 0.2s ease, background-color 0.2s ease, opacity 0.2s ease, filter 0.2s ease;
+}
+
+body[data-ui-phase="planning"] .action-panel {
+  border-color: #7cf5d9;
+  box-shadow: 0 0 0 3px rgba(124, 245, 217, 0.22), 0 18px 34px rgba(6,10,35,0.50);
+}
+
+body[data-ui-phase="planning"] .skill-pool-column,
+body[data-ui-phase="planning"] .action-matrix-column,
+body[data-ui-phase="planning"] .turn-panel {
+  border-color: rgba(124, 245, 217, 0.35);
+}
+
+body[data-ui-phase="planning"] .timeline {
+  opacity: 0.5;
+  filter: saturate(0.85);
+}
+
+body[data-ui-phase="planning"] .timeline-controls button,
+body[data-ui-phase="planning"] .timeline-controls select {
+  border-color: rgba(192, 139, 255, 0.18);
+  color: rgba(233, 221, 255, 0.55);
+}
+
+body[data-ui-phase="planning"][data-ui-skill-armed="1"] .action-matrix-column {
+  box-shadow: 0 0 0 3px rgba(124, 245, 217, 0.34), inset 0 0 28px rgba(124, 245, 217, 0.16);
+}
+
+body[data-ui-phase="planning"][data-ui-skill-armed="1"] .skill-icon-button.active {
+  box-shadow: 0 0 0 2px rgba(255, 210, 102, 0.25), 0 0 12px rgba(255, 210, 102, 0.45);
+}
+
+body[data-ui-phase="execution"] .timeline {
+  border-color: #c08bff;
+  box-shadow: 0 0 0 3px rgba(192, 139, 255, 0.28), 0 14px 30px rgba(5,9,30,0.46);
+}
+
+body[data-ui-phase="execution"] .timeline-controls button,
+body[data-ui-phase="execution"] .timeline-controls select {
+  border-color: rgba(192, 139, 255, 0.72);
+  box-shadow: 0 0 0 1px rgba(192, 139, 255, 0.16);
+}
+
+body[data-ui-phase="execution"] .action-panel,
+body[data-ui-phase="execution"] .turn-panel {
+  opacity: 0.52;
+  filter: saturate(0.85);
+}
+
+body[data-ui-phase="planning"] .ui-attention-badge {
+  border-color: rgba(124, 245, 217, 0.9);
+  color: #c8ffee;
+  box-shadow: 0 0 0 2px rgba(124, 245, 217, 0.22), 0 8px 16px rgba(0, 0, 0, 0.42);
+}
+
+body[data-ui-phase="execution"] .ui-attention-badge {
+  border-color: rgba(192, 139, 255, 0.9);
+  color: #f0ddff;
+  box-shadow: 0 0 0 2px rgba(192, 139, 255, 0.22), 0 8px 16px rgba(0, 0, 0, 0.42);
+}
+
+body[data-ui-phase="idle"] .timeline,
+body[data-ui-phase="idle"] .action-panel,
+body[data-ui-phase="idle"] .turn-panel {
+  opacity: 0.9;
+}
+
 footer { padding: 0 24px 24px; color: #b5c1ff; font-size: 0.85rem; flex-shrink: 0; height: 56px; display: flex; align-items: flex-end; }

@@ -57,6 +57,7 @@ export default class UI_SkillPanel {
 
         this._ensureEditModeToggle();
         this._ensurePlanningCommitButton();
+        this._emitArmedState();
 
         console.log('UI_SkillPanel initialized.');
     }
@@ -213,6 +214,14 @@ export default class UI_SkillPanel {
         }
         this.selectedSkill = null;
         this.clearHighlights();
+        this._emitArmedState();
+    }
+
+    _emitArmedState() {
+        this.eventBus?.emit?.('UI:SKILL_ARMED_CHANGED', {
+            isArmed: !!this.selectedSkill,
+            skillId: this.selectedSkill ? this.selectedSkill.id : null
+        });
     }
 
     bindEvents() {
@@ -393,7 +402,8 @@ export default class UI_SkillPanel {
         this.selectedSkill = null;
         this.clearHighlights();
         this.planningDraftBySkill = Object.create(null);
-       this.draftQueue = [];
+        this.draftQueue = [];
+        this._emitArmedState();
         // Matrix cleared via Engine BATTLE_UPDATE usually, but let's be safe
         this.updateSkillAvailability();
     }
@@ -429,6 +439,7 @@ export default class UI_SkillPanel {
         if (this.selectedSkill && !this.cachedSkills.find(s => s.id === this.selectedSkill.id)) {
             this.selectedSkill = null;
             this.clearHighlights();
+            this._emitArmedState();
         }
     }
 
@@ -440,6 +451,7 @@ export default class UI_SkillPanel {
             this.selectedSkill = null;
             btn.classList.remove('active');
             this.clearHighlights();
+            this._emitArmedState();
         } else {
             // Deselect previous
             if (this.selectedSkill) {
@@ -452,6 +464,7 @@ export default class UI_SkillPanel {
             
             this.showDetail(skillId);
             this.highlightValidSlots();
+            this._emitArmedState();
         }
     }
 
