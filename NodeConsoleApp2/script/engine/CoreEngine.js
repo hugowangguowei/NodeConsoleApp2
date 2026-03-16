@@ -1053,36 +1053,66 @@ class CoreEngine {
     }
 
     _getEntityHpStrict(entity) {
-        if (entity?.stats && typeof entity.stats.hp === 'number') return entity.stats.hp;
-        if (typeof entity?.hp === 'number') return entity.hp;
+        const hasFlat = typeof entity?.hp === 'number';
+        const hasNested = !!(entity?.stats && typeof entity.stats.hp === 'number');
+        if (hasFlat && hasNested) {
+            throw new Error(`[CoreEngine] Duplicate hp source detected on ${entity?.id || 'unknown'}.`);
+        }
+        if (hasFlat) return entity.hp;
+        if (hasNested) return entity.stats.hp;
         throw new Error(`[CoreEngine] Target ${entity?.id || 'unknown'} is missing hp.`);
     }
 
     _setEntityHpStrict(entity, hp) {
-        if (entity?.stats && typeof entity.stats.hp === 'number') {
-            entity.stats.hp = hp;
+        const hasFlat = typeof entity?.hp === 'number';
+        const hasNested = !!(entity?.stats && typeof entity.stats.hp === 'number');
+        if (hasFlat && hasNested) {
+            throw new Error(`[CoreEngine] Duplicate hp source detected on ${entity?.id || 'unknown'}.`);
+        }
+        if (hasFlat) {
+            entity.hp = hp;
             return;
         }
-        if (typeof entity?.hp === 'number') {
-            entity.hp = hp;
+        if (hasNested) {
+            entity.stats.hp = hp;
             return;
         }
         throw new Error(`[CoreEngine] Target ${entity?.id || 'unknown'} is missing hp.`);
     }
 
     _getEntityMaxHpStrict(entity) {
-        if (entity?.stats && typeof entity.stats.maxHp === 'number') return entity.stats.maxHp;
-        if (typeof entity?.maxHp === 'number') return entity.maxHp;
+        const hasFlat = typeof entity?.maxHp === 'number';
+        const hasNested = !!(entity?.stats && typeof entity.stats.maxHp === 'number');
+        if (hasFlat && hasNested) {
+            throw new Error(`[CoreEngine] Duplicate maxHp source detected on ${entity?.id || 'unknown'}.`);
+        }
+        if (hasFlat) return entity.maxHp;
+        if (hasNested) return entity.stats.maxHp;
         throw new Error(`[CoreEngine] Target ${entity?.id || 'unknown'} is missing maxHp.`);
     }
 
     _getEntityApStrict(entity) {
-        if (entity?.stats && typeof entity.stats.ap === 'number') return entity.stats.ap;
+        const hasFlat = typeof entity?.ap === 'number';
+        const hasNested = !!(entity?.stats && typeof entity.stats.ap === 'number');
+        if (hasFlat && hasNested) {
+            throw new Error(`[CoreEngine] Duplicate ap source detected on ${entity?.id || 'unknown'}.`);
+        }
+        if (hasFlat) return entity.ap;
+        if (hasNested) return entity.stats.ap;
         throw new Error(`[CoreEngine] Target ${entity?.id || 'unknown'} is missing ap.`);
     }
 
     _setEntityApStrict(entity, ap) {
-        if (entity?.stats && typeof entity.stats.ap === 'number') {
+        const hasFlat = typeof entity?.ap === 'number';
+        const hasNested = !!(entity?.stats && typeof entity.stats.ap === 'number');
+        if (hasFlat && hasNested) {
+            throw new Error(`[CoreEngine] Duplicate ap source detected on ${entity?.id || 'unknown'}.`);
+        }
+        if (hasFlat) {
+            entity.ap = ap;
+            return;
+        }
+        if (hasNested) {
             entity.stats.ap = ap;
             return;
         }
@@ -1090,7 +1120,13 @@ class CoreEngine {
     }
 
     _getEntityMaxApStrict(entity) {
-        if (entity?.stats && typeof entity.stats.maxAp === 'number') return entity.stats.maxAp;
+        const hasFlat = typeof entity?.maxAp === 'number';
+        const hasNested = !!(entity?.stats && typeof entity.stats.maxAp === 'number');
+        if (hasFlat && hasNested) {
+            throw new Error(`[CoreEngine] Duplicate maxAp source detected on ${entity?.id || 'unknown'}.`);
+        }
+        if (hasFlat) return entity.maxAp;
+        if (hasNested) return entity.stats.maxAp;
         throw new Error(`[CoreEngine] Target ${entity?.id || 'unknown'} is missing maxAp.`);
     }
 
@@ -1221,7 +1257,7 @@ class CoreEngine {
         return Math.max(0, Math.floor(baseValue * (percent / 100)));
     }
 
-    _applyHpDamageStrict({ attacker, targetEntity, targetBodyPart, magnitude, skillId, bypassArmor }) {
+    _applyDirectHpDamageStrict({ attacker, targetEntity, targetBodyPart, magnitude, skillId }) {
         const context = {
             attacker,
             target: targetEntity,
@@ -1239,13 +1275,63 @@ class CoreEngine {
             throw new Error(`[CoreEngine] Invalid rawDamage after BATTLE_ATTACK_PRE: skillId=${skillId}.`);
         }
 
-        let armorDamage = 0;
         const partState = targetBodyPart ? this._resolveBodyPartStateStrict(targetEntity, targetBodyPart, `skillId=${skillId}`) : null;
         if (partState && Number.isFinite(partState.weakness) && partState.weakness !== 1) {
             actualDamage = Math.floor(actualDamage * partState.weakness);
         }
 
-        if (!bypassArmor && partState && partState.current > 0) {
+        context.damageTaken = actualDamage;
+        this.eventBus.emit('BATTLE_TAKE_DAMAGE_PRE', context);
+        if (context.damageTakenMult) {
+            context.damageTaken = Math.floor(context.damageTaken * context.damageTakenMult);
+        }
+        if (context.shieldPool) {
+            const absorbed = Math.min(context.shieldPool, context.damageTaken);
+            context.damageTaken -= absorbed;
+            context.shieldPool -= absorbed;
+        }
+
+        actualDamage = Math.max(0, Math.floor(context.damageTaken));
+        if (actualDamage > 0) {
+            const currentHp = this._getEntityHpStrict(targetEntity);
+            this._setEntityHpStrict(targetEntity, Math.max(0, currentHp - actualDamage));
+        }
+
+        context.damageDealt = actualDamage;
+        this.eventBus.emit('BATTLE_ATTACK_POST', context);
+
+        return {
+            damage: actualDamage,
+            armorDamage: 0,
+            targetPart: targetBodyPart || null
+        };
+    }
+
+    _applyArmorDamageWithOverflowStrict({ attacker, targetEntity, targetBodyPart, magnitude, skillId }) {
+        const context = {
+            attacker,
+            target: targetEntity,
+            skillId,
+            bodyPart: targetBodyPart,
+            rawDamage: magnitude,
+            damageDealt: 0,
+            damageTaken: 0,
+            tempModifiers: Object.create(null)
+        };
+        this.eventBus.emit('BATTLE_ATTACK_PRE', context);
+
+        let actualDamage = Number(context.rawDamage);
+        if (!Number.isFinite(actualDamage) || actualDamage < 0) {
+            throw new Error(`[CoreEngine] Invalid rawDamage after BATTLE_ATTACK_PRE: skillId=${skillId}.`);
+        }
+
+        const partState = this._resolveBodyPartStateStrict(targetEntity, targetBodyPart, `skillId=${skillId}`);
+        if (Number.isFinite(partState.weakness) && partState.weakness !== 1) {
+            actualDamage = Math.floor(actualDamage * partState.weakness);
+        }
+
+        let armorDamage = 0;
+        if (partState.current > 0) {
             const armorMitMult = this._resolveArmorMitigationMultiplier(context);
             const damageToArmor = Math.ceil(actualDamage * armorMitMult);
             if (partState.current >= damageToArmor) {
@@ -1283,7 +1369,7 @@ class CoreEngine {
         return {
             damage: actualDamage,
             armorDamage,
-            targetPart: targetBodyPart || null
+            targetPart: targetBodyPart
         };
     }
 
@@ -1335,35 +1421,32 @@ class CoreEngine {
         }
 
         if (effectType === 'DMG_ARMOR') {
-            const partState = this._resolveBodyPartStateStrict(targetEntity, targetBodyPart, effectLabel);
-            const armorDamage = Math.min(partState.current, magnitude);
-            partState.current -= armorDamage;
-            if (partState.current <= 0) {
-                partState.current = 0;
-                partState.status = 'BROKEN';
-            }
-            return { armorDamage, targetPart: targetBodyPart };
-        }
-
-        if (effectType === 'DMG_HP') {
-            return this._applyHpDamageStrict({
+            return this._applyArmorDamageWithOverflowStrict({
                 attacker,
                 targetEntity,
                 targetBodyPart,
                 magnitude,
-                skillId: skillConfig.id,
-                bypassArmor: false
+                skillId: skillConfig.id
+            });
+        }
+
+        if (effectType === 'DMG_HP') {
+            return this._applyDirectHpDamageStrict({
+                attacker,
+                targetEntity,
+                targetBodyPart,
+                magnitude,
+                skillId: skillConfig.id
             });
         }
 
         if (effectType === 'PIERCE') {
-            return this._applyHpDamageStrict({
+            return this._applyDirectHpDamageStrict({
                 attacker,
                 targetEntity,
                 targetBodyPart,
                 magnitude,
-                skillId: skillConfig.id,
-                bypassArmor: true
+                skillId: skillConfig.id
             });
         }
 

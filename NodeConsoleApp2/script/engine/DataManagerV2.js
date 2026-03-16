@@ -19,6 +19,46 @@ class DataManager {
         return this._dataSourcesVersion;
     }
 
+    _normalizeRuntimeEnemyCombatState(enemyInstance) {
+        if (!enemyInstance || typeof enemyInstance !== 'object') {
+            throw new Error('[DataManager] Invalid runtime enemy instance.');
+        }
+
+        const stats = (enemyInstance.stats && typeof enemyInstance.stats === 'object') ? enemyInstance.stats : null;
+        const hp = Number(enemyInstance.hp ?? stats?.hp);
+        const maxHp = Number(enemyInstance.maxHp ?? stats?.maxHp);
+        const speed = Number(enemyInstance.speed ?? stats?.speed);
+        const ap = Number(enemyInstance.ap ?? stats?.ap);
+        const maxApRaw = enemyInstance.maxAp ?? stats?.maxAp;
+
+        if (!Number.isFinite(hp)) throw new Error(`[DataManager] Runtime enemy ${enemyInstance.id || 'unknown'} missing hp.`);
+        if (!Number.isFinite(maxHp)) throw new Error(`[DataManager] Runtime enemy ${enemyInstance.id || 'unknown'} missing maxHp.`);
+        if (!Number.isFinite(speed)) throw new Error(`[DataManager] Runtime enemy ${enemyInstance.id || 'unknown'} missing speed.`);
+        if (!Number.isFinite(ap)) throw new Error(`[DataManager] Runtime enemy ${enemyInstance.id || 'unknown'} missing ap.`);
+
+        enemyInstance.hp = hp;
+        enemyInstance.maxHp = maxHp;
+        enemyInstance.speed = speed;
+        enemyInstance.ap = ap;
+        if (maxApRaw !== undefined) {
+            const maxAp = Number(maxApRaw);
+            if (!Number.isFinite(maxAp)) {
+                throw new Error(`[DataManager] Runtime enemy ${enemyInstance.id || 'unknown'} has invalid maxAp.`);
+            }
+            enemyInstance.maxAp = maxAp;
+        }
+
+        if (stats) {
+            delete stats.hp;
+            delete stats.maxHp;
+            delete stats.speed;
+            delete stats.ap;
+            delete stats.maxAp;
+        }
+
+        return enemyInstance;
+    }
+
     _normalizeSkills(skills, playerTemplate) {
         const tpl = (playerTemplate && typeof playerTemplate.skills === 'object' && !Array.isArray(playerTemplate.skills))
             ? playerTemplate.skills
@@ -103,6 +143,9 @@ class DataManager {
                 // Restore runtime level data
                 if (this.dataConfig.runtime && this.dataConfig.runtime.levelData) {
                     this._currentLevelConfig = this.dataConfig.runtime.levelData;
+                    if (Array.isArray(this._currentLevelConfig.enemies)) {
+                        this._currentLevelConfig.enemies.forEach(enemy => this._normalizeRuntimeEnemyCombatState(enemy));
+                    }
                 } else {
                     this._currentLevelConfig = null;
                 }
@@ -297,11 +340,8 @@ class DataManager {
                     const enemyInstance = JSON.parse(JSON.stringify(template)); // Deep copy template
                     enemyInstance.instanceId = `${template.id}_${index}_${Date.now()}`; // Unique ID
                     enemyInstance.id = enemyInstance.instanceId; // Map instanceId to id for compatibility
-                    
-                    // Initialize Runtime Stats
-                    enemyInstance.hp = template.stats.hp;
-                    enemyInstance.maxHp = template.stats.maxHp;
-                    enemyInstance.speed = template.stats.speed;
+
+                    this._normalizeRuntimeEnemyCombatState(enemyInstance);
                     
                     // Initialize Body Parts Runtime State
                     if (enemyInstance.bodyParts) {

@@ -362,7 +362,7 @@
             }
           },
           "effect": {
-            "effectType": "DMG_HP",
+            "effectType": "DMG_ARMOR",
             "amountType": "ABS",
             "scaling": {
               "stat": "atk",
