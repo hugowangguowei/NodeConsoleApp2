@@ -551,6 +551,103 @@ class CoreEngine {
         this.eventBus.emit('BATTLE_LOG', { text: 'Game Saved.' });
     }
 
+    _validateTargetSpecStrict(targetSpec, contextLabel) {
+        if (!targetSpec || typeof targetSpec !== 'object') {
+            throw new Error(`[CoreEngine] Missing target spec: ${contextLabel}.`);
+        }
+
+        const { subject, scope, selection } = targetSpec;
+        if (subject !== 'SUBJECT_SELF' && subject !== 'SUBJECT_ENEMY') {
+            throw new Error(`[CoreEngine] Unsupported target.subject in ${contextLabel}: ${subject}.`);
+        }
+        if (scope !== 'SCOPE_ENTITY' && scope !== 'SCOPE_PART') {
+            throw new Error(`[CoreEngine] Unsupported target.scope in ${contextLabel}: ${scope}.`);
+        }
+
+        const selectionMode = selection?.mode;
+        if (selectionMode && selectionMode !== 'single' && selectionMode !== 'multiple') {
+            throw new Error(`[CoreEngine] Unsupported target.selection.mode in ${contextLabel}: ${selectionMode}.`);
+        }
+
+        return targetSpec;
+    }
+
+    _getSkillTargetSpecStrict(skillConfig, skillIdForLog = null) {
+        const skillId = skillIdForLog || skillConfig?.id || 'unknown';
+        return this._validateTargetSpecStrict(skillConfig?.target, `skillId=${skillId}`);
+    }
+
+    _skillRequiresBodyPartStrict(skillConfig, skillIdForLog = null) {
+        const targetSpec = this._getSkillTargetSpecStrict(skillConfig, skillIdForLog);
+        return targetSpec.scope === 'SCOPE_PART';
+    }
+
+    _resolveCombatantByIdStrict(targetId) {
+        if (!targetId) {
+            throw new Error('[CoreEngine] Missing targetId for combat target resolution.');
+        }
+
+        const player = this.data.playerData;
+        if (player && player.id === targetId) return player;
+
+        const enemies = this.data.currentLevelData?.enemies;
+        if (Array.isArray(enemies)) {
+            const enemy = enemies.find(e => e.id === targetId);
+            if (enemy) return enemy;
+        }
+
+        throw new Error(`[CoreEngine] Combat target not found: ${targetId}.`);
+    }
+
+    _validatePlannedSkillTargetStrict({ actorId, skillConfig, targetId, bodyPart }) {
+        const targetSpec = this._getSkillTargetSpecStrict(skillConfig, skillConfig?.id || 'unknown');
+        const isSelfTarget = targetId === actorId;
+
+        if (targetSpec.subject === 'SUBJECT_SELF' && !isSelfTarget) {
+            throw new Error(`[CoreEngine] Skill ${skillConfig?.id || 'unknown'} requires self target.`);
+        }
+        if (targetSpec.subject === 'SUBJECT_ENEMY' && isSelfTarget) {
+            throw new Error(`[CoreEngine] Skill ${skillConfig?.id || 'unknown'} requires enemy target.`);
+        }
+
+        const targetEntity = this._resolveCombatantByIdStrict(targetId);
+        if (targetSpec.scope === 'SCOPE_PART') {
+            if (!bodyPart || bodyPart === 'global') {
+                throw new Error(`[CoreEngine] Skill ${skillConfig?.id || 'unknown'} requires a concrete target body part.`);
+            }
+            if (!targetEntity.bodyParts || !targetEntity.bodyParts[bodyPart]) {
+                throw new Error(`[CoreEngine] Invalid body part '${bodyPart}' for skill ${skillConfig?.id || 'unknown'} target ${targetId}.`);
+            }
+        }
+
+        return { targetSpec, targetEntity };
+    }
+
+    _resolveDeterministicBodyPartForAiStrict(skillConfig) {
+        const targetSpec = this._getSkillTargetSpecStrict(skillConfig, skillConfig?.id || 'unknown');
+        if (targetSpec.scope !== 'SCOPE_PART') return null;
+
+        const selection = targetSpec.selection || {};
+        const selectedParts = Array.isArray(selection.selectedParts) ? selection.selectedParts.filter(Boolean) : [];
+        if (selectedParts.length === 1) {
+            return selectedParts[0];
+        }
+
+        const candidateParts = Array.isArray(selection.candidateParts) ? selection.candidateParts.filter(Boolean) : [];
+        if ((selection.mode === 'single' || !selection.mode) && candidateParts.length > 0) {
+            return candidateParts[0];
+        }
+
+        throw new Error(`[CoreEngine] Enemy AI cannot resolve deterministic body part for skill ${skillConfig?.id || 'unknown'}.`);
+    }
+
+    _resolveAiTargetIdStrict(enemy, skillConfig) {
+        const targetSpec = this._getSkillTargetSpecStrict(skillConfig, skillConfig?.id || 'unknown');
+        if (targetSpec.subject === 'SUBJECT_SELF') return enemy.id;
+        if (targetSpec.subject === 'SUBJECT_ENEMY') return this.data.playerData.id;
+        throw new Error(`[CoreEngine] Enemy AI cannot resolve target subject for skill ${skillConfig?.id || 'unknown'}.`);
+    }
+
     startTurn() {
         this.currentTurn++;
         console.log('Turn Started: ' + this.currentTurn);
@@ -621,43 +718,16 @@ class CoreEngine {
             return;
         }
 
-        // 验证目标身体部位
-        // 攻击和辅助技能需要身体部位，除非它们是全局/AOE
-        const requiresBodyPart = (skillConfig.type === 'DAMAGE' || skillConfig.type === 'HEAL' || skillConfig.type === 'BUFF') && skillConfig.targetType !== 'GLOBAL' && skillConfig.targetType !== 'AOE';
-
-        if (requiresBodyPart) {
-            if (!bodyPart) {
-                this.eventBus.emit('BATTLE_LOG', { text: `Skill ${skillConfig.name} requires a target body part.` });
-                return;
-            }
-
-            // 查找目标
-            let target = null;
-            if (targetId === this.data.playerData.id) {
-                target = this.data.playerData;
-            } else if (this.data.currentLevelData && this.data.currentLevelData.enemies) {
-                target = this.data.currentLevelData.enemies.find(e => e.id === targetId);
-            }
-
-            if (!target) {
-                this.eventBus.emit('BATTLE_LOG', { text: `Invalid target: ${targetId}` });
-                return;
-            }
-
-            // 检查目标是否存在身体部位
-            let isValidPart = false;
-            if (target.bodyParts) {
-                // 具有明确身体部位的敌人
-                if (target.bodyParts[bodyPart]) isValidPart = true;
-            } else if (target.equipment && target.equipment.armor) {
-                // 玩家（使用护甲槽作为身体部位）
-                if (target.equipment.armor.hasOwnProperty(bodyPart)) isValidPart = true;
-            }
-
-            if (!isValidPart) {
-                this.eventBus.emit('BATTLE_LOG', { text: `Invalid body part '${bodyPart}' for target.` });
-                return;
-            }
+        try {
+            this._validatePlannedSkillTargetStrict({
+                actorId: player.id,
+                skillConfig,
+                targetId,
+                bodyPart
+            });
+        } catch (err) {
+            this.eventBus.emit('BATTLE_LOG', { text: err.message });
+            return;
         }
 
         const cost = this._getSkillApCostStrict(skillConfig, skillId);
@@ -703,10 +773,15 @@ class CoreEngine {
             return;
         }
 
-        // reuse old validations (target/body part)
-        const requiresBodyPart = (skillConfig.type === 'DAMAGE' || skillConfig.type === 'HEAL' || skillConfig.type === 'BUFF') && skillConfig.targetType !== 'GLOBAL' && skillConfig.targetType !== 'AOE';
-        if (requiresBodyPart && !bodyPart) {
-            this.eventBus.emit('BATTLE_LOG', { text: `Skill ${skillConfig.name} requires a target body part.` });
+        try {
+            this._validatePlannedSkillTargetStrict({
+                actorId: this.data.playerData.id,
+                skillConfig,
+                targetId,
+                bodyPart
+            });
+        } catch (err) {
+            this.eventBus.emit('BATTLE_LOG', { text: err.message });
             return;
         }
 
@@ -800,14 +875,23 @@ class CoreEngine {
         if (this.data.currentLevelData && this.data.currentLevelData.enemies) {
             this.data.currentLevelData.enemies.forEach(enemy => {
                 if (enemy.hp > 0) {
-                    const skillId = (enemy.skills && enemy.skills.length > 0) ? enemy.skills[0] : 'skill_bite';
+                    const skillId = (enemy.skills && enemy.skills.length > 0) ? enemy.skills[0] : null;
+                    if (!skillId) {
+                        throw new Error(`[CoreEngine] Enemy ${enemy.id} has no skill configured.`);
+                    }
                     const skillConfig = this.data.getSkillConfig(skillId);
-                    const speed = (enemy.speed || 10) + (skillConfig ? skillConfig.speed : 0);
+                    if (!skillConfig) {
+                        throw new Error(`[CoreEngine] Enemy ${enemy.id} references unknown skill ${skillId}.`);
+                    }
+                    const targetId = this._resolveAiTargetIdStrict(enemy, skillConfig);
+                    const bodyPart = this._resolveDeterministicBodyPartForAiStrict(skillConfig);
+                    const speed = (enemy.speed || 10) + (Number(skillConfig.speed) || 0);
                     this.enemySkillQueue.push({
                         source: 'ENEMY',
                         sourceId: enemy.id,
                         skillId: skillId,
-                        targetId: this.data.playerData.id,
+                        targetId,
+                        bodyPart,
                         cost: 0,
                         speed: speed
                     });
@@ -960,130 +1044,447 @@ class CoreEngine {
         return result;
     }
 
-    executePlayerSkill(action) {
-        const player = this.data.playerData;
-        const skillConfig = this.data.getSkillConfig(action.skillId);
-        
-        if (!skillConfig) return null;
+    _getSkillActionsStrict(skillConfig, skillIdForLog = null) {
+        const skillId = skillIdForLog || skillConfig?.id || 'unknown';
+        if (!Array.isArray(skillConfig?.actions) || skillConfig.actions.length === 0) {
+            throw new Error(`[CoreEngine] skill.actions must be a non-empty array: skillId=${skillId}.`);
+        }
+        return skillConfig.actions;
+    }
 
-        // 扣除 AP（实际扣除）
-        player.stats.ap -= action.cost;
-        this.eventBus.emit('DATA_UPDATE', player);
+    _getEntityHpStrict(entity) {
+        if (entity?.stats && typeof entity.stats.hp === 'number') return entity.stats.hp;
+        if (typeof entity?.hp === 'number') return entity.hp;
+        throw new Error(`[CoreEngine] Target ${entity?.id || 'unknown'} is missing hp.`);
+    }
 
-        if (skillConfig.type === 'HEAL') {
-            const healAmount = skillConfig.value;
-            player.stats.hp += healAmount;
-            if (player.stats.hp > player.stats.maxHp) player.stats.hp = player.stats.maxHp;
-            
-            const log = `Player used ${skillConfig.name} healed ${healAmount} HP!`;
-            this.eventBus.emit('BATTLE_LOG', { text: log });
-            this.emitBattleUpdate();
-            return { isHit: true, heal: healAmount, targetHpRemaining: player.stats.hp };
+    _setEntityHpStrict(entity, hp) {
+        if (entity?.stats && typeof entity.stats.hp === 'number') {
+            entity.stats.hp = hp;
+            return;
+        }
+        if (typeof entity?.hp === 'number') {
+            entity.hp = hp;
+            return;
+        }
+        throw new Error(`[CoreEngine] Target ${entity?.id || 'unknown'} is missing hp.`);
+    }
+
+    _getEntityMaxHpStrict(entity) {
+        if (entity?.stats && typeof entity.stats.maxHp === 'number') return entity.stats.maxHp;
+        if (typeof entity?.maxHp === 'number') return entity.maxHp;
+        throw new Error(`[CoreEngine] Target ${entity?.id || 'unknown'} is missing maxHp.`);
+    }
+
+    _getEntityApStrict(entity) {
+        if (entity?.stats && typeof entity.stats.ap === 'number') return entity.stats.ap;
+        throw new Error(`[CoreEngine] Target ${entity?.id || 'unknown'} is missing ap.`);
+    }
+
+    _setEntityApStrict(entity, ap) {
+        if (entity?.stats && typeof entity.stats.ap === 'number') {
+            entity.stats.ap = ap;
+            return;
+        }
+        throw new Error(`[CoreEngine] Target ${entity?.id || 'unknown'} is missing ap.`);
+    }
+
+    _getEntityMaxApStrict(entity) {
+        if (entity?.stats && typeof entity.stats.maxAp === 'number') return entity.stats.maxAp;
+        throw new Error(`[CoreEngine] Target ${entity?.id || 'unknown'} is missing maxAp.`);
+    }
+
+    _resolveEntityStatForScalingStrict(entity, statKey) {
+        if (entity?.stats && typeof entity.stats[statKey] === 'number') return entity.stats[statKey];
+        if (typeof entity?.[statKey] === 'number') return entity[statKey];
+        throw new Error(`[CoreEngine] Missing scaling stat '${statKey}' on entity ${entity?.id || 'unknown'}.`);
+    }
+
+    _resolveActionBindingTargetStrict({ actor, skillTargetEntity, skillTargetBodyPart, actionConfig, effect, skillConfig }) {
+        const binding = actionConfig?.target?.binding;
+        if (!binding || typeof binding !== 'object') {
+            throw new Error(`[CoreEngine] Missing action.target.binding: skillId=${skillConfig?.id || 'unknown'}, actionId=${actionConfig?.id || 'unknown'}.`);
         }
 
-        const damage = skillConfig.value;
-        let targetName = action.targetId;
-        let result = { isHit: false, damage: 0 };
-        
-        if (this.data.currentLevelData && this.data.currentLevelData.enemies) {
-            const enemy = this.data.currentLevelData.enemies.find(e => e.id === action.targetId);
-            if (enemy) {
-                if (enemy.hp <= 0) {
-                    this.eventBus.emit('BATTLE_LOG', { text: `Target ${enemy.id} is dead, skill failed.` });
-                    return { isHit: false, reason: 'dead' };
+        let entity = null;
+        let bodyPart = null;
+
+        if (binding.mode === 'follow') {
+            if (binding.ref !== 'skillTarget') {
+                throw new Error(`[CoreEngine] Unsupported follow binding ref in skillId=${skillConfig?.id || 'unknown'}, actionId=${actionConfig?.id || 'unknown'}: ${binding.ref}.`);
+            }
+            entity = skillTargetEntity;
+            bodyPart = skillTargetBodyPart || null;
+        } else if (binding.mode === 'explicit') {
+            const explicitSpec = this._validateTargetSpecStrict(actionConfig?.target?.spec, `skillId=${skillConfig?.id || 'unknown'}, actionId=${actionConfig?.id || 'unknown'}`);
+            entity = explicitSpec.subject === 'SUBJECT_SELF' ? actor : skillTargetEntity;
+            if (explicitSpec.scope === 'SCOPE_PART') {
+                const selectedParts = explicitSpec.selection?.selectedParts;
+                if (!Array.isArray(selectedParts) || selectedParts.length !== 1) {
+                    throw new Error(`[CoreEngine] Explicit part target must provide exactly one selected part: skillId=${skillConfig?.id || 'unknown'}, actionId=${actionConfig?.id || 'unknown'}.`);
                 }
+                bodyPart = selectedParts[0];
+            }
+        } else {
+            throw new Error(`[CoreEngine] Unsupported action.target.binding.mode in skillId=${skillConfig?.id || 'unknown'}, actionId=${actionConfig?.id || 'unknown'}: ${binding.mode}.`);
+        }
 
-                // Combat Context (Buff pipeline)
-				const context = {
-					attacker: player,
-					target: enemy,
-					skillId: action.skillId,
-					bodyPart: action.bodyPart,
-					rawDamage: damage,
-					damageDealt: 0,
-					damageTaken: 0,
-					tempModifiers: Object.create(null)
-				};
-				this.eventBus.emit('BATTLE_ATTACK_PRE', context);
+        const partOverride = effect?.partOverride;
+        if (partOverride) {
+            if (partOverride.mode !== 'fixed' || !Array.isArray(partOverride.parts) || partOverride.parts.length !== 1) {
+                throw new Error(`[CoreEngine] Unsupported effect.partOverride in skillId=${skillConfig?.id || 'unknown'}, actionId=${actionConfig?.id || 'unknown'}.`);
+            }
+            bodyPart = partOverride.parts[0];
+        }
 
-                // New Damage Logic: Armor -> HP
-                let actualDamage = context.rawDamage;
-                let armorDamage = 0;
-                let targetPart = action.bodyPart || 'chest'; // Default to chest
-                
-                if (enemy.bodyParts && enemy.bodyParts[targetPart]) {
-                    const part = enemy.bodyParts[targetPart];
-                    
-                    // Apply weakness
-                    if (part.weakness) {
-                        actualDamage = Math.floor(actualDamage * part.weakness);
-                    }
+        return { entity, bodyPart };
+    }
 
-                    // Apply armor mitigation mult from buffs (破甲等写入 tempModifiers)
-					let armorMitMult = 1.0;
-					const tmp = context.tempModifiers && context.tempModifiers.armorMitigationMult;
-					if (Array.isArray(tmp) && tmp.length > 0) {
-						for (const m of tmp) {
-							if (m.type === 'percent_current') {
-								armorMitMult *= (1 + m.value);
-							} else if (m.type === 'flat') {
-								armorMitMult += m.value;
-							}
-						}
-					}
+    _resolveBodyPartStateStrict(entity, bodyPart, contextLabel) {
+        if (!bodyPart || bodyPart === 'global') {
+            throw new Error(`[CoreEngine] Missing concrete bodyPart: ${contextLabel}.`);
+        }
+        if (!entity?.bodyParts || !entity.bodyParts[bodyPart]) {
+            throw new Error(`[CoreEngine] Body part '${bodyPart}' not found on ${entity?.id || 'unknown'}: ${contextLabel}.`);
+        }
+        return entity.bodyParts[bodyPart];
+    }
 
-                    // Reduce Armor first (current)
-                    if (part.current > 0) {
-                        // armorMitMult > 1 => armor更“软”，等效为放大对护甲的穿透
-						const mitigated = Math.ceil(actualDamage * armorMitMult);
-						if (part.current >= mitigated) {
-							part.current -= mitigated;
-							armorDamage = mitigated;
-                            actualDamage = 0;
-                        } else {
-							armorDamage = part.current;
-							actualDamage = Math.max(0, mitigated - part.current);
-                            part.current = 0;
-                            part.status = 'BROKEN';
-                        }
-                    }
+    _resolveArmorMitigationMultiplier(context) {
+        let armorMitMult = 1.0;
+        const tmp = context.tempModifiers && context.tempModifiers.armorMitigationMult;
+        if (Array.isArray(tmp) && tmp.length > 0) {
+            for (const m of tmp) {
+                if (m.type === 'percent_current') {
+                    armorMitMult *= (1 + m.value);
+                } else if (m.type === 'flat') {
+                    armorMitMult += m.value;
                 }
+            }
+        }
+        return armorMitMult;
+    }
 
-                // TakeDamagePre hooks (e.g. shield / damage taken mult)
-				context.damageTaken = actualDamage;
-				this.eventBus.emit('BATTLE_TAKE_DAMAGE_PRE', context);
-				if (context.damageTakenMult) {
-					context.damageTaken = Math.floor(context.damageTaken * context.damageTakenMult);
-				}
-				if (context.shieldPool) {
-					const absorbed = Math.min(context.shieldPool, context.damageTaken);
-					context.damageTaken -= absorbed;
-					context.shieldPool -= absorbed;
-				}
+    _resolveEffectMagnitudeStrict({ effectType, effect, attacker, targetEntity, targetBodyPart, skillConfig, actionConfig }) {
+        const amountType = effect?.amountType;
+        if (!amountType) {
+            throw new Error(`[CoreEngine] Missing effect.amountType: skillId=${skillConfig?.id || 'unknown'}, actionId=${actionConfig?.id || 'unknown'}.`);
+        }
 
-                // Remaining damage goes to HP
-                actualDamage = context.damageTaken;
-                if (actualDamage > 0) {
-                    enemy.hp -= actualDamage;
-                    if (enemy.hp < 0) enemy.hp = 0;
-                }
+        const effectLabel = `skillId=${skillConfig?.id || 'unknown'}, actionId=${actionConfig?.id || 'unknown'}, effectType=${effectType}`;
+        if (amountType === 'ABS') {
+            const amount = Number(effect.amount);
+            if (!Number.isFinite(amount)) {
+                throw new Error(`[CoreEngine] Invalid ABS amount: ${effectLabel}.`);
+            }
+            return Math.max(0, Math.floor(amount));
+        }
 
-				context.damageDealt = actualDamage;
-				this.eventBus.emit('BATTLE_ATTACK_POST', context);
+        if (amountType === 'SCALING') {
+            const statKey = effect?.scaling?.stat;
+            const multiplier = Number(effect?.scaling?.multiplier);
+            if (!statKey || !Number.isFinite(multiplier)) {
+                throw new Error(`[CoreEngine] Invalid SCALING config: ${effectLabel}.`);
+            }
+            const base = this._resolveEntityStatForScalingStrict(attacker, statKey);
+            return Math.max(0, Math.floor(base * multiplier));
+        }
 
-                targetName = `${enemy.id} (HP: ${enemy.hp})`;
-                result = { 
-                    isHit: true, 
-                    damage: actualDamage, 
-                    armorDamage: armorDamage,
-                    targetHpRemaining: enemy.hp,
-                    targetPart: targetPart
-                };
+        if (amountType !== 'PCT_MAX' && amountType !== 'PCT_CURRENT') {
+            throw new Error(`[CoreEngine] Unsupported effect.amountType: ${effectLabel}, amountType=${amountType}.`);
+        }
+
+        const percent = Number(effect.amount);
+        if (!Number.isFinite(percent)) {
+            throw new Error(`[CoreEngine] Invalid percent amount: ${effectLabel}.`);
+        }
+
+        let baseValue = 0;
+        if (effectType === 'DMG_ARMOR' || effectType === 'ARMOR_ADD') {
+            const partState = this._resolveBodyPartStateStrict(targetEntity, targetBodyPart, effectLabel);
+            baseValue = amountType === 'PCT_MAX' ? Number(partState.max) : Number(partState.current);
+        } else if (effectType === 'DMG_HP' || effectType === 'PIERCE' || effectType === 'HEAL') {
+            baseValue = amountType === 'PCT_MAX'
+                ? this._getEntityMaxHpStrict(targetEntity)
+                : this._getEntityHpStrict(targetEntity);
+        } else if (effectType === 'AP_GAIN') {
+            baseValue = amountType === 'PCT_MAX'
+                ? this._getEntityMaxApStrict(targetEntity)
+                : this._getEntityApStrict(targetEntity);
+        } else {
+            throw new Error(`[CoreEngine] Unsupported amountType base resolver for ${effectLabel}.`);
+        }
+
+        if (!Number.isFinite(baseValue)) {
+            throw new Error(`[CoreEngine] Invalid percent base value: ${effectLabel}.`);
+        }
+        return Math.max(0, Math.floor(baseValue * (percent / 100)));
+    }
+
+    _applyHpDamageStrict({ attacker, targetEntity, targetBodyPart, magnitude, skillId, bypassArmor }) {
+        const context = {
+            attacker,
+            target: targetEntity,
+            skillId,
+            bodyPart: targetBodyPart,
+            rawDamage: magnitude,
+            damageDealt: 0,
+            damageTaken: 0,
+            tempModifiers: Object.create(null)
+        };
+        this.eventBus.emit('BATTLE_ATTACK_PRE', context);
+
+        let actualDamage = Number(context.rawDamage);
+        if (!Number.isFinite(actualDamage) || actualDamage < 0) {
+            throw new Error(`[CoreEngine] Invalid rawDamage after BATTLE_ATTACK_PRE: skillId=${skillId}.`);
+        }
+
+        let armorDamage = 0;
+        const partState = targetBodyPart ? this._resolveBodyPartStateStrict(targetEntity, targetBodyPart, `skillId=${skillId}`) : null;
+        if (partState && Number.isFinite(partState.weakness) && partState.weakness !== 1) {
+            actualDamage = Math.floor(actualDamage * partState.weakness);
+        }
+
+        if (!bypassArmor && partState && partState.current > 0) {
+            const armorMitMult = this._resolveArmorMitigationMultiplier(context);
+            const damageToArmor = Math.ceil(actualDamage * armorMitMult);
+            if (partState.current >= damageToArmor) {
+                partState.current -= damageToArmor;
+                armorDamage = damageToArmor;
+                actualDamage = 0;
+            } else {
+                armorDamage = partState.current;
+                actualDamage = Math.max(0, damageToArmor - partState.current);
+                partState.current = 0;
+                partState.status = 'BROKEN';
             }
         }
 
-        const log = `Player used ${skillConfig.name} attacked ${targetName} for ${result.damage} HP damage (Armor: ${result.armorDamage})!`;
-        this.eventBus.emit('BATTLE_LOG', { text: log });
+        context.damageTaken = actualDamage;
+        this.eventBus.emit('BATTLE_TAKE_DAMAGE_PRE', context);
+        if (context.damageTakenMult) {
+            context.damageTaken = Math.floor(context.damageTaken * context.damageTakenMult);
+        }
+        if (context.shieldPool) {
+            const absorbed = Math.min(context.shieldPool, context.damageTaken);
+            context.damageTaken -= absorbed;
+            context.shieldPool -= absorbed;
+        }
+
+        actualDamage = Math.max(0, Math.floor(context.damageTaken));
+        if (actualDamage > 0) {
+            const currentHp = this._getEntityHpStrict(targetEntity);
+            this._setEntityHpStrict(targetEntity, Math.max(0, currentHp - actualDamage));
+        }
+
+        context.damageDealt = actualDamage;
+        this.eventBus.emit('BATTLE_ATTACK_POST', context);
+
+        return {
+            damage: actualDamage,
+            armorDamage,
+            targetPart: targetBodyPart || null
+        };
+    }
+
+    _applySkillEffectStrict({ attacker, targetEntity, targetBodyPart, effect, actionConfig, skillConfig }) {
+        const effectType = effect?.effectType;
+        const effectLabel = `skillId=${skillConfig?.id || 'unknown'}, actionId=${actionConfig?.id || 'unknown'}`;
+        if (!effectType) {
+            throw new Error(`[CoreEngine] Missing effect.effectType: ${effectLabel}.`);
+        }
+
+        if (effectType === 'BUFF_REMOVE') {
+            throw new Error(`[CoreEngine] effectType BUFF_REMOVE is not executable yet under the strict runtime contract: ${effectLabel}.`);
+        }
+
+        const magnitude = this._resolveEffectMagnitudeStrict({
+            effectType,
+            effect,
+            attacker,
+            targetEntity,
+            targetBodyPart,
+            skillConfig,
+            actionConfig
+        });
+
+        if (effectType === 'HEAL') {
+            const maxHp = this._getEntityMaxHpStrict(targetEntity);
+            const currentHp = this._getEntityHpStrict(targetEntity);
+            const nextHp = Math.min(maxHp, currentHp + magnitude);
+            this._setEntityHpStrict(targetEntity, nextHp);
+            return { heal: Math.max(0, nextHp - currentHp) };
+        }
+
+        if (effectType === 'AP_GAIN') {
+            const maxAp = this._getEntityMaxApStrict(targetEntity);
+            const currentAp = this._getEntityApStrict(targetEntity);
+            const nextAp = Math.min(maxAp, currentAp + magnitude);
+            this._setEntityApStrict(targetEntity, nextAp);
+            return { apGain: Math.max(0, nextAp - currentAp) };
+        }
+
+        if (effectType === 'ARMOR_ADD') {
+            const partState = this._resolveBodyPartStateStrict(targetEntity, targetBodyPart, effectLabel);
+            const before = partState.current;
+            partState.current = Math.min(partState.max, partState.current + magnitude);
+            if (partState.current > 0) {
+                partState.status = 'NORMAL';
+            }
+            return { armorAdded: Math.max(0, partState.current - before), targetPart: targetBodyPart };
+        }
+
+        if (effectType === 'DMG_ARMOR') {
+            const partState = this._resolveBodyPartStateStrict(targetEntity, targetBodyPart, effectLabel);
+            const armorDamage = Math.min(partState.current, magnitude);
+            partState.current -= armorDamage;
+            if (partState.current <= 0) {
+                partState.current = 0;
+                partState.status = 'BROKEN';
+            }
+            return { armorDamage, targetPart: targetBodyPart };
+        }
+
+        if (effectType === 'DMG_HP') {
+            return this._applyHpDamageStrict({
+                attacker,
+                targetEntity,
+                targetBodyPart,
+                magnitude,
+                skillId: skillConfig.id,
+                bypassArmor: false
+            });
+        }
+
+        if (effectType === 'PIERCE') {
+            return this._applyHpDamageStrict({
+                attacker,
+                targetEntity,
+                targetBodyPart,
+                magnitude,
+                skillId: skillConfig.id,
+                bypassArmor: true
+            });
+        }
+
+        throw new Error(`[CoreEngine] Unsupported effectType under strict runtime contract: ${effectLabel}, effectType=${effectType}.`);
+    }
+
+    _executeSkillEffectsStrict({ attacker, skillConfig, action, targetEntity }) {
+        const skillTargetSpec = this._getSkillTargetSpecStrict(skillConfig, action.skillId);
+        const skillTargetBodyPart = skillTargetSpec.scope === 'SCOPE_PART' ? action.bodyPart : null;
+        const actionConfigs = this._getSkillActionsStrict(skillConfig, action.skillId);
+        const summary = {
+            isHit: false,
+            damage: 0,
+            armorDamage: 0,
+            heal: 0,
+            armorAdded: 0,
+            apGain: 0,
+            targetPart: skillTargetBodyPart,
+            targetHpRemaining: this._getEntityHpStrict(targetEntity)
+        };
+
+        for (const actionConfig of actionConfigs) {
+            const effect = actionConfig?.effect;
+            if (!effect || typeof effect !== 'object') {
+                throw new Error(`[CoreEngine] Missing action.effect: skillId=${skillConfig?.id || 'unknown'}, actionId=${actionConfig?.id || 'unknown'}.`);
+            }
+
+            const repeatCount = Number(effect?.repeat?.count ?? 1);
+            if (!Number.isInteger(repeatCount) || repeatCount <= 0) {
+                throw new Error(`[CoreEngine] Invalid effect.repeat.count: skillId=${skillConfig?.id || 'unknown'}, actionId=${actionConfig?.id || 'unknown'}.`);
+            }
+
+            for (let i = 0; i < repeatCount; i++) {
+                const resolvedTarget = this._resolveActionBindingTargetStrict({
+                    actor: attacker,
+                    skillTargetEntity: targetEntity,
+                    skillTargetBodyPart,
+                    actionConfig,
+                    effect,
+                    skillConfig
+                });
+
+                const partial = this._applySkillEffectStrict({
+                    attacker,
+                    targetEntity: resolvedTarget.entity,
+                    targetBodyPart: resolvedTarget.bodyPart,
+                    effect,
+                    actionConfig,
+                    skillConfig
+                });
+
+                summary.isHit = true;
+                summary.damage += Number(partial.damage || 0);
+                summary.armorDamage += Number(partial.armorDamage || 0);
+                summary.heal += Number(partial.heal || 0);
+                summary.armorAdded += Number(partial.armorAdded || 0);
+                summary.apGain += Number(partial.apGain || 0);
+                if (partial.targetPart) {
+                    summary.targetPart = partial.targetPart;
+                }
+                summary.targetHpRemaining = this._getEntityHpStrict(resolvedTarget.entity);
+            }
+        }
+
+        return summary;
+    }
+
+    _buildSkillExecutionLog({ actorLabel, skillConfig, targetEntity, result }) {
+        const parts = [];
+        if (result.damage > 0) parts.push(`HP伤害 ${result.damage}`);
+        if (result.armorDamage > 0) parts.push(`护甲伤害 ${result.armorDamage}`);
+        if (result.heal > 0) parts.push(`治疗 ${result.heal}`);
+        if (result.armorAdded > 0) parts.push(`护甲恢复 ${result.armorAdded}`);
+        if (result.apGain > 0) parts.push(`AP恢复 ${result.apGain}`);
+        const suffix = parts.length > 0 ? parts.join('，') : '无数值变化';
+        return `${actorLabel} used ${skillConfig.name} on ${targetEntity.id} (${result.targetPart || 'entity'}) -> ${suffix}.`;
+    }
+
+    executePlayerSkill(action) {
+        const player = this.data.playerData;
+        const skillConfig = this.data.getSkillConfig(action.skillId);
+        if (!skillConfig) return null;
+
+        player.stats.ap -= action.cost;
+        this.eventBus.emit('DATA_UPDATE', player);
+
+        let result = null;
+        try {
+            const targetEntity = this._resolveCombatantByIdStrict(action.targetId);
+            this._validatePlannedSkillTargetStrict({
+                actorId: player.id,
+                skillConfig,
+                targetId: action.targetId,
+                bodyPart: action.bodyPart
+            });
+
+            if (targetEntity.id !== player.id && this._getEntityHpStrict(targetEntity) <= 0) {
+                this.eventBus.emit('BATTLE_LOG', { text: `Target ${targetEntity.id} is dead, skill failed.` });
+                return { isHit: false, reason: 'dead' };
+            }
+
+            result = this._executeSkillEffectsStrict({
+                attacker: player,
+                skillConfig,
+                action,
+                targetEntity
+            });
+
+            this.eventBus.emit('BATTLE_LOG', {
+                text: this._buildSkillExecutionLog({
+                    actorLabel: 'Player',
+                    skillConfig,
+                    targetEntity,
+                    result
+                })
+            });
+        } catch (err) {
+            this.eventBus.emit('BATTLE_LOG', { text: err.message });
+            throw err;
+        }
+
         this.emitBattleUpdate();
         return result;
     }
@@ -1093,106 +1494,55 @@ class CoreEngine {
         if (player.stats.hp <= 0) return { isHit: false, reason: 'dead' };
 
         const skillConfig = this.data.getSkillConfig(action.skillId);
-        const baseDamage = skillConfig ? skillConfig.value : 10;
-        const skillName = skillConfig ? skillConfig.name : action.skillId;
+        if (!skillConfig) {
+            throw new Error(`[CoreEngine] Enemy skill not found: ${action.skillId}.`);
+        }
 
-        // Resolve attacker
-		const enemy = (this.data.currentLevelData && this.data.currentLevelData.enemies)
-			? this.data.currentLevelData.enemies.find(e => e.id === action.sourceId)
-			: null;
+        const enemy = (this.data.currentLevelData && this.data.currentLevelData.enemies)
+            ? this.data.currentLevelData.enemies.find(e => e.id === action.sourceId)
+            : null;
+        if (!enemy) {
+            throw new Error(`[CoreEngine] Enemy actor not found: ${action.sourceId}.`);
+        }
 
-		// Combat Context (Buff pipeline)
-		const context = {
-			attacker: enemy,
-			target: player,
-			skillId: action.skillId,
-			bodyPart: action.bodyPart,
-			rawDamage: baseDamage,
-			damageDealt: 0,
-			damageTaken: 0,
-			tempModifiers: Object.create(null)
-		};
-		this.eventBus.emit('BATTLE_ATTACK_PRE', context);
-
-        // New Damage Logic for Player
-        let actualDamage = context.rawDamage;
-        let armorDamage = 0;
-        let targetPart = action.bodyPart || 'chest'; // Default to chest
-        
-        // Access player battle state for body parts
         const runtime = this.data.dataConfig.runtime;
         const playerBattleState = runtime ? runtime.playerBattleState : null;
+        const runtimePlayer = playerBattleState
+            ? { ...player, bodyParts: playerBattleState.bodyParts }
+            : player;
 
-        if (playerBattleState && playerBattleState.bodyParts && playerBattleState.bodyParts[targetPart]) {
-            const part = playerBattleState.bodyParts[targetPart];
-            
-            // Apply weakness
-            if (part.weakness) {
-                actualDamage = Math.floor(actualDamage * part.weakness);
-            }
+        let result = null;
+        try {
+            this._validatePlannedSkillTargetStrict({
+                actorId: enemy.id,
+                skillConfig,
+                targetId: action.targetId,
+                bodyPart: action.bodyPart
+            });
 
-            // Apply armor mitigation mult from buffs
-			let armorMitMult = 1.0;
-			const tmp = context.tempModifiers && context.tempModifiers.armorMitigationMult;
-			if (Array.isArray(tmp) && tmp.length > 0) {
-				for (const m of tmp) {
-					if (m.type === 'percent_current') {
-						armorMitMult *= (1 + m.value);
-					} else if (m.type === 'flat') {
-						armorMitMult += m.value;
-					}
-				}
-			}
-
-            // Reduce Armor first (current)
-            if (part.current > 0) {
-                const mitigated = Math.ceil(actualDamage * armorMitMult);
-                if (part.current >= mitigated) {
-                    part.current -= mitigated;
-                    armorDamage = mitigated;
-                    actualDamage = 0;
-                } else {
-                    armorDamage = part.current;
-                    actualDamage = Math.max(0, mitigated - part.current);
-                    part.current = 0;
-                    part.status = 'BROKEN';
-                }
-            }
+            result = this._executeSkillEffectsStrict({
+                attacker: enemy,
+                skillConfig,
+                action,
+                targetEntity: runtimePlayer
+            });
+        } catch (err) {
+            this.eventBus.emit('BATTLE_LOG', { text: err.message });
+            throw err;
         }
 
-        // TakeDamagePre hooks (e.g. shield / damage taken mult)
-		context.damageTaken = actualDamage;
-		this.eventBus.emit('BATTLE_TAKE_DAMAGE_PRE', context);
-		if (context.damageTakenMult) {
-			context.damageTaken = Math.floor(context.damageTaken * context.damageTakenMult);
-		}
-		if (context.shieldPool) {
-			const absorbed = Math.min(context.shieldPool, context.damageTaken);
-			context.damageTaken -= absorbed;
-			context.shieldPool -= absorbed;
-		}
-
-		actualDamage = context.damageTaken;
-        if (actualDamage > 0) {
-            player.stats.hp -= actualDamage;
-            if (player.stats.hp < 0) player.stats.hp = 0;
-        }
-
-		context.damageDealt = actualDamage;
-		this.eventBus.emit('BATTLE_ATTACK_POST', context);
-        
         this.eventBus.emit('DATA_UPDATE', player);
-        
-        const log = `${action.sourceId} used ${skillName} attacked Player for ${actualDamage} HP damage (Armor: ${armorDamage})!`;
-        this.eventBus.emit('BATTLE_LOG', { text: log });
+        this.eventBus.emit('BATTLE_LOG', {
+            text: this._buildSkillExecutionLog({
+                actorLabel: action.sourceId,
+                skillConfig,
+                targetEntity: runtimePlayer,
+                result
+            })
+        });
         this.emitBattleUpdate();
 
-        return { 
-            isHit: true, 
-            damage: actualDamage, 
-            armorDamage: armorDamage,
-            targetHpRemaining: player.stats.hp 
-        };
+        return result;
     }
 
     checkBattleStatus() {

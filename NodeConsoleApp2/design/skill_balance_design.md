@@ -258,6 +258,61 @@
 
 1. 先确定技能的 **战术定位**：输出/破甲/续航/节奏/控制/辅助。
 2. 选择标签组合（至少覆盖）：
+
+### 4.4 战斗执行契约（Strict Runtime Contract）
+
+为保证高内聚、低耦合，运行时执行器只读取新版技能数据结构，不再兼容旧字段。
+
+#### 4.4.1 运行时唯一输入
+
+- `skill.target`：技能级目标声明。
+- `skill.actions[]`：执行序列。
+- `skill.actions[].target.binding`：动作级目标绑定。
+- `skill.actions[].effect`：效果声明。
+
+#### 4.4.2 明确废弃的旧字段
+
+以下字段不得再被战斗执行器读取：
+
+- `skill.type`
+- `skill.targetType`
+- `skill.value`
+- `skill.requiredPart`
+
+若运行时仍依赖上述字段，视为实现错误，而不是数据兼容需求。
+
+#### 4.4.3 effectType 的结算语义
+
+- `DMG_HP`
+  - 若目标为 `SCOPE_PART`：先应用部位弱点，再由该部位当前护甲吸收，剩余伤害进入 HP。
+  - 若目标为 `SCOPE_ENTITY`：直接对 HP 结算。
+- `DMG_ARMOR`
+  - 只削减目标部位护甲，不直接进入 HP。
+- `PIERCE`
+  - 直接对 HP 结算，不经过护甲吸收。
+- `HEAL`
+  - 恢复目标 HP，不能超过 `maxHp`。
+- `ARMOR_ADD`
+  - 增加目标部位护甲，不能超过该部位 `max`。
+- `AP_GAIN`
+  - 恢复目标 AP，不能超过 `maxAp`。
+
+#### 4.4.4 动作级目标绑定
+
+- `binding.mode = follow`
+  - 当前仅支持 `ref = skillTarget`，表示动作继承技能级目标。
+- `binding.mode = explicit`
+  - 动作显式声明自己的 `target.spec`。
+
+不在上述契约内的绑定方式，执行器应直接报错，不允许静默回退。
+
+#### 4.4.5 失败策略
+
+- 缺少 `target/actions/effect` 任一关键结构：直接报错。
+- `amountType`、`effectType`、`binding.mode` 不受支持：直接报错。
+- 部位技能缺少具体部位：直接报错。
+
+该策略用于尽早暴露数据与实现的不一致，避免出现“命中即清空护甲”这类由旧字段残留导致的隐性错误。
    - 作用属性（What）
    - 数值类型（How）
    - 时间点（When）

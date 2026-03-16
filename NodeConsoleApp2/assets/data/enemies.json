@@ -40,9 +40,9 @@
         "speed": 8,
         "ap": 3
     },
-    "skills": ["skill_bite"],
+    "skills": ["skill_heavy_swing"],
     "bodyParts": {
-        "head": { "current": 10, "max": 10, "weakness": 1.0 },
+        "head": { "current": 52, "max": 52, "weakness": 1.0 },
         "chest": { "current": 18, "max": 18, "weakness": 1.0 },
         "abdomen": { "current": 10, "max": 10, "weakness": 1.0 },
         "arm": { "current": 10, "max": 10, "weakness": 1.0 },
