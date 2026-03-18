@@ -16,11 +16,11 @@
             "learned": ["skill_heal", "skill_heavy_swing", "skill_savage_charge"]
         },
         "bodyParts": {
-            "head":       { "current": 0, "max": 20, "weakness": 1.5 },
-            "chest":      { "current": 10, "max": 20, "weakness": 1.0 },
-            "abdomen":    { "current": 0, "max": 20, "weakness": 1.1 },
-            "arm":        { "current": 0, "max": 20, "weakness": 1.0 },
-            "leg":        { "current": 20, "max": 20, "weakness": 1.0 }
+            "head":       { "current": 0, "max": 30 },
+            "chest":      { "current": 10, "max": 30 },
+            "abdomen":    { "current": 0, "max": 30 },
+            "arm":        { "current": 0, "max": 30 },
+            "leg":        { "current": 20, "max": 30 }
         },
         "equipment": {
             "weapon": null,

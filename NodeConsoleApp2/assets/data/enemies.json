@@ -10,11 +10,11 @@
     },
     "skills": ["skill_bite", "skill_throw_stone"],
     "bodyParts": {
-      "head": { "current": 0, "max": 0, "weakness": 1.5 },
-      "chest": { "current": 5, "max": 5, "weakness": 1.0 },
-      "abdomen": { "current": 0, "max": 0, "weakness": 1.2 },
-      "arm": { "current": 0, "max": 0, "weakness": 1.0 },
-      "leg": { "current": 0, "max": 0, "weakness": 1.0 }
+      "head": { "current": 0, "max": 0 },
+      "chest": { "current": 5, "max": 5 },
+      "abdomen": { "current": 0, "max": 0 },
+      "arm": { "current": 0, "max": 0 },
+      "leg": { "current": 0, "max": 0 }
     },
     "dropTable": "drop_goblin_common"
   },
@@ -24,11 +24,11 @@
     "stats": { "hp": 120, "maxHp": 120, "speed": 8, "ap": 4 },
     "skills": ["skill_smash", "skill_warcry"],
     "bodyParts": {
-      "head": { "current": 10, "max": 10, "weakness": 1.0 },
-      "chest": { "current": 18, "max": 18, "weakness": 1.0 },
-      "abdomen": { "current": 10, "max": 10, "weakness": 1.0 },
-      "arm": { "current": 10, "max": 10, "weakness": 1.0 },
-      "leg": { "current": 10, "max": 10, "weakness": 1.0 }
+      "head": { "current": 10, "max": 10 },
+      "chest": { "current": 18, "max": 18 },
+      "abdomen": { "current": 10, "max": 10 },
+      "arm": { "current": 10, "max": 10 },
+      "leg": { "current": 10, "max": 10 }
     }
   },
   "goblin_01": {
@@ -42,11 +42,11 @@
     },
     "skills": ["skill_heavy_swing"],
     "bodyParts": {
-        "head": { "current": 52, "max": 52, "weakness": 1.0 },
-        "chest": { "current": 18, "max": 18, "weakness": 1.0 },
-        "abdomen": { "current": 10, "max": 10, "weakness": 1.0 },
-        "arm": { "current": 10, "max": 10, "weakness": 1.0 },
-        "leg": { "current": 10, "max": 10, "weakness": 1.0 }
+        "head": { "current": 52, "max": 52 },
+        "chest": { "current": 18, "max": 18 },
+        "abdomen": { "current": 10, "max": 10 },
+        "arm": { "current": 10, "max": 10 },
+        "leg": { "current": 10, "max": 10 }
     }
   },
   "orc_berserker_lvl5": {
@@ -61,11 +61,11 @@
       "ap": 4
     },
     "bodyParts": {
-      "head": { "max": 0, "current": 0, "weakness": 1.5 },
-      "chest": { "max": 50, "current": 50, "weakness": 0.8 },
-      "abdomen": { "max": 20, "current": 20, "weakness": 1.0 },
-      "arm": { "max": 20, "current": 20, "weakness": 1.0 },
-      "leg": { "max": 20, "current": 20, "weakness": 1.0 }
+      "head": { "max": 0, "current": 0 },
+      "chest": { "max": 50, "current": 50 },
+      "abdomen": { "max": 20, "current": 20 },
+      "arm": { "max": 20, "current": 20 },
+      "leg": { "max": 20, "current": 20 }
     },
     "skills": ["skill_heavy_smash", "skill_rage", "skill_cleave"]
   },
@@ -81,11 +81,11 @@
       "ap": 3
     },
     "bodyParts": {
-      "head": { "max": 5, "current": 5, "weakness": 1.2 },
-      "chest": { "max": 10, "current": 10, "weakness": 1.0 },
-      "abdomen": { "max": 5, "current": 5, "weakness": 1.2 },
-      "arm": { "max": 0, "current": 0, "weakness": 1.0 },
-      "leg": { "max": 0, "current": 0, "weakness": 0.9 }
+      "head": { "max": 5, "current": 5 },
+      "chest": { "max": 10, "current": 10 },
+      "abdomen": { "max": 5, "current": 5 },
+      "arm": { "max": 0, "current": 0 },
+      "leg": { "max": 0, "current": 0 }
     },
     "skills": ["skill_ankle_bite", "skill_throw_stone", "skill_escape"]
   },
@@ -101,11 +101,11 @@
       "ap": 3
     },
     "bodyParts": {
-      "head": { "max": 20, "current": 20, "weakness": 1.1 },
-      "chest": { "max": 40, "current": 40, "weakness": 0.9 },
-      "abdomen": { "max": 20, "current": 20, "weakness": 1.0 },
-      "arm": { "max": 40, "current": 40, "weakness": 0.75 },
-      "leg": { "max": 30, "current": 30, "weakness": 1.0 }
+      "head": { "max": 20, "current": 20 },
+      "chest": { "max": 40, "current": 40 },
+      "abdomen": { "max": 20, "current": 20 },
+      "arm": { "max": 40, "current": 40 },
+      "leg": { "max": 30, "current": 30 }
     },
     "skills": ["skill_shield_bash", "skill_bone_repair"]
   }

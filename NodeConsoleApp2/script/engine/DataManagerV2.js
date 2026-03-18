@@ -59,6 +59,15 @@ class DataManager {
         return enemyInstance;
     }
 
+    _assertNoRemovedBodyPartFields(bodyParts, ownerLabel) {
+        if (!bodyParts || typeof bodyParts !== 'object') return;
+        for (const [partKey, partData] of Object.entries(bodyParts)) {
+            if (partData && typeof partData === 'object' && partData.weakness !== undefined) {
+                throw new Error(`[DataManager] ${ownerLabel}.bodyParts.${partKey}.weakness has been removed from the combat model.`);
+            }
+        }
+    }
+
     _normalizeSkills(skills, playerTemplate) {
         const tpl = (playerTemplate && typeof playerTemplate.skills === 'object' && !Array.isArray(playerTemplate.skills))
             ? playerTemplate.skills
@@ -136,6 +145,12 @@ class DataManager {
                 if (this._dataSourcesVersion && saveSourcesVer && saveSourcesVer !== this._dataSourcesVersion) {
                     console.warn(`?? [DataManager] Save dataSourcesVersion mismatch. save=${saveSourcesVer}, current=${this._dataSourcesVersion}. Ignoring save.`);
                     return false;
+                }
+
+                this._assertNoRemovedBodyPartFields(parsed?.global?.player?.bodyParts, 'player');
+                const savedEnemies = parsed?.runtime?.levelData?.enemies;
+                if (Array.isArray(savedEnemies)) {
+                    savedEnemies.forEach(enemy => this._assertNoRemovedBodyPartFields(enemy?.bodyParts, `enemy:${enemy?.id || 'unknown'}`));
                 }
 
                 this.dataConfig = parsed;
@@ -347,6 +362,9 @@ class DataManager {
                     if (enemyInstance.bodyParts) {
                         for (let partKey in enemyInstance.bodyParts) {
                             const partData = enemyInstance.bodyParts[partKey];
+                            if (partData.weakness !== undefined) {
+                                throw new Error(`[DataManager] enemy.bodyParts.${partKey}.weakness has been removed from the combat model.`);
+                            }
                             // Initialize current from max (Data Design V2)
                             const maxVal = (partData.max !== undefined) ? partData.max : (partData.maxArmor || 0);
                             

@@ -402,18 +402,15 @@ class CoreEngine {
                 bodyParts[name] = {
                     current: 0,
                     max: 0,
-                    weakness: 1.0, 
                     status: 'NORMAL'
                 };
-                
-                // Apply default weaknesses for generated parts
-                if (name === 'head') bodyParts[name].weakness = 1.5;
-                if (name === 'abdomen') bodyParts[name].weakness = 1.1;
             } else {
                  // Ensure fields
                  if (bodyParts[name].current === undefined) bodyParts[name].current = 0;
                  if (bodyParts[name].max === undefined) bodyParts[name].max = 0;
-                 if (bodyParts[name].weakness === undefined) bodyParts[name].weakness = 1.0;
+                 if (bodyParts[name].weakness !== undefined) {
+                     throw new Error(`[CoreEngine] bodyParts.${name}.weakness has been removed from the combat model.`);
+                 }
                  if (!bodyParts[name].status) bodyParts[name].status = 'NORMAL';
             }
         });
@@ -1275,11 +1272,6 @@ class CoreEngine {
             throw new Error(`[CoreEngine] Invalid rawDamage after BATTLE_ATTACK_PRE: skillId=${skillId}.`);
         }
 
-        const partState = targetBodyPart ? this._resolveBodyPartStateStrict(targetEntity, targetBodyPart, `skillId=${skillId}`) : null;
-        if (partState && Number.isFinite(partState.weakness) && partState.weakness !== 1) {
-            actualDamage = Math.floor(actualDamage * partState.weakness);
-        }
-
         context.damageTaken = actualDamage;
         this.eventBus.emit('BATTLE_TAKE_DAMAGE_PRE', context);
         if (context.damageTakenMult) {
@@ -1326,9 +1318,6 @@ class CoreEngine {
         }
 
         const partState = this._resolveBodyPartStateStrict(targetEntity, targetBodyPart, `skillId=${skillId}`);
-        if (Number.isFinite(partState.weakness) && partState.weakness !== 1) {
-            actualDamage = Math.floor(actualDamage * partState.weakness);
-        }
 
         let armorDamage = 0;
         if (partState.current > 0) {
