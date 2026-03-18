@@ -1,7 +1,9 @@
+import GAME_VERSION from './GameVersion.js';
+
 class DataManager {
     constructor() {
         this.dataConfig = {
-            version: "1.0.0",
+            version: GAME_VERSION,
             timestamp: 0,
             global: null,
             runtime: null,
@@ -117,6 +119,7 @@ class DataManager {
                 delete this.dataConfig.runtime.levelData;
             }
 
+            this.dataConfig.version = GAME_VERSION;
             this.dataConfig.timestamp = Date.now();
             if (this._dataSourcesVersion) {
                 this.dataConfig.dataSourcesVersion = this._dataSourcesVersion;
@@ -140,10 +143,17 @@ class DataManager {
                     return false;
                 }
 
+                if (parsed.version !== GAME_VERSION) {
+                    console.warn(`[DataManager] Save version mismatch. save=${parsed.version}, current=${GAME_VERSION}. Removing save.`);
+                    localStorage.removeItem('save_game');
+                    return false;
+                }
+
                 // Version guard: invalidate saves created from different data sources config
                 const saveSourcesVer = parsed.dataSourcesVersion || null;
                 if (this._dataSourcesVersion && saveSourcesVer && saveSourcesVer !== this._dataSourcesVersion) {
                     console.warn(`?? [DataManager] Save dataSourcesVersion mismatch. save=${saveSourcesVer}, current=${this._dataSourcesVersion}. Ignoring save.`);
+                    localStorage.removeItem('save_game');
                     return false;
                 }
 
@@ -209,6 +219,8 @@ class DataManager {
             currentScene: "MAIN_MENU",
             battleState: null
         };
+
+        this.dataConfig.version = GAME_VERSION;
 
         this.saveGame();
         console.log('New game created.');
